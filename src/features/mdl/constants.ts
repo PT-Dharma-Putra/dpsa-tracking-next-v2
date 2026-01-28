@@ -1,0 +1,10 @@
+export const MDL_CATEGORIES = [
+    "PADMA",
+    "KAMALA",
+    "PREMIUM",
+    "INTERNASIONAL",
+    "PINTU PADMA",
+    "PINTU KAMALA",
+    "PINTU PREMIUM",
+    "PINTU INTERNASIONAL"
+];
