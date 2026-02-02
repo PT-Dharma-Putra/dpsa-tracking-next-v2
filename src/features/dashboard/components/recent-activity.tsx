@@ -3,69 +3,36 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { useQuery } from "@tanstack/react-query"
+import { InternalDashboardService } from "@/features/dashboard/services/internal-dashboard-service"
 
 export function RecentActivity() {
-    // Mock data for now
-    const activities = [
-        {
-            id: 1,
-            user: "Agus Santoso",
-            action: "created a new project",
-            target: "Project Alpha Renovation",
-            time: "2 mins ago",
-            initials: "AS"
-        },
-        {
-            id: 2,
-            user: "System",
-            action: "completed import",
-            target: "MDL_Feb_2026.xlsx",
-            time: "1 hour ago",
-            initials: "SY"
-        },
-        {
-            id: 3,
-            user: "Budi Gunawan",
-            action: "updated status to",
-            target: "In Progress",
-            time: "3 hours ago",
-            initials: "BG"
-        },
-        {
-            id: 4,
-            user: "Siti Aminah",
-            action: "commented on",
-            target: "Material Request #123",
-            time: "Yesterday",
-            initials: "SA"
-        },
-        {
-            id: 5,
-            user: "Agus Santoso",
-            action: "uploaded document",
-            target: "ContractDraft.pdf",
-            time: "Yesterday",
-            initials: "AS"
-        }
-    ]
+    // Real data fetch
+    const { data } = useQuery({
+        queryKey: ['dashboard-overview'],
+        queryFn: InternalDashboardService.getOverview,
+        refetchInterval: 30000
+    })
+
+    const activities = data?.recent_activity || []
 
     return (
-        <Card className="flex-1 flex flex-col">
-            <CardHeader className="pb-2 pt-4 px-4">
-                <CardTitle className="text-sm font-medium">Recent Activity</CardTitle>
+        <Card className="flex-1 flex flex-col border-0 shadow-none">
+            <CardHeader className="pb-2 pt-3 px-3">
+                <CardTitle className="text-xs font-bold text-neutral-500 uppercase tracking-wider">Recent Activity</CardTitle>
             </CardHeader>
-            <CardContent className="flex-1 p-0">
-                <ScrollArea className="h-[250px] px-4 pb-4">
-                    <div className="space-y-4 pt-2">
-                        {activities.map((activity) => (
-                            <div key={activity.id} className="relative pl-4 pb-2 border-l last:border-0 border-neutral-200 ml-1">
-                                <span className="absolute -left-[5px] top-1 h-2.5 w-2.5 rounded-full bg-neutral-200 ring-4 ring-white" />
+            <CardContent className="flex-1 p-0 overflow-hidden flex flex-col">
+                <ScrollArea className="flex-1 px-3 pb-3">
+                    <div className="space-y-3 pt-1">
+                        {activities.map((activity: any) => (
+                            <div key={activity.id} className="relative pl-3 pb-1 border-l last:border-0 border-neutral-200 ml-1">
+                                <span className="absolute -left-[5px] top-1.5 h-2 w-2 rounded-full bg-neutral-200 ring-2 ring-white" />
                                 <div className="flex flex-col gap-0.5">
-                                    <p className="text-xs text-neutral-800">
+                                    <p className="text-[11px] text-neutral-800 leading-tight">
                                         <span className="font-semibold">{activity.user}</span> {activity.action}{" "}
                                         <span className="font-medium text-neutral-900">"{activity.target}"</span>
                                     </p>
-                                    <p className="text-[10px] text-neutral-500">{activity.time}</p>
+                                    <p className="text-[10px] text-neutral-400">{activity.time}</p>
                                 </div>
                             </div>
                         ))}

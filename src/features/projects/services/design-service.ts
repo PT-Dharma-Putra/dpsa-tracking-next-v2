@@ -39,6 +39,21 @@ export const DesignService = {
         return response.data; // Expected { summary: ..., items: ... }
     },
 
+    toggleNeedsDesign: async (itemId: number, needsDesign: boolean) => {
+        const response = await axiosInstance.patch(`/projects/design-items/${itemId}/needs-design`, {
+            needs_design: needsDesign
+        });
+        return response.data;
+    },
+
+    createItem: async (projectId: string | number, data: { name: string, qty: number, description?: string }) => {
+        const response = await axiosInstance.post(`/projects/${projectId}/sph/item`, {
+            ...data,
+            needs_design: true // Default to true if created from here
+        });
+        return response.data;
+    },
+
     updateStatus: async (itemId: number | string, status: DesignStatus) => {
         const response = await axiosInstance.patch(`/design-items/${itemId}/status`, { status });
         return response.data;
@@ -46,6 +61,15 @@ export const DesignService = {
 
     updateProgress: async (itemId: number | string, progress: number, note: string) => {
         const response = await axiosInstance.patch(`/design-items/${itemId}/progress`, { progress, note });
+        return response.data;
+    },
+
+    uploadBrief: async (itemId: number | string, file: File) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        const response = await axiosInstance.post(`/projects/design-items/${itemId}/upload-brief`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
         return response.data;
     }
 };
@@ -56,6 +80,10 @@ export type DesignStatus = 'TODO' | 'ON_DESIGN' | 'IN_REVIEW' | 'REVISION' | 'DO
 export interface SPHItem {
     id: number;
     name: string;
+    description?: string;
+    qty?: number;
+    unit_price?: number;
+    total_price?: number;
     design_status: DesignStatus;
     design_progress: number;
     needs_design: boolean;

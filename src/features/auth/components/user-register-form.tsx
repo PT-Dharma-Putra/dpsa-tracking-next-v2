@@ -42,8 +42,8 @@ const registerSchema = z.object({
     email: z.string().email({ message: "Invalid email address" }),
     password: z.string().min(8, { message: "Password must be at least 8 characters" }),
     password_confirmation: z.string(),
-    role: z.string({ required_error: "Please select a role" }),
-    divisi: z.string({ required_error: "Please select a division" }),
+    role: z.string().min(1, "Please select a role"),
+    divisi: z.string().min(1, "Please select a division"),
 }).refine((data) => data.password === data.password_confirmation, {
     message: "Passwords don't match",
     path: ["password_confirmation"],

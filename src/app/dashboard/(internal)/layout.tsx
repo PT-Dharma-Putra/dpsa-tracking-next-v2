@@ -27,7 +27,7 @@ export default function DashboardLayout({
     children: React.ReactNode
 }) {
     const router = useRouter()
-    const { token, hydrated } = useAuthStore()
+    const { token, hydrated, user } = useAuthStore()
     const [isChecking, setIsChecking] = useState(true)
 
     useEffect(() => {
@@ -37,10 +37,18 @@ export default function DashboardLayout({
         // Check token
         if (!token) {
             router.replace("/auth/internal/login")
-        } else {
-            setIsChecking(false)
+            return
         }
-    }, [token, hydrated, router])
+
+        // Check Role (RBAC)
+        if (user?.role === 'Client') {
+            // Client should not be here
+            router.replace("/dashboard/external")
+            return
+        }
+
+        setIsChecking(false)
+    }, [token, hydrated, user, router])
 
     if (!hydrated || isChecking) {
         return (

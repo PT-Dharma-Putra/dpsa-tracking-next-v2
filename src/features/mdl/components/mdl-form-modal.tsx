@@ -76,7 +76,7 @@ export function MDLFormModal({ open, onOpenChange, item, onSuccess }: MDLFormMod
 
 
     const form = useForm<z.infer<typeof itemSchema>>({
-        resolver: zodResolver(itemSchema),
+        resolver: zodResolver(itemSchema) as any,
         defaultValues: {
             kategori_mdl: "",
             sub_kategori: "",

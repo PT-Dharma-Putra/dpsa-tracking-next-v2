@@ -8,9 +8,19 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { ArrowLeft, Upload, FileText, Check, Loader2, Info } from "lucide-react"
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog"
+import { ArrowLeft, Upload, FileText, Check, Loader2, Info, Plus } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 
@@ -53,10 +63,19 @@ export default function DesignMarketingPage({ params }: { params: Promise<{ id: 
             {/* Content */}
             <div className="flex-1 overflow-y-auto p-6 max-w-5xl mx-auto w-full space-y-6">
 
+                {/* Quick Add (New) */}
+                <div className="bg-white p-4 rounded-xl border border-neutral-200 flex items-center justify-between shadow-sm">
+                    <div>
+                        <h3 className="text-sm font-bold text-neutral-900">Missing Items?</h3>
+                        <p className="text-xs text-neutral-500">Add items here directly to the scope.</p>
+                    </div>
+                    <CreateItemDialog projectId={projectId} />
+                </div>
+
                 {items.length === 0 ? (
                     <div className="text-center py-20 bg-white rounded-xl border border-dashed">
-                        <p className="text-neutral-500">No items found in SPH yet.</p>
-                        <p className="text-xs text-neutral-400 mt-1">Please create SPH items first.</p>
+                        <p className="text-neutral-500">No items found yet.</p>
+                        <p className="text-xs text-neutral-400 mt-1">Add items using the button above.</p>
                     </div>
                 ) : (
                     <div className="grid gap-4">
@@ -67,6 +86,65 @@ export default function DesignMarketingPage({ params }: { params: Promise<{ id: 
                 )}
             </div>
         </div>
+    )
+}
+
+function CreateItemDialog({ projectId }: { projectId: string }) {
+    const queryClient = useQueryClient();
+    const [open, setOpen] = useState(false);
+    const [name, setName] = useState("");
+    const [qty, setQty] = useState(1);
+    const [desc, setDesc] = useState("");
+
+    const mutation = useMutation({
+        mutationFn: () => DesignService.createItem(projectId, { name, qty, description: desc }),
+        onSuccess: () => {
+            toast.success("Item added successfully");
+            setOpen(false);
+            setName("");
+            setQty(1);
+            setDesc("");
+            queryClient.invalidateQueries({ queryKey: ['design-items', projectId] });
+        },
+        onError: () => toast.error("Failed to add item")
+    });
+
+    return (
+        <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+                <Button className="bg-orange-600 hover:bg-orange-700 text-white shadow-sm font-bold">
+                    <Plus className="h-4 w-4 mr-2" /> Add Item
+                </Button>
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Add New Item</DialogTitle>
+                    <DialogDescription>This will add a new item to the project scope.</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-2">
+                    <div className="space-y-2">
+                        <Label>Item Name</Label>
+                        <Input placeholder="e.g. Master Bedroom Wardrobe" value={name} onChange={(e) => setName(e.target.value)} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label>Quantity</Label>
+                            <Input type="number" min={1} value={qty} onChange={(e) => setQty(Number(e.target.value))} />
+                        </div>
+                    </div>
+                    <div className="space-y-2">
+                        <Label>Description (Optional)</Label>
+                        <Input placeholder="Dimensions, material preference, etc." value={desc} onChange={(e) => setDesc(e.target.value)} />
+                    </div>
+                </div>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+                    <Button onClick={() => mutation.mutate()} disabled={!name || mutation.isPending} className="bg-orange-600 hover:bg-orange-700 text-white">
+                        {mutation.isPending ? "Adding..." : "Add Item"}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     )
 }
 
@@ -121,7 +199,13 @@ function DesignItemCard({ item, projectId }: { item: SPHItem, projectId: string 
                     <div className="flex items-center gap-4 mt-1 text-xs text-neutral-500">
                         <span>Qty: {item.qty}</span>
                         <Separator orientation="vertical" className="h-3" />
-                        <span>{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(item.total_price)}</span>
+                        <span>{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(item.total_price || 0)}</span>
+                        {item.description && item.description !== '-' && (
+                            <>
+                                <Separator orientation="vertical" className="h-3" />
+                                <span className="italic truncate max-w-[200px]">{item.description}</span>
+                            </>
+                        )}
                     </div>
                 </div>
 
@@ -138,7 +222,7 @@ function DesignItemCard({ item, projectId }: { item: SPHItem, projectId: string 
                         {item.design_brief ? (
                             <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 text-green-700 rounded-md text-xs border border-green-200">
                                 <FileText className="h-3 w-3" />
-                                <span className="max-w-[100px] truncate" title={item.design_brief}>Brief Uploaded</span>
+                                <span className="max-w-[100px] truncate" title={item.design_brief ? "Brief Uploaded" : ""}>Brief Uploaded</span>
                                 <Button variant="ghost" size="icon" className="h-4 w-4 ml-1 hover:bg-green-100 rounded-full" onClick={() => document.getElementById(`file-${item.id}`)?.click()}>
                                     <Upload className="h-3 w-3" />
                                 </Button>

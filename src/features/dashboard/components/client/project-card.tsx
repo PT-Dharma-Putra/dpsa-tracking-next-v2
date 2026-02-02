@@ -18,36 +18,32 @@ export function ClientProjectCard({ project }: { project: Project }) {
     const isActionRequired = project.status.includes("Review") || project.status.includes("Approval");
 
     // Helper for status color
-    const getStatusColor = (status: string) => {
-        if (status.includes("Production")) return "bg-blue-100 text-blue-700 border-blue-200";
-        if (status.includes("Design")) return "bg-purple-100 text-purple-700 border-purple-200";
-        if (status.includes("Done") || status.includes("Installed")) return "bg-green-100 text-green-700 border-green-200";
-        return "bg-neutral-100 text-neutral-600 border-neutral-200";
+    const getStatusColor = (status: string, isGradient = false) => {
+        if (status.includes("Production")) return isGradient ? "from-blue-500 to-cyan-500" : "text-blue-700";
+        if (status.includes("Design")) return isGradient ? "from-purple-500 to-pink-500" : "text-purple-700";
+        if (status.includes("Done") || status.includes("Installed")) return isGradient ? "from-green-500 to-emerald-500" : "text-green-700";
+        return isGradient ? "from-neutral-400 to-neutral-500" : "text-neutral-600";
     };
 
     return (
         <Card className="group overflow-hidden border-neutral-200 hover:border-orange-200 hover:shadow-lg transition-all duration-300 bg-white">
-            {/* Thumbnail Header */}
-            <div className="h-48 bg-neutral-100 relative overflow-hidden">
-                {/* Placeholder or Image */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10" />
-                {project.thumbnail ? (
-                    <img src={project.thumbnail} alt={project.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                ) : (
-                    <div className="w-full h-full flex items-center justify-center text-neutral-300 bg-neutral-50">
-                        <FileText className="h-12 w-12 opacity-20" />
+            {/* Header - No Image */}
+            <div className={`h-2 bg-gradient-to-r ${getStatusColor(project.status, true)}`} />
+
+            <CardContent className="p-6 space-y-4">
+                <div className="flex justify-between items-start">
+                    <div className="space-y-1">
+                        <Badge variant="outline" className={`border-none px-0 ${getStatusColor(project.status)} bg-transparent font-bold uppercase tracking-wider`}>
+                            {project.status.replace(/_/g, " ")}
+                        </Badge>
+                        <h3 className="text-xl font-bold text-neutral-900 tracking-tight group-hover:text-orange-600 transition-colors">
+                            {project.name}
+                        </h3>
                     </div>
-                )}
-
-                <div className="absolute bottom-4 left-4 z-20">
-                    <Badge variant="outline" className={`bg-white/90 backdrop-blur border-none mb-2 ${getStatusColor(project.status)}`}>
-                        {project.status.replace(/_/g, " ")}
-                    </Badge>
-                    <h3 className="text-xl font-bold text-white tracking-tight drop-shadow-md">{project.name}</h3>
+                    <div className="h-10 w-10 bg-neutral-100 rounded-full flex items-center justify-center text-neutral-500">
+                        <FileText className="h-5 w-5" />
+                    </div>
                 </div>
-            </div>
-
-            <CardContent className="p-6 space-y-6">
                 <div className="space-y-2">
                     <div className="flex justify-between text-sm">
                         <span className="text-neutral-500 font-medium">Overall Progress</span>
@@ -70,13 +66,13 @@ export function ClientProjectCard({ project }: { project: Project }) {
 
             <CardFooter className="p-6 pt-0">
                 {isActionRequired ? (
-                    <Link href={`/dashboard/client/projects/${project.id}`} className="w-full">
+                    <Link href={`/dashboard/external/projects/${project.id}`} className="w-full">
                         <Button className="w-full bg-orange-600 hover:bg-orange-700 text-white shadow-orange-200 shadow-md">
                             Review Design <ArrowRight className="ml-2 h-4 w-4" />
                         </Button>
                     </Link>
                 ) : (
-                    <Link href={`/dashboard/client/projects/${project.id}`} className="w-full">
+                    <Link href={`/dashboard/external/projects/${project.id}`} className="w-full">
                         <Button variant="outline" className="w-full border-neutral-200 text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50">
                             View Details
                         </Button>

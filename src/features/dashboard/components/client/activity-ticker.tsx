@@ -1,17 +1,25 @@
 import { Megaphone } from "lucide-react";
 
+import { useQuery } from "@tanstack/react-query";
+import { ClientService } from "@/features/dashboard/services/client-service";
+
 interface ActivityTickerProps {
     activities?: string[];
 }
 
-export function ActivityTicker({ activities = [] }: ActivityTickerProps) {
-    // Default mock data if empty
-    const items = activities.length > 0 ? activities : [
-        "Project LOBBY-CL1 just entered Production Phase",
-        "Design for 'Kitchen Set' Approved by Client",
-        "Material for 'Wardrobe' has arrived at Workshop",
-        "New Invoice #INV-2024-001 is available for download"
-    ];
+export function ActivityTicker({ activities: initialActivities = [] }: ActivityTickerProps) {
+    // Fetch Real Activities
+    const { data: fetchedActivities } = useQuery({
+        queryKey: ["client-ticker"],
+        queryFn: () => ClientService.getRecentActivity(10),
+        initialData: initialActivities
+    });
+
+    // Use fetched data, fallback to mock only if explicitly empty and loading failed (optional, but requested to connect real db)
+    // Actually, if DB is empty, we might want to show a generic welcome message instead of old mock data.
+    const items = (fetchedActivities && fetchedActivities.length > 0)
+        ? fetchedActivities
+        : ["Welcome to your Executive Portal", "Project updates will appear here in real-time"];
 
     return (
         <div className="w-full bg-neutral-900 overflow-hidden flex items-center h-10 border-b border-orange-500/20 shadow-md">

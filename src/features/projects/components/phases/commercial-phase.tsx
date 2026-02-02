@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Check, Upload, FileText, ChevronRight, AlertCircle, Lock, User, Paintbrush, Info } from "lucide-react";
+import { Check, FileText, ChevronRight, AlertCircle, Lock, User, Paintbrush, Info } from "lucide-react";
 import { Project, ProjectService } from "../../services/project-service";
 import { DesignService } from "../../services/design-service";
+import { DocumentService } from "../../services/document-service";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -25,9 +26,28 @@ export function CommercialPhase({ project }: CommercialPhaseProps) {
         queryFn: () => DesignService.getItems(project.id),
     });
 
+    // Fetch SPH & SPK Status for Gate
+    const { data: quoteData } = useQuery({
+        queryKey: ['sph', project.id],
+        queryFn: () => DocumentService.getSPH(project.id)
+    });
+
+    const { data: spkData } = useQuery({
+        queryKey: ['spk', project.id],
+        queryFn: () => DocumentService.getSPK(project.id)
+    });
+
+
+
+    // Gate Checks
+    const isDesignApproved = designData?.summary.avg_progress >= 100; // Simplified logic, ideally check status
+    const isSphSent = quoteData?.status === 'approved' || quoteData?.status === 'pending'; // Approved is better
+    const isSphApproved = quoteData?.status === 'approved';
+    const isSpkSigned = spkData?.status === 'signed';
+
     // Advance Phase Mutation
     const advanceMutation = useMutation({
-        mutationFn: async () => ProjectService.advancePhase(project.id, true, "User clicked Advance"), // Using force=true for now for easy testing
+        mutationFn: async () => ProjectService.advancePhase(project.id, false), // force=false to respect backend checks
         onSuccess: () => {
             toast.success("Phase 1 Completed! Moved to Preparation.");
             queryClient.invalidateQueries({ queryKey: ["project", project.id] });
@@ -128,43 +148,80 @@ export function CommercialPhase({ project }: CommercialPhaseProps) {
                     </Card>
 
                     {/* 2. Quotation (SPH) */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-sm font-bold uppercase tracking-wide text-neutral-500">Step 2: Quotation (SPH)</CardTitle>
-                            <CardDescription>Create Bill of Quantities and generate SPH for client.</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="flex items-center justify-between bg-neutral-50 p-4 rounded-lg border border-neutral-100">
-                                <div className="flex items-center gap-3">
-                                    <div className="bg-white p-2 rounded border border-neutral-200">
-                                        <FileText className="h-5 w-5 text-orange-600" />
-                                    </div>
+                    <Link href={`/dashboard/tracking/${project.id}/sph`}>
+                        <Card className={`cursor-pointer hover:border-orange-200 hover:shadow-md transition-all ${isSphApproved ? "border-green-200 bg-green-50/10" : ""}`}>
+                            <CardHeader>
+                                <div className="flex justify-between items-center">
                                     <div>
-                                        <p className="text-sm font-bold text-neutral-900">SPH Builder</p>
-                                        <p className="text-xs text-neutral-500">Draft version</p>
+                                        <CardTitle className="text-sm font-bold uppercase tracking-wide text-neutral-500">Step 2: Quotation (SPH)</CardTitle>
+                                        <CardDescription>Upload the SPH document for client approval.</CardDescription>
                                     </div>
+                                    {isSphApproved ? (
+                                        <Badge className="bg-green-600">Approved</Badge>
+                                    ) : (
+                                        <Badge variant="outline" className="text-neutral-500">Pending</Badge>
+                                    )}
                                 </div>
-                                <Button variant="outline" size="sm">
-                                    Open Builder <ChevronRight className="ml-1 h-3 w-3" />
-                                </Button>
-                            </div>
-                        </CardContent>
-                    </Card>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="flex items-center justify-between bg-neutral-50 p-4 rounded-lg border border-neutral-100">
+                                    <div className="flex items-center gap-3">
+                                        <div className={`p-2 rounded border ${isSphApproved ? 'bg-green-50 border-green-100' : 'bg-white border-neutral-200'}`}>
+                                            <FileText className={`h-5 w-5 ${isSphApproved ? 'text-green-600' : 'text-orange-600'}`} />
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-bold text-neutral-900">
+                                                {isSphApproved ? quoteData?.sph_number || 'SPH Document' : 'Upload SPH'}
+                                            </p>
+                                            <p className="text-xs text-neutral-500">
+                                                {isSphApproved ? 'Quotation Approved' : 'Click to upload document'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <ChevronRight className="h-5 w-5 text-neutral-400" />
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </Link>
 
                     {/* 3. Contract (SPK) */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-sm font-bold uppercase tracking-wide text-neutral-500">Step 3: Contract (SPK)</CardTitle>
-                            <CardDescription>Upload the signed SPK to finalize the deal.</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="flex items-center gap-4">
-                                <Button variant="outline" className="w-full h-12 border-dashed border-2">
-                                    <Upload className="mr-2 h-4 w-4" /> Upload Signed SPK
-                                </Button>
-                            </div>
-                        </CardContent>
-                    </Card>
+                    <Link href={`/dashboard/tracking/${project.id}/spk`}>
+                        <Card className={`cursor-pointer hover:border-blue-200 hover:shadow-md transition-all ${!isSphApproved ? "opacity-60 pointer-events-none" : ""} ${isSpkSigned ? "border-green-200 bg-green-50/10" : ""}`}>
+                            <CardHeader>
+                                <div className="flex justify-between items-center">
+                                    <div>
+                                        <CardTitle className="text-sm font-bold uppercase tracking-wide text-neutral-500">Step 3: Contract (SPK)</CardTitle>
+                                        <CardDescription>Upload the signed SPK to finalize the deal.</CardDescription>
+                                    </div>
+                                    {isSpkSigned ? (
+                                        <Badge className="bg-green-600 flex gap-1"><Check className="h-3 w-3" /> Signed</Badge>
+                                    ) : !isSphApproved ? (
+                                        <Badge variant="outline" className="text-neutral-400"><Lock className="h-3 w-3 mr-1" /> Locked</Badge>
+                                    ) : (
+                                        <Badge variant="outline" className="text-neutral-500">Pending</Badge>
+                                    )}
+                                </div>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="flex items-center justify-between bg-neutral-50 p-4 rounded-lg border border-neutral-100">
+                                    <div className="flex items-center gap-3">
+                                        <div className={`p-2 rounded border ${isSpkSigned ? 'bg-green-50 border-green-100' : 'bg-white border-neutral-200'}`}>
+                                            <FileText className={`h-5 w-5 ${isSpkSigned ? 'text-green-600' : 'text-blue-600'}`} />
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-bold text-neutral-900">
+                                                {isSpkSigned ? spkData?.spk_number || 'SPK Document' : isSphApproved ? 'Upload SPK' : 'Complete SPH First'}
+                                            </p>
+                                            <p className="text-xs text-neutral-500">
+                                                {isSpkSigned ? 'Contract Signed' : isSphApproved ? 'Click to upload contract' : 'SPH must be approved first'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <ChevronRight className="h-5 w-5 text-neutral-400" />
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </Link>
 
                 </div>
 
@@ -182,9 +239,8 @@ export function CommercialPhase({ project }: CommercialPhaseProps) {
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="space-y-2">
-                                <GateRequirement label="Design Approved" met={false} />
-                                <GateRequirement label="SPH Sent" met={false} />
-                                <GateRequirement label="SPK Signed" met={false} />
+                                <GateRequirement label="SPH Approved" met={isSphApproved} />
+                                <GateRequirement label="SPK Signed" met={isSpkSigned} />
                             </div>
 
                             <Separator className="bg-neutral-800" />
@@ -194,7 +250,7 @@ export function CommercialPhase({ project }: CommercialPhaseProps) {
                                     <Button
                                         className="w-full bg-orange-600 hover:bg-orange-700 font-bold text-white"
                                         onClick={() => advanceMutation.mutate()}
-                                        disabled={advanceMutation.isPending}
+                                        disabled={advanceMutation.isPending || !isSpkSigned}
                                     >
                                         {advanceMutation.isPending ? "Processing..." : "Mark Phase 1 Complete"}
                                     </Button>
@@ -212,6 +268,8 @@ export function CommercialPhase({ project }: CommercialPhaseProps) {
                 </div>
 
             </div>
+
+
         </div>
     );
 }

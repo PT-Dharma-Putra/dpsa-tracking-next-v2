@@ -30,6 +30,20 @@ export const mdlService = {
         return data;
     },
 
+    // Get Single Item by ID
+    getById: async (id: number) => {
+        const { data } = await axiosInstance.get<MDLItem>(`/mdl/${id}`);
+        return data;
+    },
+
+    // Get Categories (For Filters)
+    getCategories: async () => {
+        // Assuming there is an endpoint for categories, or we use a distinct query
+        // If not, we might need to rely on static or aggregated list
+        const { data } = await axiosInstance.get<string[]>('/mdl/categories');
+        return data;
+    },
+
     // Create Item
     createItem: async (item: Partial<MDLItem>) => {
         const { data } = await axiosInstance.post('/mdl', item);

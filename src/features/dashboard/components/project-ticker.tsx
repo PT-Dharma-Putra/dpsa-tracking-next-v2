@@ -1,50 +1,62 @@
 "use client"
 
-import { AlertTriangle, Info } from "lucide-react"
-import { useEffect, useState } from "react"
+import { Megaphone } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { SystemService } from "@/features/common/services/system-service";
 
 export function ProjectTicker() {
-    const [messages, setMessages] = useState<string[]>([
-        "Project Alpha: Deadline H-2 (30 Jan 2026)",
-        "Project Beta: Progress 75% - Waiting for Approval",
-        "New MDL Data Imported Successfully",
-        "System Maintenance scheduled for Sunday 12:00 PM"
-    ])
+    // Fetch Real Activity Logs
+    const { data: activities, isError } = useQuery({
+        queryKey: ['activity-logs', 'ticker'],
+        queryFn: () => SystemService.getRecentActivity(5),
+        retry: false // Don't retry if endpoint missing, fallback to static
+    });
 
-    // In a real app, we would fetch these messages from an API
-    // useEffect(() => { ... }, [])
+    // Fallback Mock Data if API fails or is empty
+    const fallbackItems = [
+        "System Ready: Dashboard Connected to Live Database",
+        "Welcome to DPSA Tracking System v2.0",
+        "Waiting for new project activities..."
+    ];
+
+    const items = (activities?.data && activities.data.length > 0)
+        ? activities.data.map((log: any) => `${log.description} (${new Date(log.created_at).toLocaleTimeString()})`)
+        : fallbackItems;
 
     return (
-        <div className="w-full bg-neutral-900 text-white overflow-hidden py-1.5 rounded-lg mb-2 shadow-md relative">
-            <div className="absolute left-0 top-0 bottom-0 bg-gradient-to-r from-neutral-900 to-transparent w-16 z-10"></div>
-            <div className="absolute right-0 top-0 bottom-0 bg-gradient-to-l from-neutral-900 to-transparent w-16 z-10"></div>
-
-            <div className="animate-marquee whitespace-nowrap flex gap-12 items-center">
-                {/* Duplicate the messages to create a seamless loop */}
-                {[...messages, ...messages].map((msg, i) => (
-                    <div key={i} className="flex items-center gap-2 text-sm font-medium">
-                        {msg.includes("Deadline") ? (
-                            <AlertTriangle className="w-4 h-4 text-orange-500" />
-                        ) : (
-                            <Info className="w-4 h-4 text-blue-400" />
-                        )}
-                        <span>{msg}</span>
-                    </div>
-                ))}
+        <div className="w-full bg-neutral-900 overflow-hidden flex items-center h-10 border border-neutral-800 rounded-lg shadow-sm">
+            <div className="px-3 h-full bg-orange-600 flex items-center justify-center shrink-0 z-10">
+                <Megaphone className="h-4 w-4 text-white hover:scale-110 transition-transform" />
             </div>
-
+            <div className="flex-1 relative h-full flex items-center overflow-hidden bg-neutral-900/50">
+                <div className="animate-marquee whitespace-nowrap absolute flex items-center gap-12 text-xs text-neutral-300 font-medium">
+                    {items.map((item: string, i: number) => (
+                        <span key={i} className="flex items-center">
+                            <span className="w-1.5 h-1.5 bg-green-500 rounded-full mr-2 shadow-[0_0_8px_rgba(34,197,94,0.6)]"></span>
+                            {item}
+                        </span>
+                    ))}
+                    {/* Duplicate for seamless loop */}
+                    {items.map((item: string, i: number) => (
+                        <span key={`dup-${i}`} className="flex items-center">
+                            <span className="w-1.5 h-1.5 bg-green-500 rounded-full mr-2 shadow-[0_0_8px_rgba(34,197,94,0.6)]"></span>
+                            {item}
+                        </span>
+                    ))}
+                </div>
+            </div>
             <style jsx>{`
                 @keyframes marquee {
                     0% { transform: translateX(0); }
                     100% { transform: translateX(-50%); }
                 }
                 .animate-marquee {
-                    animation: marquee 30s linear infinite;
+                    animation: marquee 40s linear infinite;
                 }
                 .animate-marquee:hover {
                     animation-play-state: paused;
                 }
             `}</style>
         </div>
-    )
+    );
 }

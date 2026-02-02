@@ -68,9 +68,9 @@ export function OverviewTab({ projectId }: OverviewTabProps) {
                 />
                 <StatsCard
                     title="Deadline"
-                    value={`${stats.deadline_days ?? 0} Days Left`}
+                    value={stats.deadline_days !== null ? `${stats.deadline_days} Days Left` : "Pending SPK"}
                     icon={<Calendar className="h-4 w-4 text-orange-500" />}
-                    desc="Based on Schedule"
+                    desc={stats.deadline_days !== null ? "Based on Schedule" : "No Deadline Set"}
                 />
             </div>
 

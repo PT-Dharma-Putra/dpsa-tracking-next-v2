@@ -11,13 +11,25 @@ export interface Project {
     client?: { name: string };
     created_at: string;
     updated_at: string;
+    start_date?: string;
+    due_date?: string;
 }
 
 export interface CreateProjectPayload {
     name: string;
-    client_id: string; // Form usually returns string
+    client_id: string | number; // Form usually returns string, but user.id is number
     description?: string;
     due_date?: string;
+    items?: {
+        item: string;
+        jumlah: number;
+        harga?: number;
+        satuan?: string;
+        item_type?: string;
+        dimensi_panjang?: string | number | null;
+        dimensi_lebar?: string | number | null;
+        dimensi_tinggi?: string | number | null;
+    }[];
 }
 
 export const ProjectService = {
@@ -36,7 +48,7 @@ export const ProjectService = {
     // Create
     createProject: async (data: CreateProjectPayload) => {
         const response = await apiClient.post("/projects", data);
-        return response.data;
+        return response.data.data;
     },
 
     // Advance Phase (Gate Logic)
@@ -53,4 +65,49 @@ export const ProjectService = {
         const response = await apiClient.get<{ project: Project, stats: any, matrix: any[], activity_stream: any[] }>(`/projects/${id}/overview`);
         return response.data;
     },
+
+    // SPH / Quotation
+    getSPHItems: async (id: number | string) => {
+        const response = await apiClient.get(`/projects/${id}/sph/items`);
+        return response.data;
+    },
+
+    saveSPHItems: async (id: number | string, items: any[]) => {
+        const response = await apiClient.post(`/projects/${id}/sph/items`, { items });
+        return response.data;
+    },
+
+    saveSPHNumber: async (id: number | string, sphNumber: string) => {
+        const response = await apiClient.post(`/projects/${id}/sph/save-number`, { sph_number: sphNumber });
+        return response.data;
+    },
+
+    uploadSPH: async (id: number | string, file: File) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        const response = await apiClient.post(`/projects/${id}/sph/upload-file`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        return response.data;
+    },
+
+    // SPK / Contract
+    getSPK: async (id: number | string) => {
+        const response = await apiClient.get(`/projects/${id}/spk`);
+        return response.data;
+    },
+
+    saveSPKNumber: async (id: number | string, spkNumber: string) => {
+        const response = await apiClient.post(`/projects/${id}/spk/save-number`, { spk_number: spkNumber });
+        return response.data;
+    },
+
+    uploadSPK: async (id: number | string, file: File) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        const response = await apiClient.post(`/projects/${id}/spk/upload-file`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        return response.data;
+    }
 };
