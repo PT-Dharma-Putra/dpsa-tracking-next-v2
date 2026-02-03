@@ -4,6 +4,7 @@ import { use, useState } from "react"
 import Link from "next/link"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { DesignService, SPHItem } from "@/features/projects/services/design-service"
+import { DocumentService } from "@/features/projects/services/document-service"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -20,7 +21,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog"
-import { ArrowLeft, Upload, FileText, Check, Loader2, Info, Plus } from "lucide-react"
+import { ArrowLeft, Upload, FileText, Check, Loader2, Info, Plus, Lock } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 
@@ -40,6 +41,15 @@ export default function DesignMarketingPage({ params }: { params: Promise<{ id: 
 
     const { items } = data || { items: [] };
 
+    // Check SPH Status for Freeze
+    const { data: sphData } = useQuery({
+        queryKey: ['sph', projectId],
+        queryFn: () => DocumentService.getSPH(projectId)
+    });
+
+    // Freeze if SPH is created (has a number)
+    const isDesignFrozen = !!(sphData?.sph_number);
+
     return (
         <div className="flex flex-col h-screen bg-neutral-50">
             {/* Header */}
@@ -57,6 +67,11 @@ export default function DesignMarketingPage({ params }: { params: Promise<{ id: 
                     <span className="text-xs text-neutral-500">
                         {items.filter((i: SPHItem) => i.needs_design).length} Items Selected
                     </span>
+                    {isDesignFrozen && (
+                        <Badge variant="secondary" className="bg-neutral-100 text-neutral-600 border-neutral-200">
+                            <Lock className="h-3 w-3 mr-1" /> Frozen
+                        </Badge>
+                    )}
                 </div>
             </header>
 
@@ -64,13 +79,23 @@ export default function DesignMarketingPage({ params }: { params: Promise<{ id: 
             <div className="flex-1 overflow-y-auto p-6 max-w-5xl mx-auto w-full space-y-6">
 
                 {/* Quick Add (New) */}
-                <div className="bg-white p-4 rounded-xl border border-neutral-200 flex items-center justify-between shadow-sm">
-                    <div>
-                        <h3 className="text-sm font-bold text-neutral-900">Missing Items?</h3>
-                        <p className="text-xs text-neutral-500">Add items here directly to the scope.</p>
+                {isDesignFrozen ? (
+                    <div className="bg-amber-50 p-4 rounded-xl border border-amber-200 flex items-center gap-3">
+                        <Lock className="h-5 w-5 text-amber-600" />
+                        <div>
+                            <h3 className="text-sm font-bold text-amber-800">Design Scope Frozen</h3>
+                            <p className="text-xs text-amber-600">SPH has been generated. To add items, please revise the SPH first.</p>
+                        </div>
                     </div>
-                    <CreateItemDialog projectId={projectId} />
-                </div>
+                ) : (
+                    <div className="bg-white p-4 rounded-xl border border-neutral-200 flex items-center justify-between shadow-sm">
+                        <div>
+                            <h3 className="text-sm font-bold text-neutral-900">Missing Items?</h3>
+                            <p className="text-xs text-neutral-500">Add items here directly to the scope.</p>
+                        </div>
+                        <CreateItemDialog projectId={projectId} />
+                    </div>
+                )}
 
                 {items.length === 0 ? (
                     <div className="text-center py-20 bg-white rounded-xl border border-dashed">
@@ -80,7 +105,7 @@ export default function DesignMarketingPage({ params }: { params: Promise<{ id: 
                 ) : (
                     <div className="grid gap-4">
                         {items.map((item: SPHItem) => (
-                            <DesignItemCard key={item.id} item={item} projectId={projectId} />
+                            <DesignItemCard key={item.id} item={item} projectId={projectId} isFrozen={isDesignFrozen} />
                         ))}
                     </div>
                 )}
@@ -148,7 +173,7 @@ function CreateItemDialog({ projectId }: { projectId: string }) {
     )
 }
 
-function DesignItemCard({ item, projectId }: { item: SPHItem, projectId: string }) {
+function DesignItemCard({ item, projectId, isFrozen }: { item: SPHItem, projectId: string, isFrozen: boolean }) {
     const queryClient = useQueryClient();
     const [isUploading, setIsUploading] = useState(false);
 
@@ -186,6 +211,7 @@ function DesignItemCard({ item, projectId }: { item: SPHItem, projectId: string 
                     <Checkbox
                         id={`item-${item.id}`}
                         checked={item.needs_design}
+                        disabled={isFrozen}
                         onCheckedChange={(c) => toggleMutation.mutate(c as boolean)}
                         className="data-[state=checked]:bg-orange-600 data-[state=checked]:border-orange-600"
                     />

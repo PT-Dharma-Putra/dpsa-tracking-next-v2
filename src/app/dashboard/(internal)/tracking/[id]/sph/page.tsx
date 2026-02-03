@@ -40,7 +40,13 @@ export default function SPHDocumentPage({ params }: { params: Promise<{ id: stri
     })
 
     const approveMutation = useMutation({
-        mutationFn: (projectId: string) => DocumentService.approveSPH(projectId)
+        mutationFn: (projectId: string) => DocumentService.approveSPH(projectId),
+        onSuccess: () => {
+            toast.success("SPH Status updated to Approved")
+            queryClient.invalidateQueries({ queryKey: ['sph', id] })
+            queryClient.invalidateQueries({ queryKey: ['project', id] })
+        },
+        onError: () => toast.error("Failed to approve SPH")
     })
 
     const handleUpload = async () => {
@@ -56,9 +62,9 @@ export default function SPHDocumentPage({ params }: { params: Promise<{ id: stri
         try {
             await saveNumberMutation.mutateAsync({ id, number: sphNumber })
             await uploadFileMutation.mutateAsync({ id, file })
-            await approveMutation.mutateAsync(id)
+            // await approveMutation.mutateAsync(id) // Removed Auto-Approve
 
-            toast.success("SPH uploaded and approved!")
+            toast.success("SPH uploaded successfully. Waiting for approval.")
             queryClient.invalidateQueries({ queryKey: ['sph', id] })
             queryClient.invalidateQueries({ queryKey: ['project', id] })
 
@@ -145,10 +151,23 @@ export default function SPHDocumentPage({ params }: { params: Promise<{ id: stri
                                         </p>
                                     </div>
                                 </div>
-                                {sphData.status === 'approved' && (
+                                {sphData.status === 'approved' ? (
                                     <div className="flex items-center gap-2 text-green-600">
                                         <Check className="h-5 w-5" />
                                         <span className="font-medium">Approved</span>
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-sm text-neutral-500 italic">Waiting Approval</span>
+                                        <Button
+                                            size="sm"
+                                            onClick={() => approveMutation.mutate(id)}
+                                            disabled={approveMutation.isPending}
+                                            className="bg-green-600 hover:bg-green-700 text-white"
+                                        >
+                                            {approveMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin mr-2" /> : <Check className="h-3 w-3 mr-2" />}
+                                            Mark Approved
+                                        </Button>
                                     </div>
                                 )}
                             </div>

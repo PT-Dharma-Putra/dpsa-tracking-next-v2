@@ -115,6 +115,26 @@ export default function MDLImportPage() {
         return undefined
     }
 
+    // Consolidated Field Mappings
+    const FIELD_MAPPINGS = {
+        kategori_mdl: ['Kategori MDL', 'kategori_mdl', 'Kategori', 'Category', 'Kategori Barang'],
+        sub_kategori: ['Sub Kategori', 'sub_kategori', 'Sub Category', 'Sub'],
+        nama_barang: ['Nama Barang', 'nama_barang', 'Item Name', 'Nama Item', 'Deskripsi'],
+        kode_barang: ['Kode Barang', 'kode_barang', 'Kode', 'Code', 'Item Code'],
+        lokasi_ruangan: ['Lokasi Ruangan', 'lokasi_ruangan', 'Location', 'Lokasi'],
+        spesifikasi_dan_material: ['Spesifikasi & Material', 'spesifikasi_dan_material', 'Spesifikasi', 'Specs', 'Spec', 'Material'],
+        dimensi_panjang: ['Panjang', 'dimensi_panjang', 'Length', 'P (cm)', 'P'],
+        dimensi_lebar: ['Lebar', 'dimensi_lebar', 'Width', 'L (cm)', 'L'],
+        dimensi_tinggi: ['Tinggi', 'dimensi_tinggi', 'Height', 'T (cm)', 'T'],
+        volume: ['Volume (m^3)', 'volume', 'Volume', 'Vol (m3)', 'Vol (m^3)', 'Vol'],
+        kode_satuan_beli: ['Kode Satuan Beli', 'kode_satuan_beli', 'Satuan', 'Unit', 'UoM'],
+        harga_pulau_jawa: ['Harga Jawa', 'Harga Pulau Jawa', 'harga_pulau_jawa', 'Price Java'],
+        harga_jabodetabek: ['Harga Jabodetabek', 'harga_jabodetabek', 'Price Jabodetabek'],
+        harga_luar_jawa: ['Harga Luar Jawa', 'harga_luar_jawa', 'Price Outer Java'],
+        prioritas_garansi: ['Prioritas Garansi', 'prioritas_garansi', 'Garansi', 'Warranty'],
+        link_gambar_kerja: ['Link Gambar Kerja', 'link_gambar_kerja', 'Link Gambar', 'Image Link', 'Link']
+    }
+
     const handleUpload = async () => {
         if (!parsedData.length) return
 
@@ -122,22 +142,22 @@ export default function MDLImportPage() {
         setProgress(10)
 
         const itemsToUpload = parsedData.map(row => ({
-            kategori_mdl: findValue(row, ['Kategori MDL', 'kategori_mdl', 'Kategori', 'Category', 'Kategori Barang']),
-            sub_kategori: findValue(row, ['Sub Kategori', 'sub_kategori', 'Sub Category', 'Sub']),
-            nama_barang: findValue(row, ['Nama Barang', 'nama_barang', 'Item Name', 'Nama Item', 'Deskripsi']),
-            kode_barang: findValue(row, ['Kode Barang', 'kode_barang', 'Kode', 'Code', 'Item Code']),
-            spesifikasi_dan_material: findValue(row, ['Spesifikasi & Material', 'spesifikasi_dan_material', 'Spesifikasi', 'Specs', 'Spec', 'Material']),
-            dimensi_panjang: findValue(row, ['Panjang', 'dimensi_panjang', 'Length', 'P (cm)', 'P']),
-            dimensi_lebar: findValue(row, ['Lebar', 'dimensi_lebar', 'Width', 'L (cm)', 'L']),
-            dimensi_tinggi: findValue(row, ['Tinggi', 'dimensi_tinggi', 'Height', 'T (cm)', 'T']),
-            volume: findValue(row, ['Volume (m^3)', 'volume', 'Volume', 'Vol (m3)', 'Vol (m^3)', 'Vol']),
-            kode_satuan_beli: findValue(row, ['Kode Satuan Beli', 'kode_satuan_beli', 'Satuan', 'Unit', 'UoM']),
-            harga_pulau_jawa: findValue(row, ['Harga Jawa', 'harga_pulau_jawa', 'Price Java', 'Harga Pulau Jawa']),
-            harga_jabodetabek: findValue(row, ['Harga Jabodetabek', 'harga_jabodetabek', 'Price Jabodetabek']),
-            harga_luar_jawa: findValue(row, ['Harga Luar Jawa', 'harga_luar_jawa', 'Price Outer Java']),
-            prioritas_garansi: findValue(row, ['Prioritas Garansi', 'prioritas_garansi', 'Garansi', 'Warranty']),
-            link_gambar_kerja: findValue(row, ['Link Gambar Kerja', 'link_gambar_kerja', 'Link Gambar', 'Image Link', 'Link']),
-            lokasi_ruangan: findValue(row, ['Lokasi Ruangan', 'lokasi_ruangan', 'Location', 'Lokasi']),
+            kategori_mdl: findValue(row, FIELD_MAPPINGS.kategori_mdl),
+            sub_kategori: findValue(row, FIELD_MAPPINGS.sub_kategori),
+            nama_barang: findValue(row, FIELD_MAPPINGS.nama_barang),
+            kode_barang: findValue(row, FIELD_MAPPINGS.kode_barang),
+            spesifikasi_dan_material: findValue(row, FIELD_MAPPINGS.spesifikasi_dan_material),
+            dimensi_panjang: findValue(row, FIELD_MAPPINGS.dimensi_panjang),
+            dimensi_lebar: findValue(row, FIELD_MAPPINGS.dimensi_lebar),
+            dimensi_tinggi: findValue(row, FIELD_MAPPINGS.dimensi_tinggi),
+            volume: findValue(row, FIELD_MAPPINGS.volume),
+            kode_satuan_beli: findValue(row, FIELD_MAPPINGS.kode_satuan_beli),
+            harga_pulau_jawa: findValue(row, FIELD_MAPPINGS.harga_pulau_jawa),
+            harga_jabodetabek: findValue(row, FIELD_MAPPINGS.harga_jabodetabek),
+            harga_luar_jawa: findValue(row, FIELD_MAPPINGS.harga_luar_jawa),
+            prioritas_garansi: findValue(row, FIELD_MAPPINGS.prioritas_garansi),
+            link_gambar_kerja: findValue(row, FIELD_MAPPINGS.link_gambar_kerja),
+            lokasi_ruangan: findValue(row, FIELD_MAPPINGS.lokasi_ruangan),
         })).filter(item => item.nama_barang && item.kategori_mdl)
 
         if (itemsToUpload.length === 0) {
@@ -350,30 +370,30 @@ export default function MDLImportPage() {
                                         <TableBody>
                                             {paginatedData.map((row, index) => (
                                                 <TableRow key={index}>
-                                                    <TableCell>{findValue(row, ['Kategori MDL', 'kategori_mdl', 'Kategori']) || '-'}</TableCell>
-                                                    <TableCell>{findValue(row, ['Sub Kategori', 'sub_kategori', 'Sub Category', 'Sub']) || '-'}</TableCell>
-                                                    <TableCell className="font-medium">{findValue(row, ['Nama Barang', 'nama_barang']) || '-'}</TableCell>
-                                                    <TableCell>{findValue(row, ['Kode Barang', 'kode_barang', 'Kode']) || '-'}</TableCell>
-                                                    <TableCell>{findValue(row, ['Lokasi Ruangan', 'lokasi_ruangan', 'Lokasi']) || '-'}</TableCell>
+                                                    <TableCell>{findValue(row, FIELD_MAPPINGS.kategori_mdl) || '-'}</TableCell>
+                                                    <TableCell>{findValue(row, FIELD_MAPPINGS.sub_kategori) || '-'}</TableCell>
+                                                    <TableCell className="font-medium">{findValue(row, FIELD_MAPPINGS.nama_barang) || '-'}</TableCell>
+                                                    <TableCell>{findValue(row, FIELD_MAPPINGS.kode_barang) || '-'}</TableCell>
+                                                    <TableCell>{findValue(row, FIELD_MAPPINGS.lokasi_ruangan) || '-'}</TableCell>
                                                     <TableCell className="max-w-[300px] truncate">
-                                                        {findValue(row, ['Spesifikasi & Material', 'spesifikasi_dan_material', 'Spesifikasi']) || '-'}
+                                                        {findValue(row, FIELD_MAPPINGS.spesifikasi_dan_material) || '-'}
                                                     </TableCell>
-                                                    <TableCell className="text-right">{findValue(row, ['Panjang', 'dimensi_panjang', 'P (cm)']) || '-'}</TableCell>
-                                                    <TableCell className="text-right">{findValue(row, ['Lebar', 'dimensi_lebar', 'L (cm)']) || '-'}</TableCell>
-                                                    <TableCell className="text-right">{findValue(row, ['Tinggi', 'dimensi_tinggi', 'T (cm)']) || '-'}</TableCell>
-                                                    <TableCell className="text-right">{findValue(row, ['Volume (m^3)', 'volume', 'Vol (m^3)']) || '-'}</TableCell>
-                                                    <TableCell>{findValue(row, ['Kode Satuan Beli', 'kode_satuan_beli', 'Satuan']) || '-'}</TableCell>
+                                                    <TableCell className="text-right">{findValue(row, FIELD_MAPPINGS.dimensi_panjang) || '-'}</TableCell>
+                                                    <TableCell className="text-right">{findValue(row, FIELD_MAPPINGS.dimensi_lebar) || '-'}</TableCell>
+                                                    <TableCell className="text-right">{findValue(row, FIELD_MAPPINGS.dimensi_tinggi) || '-'}</TableCell>
+                                                    <TableCell className="text-right">{findValue(row, FIELD_MAPPINGS.volume) || '-'}</TableCell>
+                                                    <TableCell>{findValue(row, FIELD_MAPPINGS.kode_satuan_beli) || '-'}</TableCell>
                                                     <TableCell className="text-right">
-                                                        {(findValue(row, ['Harga Jawa', 'harga_pulau_jawa']))?.toLocaleString() || '-'}
-                                                    </TableCell>
-                                                    <TableCell className="text-right">
-                                                        {(findValue(row, ['Harga Jabodetabek', 'harga_jabodetabek']))?.toLocaleString() || '-'}
+                                                        {(findValue(row, FIELD_MAPPINGS.harga_pulau_jawa))?.toLocaleString() || '-'}
                                                     </TableCell>
                                                     <TableCell className="text-right">
-                                                        {(findValue(row, ['Harga Luar Jawa', 'harga_luar_jawa']))?.toLocaleString() || '-'}
+                                                        {(findValue(row, FIELD_MAPPINGS.harga_jabodetabek))?.toLocaleString() || '-'}
+                                                    </TableCell>
+                                                    <TableCell className="text-right">
+                                                        {(findValue(row, FIELD_MAPPINGS.harga_luar_jawa))?.toLocaleString() || '-'}
                                                     </TableCell>
                                                     <TableCell className="max-w-[200px] truncate">
-                                                        {findValue(row, ['Link Gambar Kerja', 'link_gambar_kerja', 'Link Gambar']) || '-'}
+                                                        {findValue(row, FIELD_MAPPINGS.link_gambar_kerja) || '-'}
                                                     </TableCell>
                                                 </TableRow>
                                             ))}
@@ -387,6 +407,7 @@ export default function MDLImportPage() {
                                 </div>
                             )}
                         </CardContent>
+
                         {parsedData.length > 0 && (
                             <CardFooter className="flex items-center justify-between border-t p-4">
                                 <div className="text-xs text-muted-foreground">
