@@ -78,23 +78,34 @@ export function DokubahWidget({ projectId }: DokubahWidgetProps) {
             </CardHeader>
             <CardContent className="p-6 space-y-6">
 
-                {/* 1. Status Display */}
-                {fileUrl ? (
-                    <div className="bg-green-50 border border-green-100 rounded-lg p-4 flex items-center gap-4">
-                        <div className="bg-white p-2 rounded-full border border-green-100 shadow-sm">
-                            <CheckCircle2 className="h-5 w-5 text-green-600" />
+                {/* 1. PDF Viewer (if available) */}
+                {fileUrl && (
+                    <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                                <p className="text-sm font-semibold text-neutral-900">Dokubah Available</p>
+                            </div>
+                            <Link href={fileUrl} target="_blank">
+                                <Button size="sm" variant="outline" className="border-green-200 text-green-700 hover:bg-green-100">
+                                    <Download className="mr-2 h-3 w-3" /> Download
+                                </Button>
+                            </Link>
                         </div>
-                        <div className="flex-1">
-                            <p className="text-sm font-bold text-neutral-900">Dokubah Available</p>
-                            <p className="text-xs text-neutral-500">Ready for production.</p>
+
+                        {/* PDF Viewer */}
+                        <div className="border border-neutral-200 rounded-lg overflow-hidden bg-neutral-50">
+                            <iframe
+                                src={fileUrl}
+                                className="w-full h-[600px]"
+                                title="Dokubah PDF Viewer"
+                            />
                         </div>
-                        <Link href={fileUrl} target="_blank">
-                            <Button size="sm" variant="outline" className="border-green-200 text-green-700 hover:bg-green-100">
-                                <Download className="mr-2 h-4 w-4" /> Download
-                            </Button>
-                        </Link>
                     </div>
-                ) : (
+                )}
+
+                {/* No file state */}
+                {!fileUrl && (
                     <div className="bg-neutral-50 border border-neutral-100 rounded-lg p-4 flex items-center gap-3">
                         <div className="bg-white p-2 rounded-full border border-neutral-200 shadow-sm">
                             <AlertCircle className="h-5 w-5 text-neutral-400" />
