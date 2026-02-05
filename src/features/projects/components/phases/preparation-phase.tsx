@@ -11,6 +11,7 @@ import { DivisionAssignmentWidget } from "./preparation/division-assignment-widg
 import { DokubahWidget } from "./preparation/dokubah-widget"
 import { EngineeringWidget } from "./preparation/engineering-widget"
 import { ProcurementWidget } from "./preparation/procurement-widget"
+import { MaterialRequestWidget } from "./preparation/material-request-widget"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
@@ -169,9 +170,18 @@ export function PreparationPhase({ project }: PreparationPhaseProps) {
                 </TabsContent>
 
                 {/* 4. WAREHOUSE TAB */}
-                <TabsContent value="warehouse">
+                <TabsContent value="warehouse" className="space-y-8">
                     <div className="max-w-4xl">
-                        <ProcurementWidget projectId={project.id} />
+                        <section>
+                            <h3 className="text-lg font-bold text-neutral-900 mb-4">Material Requests</h3>
+                            <MaterialRequestWidget projectId={project.id} />
+                        </section>
+                    </div>
+                    <div className="max-w-4xl">
+                        <section>
+                            <h3 className="text-lg font-bold text-neutral-900 mb-4">Procurement & Stock</h3>
+                            <ProcurementWidget projectId={project.id} />
+                        </section>
                     </div>
                 </TabsContent>
 
