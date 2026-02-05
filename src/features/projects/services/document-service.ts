@@ -1,114 +1,42 @@
-import { axiosInstance } from "@/lib/axios";
-
-export interface SPH {
-    id: number;
-    project_id: number;
-    sph_number: string;
-    status: 'draft' | 'pending' | 'approved' | 'rejected';
-    file_path: string | null;
-    file_url?: string | null; // Full URL from backend
-    total_amount: number;
-    created_at: string;
-}
-
-export interface SPK {
-    id: number;
-    project_id: number;
-    spk_number: string;
-    file_path?: string | null; // Deprecated
-    spk_file_url?: string | null; // Backend returns this
-    status: 'pending' | 'signed';
-    created_at: string;
-    deadline?: string;
-}
-
-export interface Invoice {
-    id: number;
-    invoice_number: string;
-    term_name: string; // DP, Termin 1, Pelunasan
-    amount: number;
-    status: 'unpaid' | 'paid' | 'overdue';
-    due_date: string;
-    file_path: string | null;
-}
+import { apiClient } from "@/lib/api-client";
 
 export const DocumentService = {
-    // --- SPH (Quotation) ---
-    getSPH: async (projectId: string | number): Promise<SPH | null> => {
-        try {
-            const response = await axiosInstance.get(`/projects/${projectId}/sph`);
-            const data = response.data.data;
-            // Map Backend 'sent' -> Frontend 'pending'
-            if (data && data.status === 'sent') {
-                data.status = 'pending';
-            }
-            return data;
-        } catch (error) {
-            return null; // Handle 404 gracefully
-        }
-    },
+    getDocuments: async (projectId: number | string, type?: string, itemId?: number) => {
+        const params = new URLSearchParams();
+        if (type) params.append('type', type);
+        if (itemId) params.append('item_id', itemId.toString());
 
-    approveSPH: async (projectId: string | number) => {
-        const response = await axiosInstance.post(`/projects/${projectId}/sph/approve`);
+        const response = await apiClient.get(`/projects/${projectId}/documents?${params.toString()}`);
         return response.data;
     },
 
-    // --- SPK (Contract) ---
-    getSPK: async (projectId: string | number): Promise<SPK | null> => {
-        try {
-            const response = await axiosInstance.get(`/projects/${projectId}/spk`);
-            const data = response.data.data;
-            if (data) {
-                // Infer status from file existence
-                data.status = data.spk_file_url ? 'signed' : 'pending';
-            }
-            return data;
-        } catch (error) {
-            return null;
-        }
-    },
-
-    uploadSignedSPK: async (projectId: string | number, file: File) => {
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('type', 'signed_spk');
-
-        const response = await axiosInstance.post(`/projects/${projectId}/spk/upload-file`, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
-        return response.data;
-    },
-
-    // --- Invoices ---
-    getInvoices: async (projectId: string | number): Promise<Invoice[]> => {
-        try {
-            const response = await axiosInstance.get(`/projects/${projectId}/invoices`);
-            return response.data.data;
-        } catch (error) {
-            return [];
-        }
-    },
-
-    // --- Generic Project Documents (Engineering, etc) ---
-    getDocuments: async (projectId: string | number, type?: string) => {
-        const response = await axiosInstance.get(`/projects/${projectId}/documents`, { params: { type } });
-        return response.data;
-    },
-
-    uploadDocument: async (projectId: string | number, file: File, type: string, name?: string) => {
+    uploadDocument: async (projectId: number | string, file: File, type: string, itemId?: number) => {
         const formData = new FormData();
         formData.append('file', file);
         formData.append('type', type);
-        if (name) formData.append('name', name);
+        if (itemId) {
+            formData.append('sph_item_id', itemId.toString());
+        }
 
-        const response = await axiosInstance.post(`/projects/${projectId}/documents`, formData, {
+        const response = await apiClient.post(`/projects/${projectId}/documents`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
         return response.data;
     },
 
-    deleteDocument: async (projectId: string | number, docId: number) => {
-        const response = await axiosInstance.delete(`/projects/${projectId}/documents/${docId}`);
+    deleteDocument: async (projectId: number | string, documentId: number) => {
+        const response = await apiClient.delete(`/projects/${projectId}/documents/${documentId}`);
+        return response.data;
+    },
+
+    // Engineering Handover
+    uploadEngineeringHandover: async (projectId: number | string, file: File) => {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const response = await apiClient.post(`/projects/${projectId}/engineering/handover`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
         return response.data;
     }
 };
