@@ -200,9 +200,9 @@ function MaterialRequestCard({ material, projectId }: { material: any, projectId
             <div className="flex items-start justify-between">
                 <div className="flex-1">
                     {/* Item Name */}
-                    {material.sph_item?.item_name && (
+                    {material.sph_item?.name && (
                         <p className="text-xs font-medium text-blue-600 mb-1">
-                            📦 {material.sph_item.item_name}
+                            📦 {material.sph_item.name}
                         </p>
                     )}
                     <div className="flex items-center gap-2 mb-1">

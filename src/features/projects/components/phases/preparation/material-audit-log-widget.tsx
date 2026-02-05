@@ -73,9 +73,9 @@ export function MaterialAuditLogWidget({ projectId }: MaterialAuditLogWidgetProp
                                     <div className="flex items-start justify-between gap-2 mb-2">
                                         <div className="flex-1">
                                             {/* Item Name */}
-                                            {log.material?.sph_item?.item_name ? (
+                                            {log.material?.sph_item?.name ? (
                                                 <p className="text-xs font-medium text-blue-600 mb-1">
-                                                    📦 {log.material.sph_item.item_name}
+                                                    📦 {log.material.sph_item.name}
                                                 </p>
                                             ) : (
                                                 <p className="text-xs font-medium text-neutral-400 mb-1">
