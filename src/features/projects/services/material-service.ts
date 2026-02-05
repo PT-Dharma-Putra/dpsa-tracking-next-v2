@@ -37,7 +37,12 @@ export const MaterialService = {
     },
 
     // Update material (status, notes, etc)
-    updateMaterial: async (projectId: number | string, materialId: number, data: Partial<MaterialPayload> & { status?: string; warehouse_notes?: string }) => {
+    updateMaterial: async (projectId: number | string, materialId: number, data: Partial<MaterialPayload> & {
+        status?: string;
+        warehouse_notes?: string;
+        released_to_pic?: string;
+        released_date?: string;
+    }) => {
         const response = await apiClient.put(`/projects/${projectId}/materials/${materialId}`, data);
         return response.data;
     },
@@ -52,6 +57,12 @@ export const MaterialService = {
     getProjectMaterials: async (projectId: number | string, status?: string) => {
         const params = status ? `?status=${status}` : '';
         const response = await apiClient.get(`/projects/${projectId}/materials${params}`);
+        return response.data;
+    },
+
+    // Get audit logs for project materials
+    getAuditLogs: async (projectId: number | string) => {
+        const response = await apiClient.get(`/projects/${projectId}/materials/audit-logs`);
         return response.data;
     }
 };

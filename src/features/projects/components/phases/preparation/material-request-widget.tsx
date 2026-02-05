@@ -9,6 +9,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
 
 interface MaterialRequestWidgetProps {
     projectId: number;
@@ -136,6 +146,11 @@ function ItemMaterialGroup({ item, materials, projectId }: { item: any, material
 // Material Request Card
 function MaterialRequestCard({ material, projectId }: { material: any, projectId: number }) {
     const queryClient = useQueryClient();
+    const [isReleaseModalOpen, setIsReleaseModalOpen] = useState(false);
+    const [releaseData, setReleaseData] = useState({
+        released_to_pic: '',
+        released_date: new Date().toISOString().split('T')[0] // Today's date as default
+    });
 
     const updateStatusMutation = useMutation({
         mutationFn: (status: string) => MaterialService.updateMaterial(projectId, material.id, { status }),
@@ -145,6 +160,23 @@ function MaterialRequestCard({ material, projectId }: { material: any, projectId
         },
         onError: (error: any) => {
             toast.error(error.message || "Failed to update status");
+        }
+    });
+
+    const releaseMutation = useMutation({
+        mutationFn: () => MaterialService.updateMaterial(projectId, material.id, {
+            status: 'released',
+            released_to_pic: releaseData.released_to_pic,
+            released_date: releaseData.released_date
+        }),
+        onSuccess: () => {
+            toast.success("Material released successfully");
+            queryClient.invalidateQueries({ queryKey: ["project-materials", projectId] });
+            setIsReleaseModalOpen(false);
+            setReleaseData({ released_to_pic: '', released_date: new Date().toISOString().split('T')[0] });
+        },
+        onError: (error: any) => {
+            toast.error(error.message || "Failed to release material");
         }
     });
 
@@ -222,15 +254,62 @@ function MaterialRequestCard({ material, projectId }: { material: any, projectId
                             size="sm"
                             variant="outline"
                             className="flex-1 text-xs border-blue-200 text-blue-700 hover:bg-blue-50"
-                            onClick={() => updateStatusMutation.mutate('released')}
-                            disabled={updateStatusMutation.isPending}
+                            onClick={() => setIsReleaseModalOpen(true)}
                         >
-                            {updateStatusMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Truck className="h-3 w-3 mr-1" />}
+                            <Truck className="h-3 w-3 mr-1" />
                             Mark Released
                         </Button>
                     )}
                 </div>
             )}
+
+            {/* Release Modal */}
+            <Dialog open={isReleaseModalOpen} onOpenChange={setIsReleaseModalOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Release Material</DialogTitle>
+                        <DialogDescription>
+                            Enter the PIC (Person In Charge) and release date for {material.material_name}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid gap-2">
+                            <Label htmlFor="pic">PIC (Person In Charge) *</Label>
+                            <Input
+                                id="pic"
+                                placeholder="Enter PIC name"
+                                value={releaseData.released_to_pic}
+                                onChange={(e) => setReleaseData({ ...releaseData, released_to_pic: e.target.value })}
+                            />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="date">Release Date *</Label>
+                            <Input
+                                id="date"
+                                type="date"
+                                value={releaseData.released_date}
+                                onChange={(e) => setReleaseData({ ...releaseData, released_date: e.target.value })}
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => setIsReleaseModalOpen(false)}
+                            disabled={releaseMutation.isPending}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={() => releaseMutation.mutate()}
+                            disabled={releaseMutation.isPending || !releaseData.released_to_pic || !releaseData.released_date}
+                        >
+                            {releaseMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                            Confirm Release
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

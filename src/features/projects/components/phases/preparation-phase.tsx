@@ -12,6 +12,7 @@ import { DokubahWidget } from "./preparation/dokubah-widget"
 import { EngineeringWidget } from "./preparation/engineering-widget"
 import { ProcurementWidget } from "./preparation/procurement-widget"
 import { MaterialRequestWidget } from "./preparation/material-request-widget"
+import { MaterialAuditLogWidget } from "./preparation/material-audit-log-widget"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
@@ -175,6 +176,11 @@ export function PreparationPhase({ project }: PreparationPhaseProps) {
                         <section>
                             <h3 className="text-lg font-bold text-neutral-900 mb-4">Material Requests</h3>
                             <MaterialRequestWidget projectId={project.id} />
+                        </section>
+
+                        <section className="mt-8">
+                            <h3 className="text-lg font-bold text-neutral-900 mb-4">Audit Log</h3>
+                            <MaterialAuditLogWidget projectId={project.id} />
                         </section>
                     </div>
                     <div className="max-w-4xl">
