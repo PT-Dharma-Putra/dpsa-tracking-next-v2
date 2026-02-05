@@ -53,6 +53,13 @@ export function PreparationPhase({ project }: PreparationPhaseProps) {
     const isMaterialReady = totalItems > 0 && readyItems === totalItems; // Strict: All must be ready
 
 
+    // 5. Division Assignment Check
+    const { data: sphItems } = useQuery({
+        queryKey: ["project-items", project.id],
+        queryFn: () => ProjectService.getSPHItems(project.id)
+    });
+    const isDivisionAssigned = sphItems && sphItems.length > 0 && sphItems.every((item: any) => item.divisi);
+
     // Advance Mutation
     const advanceMutation = useMutation({
         mutationFn: async () => ProjectService.advancePhase(project.id, false),
@@ -85,7 +92,7 @@ export function PreparationPhase({ project }: PreparationPhaseProps) {
                             </CardHeader>
                             <CardContent className="space-y-4">
                                 <SummaryRow label="Schedule" met={isScheduleSet} pendingText="Not Set" />
-                                <SummaryRow label="Division Assignment" met={true} pendingText="Check Items" /> {/* Always check manually */}
+                                <SummaryRow label="Division Assignment" met={Boolean(isDivisionAssigned)} pendingText="Check Items" />
                                 <SummaryRow label="Dokubah (Material List)" met={isDokubahReady} pendingText="Upload Required" />
                                 <SummaryRow label="Engineering Drawings" met={isDrawingReady} pendingText="No Drawings" />
                                 <SummaryRow label="Material Readiness" met={isMaterialReady} pendingText="Waiting Procurement" />

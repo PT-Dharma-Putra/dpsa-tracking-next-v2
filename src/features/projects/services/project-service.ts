@@ -76,7 +76,7 @@ export const ProjectService = {
     // SPH / Quotation
     getSPHItems: async (id: number | string) => {
         const response = await apiClient.get(`/projects/${id}/sph/items`);
-        return response.data;
+        return response.data.data;
     },
 
     saveSPHItems: async (id: number | string, items: any[]) => {
@@ -117,6 +117,17 @@ export const ProjectService = {
         const response = await apiClient.post(`/projects/${id}/spk/upload-file`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
+        return response.data;
+    },
+
+    // Production Items (ProjectItem)
+    getItems: async (id: number | string) => {
+        const response = await apiClient.get(`/projects/${id}/items`);
+        return response.data.data;
+    },
+
+    syncSPHItems: async (id: number | string) => {
+        const response = await apiClient.post(`/projects/${id}/items/sync-sph`, {});
         return response.data;
     }
 };
