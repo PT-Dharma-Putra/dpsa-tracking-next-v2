@@ -19,6 +19,7 @@ export interface SPK {
     spk_file_url?: string | null; // Backend returns this
     status: 'pending' | 'signed';
     created_at: string;
+    deadline?: string;
 }
 
 export interface Invoice {
@@ -56,7 +57,12 @@ export const DocumentService = {
     getSPK: async (projectId: string | number): Promise<SPK | null> => {
         try {
             const response = await axiosInstance.get(`/projects/${projectId}/spk`);
-            return response.data.data;
+            const data = response.data.data;
+            if (data) {
+                // Infer status from file existence
+                data.status = data.spk_file_url ? 'signed' : 'pending';
+            }
+            return data;
         } catch (error) {
             return null;
         }
@@ -81,5 +87,28 @@ export const DocumentService = {
         } catch (error) {
             return [];
         }
+    },
+
+    // --- Generic Project Documents (Engineering, etc) ---
+    getDocuments: async (projectId: string | number, type?: string) => {
+        const response = await axiosInstance.get(`/projects/${projectId}/documents`, { params: { type } });
+        return response.data;
+    },
+
+    uploadDocument: async (projectId: string | number, file: File, type: string, name?: string) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('type', type);
+        if (name) formData.append('name', name);
+
+        const response = await axiosInstance.post(`/projects/${projectId}/documents`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        return response.data;
+    },
+
+    deleteDocument: async (projectId: string | number, docId: number) => {
+        const response = await axiosInstance.delete(`/projects/${projectId}/documents/${docId}`);
+        return response.data;
     }
 };

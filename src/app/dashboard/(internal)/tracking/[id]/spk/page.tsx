@@ -20,6 +20,7 @@ export default function SPKDocumentPage({ params }: { params: Promise<{ id: stri
 
     // Form State
     const [spkNumber, setSpkNumber] = useState("")
+    const [deadline, setDeadline] = useState("")
     const [file, setFile] = useState<File | null>(null)
 
     // Fetch SPK Data
@@ -30,8 +31,8 @@ export default function SPKDocumentPage({ params }: { params: Promise<{ id: stri
 
     // Upload Mutations
     const saveNumberMutation = useMutation({
-        mutationFn: (data: { id: string, number: string }) =>
-            ProjectService.saveSPKNumber(data.id, data.number)
+        mutationFn: (data: { id: string, number: string, deadline?: string }) =>
+            ProjectService.saveSPKNumber(data.id, data.number, data.deadline)
     })
 
     const uploadFileMutation = useMutation({
@@ -50,7 +51,7 @@ export default function SPKDocumentPage({ params }: { params: Promise<{ id: stri
         }
 
         try {
-            await saveNumberMutation.mutateAsync({ id, number: spkNumber })
+            await saveNumberMutation.mutateAsync({ id, number: spkNumber, deadline: deadline || undefined })
             await uploadFileMutation.mutateAsync({ id, file })
 
             toast.success("SPK uploaded successfully!")
@@ -59,6 +60,7 @@ export default function SPKDocumentPage({ params }: { params: Promise<{ id: stri
 
             // Reset form
             setSpkNumber("")
+            setDeadline("")
             setFile(null)
         } catch (error) {
             console.error(error)
@@ -133,11 +135,20 @@ export default function SPKDocumentPage({ params }: { params: Promise<{ id: stri
                                     </div>
                                     <div>
                                         <p className="font-bold text-neutral-900">{spkData.spk_number}</p>
-                                        <p className="text-sm text-neutral-500">
-                                            Uploaded {new Date(spkData.created_at).toLocaleDateString('id-ID', {
-                                                day: 'numeric', month: 'long', year: 'numeric'
-                                            })}
-                                        </p>
+                                        {spkData.created_at && (
+                                            <p className="text-sm text-neutral-500">
+                                                Uploaded {new Date(spkData.created_at).toLocaleDateString('id-ID', {
+                                                    day: 'numeric', month: 'long', year: 'numeric'
+                                                })}
+                                            </p>
+                                        )}
+                                        {spkData.deadline && (
+                                            <p className="text-sm text-red-600 font-medium mt-1">
+                                                Deadline: {new Date(spkData.deadline).toLocaleDateString('id-ID', {
+                                                    day: 'numeric', month: 'long', year: 'numeric'
+                                                })}
+                                            </p>
+                                        )}
                                     </div>
                                 </div>
                                 {spkData.status === 'signed' && (
@@ -167,13 +178,23 @@ export default function SPKDocumentPage({ params }: { params: Promise<{ id: stri
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <div className="space-y-2">
-                                <Label>SPK Number</Label>
-                                <Input
-                                    placeholder="e.g. 001/SPK/DPSA/I/2026"
-                                    value={spkNumber}
-                                    onChange={(e) => setSpkNumber(e.target.value)}
-                                />
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label>SPK Number</Label>
+                                    <Input
+                                        placeholder="e.g. 001/SPK/DPSA/I/2026"
+                                        value={spkNumber}
+                                        onChange={(e) => setSpkNumber(e.target.value)}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Deadline (Optional)</Label>
+                                    <Input
+                                        type="date"
+                                        value={deadline}
+                                        onChange={(e) => setDeadline(e.target.value)}
+                                    />
+                                </div>
                             </div>
 
                             <div className="space-y-2">

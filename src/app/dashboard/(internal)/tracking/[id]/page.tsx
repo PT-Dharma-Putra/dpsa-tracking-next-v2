@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query"
 import { ProjectService } from "@/features/projects/services/project-service"
 import { PhaseStepper } from "@/features/tracking/components/phase-stepper"
 import { CommercialPhase } from "@/features/projects/components/phases/commercial-phase"
+import { PreparationPhase } from "@/features/projects/components/phases/preparation-phase"
 import { OverviewTab } from "@/features/projects/components/phases/overview-tab"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -124,10 +125,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                             </TabsContent>
 
                             {/* PREPARATION TAB */}
-                            <TabsContent value="preparation" className="mt-0 space-y-8 max-w-4xl mx-auto">
-                                <div className="text-center py-20">
-                                    <p className="text-neutral-400">Preparation Phase (Coming Soon)</p>
-                                </div>
+                            <TabsContent value="preparation" className="mt-0 max-w-5xl mx-auto">
+                                <PreparationPhase project={project} />
                             </TabsContent>
 
                             {/* OTHER TABS */}

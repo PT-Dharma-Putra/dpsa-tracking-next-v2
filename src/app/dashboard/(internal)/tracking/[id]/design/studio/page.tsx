@@ -298,10 +298,32 @@ function UpdateProgressModal({ item, open, onOpenChange, projectId }: { item: SP
                     {item.logs && item.logs.length > 0 && (
                         <div className="bg-neutral-50 p-3 rounded-lg text-xs space-y-2 max-h-[100px] overflow-y-auto">
                             <p className="font-bold text-neutral-500">Recent History</p>
-                            {item.logs.slice(0, 3).map(log => (
-                                <div key={log.id} className="flex justify-between">
-                                    <span>{log.note}</span>
-                                    <span className="text-neutral-400">{log.progress}%</span>
+                            {item.logs.slice(0, 5).map((log: any) => (
+                                <div
+                                    key={log.id}
+                                    className={cn(
+                                        "flex justify-between items-start p-2 rounded border",
+                                        log.status === 'REVISION'
+                                            ? "bg-red-50 border-red-100"
+                                            : "bg-white border-transparent"
+                                    )}
+                                >
+                                    <div className="flex flex-col gap-1">
+                                        <div className="flex items-center gap-2">
+                                            {log.status === 'REVISION' && (
+                                                <Badge variant="destructive" className="text-[9px] h-4 px-1">CLIENT REVISION</Badge>
+                                            )}
+                                            <span className={cn("text-xs", log.status === 'REVISION' ? "text-red-700 font-medium" : "text-neutral-600")}>
+                                                {log.note}
+                                            </span>
+                                        </div>
+                                        {log.created_at && (
+                                            <span className="text-[9px] text-neutral-400">
+                                                {new Date(log.created_at).toLocaleString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <span className="text-neutral-400 shrink-0 ml-2">{log.progress}%</span>
                                 </div>
                             ))}
                         </div>

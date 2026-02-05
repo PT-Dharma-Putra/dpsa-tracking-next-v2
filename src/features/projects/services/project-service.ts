@@ -13,6 +13,7 @@ export interface Project {
     updated_at: string;
     start_date?: string;
     due_date?: string;
+    spk_number?: string;
 }
 
 export interface CreateProjectPayload {
@@ -58,6 +59,12 @@ export const ProjectService = {
             reason,
         });
         return response.data;
+    },
+
+    // Update
+    updateProject: async (id: string | number, data: Partial<Project> | any) => {
+        const response = await apiClient.put(`/projects/${id}`, data);
+        return response.data.data;
     },
 
     // Get Overview Data
