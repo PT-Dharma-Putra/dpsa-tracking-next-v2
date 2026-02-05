@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { ArrowLeft, Loader2, FileText } from "lucide-react"
+import { ArrowLeft, Loader2, FileText, Download, Eye, Upload } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 
@@ -91,15 +91,67 @@ export default function DesignStudioPage({ params }: { params: Promise<{ id: str
 }
 
 function KanbanCard({ item }: { item: SPHItem }) {
+    const queryClient = useQueryClient();
+    const [showPDF, setShowPDF] = useState(false);
+    const pdfUrl = item.design_brief
+        ? `${process.env.NEXT_PUBLIC_API_URL?.replace('/api', '')}/storage/${item.design_brief}`
+        : null;
+
+    // Upload Design Mutation
+    const uploadMutation = useMutation({
+        mutationFn: async (file: File) => DesignService.uploadDesign(item.id, file),
+        onSuccess: () => {
+            toast.success("Design berhasil diupload");
+            queryClient.invalidateQueries({ queryKey: ['design-items'] });
+        },
+        onError: () => toast.error("Gagal upload design")
+    });
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) uploadMutation.mutate(file);
+    };
+
     return (
         <Card className="shadow-sm hover:shadow-md transition-shadow border-neutral-200">
             <CardContent className="p-4 space-y-3">
-                <div className="flex justify-between items-start">
+                <div className="flex justify-between items-start gap-2">
                     <span className="text-sm font-bold text-neutral-900 line-clamp-2 leading-tight">
                         {item.name}
                     </span>
-                    {item.design_brief && <FileText className="h-3 w-3 text-green-500 shrink-0" />}
+                    {item.design_brief && (
+                        <div className="flex gap-1">
+                            <button
+                                onClick={() => setShowPDF(!showPDF)}
+                                className="shrink-0 p-1 hover:bg-blue-50 rounded transition-colors"
+                                title="Preview SPD"
+                            >
+                                <Eye className="h-3 w-3 text-blue-600" />
+                            </button>
+                            <a
+                                href={pdfUrl!}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="shrink-0 p-1 hover:bg-green-50 rounded transition-colors"
+                                title="Download Surat Perintah Desain"
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                <Download className="h-3 w-3 text-green-600" />
+                            </a>
+                        </div>
+                    )}
                 </div>
+
+                {/* PDF Preview */}
+                {showPDF && pdfUrl && (
+                    <div className="border rounded overflow-hidden bg-neutral-50">
+                        <iframe
+                            src={pdfUrl}
+                            className="w-full h-[300px]"
+                            title="SPD Preview"
+                        />
+                    </div>
+                )}
 
                 <div className="space-y-1">
                     <div className="flex justify-between text-[10px] text-neutral-500">
@@ -114,7 +166,47 @@ function KanbanCard({ item }: { item: SPHItem }) {
                     </div>
                 </div>
 
-                <div className="flex items-center justify-between pt-2 border-t border-neutral-100">
+                {/* Upload Design Result */}
+                <div className="pt-2 border-t border-neutral-100">
+                    {item.design_file ? (
+                        <div className="flex items-center justify-between text-xs">
+                            <span className="text-green-600 flex items-center gap-1">
+                                <FileText className="h-3 w-3" />
+                                Design Uploaded
+                            </span>
+                            <a
+                                href={`${process.env.NEXT_PUBLIC_API_URL?.replace('/api', '')}/storage/${item.design_file}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:underline"
+                            >
+                                View
+                            </a>
+                        </div>
+                    ) : (
+                        <>
+                            <input
+                                type="file"
+                                id={`design-${item.id}`}
+                                className="hidden"
+                                accept=".pdf,.jpg,.png,.zip"
+                                onChange={handleFileChange}
+                            />
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="w-full h-7 text-[10px]"
+                                onClick={() => document.getElementById(`design-${item.id}`)?.click()}
+                                disabled={uploadMutation.isPending}
+                            >
+                                {uploadMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Upload className="h-3 w-3 mr-1" />}
+                                Upload Design
+                            </Button>
+                        </>
+                    )}
+                </div>
+
+                <div className="flex items-center justify-between">
                     <span className="text-[10px] text-neutral-400">Click to update</span>
                 </div>
             </CardContent>

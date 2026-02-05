@@ -104,7 +104,7 @@ export const ProjectService = {
 
     uploadSPK: async (id: number | string, file: File) => {
         const formData = new FormData();
-        formData.append('file', file);
+        formData.append('spk_file', file);
         const response = await apiClient.post(`/projects/${id}/spk/upload-file`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
         });

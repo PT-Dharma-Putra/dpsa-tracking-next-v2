@@ -36,7 +36,12 @@ export const DocumentService = {
     getSPH: async (projectId: string | number): Promise<SPH | null> => {
         try {
             const response = await axiosInstance.get(`/projects/${projectId}/sph`);
-            return response.data.data;
+            const data = response.data.data;
+            // Map Backend 'sent' -> Frontend 'pending'
+            if (data && data.status === 'sent') {
+                data.status = 'pending';
+            }
+            return data;
         } catch (error) {
             return null; // Handle 404 gracefully
         }

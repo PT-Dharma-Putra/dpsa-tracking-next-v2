@@ -14,7 +14,7 @@ export interface Design {
 export const DesignService = {
     // --- Client / Approval Features ---
     getProjectDesigns: async (projectId: number | string): Promise<Design[]> => {
-        const response = await axiosInstance.get(`/projects/${projectId}/designs`);
+        const response = await axiosInstance.get(`/projects/${projectId}/client-designs`);
         return response.data.data;
     },
 
@@ -40,7 +40,7 @@ export const DesignService = {
     },
 
     toggleNeedsDesign: async (itemId: number, needsDesign: boolean) => {
-        const response = await axiosInstance.patch(`/projects/design-items/${itemId}/needs-design`, {
+        const response = await axiosInstance.patch(`/design-items/${itemId}/needs-design`, {
             needs_design: needsDesign
         });
         return response.data;
@@ -67,7 +67,21 @@ export const DesignService = {
     uploadBrief: async (itemId: number | string, file: File) => {
         const formData = new FormData();
         formData.append('file', file);
-        const response = await axiosInstance.post(`/projects/design-items/${itemId}/upload-brief`, formData, {
+        const response = await axiosInstance.post(`/design-items/${itemId}/upload-brief`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        return response.data;
+    },
+
+    deleteBrief: async (itemId: number | string) => {
+        const response = await axiosInstance.delete(`/design-items/${itemId}/brief`);
+        return response.data;
+    },
+
+    uploadDesign: async (itemId: number | string, file: File) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        const response = await axiosInstance.post(`/design-items/${itemId}/upload-design`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
         return response.data;
@@ -87,6 +101,7 @@ export interface SPHItem {
     design_status: DesignStatus;
     design_progress: number;
     needs_design: boolean;
-    design_brief?: boolean;
+    design_brief?: string;
+    design_file?: string;
     logs?: any[];
 }

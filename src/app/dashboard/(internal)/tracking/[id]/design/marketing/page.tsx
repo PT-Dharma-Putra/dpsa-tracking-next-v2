@@ -21,7 +21,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog"
-import { ArrowLeft, Upload, FileText, Check, Loader2, Info, Plus, Lock } from "lucide-react"
+import { ArrowLeft, Upload, FileText, Check, Loader2, Info, Plus, Lock, X } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 
@@ -35,17 +35,17 @@ export default function DesignMarketingPage({ params }: { params: Promise<{ id: 
         queryFn: () => DesignService.getItems(projectId),
     });
 
-    if (isLoading) {
-        return <div className="flex h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-orange-600" /></div>;
-    }
-
-    const { items } = data || { items: [] };
-
     // Check SPH Status for Freeze
     const { data: sphData } = useQuery({
         queryKey: ['sph', projectId],
         queryFn: () => DocumentService.getSPH(projectId)
     });
+
+    if (isLoading) {
+        return <div className="flex h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-orange-600" /></div>;
+    }
+
+    const { items } = data || { items: [] };
 
     // Freeze if SPH is created (has a number)
     const isDesignFrozen = !!(sphData?.sph_number);
@@ -190,17 +190,27 @@ function DesignItemCard({ item, projectId, isFrozen }: { item: SPHItem, projectI
     const uploadMutation = useMutation({
         mutationFn: async (file: File) => DesignService.uploadBrief(item.id, file),
         onSuccess: () => {
-            toast.success("Brief uploaded successfully");
+            toast.success("Surat Perintah Desain berhasil diupload");
             setIsUploading(false);
             queryClient.invalidateQueries({ queryKey: ['design-items', projectId] });
         },
-        onError: () => toast.error("Failed to upload brief")
+        onError: () => toast.error("Gagal upload Surat Perintah Desain")
     });
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) uploadMutation.mutate(file);
     };
+
+    // Delete Mutation
+    const deleteMutation = useMutation({
+        mutationFn: async () => DesignService.deleteBrief(item.id),
+        onSuccess: () => {
+            toast.success("Surat Perintah Desain berhasil dihapus");
+            queryClient.invalidateQueries({ queryKey: ['design-items', projectId] });
+        },
+        onError: () => toast.error("Gagal menghapus Surat Perintah Desain")
+    });
 
     return (
         <Card className={cn("transition-all", item.needs_design ? "border-orange-200 bg-white" : "border-neutral-200 bg-neutral-50/50")}>
@@ -248,9 +258,22 @@ function DesignItemCard({ item, projectId, isFrozen }: { item: SPHItem, projectI
                         {item.design_brief ? (
                             <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 text-green-700 rounded-md text-xs border border-green-200">
                                 <FileText className="h-3 w-3" />
-                                <span className="max-w-[100px] truncate" title={item.design_brief ? "Brief Uploaded" : ""}>Brief Uploaded</span>
+                                <span className="max-w-[100px] truncate" title={item.design_brief ? "Surat Perintah Desain Terupload" : ""}>Surat Perintah Desain Terupload</span>
                                 <Button variant="ghost" size="icon" className="h-4 w-4 ml-1 hover:bg-green-100 rounded-full" onClick={() => document.getElementById(`file-${item.id}`)?.click()}>
                                     <Upload className="h-3 w-3" />
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-4 w-4 hover:bg-red-100 rounded-full"
+                                    onClick={() => {
+                                        if (confirm('Hapus Surat Perintah Desain ini?')) {
+                                            deleteMutation.mutate();
+                                        }
+                                    }}
+                                    disabled={deleteMutation.isPending}
+                                >
+                                    <X className="h-3 w-3 text-red-600" />
                                 </Button>
                             </div>
                         ) : (
@@ -270,7 +293,7 @@ function DesignItemCard({ item, projectId, isFrozen }: { item: SPHItem, projectI
                                     disabled={uploadMutation.isPending}
                                 >
                                     {uploadMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Upload className="h-3 w-3 mr-1" />}
-                                    Upload Brief
+                                    Upload SPD
                                 </Button>
                             </div>
                         )}
