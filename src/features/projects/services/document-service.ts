@@ -1,4 +1,4 @@
-import { apiClient } from "@/lib/api-client";
+import { axiosInstance as apiClient } from "@/lib/axios";
 
 export const DocumentService = {
     getDocuments: async (projectId: number | string, type?: string, itemId?: number) => {
