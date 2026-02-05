@@ -164,64 +164,94 @@ function DesignCard({ design, onApprove, onReject, isProcessing }: {
 }) {
     const [comment, setComment] = useState("");
     const [isRejectOpen, setIsRejectOpen] = useState(false);
+    const [isImageOpen, setIsImageOpen] = useState(false);
 
     return (
-        <Card className={`overflow-hidden transition-all duration-300 ${design.status === 'approved' ? 'border-green-200 bg-green-50/10' : 'border-neutral-200 shadow-md hover:shadow-lg'}`}>
-            <div className="h-64 bg-neutral-200 relative group cursor-pointer overflow-hidden">
-                <img src={design.image_url} alt={design.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+        <>
+            <Card className={`overflow-hidden transition-all duration-300 ${design.status === 'approved' ? 'border-green-200 bg-green-50/10' : 'border-neutral-200 shadow-md hover:shadow-lg'}`}>
+                <div
+                    className="h-64 bg-neutral-200 relative group cursor-pointer overflow-hidden"
+                    onClick={() => setIsImageOpen(true)}
+                >
+                    <img src={design.image_url} alt={design.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
 
-                {/* Status Badge */}
-                <div className="absolute top-3 right-3">
-                    {design.status === 'approved' && <Badge className="bg-green-600 text-white"><CheckCircle className="h-3 w-3 mr-1" /> Approved</Badge>}
-                    {design.status === 'rejected' && <Badge className="bg-red-600 text-white"><AlertCircle className="h-3 w-3 mr-1" /> Revision Requested</Badge>}
-                    {design.status === 'pending' && <Badge className="bg-yellow-500 text-white shadow-sm flex items-center gap-1"><AlertCircle className="h-3 w-3" /> Action Required</Badge>}
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                        <Eye className="text-white opacity-0 group-hover:opacity-100 h-8 w-8 drop-shadow-lg transform scale-50 group-hover:scale-100 transition-all duration-300" />
+                    </div>
+
+                    {/* Status Badge */}
+                    <div className="absolute top-3 right-3">
+                        {design.status === 'approved' && <Badge className="bg-green-600 text-white"><CheckCircle className="h-3 w-3 mr-1" /> Approved</Badge>}
+                        {design.status === 'rejected' && <Badge className="bg-red-600 text-white"><AlertCircle className="h-3 w-3 mr-1" /> Revision Requested</Badge>}
+                        {design.status === 'pending' && <Badge className="bg-yellow-500 text-white shadow-sm flex items-center gap-1"><AlertCircle className="h-3 w-3" /> Action Required</Badge>}
+                    </div>
                 </div>
-            </div>
 
-            <CardHeader>
-                <CardTitle className="flex justify-between items-start">
-                    <span>{design.title}</span>
-                    <span className="text-xs text-neutral-400 font-normal capitalize">{design.type}</span>
-                </CardTitle>
-                <CardDescription>Uploaded by {design.uploader} • {design.uploaded_at}</CardDescription>
-            </CardHeader>
+                <CardHeader>
+                    <CardTitle className="flex justify-between items-start">
+                        <span>{design.title}</span>
+                        <span className="text-xs text-neutral-400 font-normal capitalize">{design.type}</span>
+                    </CardTitle>
+                    <CardDescription>Uploaded by {design.uploader} • {design.uploaded_at}</CardDescription>
+                </CardHeader>
 
-            {design.status === 'rejected' && (
-                <div className="px-6 pb-4">
-                    <p className="text-sm text-red-600 bg-red-50 p-3 rounded-lg border border-red-100">
-                        <strong>My Revision Request:</strong> {design.comment}
-                    </p>
-                </div>
-            )}
+                {design.status === 'rejected' && (
+                    <div className="px-6 pb-4">
+                        <p className="text-sm text-red-600 bg-red-50 p-3 rounded-lg border border-red-100">
+                            <strong>My Revision Request:</strong> {design.comment}
+                        </p>
+                    </div>
+                )}
 
-            {design.status === 'pending' && (
-                <CardFooter className="flex gap-3 bg-neutral-50/50 p-6 z-10">
-                    <Button onClick={onApprove} disabled={isProcessing} className="flex-1 bg-green-600 hover:bg-green-700 text-white">
-                        <CheckCircle className="h-4 w-4 mr-2" /> Approve
-                    </Button>
+                {design.status === 'pending' && (
+                    <CardFooter className="flex gap-3 bg-neutral-50/50 p-6 z-10">
+                        <Button onClick={onApprove} disabled={isProcessing} className="flex-1 bg-green-600 hover:bg-green-700 text-white">
+                            <CheckCircle className="h-4 w-4 mr-2" /> Approve
+                        </Button>
 
-                    <Dialog open={isRejectOpen} onOpenChange={setIsRejectOpen}>
-                        <DialogTrigger asChild>
-                            <Button variant="outline" className="flex-1 text-neutral-600">Request Revision</Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>Request Revision</DialogTitle>
-                                <DialogDescription>Please describe what change you need for this design.</DialogDescription>
-                            </DialogHeader>
-                            <Textarea
-                                placeholder="Example: Color is too dark, please make it lighter..."
-                                value={comment}
-                                onChange={(e) => setComment(e.target.value)}
-                            />
-                            <DialogFooter>
-                                <Button onClick={() => { onReject(comment); setIsRejectOpen(false); }} disabled={!comment}>Submit Request</Button>
-                            </DialogFooter>
-                        </DialogContent>
-                    </Dialog>
-                </CardFooter>
-            )}
-        </Card>
+                        <Dialog open={isRejectOpen} onOpenChange={setIsRejectOpen}>
+                            <DialogTrigger asChild>
+                                <Button variant="outline" className="flex-1 text-neutral-600">Request Revision</Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                                <DialogHeader>
+                                    <DialogTitle>Request Revision</DialogTitle>
+                                    <DialogDescription>Please describe what change you need for this design.</DialogDescription>
+                                </DialogHeader>
+                                <Textarea
+                                    placeholder="Example: Color is too dark, please make it lighter..."
+                                    value={comment}
+                                    onChange={(e) => setComment(e.target.value)}
+                                />
+                                <DialogFooter>
+                                    <Button onClick={() => { onReject(comment); setIsRejectOpen(false); }} disabled={!comment}>Submit Request</Button>
+                                </DialogFooter>
+                            </DialogContent>
+                        </Dialog>
+                    </CardFooter>
+                )}
+            </Card>
+
+            {/* Image Preview Dialog */}
+            <Dialog open={isImageOpen} onOpenChange={setIsImageOpen}>
+                <DialogContent className="max-w-7xl h-[90vh] flex flex-col p-0 border-none bg-black/95">
+                    <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
+                        <img
+                            src={design.image_url}
+                            alt={design.title}
+                            className="max-w-full max-h-full object-contain"
+                        />
+                        <button
+                            onClick={() => setIsImageOpen(false)}
+                            className="absolute top-4 right-4 bg-white/10 hover:bg-white/20 text-white rounded-full p-2 transition-colors"
+                        >
+                            <ArrowLeft className="h-6 w-6" /> {/* reusing ArrowLeft as 'Close' to avoid importing X if not available, or use native behavior */}
+                        </button>
+                    </div>
+
+                </DialogContent>
+            </Dialog>
+        </>
     );
 }
 

@@ -19,12 +19,12 @@ export const DesignService = {
     },
 
     approveDesign: async (designId: number) => {
-        const response = await axiosInstance.post(`/designs/${designId}/approve`);
+        const response = await axiosInstance.post(`/client-designs/${designId}/approve`);
         return response.data;
     },
 
     rejectDesign: async (designId: number, comment: string) => {
-        const response = await axiosInstance.post(`/designs/${designId}/reject`, { comment });
+        const response = await axiosInstance.post(`/client-designs/${designId}/reject`, { comment });
         return response.data;
     },
 

@@ -97,8 +97,10 @@ export const ProjectService = {
         return response.data;
     },
 
-    saveSPKNumber: async (id: number | string, spkNumber: string) => {
-        const response = await apiClient.post(`/projects/${id}/spk/save-number`, { spk_number: spkNumber });
+    saveSPKNumber: async (id: number | string, spkNumber: string, deadline?: string) => {
+        const payload: any = { spk_number: spkNumber };
+        if (deadline) payload.deadline = deadline;
+        const response = await apiClient.post(`/projects/${id}/spk/save-number`, payload);
         return response.data;
     },
 
