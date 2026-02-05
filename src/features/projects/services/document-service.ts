@@ -38,5 +38,29 @@ export const DocumentService = {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
         return response.data;
+    },
+
+    // SPH (Quotation) Documents
+    getSPH: async (projectId: number | string) => {
+        const response = await apiClient.get(`/projects/${projectId}/documents?type=sph`);
+        return response.data;
+    },
+
+    // SPK (Work Order) Documents
+    getSPK: async (projectId: number | string) => {
+        const response = await apiClient.get(`/projects/${projectId}/documents?type=spk`);
+        return response.data;
+    },
+
+    // Invoice Documents
+    getInvoices: async (projectId: number | string) => {
+        const response = await apiClient.get(`/projects/${projectId}/documents?type=invoice`);
+        return response.data;
+    },
+
+    // Approve SPH
+    approveSPH: async (projectId: number | string) => {
+        const response = await apiClient.post(`/projects/${projectId}/sph/approve`);
+        return response.data;
     }
 };

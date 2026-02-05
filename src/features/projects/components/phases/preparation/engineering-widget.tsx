@@ -188,11 +188,11 @@ export function EngineeringWidget({ projectId }: EngineeringWidgetProps) {
                                     key={item.id}
                                     item={item}
                                     projectId={projectId}
-                                    onUpload={(file) => uploadItemDrawingMutation.mutate({ itemId: item.id, file })}
-                                    onDelete={(docId) => deleteMutation.mutate(docId)}
+                                    onUpload={(file: File) => uploadItemDrawingMutation.mutate({ itemId: item.id, file })}
+                                    onDelete={(docId: number) => deleteMutation.mutate(docId)}
                                     isUploading={uploadItemDrawingMutation.isPending}
                                     currentFile={itemFiles[item.id]}
-                                    onFileChange={(file) => setItemFiles(prev => ({ ...prev, [item.id]: file }))}
+                                    onFileChange={(file: File) => setItemFiles(prev => ({ ...prev, [item.id]: file }))}
                                 />
                             ))
                         ) : (
