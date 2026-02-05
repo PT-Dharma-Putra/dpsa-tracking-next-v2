@@ -247,6 +247,7 @@ function ItemMaterialAccordion({ item, projectId }: { item: any, projectId: numb
                                 <MaterialCard
                                     key={material.id}
                                     material={material}
+                                    projectId={projectId}
                                     onEdit={() => setEditingMaterial(material)}
                                 />
                             ))}
@@ -275,6 +276,7 @@ function ItemMaterialAccordion({ item, projectId }: { item: any, projectId: numb
                                 <DialogContent>
                                     <EditMaterialForm
                                         material={editingMaterial}
+                                        projectId={projectId}
                                         onSuccess={() => setEditingMaterial(null)}
                                     />
                                 </DialogContent>
@@ -288,7 +290,7 @@ function ItemMaterialAccordion({ item, projectId }: { item: any, projectId: numb
 }
 
 // Material Card Component
-function MaterialCard({ material, onEdit }: { material: any, onEdit: () => void }) {
+function MaterialCard({ material, projectId, onEdit }: { material: any, projectId: number, onEdit: () => void }) {
     const queryClient = useQueryClient();
 
     const deleteMutation = useMutation({
@@ -429,7 +431,7 @@ function AddMaterialForm({ projectId, itemId, onSuccess }: { projectId: number, 
 }
 
 // Edit Material Form
-function EditMaterialForm({ material, onSuccess }: { material: any, onSuccess: () => void }) {
+function EditMaterialForm({ material, projectId, onSuccess }: { material: any, projectId: number, onSuccess: () => void }) {
     const queryClient = useQueryClient();
     const [formData, setFormData] = useState({
         material_name: material.material_name,
