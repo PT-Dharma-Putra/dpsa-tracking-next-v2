@@ -39,27 +39,13 @@ export function DivisionAssignmentWidget({ projectId, spkNumber }: DivisionAssig
     const queryClient = useQueryClient();
     const [assignments, setAssignments] = useState<Record<number, string>>({});
 
-    // 1. Fetch Project Items (Production Items)
+    // 1. Fetch SPH Items
     const { data: items, isLoading } = useQuery({
-        queryKey: ["project-items", projectId],
-        queryFn: () => ProjectService.getItems(projectId)
+        queryKey: ["sph-items", projectId],
+        queryFn: () => ProjectService.getSPHItems(projectId)
     });
 
-    // 2. Sync Mutation
-    const syncMutation = useMutation({
-        mutationFn: async () => ProjectService.syncSPHItems(projectId),
-        onSuccess: (data) => {
-            if (data.success) {
-                toast.success(data.message);
-                queryClient.invalidateQueries({ queryKey: ["project-items", projectId] });
-            } else {
-                toast.info(data.message);
-            }
-        },
-        onError: (err: any) => toast.error(err.message || "Sync failed")
-    });
-
-    // 3. Mutation for Bulk Assign
+    // 2. Mutation for Bulk Assign
     const bulkAssignMutation = useMutation({
         mutationFn: async () => {
             const payload = Object.entries(assignments).map(([itemId, divisi]) => ({
@@ -70,8 +56,8 @@ export function DivisionAssignmentWidget({ projectId, spkNumber }: DivisionAssig
             return await PPICService.bulkAssignDivisi(payload);
         },
         onSuccess: () => {
-            toast.success("Design assignments saved successfully");
-            queryClient.invalidateQueries({ queryKey: ["project-items", projectId] });
+            toast.success("Division assignments saved successfully");
+            queryClient.invalidateQueries({ queryKey: ["sph-items", projectId] });
             setAssignments({});
         },
         onError: (error: any) => {
@@ -128,11 +114,11 @@ export function DivisionAssignmentWidget({ projectId, spkNumber }: DivisionAssig
                                     <div className="col-span-12 md:col-span-8">
                                         <div className="flex items-start gap-3">
                                             <div className="h-8 w-8 rounded bg-neutral-100 flex items-center justify-center shrink-0">
-                                                <span className="text-xs font-bold text-neutral-500">{item.jumlah || item.qty}x</span>
+                                                <span className="text-xs font-bold text-neutral-500">{item.qty}x</span>
                                             </div>
                                             <div>
-                                                <p className="text-sm font-medium text-neutral-900 line-clamp-1">{item.item || item.name}</p>
-                                                <p className="text-xs text-neutral-500 line-clamp-1">{item.keterangan || item.specs || "No specs"}</p>
+                                                <p className="text-sm font-medium text-neutral-900 line-clamp-1">{item.name}</p>
+                                                <p className="text-xs text-neutral-500 line-clamp-1">{item.description || "No description"}</p>
                                             </div>
                                         </div>
                                     </div>
@@ -159,17 +145,8 @@ export function DivisionAssignmentWidget({ projectId, spkNumber }: DivisionAssig
                             )
                         })
                     ) : (
-                        <div className="p-8 text-center flex flex-col items-center justify-center gap-4">
-                            <p className="text-neutral-400 text-sm">No production items found.</p>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => syncMutation.mutate()}
-                                disabled={syncMutation.isPending}
-                            >
-                                {syncMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin mr-2" /> : null}
-                                Import items from SPH
-                            </Button>
+                        <div className="p-8 text-center text-neutral-400">
+                            No items found for this project.
                         </div>
                     )}
                 </div>

@@ -55,7 +55,7 @@ export function PreparationPhase({ project }: PreparationPhaseProps) {
 
     // 5. Division Assignment Check
     const { data: sphItems } = useQuery({
-        queryKey: ["project-items", project.id],
+        queryKey: ["sph-items", project.id],
         queryFn: () => ProjectService.getSPHItems(project.id)
     });
     const isDivisionAssigned = sphItems && sphItems.length > 0 && sphItems.every((item: any) => item.divisi);
