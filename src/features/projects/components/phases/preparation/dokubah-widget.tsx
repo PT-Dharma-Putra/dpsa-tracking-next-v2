@@ -3,11 +3,13 @@
 import { useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { PPICService } from "@/features/projects/services/ppic-service"
-import { DocumentService } from "@/features/projects/services/document-service"
+import { MaterialService, type MaterialPayload } from "@/features/projects/services/material-service"
 import { ProjectService } from "@/features/projects/services/project-service"
-import { Loader2, Upload, FileText, Download, CheckCircle2, AlertCircle, File as FileIcon, Trash2 } from "lucide-react"
+import { Loader2, Upload, FileText, Download, AlertCircle, Plus, Trash2, Edit2, Package } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
@@ -28,31 +30,38 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
 
 interface DokubahWidgetProps {
     projectId: number;
 }
 
-const MATERIAL_DOC_TYPE = "MATERIAL";
-
 export function DokubahWidget({ projectId }: DokubahWidgetProps) {
     const queryClient = useQueryClient();
     const [file, setFile] = useState<File | null>(null);
-    const [itemFiles, setItemFiles] = useState<Record<number, File | null>>({});
 
-    // 1. Fetch Dokubah Data (General Material List)
+    // Fetch Dokubah Data (General Material List)
     const { data: dokubahData, isLoading } = useQuery({
         queryKey: ["dokubah", projectId],
         queryFn: () => PPICService.getDokubah(projectId)
     });
 
-    // 2. Fetch SPH Items for per-item material lists
+    // Fetch SPH Items
     const { data: sphItems, isLoading: itemsLoading } = useQuery({
         queryKey: ["sph-items", projectId],
         queryFn: () => ProjectService.getSPHItems(projectId)
     });
 
-    // 3. Upload General Dokubah Mutation
+    // Upload General Dokubah Mutation
     const uploadMutation = useMutation({
         mutationFn: async () => {
             if (!file) throw new Error("Please select a file first");
@@ -65,35 +74,6 @@ export function DokubahWidget({ projectId }: DokubahWidgetProps) {
         },
         onError: (error: any) => {
             toast.error(error.message || "Failed to upload Dokubah");
-        }
-    });
-
-    // 4. Upload Item Material List Mutation
-    const uploadItemMaterialMutation = useMutation({
-        mutationFn: async ({ itemId, file }: { itemId: number, file: File }) => {
-            return await DocumentService.uploadDocument(projectId, file, MATERIAL_DOC_TYPE, itemId);
-        },
-        onSuccess: (_, variables) => {
-            toast.success("Material list uploaded");
-            setItemFiles(prev => ({ ...prev, [variables.itemId]: null }));
-            queryClient.invalidateQueries({ queryKey: ["item-materials", projectId, variables.itemId] });
-        },
-        onError: (error: any) => {
-            toast.error(error.message || "Failed to upload material list");
-        }
-    });
-
-    // 5. Delete Mutation
-    const deleteMutation = useMutation({
-        mutationFn: async (docId: number) => {
-            return await DocumentService.deleteDocument(projectId, docId);
-        },
-        onSuccess: () => {
-            toast.success("Material list deleted");
-            queryClient.invalidateQueries({ queryKey: ["item-materials"] });
-        },
-        onError: (error: any) => {
-            toast.error(error.message || "Failed to delete");
         }
     });
 
@@ -130,14 +110,14 @@ export function DokubahWidget({ projectId }: DokubahWidgetProps) {
                     </Badge>
                 </div>
                 <CardDescription>
-                    General material list and per-item material breakdown.
+                    General material list and per-item material requirements.
                 </CardDescription>
             </CardHeader>
             <CardContent className="p-6 space-y-6">
 
                 {/* General Dokubah Section */}
                 <div className="space-y-3">
-                    <h3 className="text-sm font-semibold text-neutral-700">General Material List</h3>
+                    <h3 className="text-sm font-semibold text-neutral-700">General Material List (Dokubah)</h3>
 
                     {fileUrl ? (
                         <div className="space-y-3">
@@ -199,9 +179,17 @@ export function DokubahWidget({ projectId }: DokubahWidgetProps) {
                     </div>
                 </div>
 
-                {/* Per-Item Material Lists */}
+                {/* Per-Item Material Requirements */}
                 <div className="space-y-3 pt-4 border-t border-neutral-100">
-                    <h3 className="text-sm font-semibold text-neutral-700">Per-Item Material Lists</h3>
+                    <div className="flex items-center justify-between">
+                        <h3 className="text-sm font-semibold text-neutral-700 flex items-center gap-2">
+                            <Package className="h-4 w-4" />
+                            Per-Item Material Requirements
+                        </h3>
+                        <Badge variant="outline" className="text-xs">
+                            {sphItems?.length || 0} items
+                        </Badge>
+                    </div>
 
                     <Accordion type="multiple" className="w-full">
                         {sphItems && sphItems.length > 0 ? (
@@ -210,11 +198,6 @@ export function DokubahWidget({ projectId }: DokubahWidgetProps) {
                                     key={item.id}
                                     item={item}
                                     projectId={projectId}
-                                    onUpload={(file: File) => uploadItemMaterialMutation.mutate({ itemId: item.id, file })}
-                                    onDelete={(docId: number) => deleteMutation.mutate(docId)}
-                                    isUploading={uploadItemMaterialMutation.isPending}
-                                    currentFile={itemFiles[item.id]}
-                                    onFileChange={(file: File | null) => setItemFiles(prev => ({ ...prev, [item.id]: file }))}
                                 />
                             ))
                         ) : (
@@ -228,11 +211,15 @@ export function DokubahWidget({ projectId }: DokubahWidgetProps) {
     )
 }
 
-// Sub-component for each item's material lists
-function ItemMaterialAccordion({ item, projectId, onUpload, onDelete, isUploading, currentFile, onFileChange }: any) {
-    const { data: materials } = useQuery({
+// Sub-component for each item's materials
+function ItemMaterialAccordion({ item, projectId }: { item: any, projectId: number }) {
+    const queryClient = useQueryClient();
+    const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+    const [editingMaterial, setEditingMaterial] = useState<any>(null);
+
+    const { data: materials, isLoading } = useQuery({
         queryKey: ["item-materials", projectId, item.id],
-        queryFn: () => DocumentService.getDocuments(projectId, "MATERIAL", item.id)
+        queryFn: () => MaterialService.getItemMaterials(projectId, item.id)
     });
 
     const materialsList = materials?.data || [];
@@ -243,78 +230,280 @@ function ItemMaterialAccordion({ item, projectId, onUpload, onDelete, isUploadin
                 <div className="flex items-center justify-between w-full pr-4">
                     <span className="text-sm font-medium text-neutral-900">{item.name}</span>
                     <Badge variant="outline" className="text-xs">
-                        {materialsList.length} files
+                        {materialsList.length} materials
                     </Badge>
                 </div>
             </AccordionTrigger>
             <AccordionContent className="space-y-3 pt-2">
-                {/* File List */}
-                <div className="space-y-2">
-                    {materialsList.map((doc: any) => (
-                        <div key={doc.id} className="flex items-center justify-between p-2 bg-neutral-50 rounded border border-neutral-100 group hover:bg-neutral-100">
-                            <div className="flex items-center gap-2 overflow-hidden">
-                                <FileIcon className="h-4 w-4 text-orange-600 shrink-0" />
-                                <p className="text-xs font-medium text-neutral-900 truncate">{doc.name}</p>
-                            </div>
-                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <Link href={doc.file_url} target="_blank">
-                                    <Button size="icon" variant="ghost" className="h-6 w-6">
-                                        <Download className="h-3 w-3" />
-                                    </Button>
-                                </Link>
-                                <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                        <Button size="icon" variant="ghost" className="h-6 w-6 hover:bg-red-50 hover:text-red-600">
-                                            <Trash2 className="h-3 w-3" />
-                                        </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                        <AlertDialogHeader>
-                                            <AlertDialogTitle>Delete Material List?</AlertDialogTitle>
-                                            <AlertDialogDescription>
-                                                This will permanently delete <b>{doc.name}</b>.
-                                            </AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                            <AlertDialogAction
-                                                onClick={() => onDelete(doc.id)}
-                                                className="bg-red-600 hover:bg-red-700"
-                                            >
-                                                Delete
-                                            </AlertDialogAction>
-                                        </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                </AlertDialog>
-                            </div>
+                {isLoading ? (
+                    <div className="flex justify-center py-4">
+                        <Loader2 className="h-5 w-5 animate-spin text-neutral-400" />
+                    </div>
+                ) : (
+                    <>
+                        {/* Material List */}
+                        <div className="space-y-2">
+                            {materialsList.map((material: any) => (
+                                <MaterialCard
+                                    key={material.id}
+                                    material={material}
+                                    onEdit={() => setEditingMaterial(material)}
+                                />
+                            ))}
                         </div>
-                    ))}
-                </div>
 
-                {/* Upload Form */}
-                <div className="flex gap-2 pt-2 border-t border-neutral-100">
-                    <input
-                        type="file"
-                        accept=".pdf,.xlsx,.xls"
-                        onChange={(e) => e.target.files && onFileChange(e.target.files[0])}
-                        className="block w-full text-xs text-neutral-500
-                            file:mr-3 file:py-1.5 file:px-3
-                            file:rounded-md file:border-0
-                            file:text-xs file:font-semibold
-                            file:bg-orange-50 file:text-orange-700
-                            hover:file:bg-orange-100
-                            border border-neutral-200 rounded-md cursor-pointer"
-                    />
-                    <Button
-                        size="sm"
-                        onClick={() => currentFile && onUpload(currentFile)}
-                        disabled={!currentFile || isUploading}
-                        className="shrink-0"
-                    >
-                        {isUploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
-                    </Button>
-                </div>
+                        {/* Add Material Button */}
+                        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+                            <DialogTrigger asChild>
+                                <Button size="sm" variant="outline" className="w-full border-dashed">
+                                    <Plus className="h-3 w-3 mr-2" />
+                                    Add Material
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                                <AddMaterialForm
+                                    projectId={projectId}
+                                    itemId={item.id}
+                                    onSuccess={() => setIsAddDialogOpen(false)}
+                                />
+                            </DialogContent>
+                        </Dialog>
+
+                        {/* Edit Material Dialog */}
+                        {editingMaterial && (
+                            <Dialog open={!!editingMaterial} onOpenChange={() => setEditingMaterial(null)}>
+                                <DialogContent>
+                                    <EditMaterialForm
+                                        material={editingMaterial}
+                                        onSuccess={() => setEditingMaterial(null)}
+                                    />
+                                </DialogContent>
+                            </Dialog>
+                        )}
+                    </>
+                )}
             </AccordionContent>
         </AccordionItem>
+    );
+}
+
+// Material Card Component
+function MaterialCard({ material, onEdit }: { material: any, onEdit: () => void }) {
+    const queryClient = useQueryClient();
+
+    const deleteMutation = useMutation({
+        mutationFn: () => MaterialService.deleteMaterial(material.id),
+        onSuccess: () => {
+            toast.success("Material deleted");
+            queryClient.invalidateQueries({ queryKey: ["item-materials"] });
+        },
+        onError: (error: any) => {
+            toast.error(error.message || "Failed to delete");
+        }
+    });
+
+    return (
+        <div className="flex items-center justify-between p-3 bg-neutral-50 rounded border border-neutral-100 group hover:bg-neutral-100">
+            <div className="flex-1">
+                <p className="text-sm font-medium text-neutral-900">{material.material_name}</p>
+                <p className="text-xs text-neutral-500">
+                    Qty: {material.quantity} {material.unit}
+                    {material.notes && ` • ${material.notes}`}
+                </p>
+            </div>
+            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onEdit}>
+                    <Edit2 className="h-3 w-3" />
+                </Button>
+                <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <Button size="icon" variant="ghost" className="h-7 w-7 hover:bg-red-50 hover:text-red-600">
+                            <Trash2 className="h-3 w-3" />
+                        </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Material?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                This will permanently delete <b>{material.material_name}</b>.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                                onClick={() => deleteMutation.mutate()}
+                                className="bg-red-600 hover:bg-red-700"
+                            >
+                                Delete
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+            </div>
+        </div>
+    );
+}
+
+// Add Material Form
+function AddMaterialForm({ projectId, itemId, onSuccess }: { projectId: number, itemId: number, onSuccess: () => void }) {
+    const queryClient = useQueryClient();
+    const [formData, setFormData] = useState<MaterialPayload>({
+        material_name: '',
+        quantity: 0,
+        unit: '',
+        notes: ''
+    });
+
+    const addMutation = useMutation({
+        mutationFn: () => MaterialService.addMaterial(projectId, itemId, formData),
+        onSuccess: () => {
+            toast.success("Material added");
+            queryClient.invalidateQueries({ queryKey: ["item-materials", projectId, itemId] });
+            onSuccess();
+        },
+        onError: (error: any) => {
+            toast.error(error.message || "Failed to add material");
+        }
+    });
+
+    return (
+        <>
+            <DialogHeader>
+                <DialogTitle>Add Material</DialogTitle>
+                <DialogDescription>Add a new material requirement for this item.</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                    <Label htmlFor="material_name">Material Name</Label>
+                    <Input
+                        id="material_name"
+                        placeholder="e.g., Kayu Jati, Besi Hollow, dll"
+                        value={formData.material_name}
+                        onChange={(e) => setFormData({ ...formData, material_name: e.target.value })}
+                    />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="quantity">Quantity</Label>
+                        <Input
+                            id="quantity"
+                            type="number"
+                            step="0.01"
+                            placeholder="0"
+                            value={formData.quantity || ''}
+                            onChange={(e) => setFormData({ ...formData, quantity: parseFloat(e.target.value) || 0 })}
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="unit">Unit</Label>
+                        <Input
+                            id="unit"
+                            placeholder="pcs, m³, kg, dll"
+                            value={formData.unit}
+                            onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
+                        />
+                    </div>
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="notes">Notes (Optional)</Label>
+                    <Textarea
+                        id="notes"
+                        placeholder="Additional notes..."
+                        value={formData.notes}
+                        onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                        rows={2}
+                    />
+                </div>
+            </div>
+            <DialogFooter>
+                <Button
+                    onClick={() => addMutation.mutate()}
+                    disabled={!formData.material_name || !formData.quantity || !formData.unit || addMutation.isPending}
+                >
+                    {addMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                    Add Material
+                </Button>
+            </DialogFooter>
+        </>
+    );
+}
+
+// Edit Material Form
+function EditMaterialForm({ material, onSuccess }: { material: any, onSuccess: () => void }) {
+    const queryClient = useQueryClient();
+    const [formData, setFormData] = useState({
+        material_name: material.material_name,
+        quantity: material.quantity,
+        unit: material.unit,
+        notes: material.notes || ''
+    });
+
+    const updateMutation = useMutation({
+        mutationFn: () => MaterialService.updateMaterial(material.id, formData),
+        onSuccess: () => {
+            toast.success("Material updated");
+            queryClient.invalidateQueries({ queryKey: ["item-materials"] });
+            onSuccess();
+        },
+        onError: (error: any) => {
+            toast.error(error.message || "Failed to update material");
+        }
+    });
+
+    return (
+        <>
+            <DialogHeader>
+                <DialogTitle>Edit Material</DialogTitle>
+                <DialogDescription>Update material information.</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                    <Label htmlFor="edit_material_name">Material Name</Label>
+                    <Input
+                        id="edit_material_name"
+                        value={formData.material_name}
+                        onChange={(e) => setFormData({ ...formData, material_name: e.target.value })}
+                    />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="edit_quantity">Quantity</Label>
+                        <Input
+                            id="edit_quantity"
+                            type="number"
+                            step="0.01"
+                            value={formData.quantity}
+                            onChange={(e) => setFormData({ ...formData, quantity: parseFloat(e.target.value) || 0 })}
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="edit_unit">Unit</Label>
+                        <Input
+                            id="edit_unit"
+                            value={formData.unit}
+                            onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
+                        />
+                    </div>
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="edit_notes">Notes</Label>
+                    <Textarea
+                        id="edit_notes"
+                        value={formData.notes}
+                        onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                        rows={2}
+                    />
+                </div>
+            </div>
+            <DialogFooter>
+                <Button
+                    onClick={() => updateMutation.mutate()}
+                    disabled={!formData.material_name || !formData.quantity || !formData.unit || updateMutation.isPending}
+                >
+                    {updateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                    Update Material
+                </Button>
+            </DialogFooter>
+        </>
     );
 }
