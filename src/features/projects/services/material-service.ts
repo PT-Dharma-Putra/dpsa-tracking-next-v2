@@ -37,14 +37,14 @@ export const MaterialService = {
     },
 
     // Update material (status, notes, etc)
-    updateMaterial: async (materialId: number, data: Partial<MaterialPayload> & { status?: string; warehouse_notes?: string }) => {
-        const response = await apiClient.put(`/materials/${materialId}`, data);
+    updateMaterial: async (projectId: number | string, materialId: number, data: Partial<MaterialPayload> & { status?: string; warehouse_notes?: string }) => {
+        const response = await apiClient.put(`/projects/${projectId}/materials/${materialId}`, data);
         return response.data;
     },
 
     // Delete material
-    deleteMaterial: async (materialId: number) => {
-        const response = await apiClient.delete(`/materials/${materialId}`);
+    deleteMaterial: async (projectId: number | string, materialId: number) => {
+        const response = await apiClient.delete(`/projects/${projectId}/materials/${materialId}`);
         return response.data;
     },
 

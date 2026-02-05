@@ -292,7 +292,7 @@ function MaterialCard({ material, onEdit }: { material: any, onEdit: () => void 
     const queryClient = useQueryClient();
 
     const deleteMutation = useMutation({
-        mutationFn: () => MaterialService.deleteMaterial(material.id),
+        mutationFn: () => MaterialService.deleteMaterial(projectId, material.id),
         onSuccess: () => {
             toast.success("Material deleted");
             queryClient.invalidateQueries({ queryKey: ["item-materials"] });
@@ -439,7 +439,7 @@ function EditMaterialForm({ material, onSuccess }: { material: any, onSuccess: (
     });
 
     const updateMutation = useMutation({
-        mutationFn: () => MaterialService.updateMaterial(material.id, formData),
+        mutationFn: () => MaterialService.updateMaterial(projectId, material.id, formData),
         onSuccess: () => {
             toast.success("Material updated");
             queryClient.invalidateQueries({ queryKey: ["item-materials"] });

@@ -138,7 +138,7 @@ function MaterialRequestCard({ material, projectId }: { material: any, projectId
     const queryClient = useQueryClient();
 
     const updateStatusMutation = useMutation({
-        mutationFn: (status: string) => MaterialService.updateMaterial(material.id, { status }),
+        mutationFn: (status: string) => MaterialService.updateMaterial(projectId, material.id, { status }),
         onSuccess: () => {
             toast.success("Status updated");
             queryClient.invalidateQueries({ queryKey: ["project-materials", projectId] });
