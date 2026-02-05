@@ -199,6 +199,12 @@ function MaterialRequestCard({ material, projectId }: { material: any, projectId
         <div className="bg-neutral-50 border border-neutral-100 rounded-lg p-3 space-y-3">
             <div className="flex items-start justify-between">
                 <div className="flex-1">
+                    {/* Item Name */}
+                    {material.sph_item?.item_name && (
+                        <p className="text-xs font-medium text-blue-600 mb-1">
+                            📦 {material.sph_item.item_name}
+                        </p>
+                    )}
                     <div className="flex items-center gap-2 mb-1">
                         <p className="text-sm font-medium text-neutral-900">{material.material_name}</p>
                         {getStatusBadge(material.status)}

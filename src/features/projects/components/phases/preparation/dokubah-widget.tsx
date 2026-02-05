@@ -307,6 +307,12 @@ function MaterialCard({ material, projectId, onEdit }: { material: any, projectI
     return (
         <div className="flex items-center justify-between p-3 bg-neutral-50 rounded border border-neutral-100 group hover:bg-neutral-100">
             <div className="flex-1">
+                {/* Item Name */}
+                {material.sph_item?.item_name && (
+                    <p className="text-xs font-medium text-blue-600 mb-1">
+                        📦 {material.sph_item.item_name}
+                    </p>
+                )}
                 <p className="text-sm font-medium text-neutral-900">{material.material_name}</p>
                 <p className="text-xs text-neutral-500">
                     Qty: {material.quantity} {material.unit}
