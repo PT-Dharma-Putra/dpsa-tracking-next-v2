@@ -3,23 +3,12 @@
 import { useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { MaterialService } from "@/features/projects/services/material-service"
-import { Loader2, Package, CheckCircle2, AlertCircle, ShoppingCart, Truck, MessageSquare } from "lucide-react"
+import { Loader2, Package, CheckCircle2, AlertCircle, ShoppingCart, Truck } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 
 interface MaterialRequestWidgetProps {
     projectId: number;
@@ -147,8 +136,6 @@ function ItemMaterialGroup({ item, materials, projectId }: { item: any, material
 // Material Request Card
 function MaterialRequestCard({ material, projectId }: { material: any, projectId: number }) {
     const queryClient = useQueryClient();
-    const [isNotesDialogOpen, setIsNotesDialogOpen] = useState(false);
-    const [warehouseNotes, setWarehouseNotes] = useState(material.warehouse_notes || '');
 
     const updateStatusMutation = useMutation({
         mutationFn: (status: string) => MaterialService.updateMaterial(material.id, { status }),
@@ -158,18 +145,6 @@ function MaterialRequestCard({ material, projectId }: { material: any, projectId
         },
         onError: (error: any) => {
             toast.error(error.message || "Failed to update status");
-        }
-    });
-
-    const updateNotesMutation = useMutation({
-        mutationFn: () => MaterialService.updateMaterial(material.id, { warehouse_notes: warehouseNotes }),
-        onSuccess: () => {
-            toast.success("Notes updated");
-            queryClient.invalidateQueries({ queryKey: ["project-materials", projectId] });
-            setIsNotesDialogOpen(false);
-        },
-        onError: (error: any) => {
-            toast.error(error.message || "Failed to update notes");
         }
     });
 
@@ -200,14 +175,6 @@ function MaterialRequestCard({ material, projectId }: { material: any, projectId
                         Qty: <span className="font-semibold">{material.quantity} {material.unit}</span>
                         {material.notes && <span className="ml-2">• {material.notes}</span>}
                     </p>
-                    {material.warehouse_notes && (
-                        <div className="mt-2 bg-blue-50 border border-blue-100 rounded p-2">
-                            <p className="text-xs text-blue-900">
-                                <MessageSquare className="h-3 w-3 inline mr-1" />
-                                <span className="font-semibold">Warehouse:</span> {material.warehouse_notes}
-                            </p>
-                        </div>
-                    )}
                 </div>
             </div>
 
@@ -262,44 +229,6 @@ function MaterialRequestCard({ material, projectId }: { material: any, projectId
                             Mark Released
                         </Button>
                     )}
-
-                    {/* Add Notes Button */}
-                    <Dialog open={isNotesDialogOpen} onOpenChange={setIsNotesDialogOpen}>
-                        <DialogTrigger asChild>
-                            <Button size="sm" variant="ghost" className="text-xs">
-                                <MessageSquare className="h-3 w-3" />
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>Warehouse Notes</DialogTitle>
-                                <DialogDescription>
-                                    Add notes about this material (stock location, supplier, etc.)
-                                </DialogDescription>
-                            </DialogHeader>
-                            <div className="space-y-4 py-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="warehouse_notes">Notes</Label>
-                                    <Textarea
-                                        id="warehouse_notes"
-                                        placeholder="e.g., Stock available in Warehouse A, Supplier: PT XYZ"
-                                        value={warehouseNotes}
-                                        onChange={(e) => setWarehouseNotes(e.target.value)}
-                                        rows={4}
-                                    />
-                                </div>
-                            </div>
-                            <DialogFooter>
-                                <Button
-                                    onClick={() => updateNotesMutation.mutate()}
-                                    disabled={updateNotesMutation.isPending}
-                                >
-                                    {updateNotesMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                                    Save Notes
-                                </Button>
-                            </DialogFooter>
-                        </DialogContent>
-                    </Dialog>
                 </div>
             )}
         </div>
