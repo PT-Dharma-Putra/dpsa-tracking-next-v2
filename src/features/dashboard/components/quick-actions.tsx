@@ -42,7 +42,7 @@ export function QuickActions({ className }: { className?: string }) {
         ...(isAdmin ? [{
             title: "Manage Users",
             desc: "Staff & Client access",
-            href: "/dashboard/users",
+            href: "/dashboard/admin/users",
             icon: Users,
             color: "text-purple-600",
             bg: "bg-purple-50",

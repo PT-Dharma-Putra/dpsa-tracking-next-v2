@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, ArrowRight, User } from "lucide-react";
+import { Calendar, ArrowRight, User, Link2 } from "lucide-react";
 import Link from "next/link";
 import { Project } from "../services/project-service";
 import { format } from "date-fns";
@@ -57,6 +57,13 @@ export function ProjectCard({ project }: ProjectCardProps) {
                         Phase {project.current_phase}
                     </Badge>
                 </div>
+                {/* Addendum badge */}
+                {project.is_addendum && (
+                    <div className="flex items-center gap-1 text-xs text-blue-500">
+                        <Link2 className="h-3 w-3" />
+                        <span>ADD-{project.addendum_number}</span>
+                    </div>
+                )}
             </CardHeader>
             <CardContent className="space-y-4 pb-3">
                 <div className="text-sm text-muted-foreground line-clamp-2 min-h-[40px]">
@@ -69,6 +76,14 @@ export function ProjectCard({ project }: ProjectCardProps) {
                         Created: {formattedDate}
                     </div>
                 </div>
+
+                {/* Addendum count for parent projects */}
+                {project.addendums && project.addendums.length > 0 && (
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Link2 className="h-3 w-3" />
+                        {project.addendums.length} addendum(s)
+                    </div>
+                )}
 
                 {/* Phase Progress Bar (Visual only for now) */}
                 <div className="space-y-1">

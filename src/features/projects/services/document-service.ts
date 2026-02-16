@@ -42,14 +42,14 @@ export const DocumentService = {
 
     // SPH (Quotation) Documents
     getSPH: async (projectId: number | string) => {
-        const response = await apiClient.get(`/projects/${projectId}/documents?type=sph`);
-        return response.data;
+        const response = await apiClient.get(`/projects/${projectId}/sph`);
+        return response.data.data;
     },
 
     // SPK (Work Order) Documents
     getSPK: async (projectId: number | string) => {
-        const response = await apiClient.get(`/projects/${projectId}/documents?type=spk`);
-        return response.data;
+        const response = await apiClient.get(`/projects/${projectId}/spk`);
+        return response.data.data;
     },
 
     // Invoice Documents
@@ -62,5 +62,33 @@ export const DocumentService = {
     approveSPH: async (projectId: number | string) => {
         const response = await apiClient.post(`/projects/${projectId}/sph/approve`);
         return response.data;
-    }
+    },
+
+    // Revise SPH (create new version)
+    reviseSPH: async (projectId: number | string, file: File, reason: string) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('reason', reason);
+        const response = await apiClient.post(`/projects/${projectId}/sph/revise`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        return response.data;
+    },
+
+    // Revise SPK (create new version)
+    reviseSPK: async (projectId: number | string, file: File, reason: string) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('reason', reason);
+        const response = await apiClient.post(`/projects/${projectId}/spk/revise`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        return response.data;
+    },
+
+    // Approve SPK
+    approveSPK: async (projectId: number | string) => {
+        const response = await apiClient.post(`/projects/${projectId}/spk/approve`);
+        return response.data;
+    },
 };

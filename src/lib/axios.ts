@@ -31,8 +31,11 @@ axiosInstance.interceptors.response.use(
     (response) => response,
     (error) => {
         if (error.response?.status === 401) {
-            // TODO: Handle Logout
-            console.warn('Unauthorized - Redirecting to login...');
+            // Clear auth state and redirect to login
+            if (typeof window !== 'undefined') {
+                localStorage.removeItem('auth-storage');
+                window.location.href = '/auth/internal/login';
+            }
         }
         return Promise.reject(error);
     }

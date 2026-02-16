@@ -1,53 +1,73 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Check, FileText, ChevronRight, AlertCircle, Lock, User, Paintbrush, Info } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAuthStore } from "@/lib/auth-store";
+import { getUserBusinessRole } from "@/lib/get-user-role";
 import { Project, ProjectService } from "../../services/project-service";
 import { DesignService } from "../../services/design-service";
 import { DocumentService } from "../../services/document-service";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import Link from "next/link";
+import { CommercialItemTable } from "./commercial/commercial-item-table";
+import { DocumentStatusCards } from "./commercial/document-status-cards";
+import { DocumentAuditLog } from "./commercial/document-audit-log";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
+import {
+    Check, Lock, AlertCircle, ShieldCheck, User as UserIcon,
+    Paintbrush, Eye, ChevronRight
+} from "lucide-react";
+import Link from "next/link";
 
 interface CommercialPhaseProps {
     project: Project;
 }
 
+const ROLE_DISPLAY: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
+    marketing: { label: 'Marketing', icon: <UserIcon className="h-3 w-3" />, color: 'bg-orange-50 text-orange-700 border-orange-200' },
+    studio: { label: 'Studio', icon: <Paintbrush className="h-3 w-3" />, color: 'bg-blue-50 text-blue-700 border-blue-200' },
+    supervisor: { label: 'Supervisor', icon: <ShieldCheck className="h-3 w-3" />, color: 'bg-purple-50 text-purple-700 border-purple-200' },
+    finance: { label: 'Finance', icon: <Eye className="h-3 w-3" />, color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+    other: { label: 'Viewer', icon: <Eye className="h-3 w-3" />, color: 'bg-neutral-50 text-neutral-600 border-neutral-200' },
+};
+
 export function CommercialPhase({ project }: CommercialPhaseProps) {
     const queryClient = useQueryClient();
+    const { user } = useAuthStore();
+    const role = getUserBusinessRole(user);
+    const roleDisplay = ROLE_DISPLAY[role] || ROLE_DISPLAY.other;
     const isPhaseComplete = project.current_phase > 1;
 
     // Fetch Design Statistics
-    const { data: designData, isLoading: isLoadingDesign } = useQuery({
+    const { data: designData } = useQuery({
         queryKey: ['design-items', project.id],
         queryFn: () => DesignService.getItems(project.id),
     });
 
-    // Fetch SPH & SPK Status for Gate
+    // Fetch SPH & SPK for Gate
     const { data: quoteData } = useQuery({
         queryKey: ['sph', project.id],
-        queryFn: () => DocumentService.getSPH(project.id)
+        queryFn: () => DocumentService.getSPH(project.id),
     });
 
     const { data: spkData } = useQuery({
         queryKey: ['spk', project.id],
-        queryFn: () => DocumentService.getSPK(project.id)
+        queryFn: () => DocumentService.getSPK(project.id),
     });
 
-
-
     // Gate Checks
-    const isDesignApproved = designData?.summary.avg_progress >= 100; // Simplified logic, ideally check status
-    const isSphSent = quoteData?.status === 'approved' || quoteData?.status === 'pending'; // Approved is better
+    const items = designData?.items || [];
+    const designFreeze = items.length === 0 || items.every(
+        (i: any) => i.design_status === 'DONE' || !i.needs_design
+    );
     const isSphApproved = quoteData?.status === 'approved';
     const isSpkSigned = spkData?.status === 'signed';
+    const canAdvance = designFreeze && isSphApproved && isSpkSigned;
 
-    // Advance Phase Mutation
+    // Advance Phase
     const advanceMutation = useMutation({
-        mutationFn: async () => ProjectService.advancePhase(project.id, false), // force=false to respect backend checks
+        mutationFn: async () => ProjectService.advancePhase(project.id, false),
         onSuccess: () => {
             toast.success("Phase 1 Completed! Moved to Preparation.");
             queryClient.invalidateQueries({ queryKey: ["project", project.id] });
@@ -59,175 +79,89 @@ export function CommercialPhase({ project }: CommercialPhaseProps) {
 
     return (
         <div className="space-y-8">
-            {/* Header */}
+
+            {/* === HEADER === */}
             <div className="flex items-center justify-between">
                 <div>
                     <h3 className="text-lg font-bold text-neutral-900">Commercial & Design</h3>
                     <p className="text-sm text-neutral-500">
-                        Manage designs, generate quotation (SPH), and sign the contract (SPK).
+                        Manage item designs, generate quotation (SPH), and sign the contract (SPK).
                     </p>
                 </div>
-                {isPhaseComplete ? (
-                    <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-green-200 px-3 py-1">
-                        <Check className="mr-1 h-3 w-3" /> Phase Completed
+                <div className="flex items-center gap-2">
+                    {/* Role Badge */}
+                    <Badge variant="outline" className={`text-[10px] font-bold gap-1 ${roleDisplay.color}`}>
+                        {roleDisplay.icon}
+                        {roleDisplay.label}
                     </Badge>
-                ) : (
-                    <Badge variant="outline" className="text-blue-600 border-blue-200 bg-blue-50">
-                        In Progress
-                    </Badge>
-                )}
+
+                    {/* Phase Status */}
+                    {isPhaseComplete ? (
+                        <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-green-200 px-3 py-1">
+                            <Check className="mr-1 h-3 w-3" /> Phase Completed
+                        </Badge>
+                    ) : (
+                        <Badge variant="outline" className="text-blue-600 border-blue-200 bg-blue-50">
+                            In Progress
+                        </Badge>
+                    )}
+                </div>
             </div>
 
+            {/* === MAIN LAYOUT === */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-                {/* Left Col: Tasks */}
+                {/* LEFT: Content (2/3) */}
                 <div className="lg:col-span-2 space-y-6">
 
-                    {/* 1. Design Tracking Integration */}
-                    <Card>
-                        <CardHeader className="pb-3">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <div className="flex items-center gap-2">
-                                        <CardTitle className="text-sm font-bold uppercase tracking-wide text-neutral-500">Step 1: Design Tracking</CardTitle>
-                                        <Badge variant="secondary" className="text-[10px] h-5">NEW</Badge>
-                                    </div>
-                                    <CardDescription>Manage item-level designs & progress.</CardDescription>
-                                </div>
-                                <div className="text-right">
-                                    <span className="text-2xl font-bold text-neutral-900">{designData?.summary.avg_progress || 0}%</span>
-                                    <p className="text-xs text-neutral-400">Avg. Progress</p>
-                                </div>
+                    {/* 1. Item Tracking Table */}
+                    <section>
+                        <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                                <h4 className="text-sm font-bold uppercase tracking-wide text-neutral-500">
+                                    Step 1: Item Tracking
+                                </h4>
+                                <Badge variant="secondary" className="text-[10px] h-5">
+                                    {items.length} items
+                                </Badge>
                             </div>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            {/* Progress Bar */}
-                            <div className="h-2 w-full bg-neutral-100 rounded-full overflow-hidden">
-                                <div
-                                    className="h-full bg-orange-500 transition-all duration-500"
-                                    style={{ width: `${designData?.summary.avg_progress || 0}%` }}
-                                />
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-3 pt-2">
+                            <div className="flex items-center gap-2">
                                 <Link href={`/dashboard/tracking/${project.id}/design/marketing`}>
-                                    <Button variant="outline" className="w-full justify-between h-auto py-3 px-4 border-2 border-dashed hover:border-orange-200 hover:bg-orange-50/50">
-                                        <div className="text-left">
-                                            <div className="font-bold text-neutral-900 flex items-center gap-2">
-                                                <User className="h-4 w-4 text-orange-600" />
-                                                Marketing
-                                            </div>
-                                            <div className="text-xs text-neutral-500 mt-0.5">Select Items & Brief</div>
-                                        </div>
-                                        <ChevronRight className="h-4 w-4 text-neutral-400" />
+                                    <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5 border-orange-200 text-orange-600 hover:bg-orange-50">
+                                        <UserIcon className="h-3 w-3" />
+                                        Marketing View
+                                        <ChevronRight className="h-3 w-3" />
                                     </Button>
                                 </Link>
-
                                 <Link href={`/dashboard/tracking/${project.id}/design/studio`}>
-                                    <Button variant="outline" className="w-full justify-between h-auto py-3 px-4 border-2 border-dashed hover:border-blue-200 hover:bg-blue-50/50">
-                                        <div className="text-left">
-                                            <div className="font-bold text-neutral-900 flex items-center gap-2">
-                                                <Paintbrush className="h-4 w-4 text-blue-600" />
-                                                Studio
-                                            </div>
-                                            <div className="text-xs text-neutral-500 mt-0.5">Kanban & Updates</div>
-                                        </div>
-                                        <ChevronRight className="h-4 w-4 text-neutral-400" />
+                                    <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5 border-blue-200 text-blue-600 hover:bg-blue-50">
+                                        <Paintbrush className="h-3 w-3" />
+                                        Studio View
+                                        <ChevronRight className="h-3 w-3" />
                                     </Button>
                                 </Link>
                             </div>
+                        </div>
+                        <CommercialItemTable projectId={project.id} role={role} />
+                    </section>
 
-                            <div className="bg-neutral-50 rounded-md p-3 text-xs text-neutral-500 flex items-start gap-2">
-                                <Info className="h-4 w-4 text-neutral-400 shrink-0 mt-0.5" />
-                                <p>
-                                    <strong>{designData?.summary.design_needed || 0} items</strong> require design.
-                                    Marketing selects items, Studio updates progress.
-                                </p>
-                            </div>
-                        </CardContent>
-                    </Card>
+                    {/* 2. Document Status Cards (SPH + SPK) */}
+                    <section>
+                        <h4 className="text-sm font-bold uppercase tracking-wide text-neutral-500 mb-3">
+                            Step 2: Documents
+                        </h4>
+                        <DocumentStatusCards projectId={project.id} role={role} />
+                    </section>
 
-                    {/* 2. Quotation (SPH) */}
-                    <Link href={`/dashboard/tracking/${project.id}/sph`}>
-                        <Card className={`cursor-pointer hover:border-orange-200 hover:shadow-md transition-all ${isSphApproved ? "border-green-200 bg-green-50/10" : ""}`}>
-                            <CardHeader>
-                                <div className="flex justify-between items-center">
-                                    <div>
-                                        <CardTitle className="text-sm font-bold uppercase tracking-wide text-neutral-500">Step 2: Quotation (SPH)</CardTitle>
-                                        <CardDescription>Upload the SPH document for client approval.</CardDescription>
-                                    </div>
-                                    {isSphApproved ? (
-                                        <Badge className="bg-green-600">Approved</Badge>
-                                    ) : (
-                                        <Badge variant="outline" className="text-neutral-500">Pending</Badge>
-                                    )}
-                                </div>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="flex items-center justify-between bg-neutral-50 p-4 rounded-lg border border-neutral-100">
-                                    <div className="flex items-center gap-3">
-                                        <div className={`p-2 rounded border ${isSphApproved ? 'bg-green-50 border-green-100' : 'bg-white border-neutral-200'}`}>
-                                            <FileText className={`h-5 w-5 ${isSphApproved ? 'text-green-600' : 'text-orange-600'}`} />
-                                        </div>
-                                        <div>
-                                            <p className="text-sm font-bold text-neutral-900">
-                                                {isSphApproved ? quoteData?.sph_number || 'SPH Document' : 'Upload SPH'}
-                                            </p>
-                                            <p className="text-xs text-neutral-500">
-                                                {isSphApproved ? 'Quotation Approved' : 'Click to upload document'}
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <ChevronRight className="h-5 w-5 text-neutral-400" />
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </Link>
-
-                    {/* 3. Contract (SPK) */}
-                    <Link href={`/dashboard/tracking/${project.id}/spk`}>
-                        <Card className={`cursor-pointer hover:border-blue-200 hover:shadow-md transition-all ${!isSphApproved ? "opacity-60 pointer-events-none" : ""} ${isSpkSigned ? "border-green-200 bg-green-50/10" : ""}`}>
-                            <CardHeader>
-                                <div className="flex justify-between items-center">
-                                    <div>
-                                        <CardTitle className="text-sm font-bold uppercase tracking-wide text-neutral-500">Step 3: Contract (SPK)</CardTitle>
-                                        <CardDescription>Upload the signed SPK to finalize the deal.</CardDescription>
-                                    </div>
-                                    {isSpkSigned ? (
-                                        <Badge className="bg-green-600 flex gap-1"><Check className="h-3 w-3" /> Signed</Badge>
-                                    ) : !isSphApproved ? (
-                                        <Badge variant="outline" className="text-neutral-400"><Lock className="h-3 w-3 mr-1" /> Locked</Badge>
-                                    ) : (
-                                        <Badge variant="outline" className="text-neutral-500">Pending</Badge>
-                                    )}
-                                </div>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="flex items-center justify-between bg-neutral-50 p-4 rounded-lg border border-neutral-100">
-                                    <div className="flex items-center gap-3">
-                                        <div className={`p-2 rounded border ${isSpkSigned ? 'bg-green-50 border-green-100' : 'bg-white border-neutral-200'}`}>
-                                            <FileText className={`h-5 w-5 ${isSpkSigned ? 'text-green-600' : 'text-blue-600'}`} />
-                                        </div>
-                                        <div>
-                                            <p className="text-sm font-bold text-neutral-900">
-                                                {isSpkSigned ? spkData?.spk_number || 'SPK Document' : isSphApproved ? 'Upload SPK' : 'Complete SPH First'}
-                                            </p>
-                                            <p className="text-xs text-neutral-500">
-                                                {isSpkSigned ? 'Contract Signed' : isSphApproved ? 'Click to upload contract' : 'SPH must be approved first'}
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <ChevronRight className="h-5 w-5 text-neutral-400" />
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </Link>
-
+                    {/* 3. Audit Log */}
+                    <section>
+                        <DocumentAuditLog projectId={project.id} />
+                    </section>
                 </div>
 
-                {/* Right Col: Gate Control */}
+                {/* RIGHT: Phase Gate (1/3) */}
                 <div className="space-y-6">
-                    <Card className="bg-neutral-900 text-white border-none shadow-lg">
+                    <Card className="bg-neutral-900 text-white border-none shadow-lg sticky top-4">
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                                 <Lock className="h-4 w-4 text-orange-500" />
@@ -239,6 +173,11 @@ export function CommercialPhase({ project }: CommercialPhaseProps) {
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="space-y-2">
+                                <GateRequirement label="Design Freeze" met={designFreeze} detail={
+                                    designFreeze
+                                        ? "All item designs finalized"
+                                        : `${items.filter((i: any) => i.needs_design && i.design_status !== 'DONE').length} items pending`
+                                } />
                                 <GateRequirement label="SPH Approved" met={isSphApproved} />
                                 <GateRequirement label="SPK Signed" met={isSpkSigned} />
                             </div>
@@ -248,9 +187,9 @@ export function CommercialPhase({ project }: CommercialPhaseProps) {
                             <div className="pt-2">
                                 {!isPhaseComplete ? (
                                     <Button
-                                        className="w-full bg-orange-600 hover:bg-orange-700 font-bold text-white"
+                                        className="w-full bg-orange-600 hover:bg-orange-700 font-bold text-white disabled:opacity-40"
                                         onClick={() => advanceMutation.mutate()}
-                                        disabled={advanceMutation.isPending || !isSpkSigned}
+                                        disabled={advanceMutation.isPending || !canAdvance}
                                     >
                                         {advanceMutation.isPending ? "Processing..." : "Mark Phase 1 Complete"}
                                     </Button>
@@ -259,25 +198,29 @@ export function CommercialPhase({ project }: CommercialPhaseProps) {
                                         Phase 1 Completed
                                     </Button>
                                 )}
-                                <p className="text-[10px] text-neutral-500 text-center mt-3">
-                                    Ensures all documents are locked.
-                                </p>
+                                {!canAdvance && !isPhaseComplete && (
+                                    <p className="text-[10px] text-neutral-500 text-center mt-3">
+                                        Complete all gate requirements above to proceed.
+                                    </p>
+                                )}
                             </div>
                         </CardContent>
                     </Card>
                 </div>
-
             </div>
-
-
         </div>
     );
 }
 
-function GateRequirement({ label, met }: { label: string, met: boolean }) {
+function GateRequirement({ label, met, detail }: { label: string; met: boolean; detail?: string }) {
     return (
         <div className="flex items-center justify-between text-sm">
-            <span className="text-neutral-300">{label}</span>
+            <div>
+                <span className="text-neutral-300">{label}</span>
+                {detail && (
+                    <p className="text-[10px] text-neutral-500 mt-0.5">{detail}</p>
+                )}
+            </div>
             {met ? (
                 <span className="flex items-center text-green-500 text-xs font-bold">
                     <Check className="h-3 w-3 mr-1" /> OK
@@ -288,5 +231,5 @@ function GateRequirement({ label, met }: { label: string, met: boolean }) {
                 </span>
             )}
         </div>
-    )
+    );
 }

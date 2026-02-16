@@ -7,9 +7,11 @@ import * as z from "zod"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Loader2 } from "lucide-react"
 import { toast } from "sonner"
+import { useQuery } from "@tanstack/react-query"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
     Form,
     FormControl,
@@ -29,6 +31,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { authService } from "@/features/auth/api/auth-service"
 import { cn } from "@/lib/utils"
+import { axiosInstance } from "@/lib/axios"
 
 const registerSchema = z.object({
     name: z.string().min(2, { message: "Name must be at least 2 characters" }),
@@ -36,10 +39,17 @@ const registerSchema = z.object({
     password: z.string().min(8, { message: "Password must be at least 8 characters" }),
     password_confirmation: z.string(),
     client_id: z.number(),
+    category_ids: z.array(z.number()).optional(),
 }).refine((data) => data.password === data.password_confirmation, {
     message: "Passwords don't match",
     path: ["password_confirmation"],
 })
+
+interface ClientCategory {
+    id: number;
+    name: string;
+    label: string;
+}
 
 interface CustomerRegisterFormProps extends React.HTMLAttributes<HTMLDivElement> { }
 
@@ -54,6 +64,15 @@ export function CustomerRegisterForm({ className, ...props }: CustomerRegisterFo
     const clientIdParam = searchParams.get('client_id')
     const clientId = clientIdParam ? parseInt(clientIdParam) : undefined
 
+    // Fetch available client categories
+    const { data: categories = [] } = useQuery<ClientCategory[]>({
+        queryKey: ['client-categories'],
+        queryFn: async () => {
+            const { data } = await axiosInstance.get('/client-categories')
+            return data.data ?? data
+        },
+    })
+
     const form = useForm<z.infer<typeof registerSchema>>({
         resolver: zodResolver(registerSchema),
         defaultValues: {
@@ -62,6 +81,7 @@ export function CustomerRegisterForm({ className, ...props }: CustomerRegisterFo
             password: "",
             password_confirmation: "",
             client_id: clientId,
+            category_ids: [],
         },
     })
 
@@ -135,6 +155,54 @@ export function CustomerRegisterForm({ className, ...props }: CustomerRegisterFo
 
                     {/* Hidden Client ID */}
                     <input type="hidden" {...form.register('client_id')} />
+
+                    {/* Client Categories Selection */}
+                    {categories.length > 0 && (
+                        <FormField
+                            control={form.control}
+                            name="category_ids"
+                            render={() => (
+                                <FormItem>
+                                    <FormLabel>Client Categories</FormLabel>
+                                    <p className="text-xs text-muted-foreground mb-2">
+                                        Select the categories that apply to your company.
+                                    </p>
+                                    <div className="space-y-2">
+                                        {categories.map((cat) => (
+                                            <FormField
+                                                key={cat.id}
+                                                control={form.control}
+                                                name="category_ids"
+                                                render={({ field }) => {
+                                                    const currentValues = field.value ?? [];
+                                                    return (
+                                                        <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                                                            <FormControl>
+                                                                <Checkbox
+                                                                    checked={currentValues.includes(cat.id)}
+                                                                    onCheckedChange={(checked) => {
+                                                                        if (checked) {
+                                                                            field.onChange([...currentValues, cat.id])
+                                                                        } else {
+                                                                            field.onChange(currentValues.filter((id) => id !== cat.id))
+                                                                        }
+                                                                    }}
+                                                                />
+                                                            </FormControl>
+                                                            <FormLabel className="text-sm font-normal cursor-pointer">
+                                                                {cat.label}
+                                                            </FormLabel>
+                                                        </FormItem>
+                                                    )
+                                                }}
+                                            />
+                                        ))}
+                                    </div>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    )}
 
                     <div className="grid grid-cols-2 gap-4">
                         <FormField

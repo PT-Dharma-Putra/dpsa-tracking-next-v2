@@ -19,6 +19,7 @@ import { Badge } from "@/components/ui/badge"
 import { Loader2, Search, Edit, Trash2, Eye } from "lucide-react"
 import { useDebounce } from "@/hooks/use-debounce"
 import { MDL_CATEGORIES } from "../constants"
+import { usePermissions } from "@/hooks/use-permissions"
 import {
     Select,
     SelectContent,
@@ -33,6 +34,7 @@ interface MDLTableProps {
 }
 
 export function MDLTable({ onEdit, onStatsUpdate }: MDLTableProps) {
+    const { canViewPrice } = usePermissions();
     const [page, setPage] = useState(1);
     const [search, setSearch] = useState("");
     const [category, setCategory] = useState("");
@@ -155,7 +157,7 @@ export function MDLTable({ onEdit, onStatsUpdate }: MDLTableProps) {
                             <TableHead>Kategori</TableHead>
                             <TableHead>Sub Kategori</TableHead>
                             <TableHead>Satuan</TableHead>
-                            <TableHead className="text-right">Harga (IDR)</TableHead>
+                            {canViewPrice && <TableHead className="text-right">Harga (IDR)</TableHead>}
                             <TableHead className="text-right">Aksi</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -176,9 +178,11 @@ export function MDLTable({ onEdit, onStatsUpdate }: MDLTableProps) {
                                     {item.sub_kategori ? <span className="text-xs text-muted-foreground">{item.sub_kategori}</span> : '-'}
                                 </TableCell>
                                 <TableCell className="text-xs">{item.nama_satuan_beli || '-'}</TableCell>
-                                <TableCell className="text-right font-mono text-xs">
-                                    {item.harga_pulau_jawa?.toLocaleString('id-ID') || '-'}
-                                </TableCell>
+                                {canViewPrice && (
+                                    <TableCell className="text-right font-mono text-xs">
+                                        {item.harga_pulau_jawa?.toLocaleString('id-ID') || '-'}
+                                    </TableCell>
+                                )}
                                 <TableCell className="text-right">
                                     <div className="flex justify-end gap-1">
                                         <Button

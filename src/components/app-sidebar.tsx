@@ -13,7 +13,8 @@ import {
     ChevronsUpDown,
     Building2
 } from "lucide-react"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
+import Link from "next/link"
 
 import {
     Sidebar,
@@ -44,6 +45,7 @@ import { useAuthStore } from "@/lib/auth-store"
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const router = useRouter()
+    const pathname = usePathname()
     const { user, logout } = useAuthStore()
     const { isMobile } = useSidebar()
 
@@ -59,6 +61,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
     // Define menu items based on Role (Can be refined later)
     const isAdmin = user?.roles?.some(r => r.name === "Super-Admin")
+
+    const isActive = (href: string) => {
+        if (href === '/dashboard') return pathname === '/dashboard'
+        return pathname.startsWith(href)
+    }
 
     return (
         <Sidebar collapsible="icon" {...props}>
@@ -85,29 +92,29 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     <SidebarGroupContent>
                         <SidebarMenu>
                             <SidebarMenuItem>
-                                <SidebarMenuButton asChild tooltip="Dashboard">
-                                    <a href="/dashboard">
+                                <SidebarMenuButton asChild tooltip="Dashboard" isActive={isActive('/dashboard')}>
+                                    <Link href="/dashboard">
                                         <SquareTerminal />
                                         <span>Dashboard</span>
-                                    </a>
+                                    </Link>
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
 
                             <SidebarMenuItem>
-                                <SidebarMenuButton asChild tooltip="Tracking">
-                                    <a href="/dashboard/projects">
+                                <SidebarMenuButton asChild tooltip="Tracking" isActive={isActive('/dashboard/projects')}>
+                                    <Link href="/dashboard/projects">
                                         <FileBox />
                                         <span>Project Tracking</span>
-                                    </a>
+                                    </Link>
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
 
                             <SidebarMenuItem>
-                                <SidebarMenuButton asChild tooltip="MDL Catalog">
-                                    <a href="/dashboard/mdl">
+                                <SidebarMenuButton asChild tooltip="MDL Catalog" isActive={isActive('/dashboard/mdl')}>
+                                    <Link href="/dashboard/mdl">
                                         <Files />
                                         <span>Master Data List</span>
-                                    </a>
+                                    </Link>
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
                         </SidebarMenu>
@@ -119,19 +126,19 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     <SidebarGroupContent>
                         <SidebarMenu>
                             <SidebarMenuItem>
-                                <SidebarMenuButton asChild tooltip="User Management">
-                                    <a href="/dashboard/admin/users">
+                                <SidebarMenuButton asChild tooltip="User Management" isActive={isActive('/dashboard/admin/users')}>
+                                    <Link href="/dashboard/admin/users">
                                         <Users />
                                         <span>User Management</span>
-                                    </a>
+                                    </Link>
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
                             <SidebarMenuItem>
-                                <SidebarMenuButton asChild tooltip="Reports">
-                                    <a href="/dashboard/reports">
+                                <SidebarMenuButton asChild tooltip="Reports" isActive={isActive('/dashboard/reports')}>
+                                    <Link href="/dashboard/reports">
                                         <PieChart />
                                         <span>Analytics & Reports</span>
-                                    </a>
+                                    </Link>
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
                         </SidebarMenu>

@@ -21,6 +21,9 @@ export interface User {
     avatar_url?: string;
     // External specific
     client_id?: number | null;
+    // ACL fields
+    client_categories?: string[];
+    permissions?: string[];
     account_status?: 'pending' | 'approved' | 'rejected' | 'active' | 'inactive';
     rejection_reason?: string | null;
     approved_at?: string | null;
@@ -77,4 +80,5 @@ export interface RegisterExternalRequest {
     password: string;
     password_confirmation: string;
     client_id: number;
+    category_ids?: number[];
 }

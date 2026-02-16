@@ -95,10 +95,12 @@ function DesignTabContent({ projectId }: { projectId: string }) {
     const queryClient = useQueryClient();
 
     // Fetch Designs
-    const { data: designs = [], isLoading } = useQuery({
+    const { data: designData, isLoading } = useQuery({
         queryKey: ["designs", projectId],
         queryFn: () => DesignService.getProjectDesigns(projectId),
     });
+
+    const designs = Array.isArray(designData) ? designData : [];
 
     // Mutations
     const approveMutation = useMutation({
@@ -235,6 +237,7 @@ function DesignCard({ design, onApprove, onReject, isProcessing }: {
             {/* Image Preview Dialog */}
             <Dialog open={isImageOpen} onOpenChange={setIsImageOpen}>
                 <DialogContent className="max-w-7xl h-[90vh] flex flex-col p-0 border-none bg-black/95">
+                    <DialogTitle className="sr-only">View Image: {design.title}</DialogTitle>
                     <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
                         <img
                             src={design.image_url}
@@ -269,10 +272,14 @@ function DocumentsTabContent({ projectId }: { projectId: string }) {
         queryFn: () => DocumentService.getSPK(projectId)
     });
 
-    const { data: invoices = [], isLoading: isLoadingInvoices } = useQuery({
+    const { data: invoiceData, isLoading: isLoadingInvoices } = useQuery({
         queryKey: ["invoices", projectId],
         queryFn: () => DocumentService.getInvoices(projectId)
     });
+
+    const invoices = Array.isArray(invoiceData)
+        ? invoiceData
+        : (Array.isArray(invoiceData?.data) ? invoiceData.data : []);
 
     const approveSPHMutation = useMutation({
         mutationFn: () => DocumentService.approveSPH(projectId),
@@ -362,7 +369,7 @@ function DocumentsTabContent({ projectId }: { projectId: string }) {
                                 </div>
                                 <div>
                                     <p className="font-medium text-neutral-900">{spk.spk_number}</p>
-                                    <p className="text-xs text-neutral-500">{spk.status === 'signed' ? 'Signed & Valid' : 'Draft / Waiting Signature'}</p>
+                                    <p className="text-xs text-neutral-500">{spk.spk_file_url ? 'Signed & Valid' : 'Draft / Waiting Signature'}</p>
                                 </div>
                             </div>
                             <div className="flex gap-2">

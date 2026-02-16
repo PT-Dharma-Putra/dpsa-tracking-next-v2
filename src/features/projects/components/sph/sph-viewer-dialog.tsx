@@ -11,7 +11,7 @@ interface SPHViewerDialogProps {
     sphNumber: string
     onApprove: () => void
     isApproving: boolean
-    status: 'pending' | 'approved' | 'rejected' | 'draft' | undefined
+    status: 'pending' | 'approved' | 'rejected' | 'draft' | 'sent' | undefined
 }
 
 export function SPHViewerDialog({
@@ -57,7 +57,7 @@ export function SPHViewerDialog({
                 <DialogFooter className="p-4 border-t bg-white shrink-0">
                     <Button variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
 
-                    {status === 'pending' && (
+                    {(status === 'pending' || status === 'sent') && (
                         <Button onClick={onApprove} disabled={isApproving} className="bg-green-600 hover:bg-green-700 text-white min-w-[150px]">
                             {isApproving ? (
                                 <>

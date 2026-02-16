@@ -9,13 +9,15 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import { Search, X } from "lucide-react"
+import { Search, X, Lock } from "lucide-react"
 import { useDebounce } from "@/hooks/use-debounce"
 import { Slider } from "@/components/ui/slider"
+import { usePermissions } from "@/hooks/use-permissions"
 
 export function CatalogFilters() {
     const router = useRouter()
     const searchParams = useSearchParams()
+    const { canViewPrice, canOrderInternational } = usePermissions()
 
     // Query Params
     const initialSearch = searchParams.get("search") || ""
@@ -93,45 +95,54 @@ export function CatalogFilters() {
                     {categories.length === 0 && (
                         <div className="text-xs text-neutral-400 italic px-2">No categories found.</div>
                     )}
-                    {categories.map((cat: string) => (
-                        <div key={cat} className="flex items-center space-x-2">
-                            <Checkbox
-                                id={cat}
-                                checked={selectedCategory === cat}
-                                onCheckedChange={() => setSelectedCategory(selectedCategory === cat ? "" : cat)}
-                                className="data-[state=checked]:bg-orange-600 data-[state=checked]:border-orange-600"
+                    {categories.map((cat: string) => {
+                        const isDisabled = cat.toLowerCase() === 'internasional' && !canOrderInternational;
+                        return (
+                            <div key={cat} className={`flex items-center space-x-2 ${isDisabled ? 'opacity-50' : ''}`}>
+                                <Checkbox
+                                    id={cat}
+                                    checked={selectedCategory === cat}
+                                    onCheckedChange={() => setSelectedCategory(selectedCategory === cat ? "" : cat)}
+                                    className="data-[state=checked]:bg-orange-600 data-[state=checked]:border-orange-600"
+                                    disabled={isDisabled}
+                                />
+                                <label
+                                    htmlFor={cat}
+                                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer text-neutral-700"
+                                >
+                                    {cat}
+                                    {isDisabled && <Lock className="inline w-3 h-3 ml-1 text-neutral-400" />}
+                                </label>
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+
+            {canViewPrice && (
+                <>
+                    <Separator />
+
+                    {/* Price Range */}
+                    <div className="space-y-4">
+                        <Label className="text-xs font-semibold uppercase text-neutral-500 tracking-wider">Price Range</Label>
+                        <div className="px-2">
+                            <Slider
+                                defaultValue={[0, 100000000]}
+                                max={100000000}
+                                step={500000}
+                                value={priceRange}
+                                onValueChange={setPriceRange}
+                                className="accent-orange-600"
                             />
-                            <label
-                                htmlFor={cat}
-                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer text-neutral-700"
-                            >
-                                {cat}
-                            </label>
                         </div>
-                    ))}
-                </div>
-            </div>
-
-            <Separator />
-
-            {/* Price Range */}
-            <div className="space-y-4">
-                <Label className="text-xs font-semibold uppercase text-neutral-500 tracking-wider">Price Range</Label>
-                <div className="px-2">
-                    <Slider
-                        defaultValue={[0, 100000000]}
-                        max={100000000}
-                        step={500000}
-                        value={priceRange}
-                        onValueChange={setPriceRange}
-                        className="accent-orange-600"
-                    />
-                </div>
-                <div className="flex items-center justify-between text-xs text-neutral-500">
-                    <span>Rp {(priceRange[0]).toLocaleString('id-ID')}</span>
-                    <span>Rp {(priceRange[1]).toLocaleString('id-ID')}</span>
-                </div>
-            </div>
+                        <div className="flex items-center justify-between text-xs text-neutral-500">
+                            <span>Rp {(priceRange[0]).toLocaleString('id-ID')}</span>
+                            <span>Rp {(priceRange[1]).toLocaleString('id-ID')}</span>
+                        </div>
+                    </div>
+                </>
+            )}
 
             <Button variant="outline" size="sm" onClick={clearFilters} className="w-full text-neutral-500 hover:text-red-600">
                 <X className="mr-2 h-3 w-3" /> Clear Filters

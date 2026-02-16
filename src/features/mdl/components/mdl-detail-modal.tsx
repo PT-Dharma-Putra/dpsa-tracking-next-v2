@@ -9,7 +9,8 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { MDLItem } from "../types"
-import { MapPin, Box, Ruler, DollarSign, Image as ImageIcon } from "lucide-react"
+import { MapPin, Box, Ruler, DollarSign, Image as ImageIcon, Lock } from "lucide-react"
+import { usePermissions } from "@/hooks/use-permissions"
 
 interface MDLDetailModalProps {
     item: MDLItem | null;
@@ -18,6 +19,7 @@ interface MDLDetailModalProps {
 }
 
 export function MDLDetailModal({ item, open, onOpenChange }: MDLDetailModalProps) {
+    const { canViewPrice, canViewConfidential } = usePermissions();
     if (!item) return null;
 
     return (
@@ -124,34 +126,44 @@ export function MDLDetailModal({ item, open, onOpenChange }: MDLDetailModalProps
 
                     {/* Right Column: Pricing & Others */}
                     <div className="space-y-6">
-                        <div>
-                            <h4 className="font-medium flex items-center gap-2 mb-2 text-emerald-600">
-                                <DollarSign className="w-4 h-4" /> Pricing Information
-                            </h4>
-                            <div className="border rounded-lg overflow-hidden">
-                                <div className="bg-emerald-50 p-3 border-b flex justify-between items-center">
-                                    <span className="text-emerald-800 font-medium text-sm">Main Price (Java)</span>
-                                    <span className="text-lg font-bold text-emerald-700 font-mono">
-                                        Rp {item.harga_pulau_jawa?.toLocaleString('id-ID') || 0}
-                                    </span>
-                                </div>
-                                <div className="p-3 bg-white space-y-2">
-                                    <div className="flex justify-between items-center text-sm">
-                                        <span className="text-muted-foreground">Jabodetabek</span>
-                                        <span className="font-mono">Rp {item.harga_jabodetabek?.toLocaleString('id-ID') || 0}</span>
+                        {canViewPrice ? (
+                            <div>
+                                <h4 className="font-medium flex items-center gap-2 mb-2 text-emerald-600">
+                                    <DollarSign className="w-4 h-4" /> Pricing Information
+                                </h4>
+                                <div className="border rounded-lg overflow-hidden">
+                                    <div className="bg-emerald-50 p-3 border-b flex justify-between items-center">
+                                        <span className="text-emerald-800 font-medium text-sm">Main Price (Java)</span>
+                                        <span className="text-lg font-bold text-emerald-700 font-mono">
+                                            Rp {item.harga_pulau_jawa?.toLocaleString('id-ID') || 0}
+                                        </span>
                                     </div>
-                                    <div className="flex justify-between items-center text-sm">
-                                        <span className="text-muted-foreground">Outer Java</span>
-                                        <span className="font-mono">Rp {item.harga_luar_jawa?.toLocaleString('id-ID') || 0}</span>
-                                    </div>
-                                    <Separator className="my-2" />
-                                    <div className="flex justify-between items-center text-sm">
-                                        <span className="text-muted-foreground">Purchasing Unit</span>
-                                        <Badge variant="outline">{item.nama_satuan_beli || 'UNIT'}</Badge>
+                                    <div className="p-3 bg-white space-y-2">
+                                        <div className="flex justify-between items-center text-sm">
+                                            <span className="text-muted-foreground">Jabodetabek</span>
+                                            <span className="font-mono">Rp {item.harga_jabodetabek?.toLocaleString('id-ID') || 0}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center text-sm">
+                                            <span className="text-muted-foreground">Outer Java</span>
+                                            <span className="font-mono">Rp {item.harga_luar_jawa?.toLocaleString('id-ID') || 0}</span>
+                                        </div>
+                                        <Separator className="my-2" />
+                                        <div className="flex justify-between items-center text-sm">
+                                            <span className="text-muted-foreground">Purchasing Unit</span>
+                                            <Badge variant="outline">{item.nama_satuan_beli || 'UNIT'}</Badge>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        ) : (
+                            <div className="p-4 bg-slate-50 rounded-lg border border-dashed border-slate-200 flex items-center gap-3">
+                                <Lock className="w-5 h-5 text-slate-400" />
+                                <div>
+                                    <p className="text-sm font-medium text-slate-600">Price Information Restricted</p>
+                                    <p className="text-xs text-slate-400">You don&apos;t have permission to view pricing.</p>
+                                </div>
+                            </div>
+                        )}
 
                         <div>
                             <h4 className="font-medium mb-2">Additional Info</h4>
@@ -164,21 +176,28 @@ export function MDLDetailModal({ item, open, onOpenChange }: MDLDetailModalProps
                                     <span className="text-muted-foreground">Created At</span>
                                     <span>{item.created_at ? new Date(item.created_at).toLocaleDateString() : '-'}</span>
                                 </div>
-                                <div className="py-2">
-                                    <span className="text-muted-foreground block mb-1">Working Drawing Link</span>
-                                    {item.link_gambar_kerja ? (
-                                        <a
-                                            href={item.link_gambar_kerja}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                            className="text-blue-600 hover:underline break-all block truncate"
-                                        >
-                                            {item.link_gambar_kerja}
-                                        </a>
-                                    ) : (
-                                        <span className="text-slate-400">-</span>
-                                    )}
-                                </div>
+                                {canViewConfidential ? (
+                                    <div className="py-2">
+                                        <span className="text-muted-foreground block mb-1">Working Drawing Link</span>
+                                        {item.link_gambar_kerja ? (
+                                            <a
+                                                href={item.link_gambar_kerja}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className="text-blue-600 hover:underline break-all block truncate"
+                                            >
+                                                {item.link_gambar_kerja}
+                                            </a>
+                                        ) : (
+                                            <span className="text-slate-400">-</span>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <div className="py-2 flex items-center gap-2 text-slate-400">
+                                        <Lock className="w-3 h-3" />
+                                        <span className="text-xs">Drawing link restricted</span>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>

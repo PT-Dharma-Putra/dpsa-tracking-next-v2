@@ -14,6 +14,12 @@ export interface Project {
     start_date?: string;
     due_date?: string;
     spk_number?: string;
+    // Addendum fields
+    parent_project_id?: number | null;
+    addendum_number?: number | null;
+    is_addendum?: boolean;
+    parent_project?: { id: number; name: string } | null;
+    addendums?: { id: number; name: string; addendum_number: number; status: string; current_phase: number }[];
 }
 
 export interface CreateProjectPayload {
@@ -69,7 +75,13 @@ export const ProjectService = {
 
     // Get Overview Data
     getOverview: async (id: string | number) => {
-        const response = await apiClient.get<{ project: Project, stats: any, matrix: any[], activity_stream: any[] }>(`/projects/${id}/overview`);
+        const response = await apiClient.get<{
+            project: Project,
+            stats: any,
+            matrix: any[],
+            activity_stream: string[],
+            detailed_activities: any[]
+        }>(`/projects/${id}/overview`);
         return response.data;
     },
 
@@ -129,5 +141,16 @@ export const ProjectService = {
     syncSPHItems: async (id: number | string) => {
         const response = await apiClient.post(`/projects/${id}/items/sync-sph`, {});
         return response.data;
-    }
+    },
+
+    // Addendum
+    createAddendum: async (parentId: number | string, data: { description?: string; items?: any[] }) => {
+        const response = await apiClient.post(`/projects/${parentId}/addendums`, data);
+        return response.data.data;
+    },
+
+    getAddendums: async (parentId: number | string) => {
+        const response = await apiClient.get(`/projects/${parentId}/addendums`);
+        return response.data.data;
+    },
 };

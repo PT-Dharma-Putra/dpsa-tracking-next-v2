@@ -77,8 +77,13 @@ export default function SPHDocumentPage({ params }: { params: Promise<{ id: stri
         }
     }
 
+    // Safe SPH Extraction
+    const sph = Array.isArray(sphData)
+        ? sphData[0]
+        : (Array.isArray(sphData?.data) ? sphData.data[0] : sphData);
+
     const isUploading = saveNumberMutation.isPending || uploadFileMutation.isPending || approveMutation.isPending
-    const hasDocument = sphData?.file_url || sphData?.file_path
+    const hasDocument = sph?.file_url || sph?.file_path
 
     if (isLoading) {
         return (
@@ -104,13 +109,13 @@ export default function SPHDocumentPage({ params }: { params: Promise<{ id: stri
                             <h1 className="text-lg font-bold text-neutral-900 flex items-center gap-3">
                                 <FileText className="h-5 w-5 text-orange-600" />
                                 SPH (Quotation)
-                                {sphData?.status === 'approved' && (
+                                {sph?.status === 'approved' && (
                                     <Badge className="bg-green-600">Approved</Badge>
                                 )}
-                                {sphData?.status === 'pending' && (
+                                {sph?.status === 'pending' && (
                                     <Badge variant="outline" className="text-amber-600 border-amber-300">Pending</Badge>
                                 )}
-                                {!sphData && (
+                                {!sph && (
                                     <Badge variant="outline" className="text-neutral-500">No Document</Badge>
                                 )}
                             </h1>
@@ -121,7 +126,7 @@ export default function SPHDocumentPage({ params }: { params: Promise<{ id: stri
                     {hasDocument && (
                         <div className="flex items-center gap-2">
                             <Button variant="outline" size="sm" asChild>
-                                <a href={sphData?.file_url || ''} target="_blank" rel="noopener noreferrer">
+                                <a href={sph?.file_url || ''} target="_blank" rel="noopener noreferrer">
                                     <Download className="h-4 w-4 mr-2" />
                                     Download
                                 </a>
@@ -134,7 +139,7 @@ export default function SPHDocumentPage({ params }: { params: Promise<{ id: stri
             {/* Content */}
             <div className="max-w-screen-xl mx-auto p-6 space-y-6">
                 {/* Document Info */}
-                {sphData?.sph_number && (
+                {sph?.sph_number && (
                     <Card>
                         <CardContent className="py-4">
                             <div className="flex items-center justify-between">
@@ -143,15 +148,15 @@ export default function SPHDocumentPage({ params }: { params: Promise<{ id: stri
                                         <FileText className="h-6 w-6 text-orange-600" />
                                     </div>
                                     <div>
-                                        <p className="font-bold text-neutral-900">{sphData.sph_number}</p>
+                                        <p className="font-bold text-neutral-900">{sph.sph_number}</p>
                                         <p className="text-sm text-neutral-500">
-                                            Uploaded {new Date(sphData.created_at).toLocaleDateString('id-ID', {
+                                            Uploaded {new Date(sph.created_at).toLocaleDateString('id-ID', {
                                                 day: 'numeric', month: 'long', year: 'numeric'
                                             })}
                                         </p>
                                     </div>
                                 </div>
-                                {sphData.status === 'approved' ? (
+                                {sph.status === 'approved' ? (
                                     <div className="flex items-center gap-2 text-green-600">
                                         <Check className="h-5 w-5" />
                                         <span className="font-medium">Approved</span>
@@ -178,7 +183,7 @@ export default function SPHDocumentPage({ params }: { params: Promise<{ id: stri
                 {/* PDF Viewer or Upload Form */}
                 {hasDocument ? (
                     <DocumentViewer
-                        url={sphData?.file_url}
+                        url={sph?.file_url || sph?.file_path}
                         title="SPH Document"
                         emptyMessage="SPH document not available"
                     />

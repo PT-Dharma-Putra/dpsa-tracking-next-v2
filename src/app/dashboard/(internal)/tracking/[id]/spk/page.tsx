@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { DocumentService } from "@/features/projects/services/document-service"
 import { ProjectService } from "@/features/projects/services/project-service"
 import { DocumentViewer } from "@/features/projects/components/document-viewer"
+import { DocumentAuditLog } from "@/features/projects/components/phases/commercial/document-audit-log"
 import Link from "next/link"
 import { toast } from "sonner"
 import { ArrowLeft, Upload, FileText, Check, Download, Loader2, UploadCloud } from "lucide-react"
@@ -244,6 +245,9 @@ export default function SPKDocumentPage({ params }: { params: Promise<{ id: stri
                         </CardContent>
                     </Card>
                 )}
+
+                {/* Audit Log / History */}
+                <DocumentAuditLog projectId={id} />
             </div>
         </div>
     )
