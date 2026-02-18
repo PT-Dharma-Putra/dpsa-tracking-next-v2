@@ -13,17 +13,21 @@ import { QCGateModal } from "./qc-gate-modal"
 
 interface ProductionQueueProps {
     stage: string
+    projectId?: string
 }
 
-export function ProductionQueue({ stage }: ProductionQueueProps) {
+export function ProductionQueue({ stage, projectId }: ProductionQueueProps) {
     const [selectedItem, setSelectedItem] = useState<any>(null)
     const [modalOpen, setModalOpen] = useState(false)
     const [qcModalOpen, setQcModalOpen] = useState(false)
 
     const { data, isLoading, error, refetch } = useQuery({
-        queryKey: ['production-queue', stage],
+        queryKey: ['production-queue', stage, projectId],
         queryFn: async () => {
-            const res = await axiosInstance.get(`/production/queue?stage=${stage}`)
+            const url = projectId
+                ? `/production/queue?stage=${stage}&project_id=${projectId}`
+                : `/production/queue?stage=${stage}`
+            const res = await axiosInstance.get(url)
             return res.data
         }
     })
@@ -51,73 +55,76 @@ export function ProductionQueue({ stage }: ProductionQueueProps) {
     return (
         <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {items.map((item: any) => (
-                    <Card key={item.id} className="overflow-hidden border-l-4 border-l-blue-500 hover:shadow-md transition-shadow">
-                        <CardHeader className="pb-2 bg-slate-50/50">
-                            <div className="flex justify-between items-start">
-                                <div>
-                                    <div className="text-xs text-muted-foreground mb-1">{item.project?.spk_number || "No SPK"}</div>
-                                    <CardTitle className="text-base line-clamp-1">{item.mdl_item?.nama_barang || item.item}</CardTitle>
+                {items.map((item: any) => {
+                    const activeJob = item.current_job;
+                    return (
+                        <Card key={item.id} className={`overflow-hidden border-l-4 hover:shadow-md transition-shadow ${activeJob ? 'border-l-emerald-500 bg-emerald-50/30' : 'border-l-blue-500'}`}>
+                            <CardHeader className="pb-2 bg-slate-50/50">
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <div className="text-xs text-muted-foreground mb-1">{item.project?.spk_number || "No SPK"}</div>
+                                        <CardTitle className="text-base line-clamp-1">{item.mdl_item?.nama_barang || item.item}</CardTitle>
+                                    </div>
+                                    <Badge variant={item.stage_status === 'rejected' ? 'destructive' : 'secondary'}>
+                                        {item.stage_status}
+                                    </Badge>
                                 </div>
-                                <Badge variant={item.stage_status === 'rejected' ? 'destructive' : 'secondary'}>
-                                    {item.stage_status}
-                                </Badge>
-                            </div>
-                        </CardHeader>
-                        <CardContent className="pt-4 text-sm space-y-2">
-                            <div className="flex justify-between">
-                                <span className="text-muted-foreground">Qty:</span>
-                                <span className="font-mono font-medium">{item.jumlah} {item.satuan}</span>
-                            </div>
-                            <div className="flex justify-between">
-                                <span className="text-muted-foreground">Dimensions:</span>
-                                <span className="font-mono">{item.panjang}x{item.lebar}x{item.tinggi}</span>
-                            </div>
-                            {item.keterangan && (
-                                <div className="p-2 bg-yellow-50 text-yellow-800 text-xs rounded border border-yellow-100 mt-2">
-                                    Note: {item.keterangan}
+                            </CardHeader>
+                            <CardContent className="pt-4 text-sm space-y-2">
+                                <div className="flex justify-between">
+                                    <span className="text-muted-foreground">Qty:</span>
+                                    <span className="font-mono font-medium">{item.jumlah} {item.satuan}</span>
                                 </div>
-                            )}
-                        </CardContent>
-                        <CardFooter className="bg-slate-50 p-3 flex gap-2">
-                            {stage === 'qc' ? (
-                                <>
+                                <div className="flex justify-between">
+                                    <span className="text-muted-foreground">Dimensions:</span>
+                                    <span className="font-mono">{item.panjang}x{item.lebar}x{item.tinggi}</span>
+                                </div>
+                                {item.keterangan && (
+                                    <div className="p-2 bg-yellow-50 text-yellow-800 text-xs rounded border border-yellow-100 mt-2">
+                                        Note: {item.keterangan}
+                                    </div>
+                                )}
+                            </CardContent>
+                            <CardFooter className="bg-slate-50 p-3 flex gap-2">
+                                {stage === 'qc' ? (
+                                    <>
+                                        <Button
+                                            variant="outline"
+                                            className="flex-1 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                                            onClick={() => {
+                                                setSelectedItem(item)
+                                                setQcModalOpen(true)
+                                            }}
+                                        >
+                                            Reject
+                                        </Button>
+                                        <Button
+                                            className="flex-1 bg-green-600 hover:bg-green-700"
+                                            onClick={() => {
+                                                setSelectedItem(item)
+                                                setModalOpen(true) // Re-use standard complete for QC Pass
+                                            }}
+                                        >
+                                            <CheckCircle2 className="w-4 h-4 mr-2" />
+                                            Pass
+                                        </Button>
+                                    </>
+                                ) : (
                                     <Button
-                                        variant="outline"
-                                        className="flex-1 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                                        className="w-full gap-2"
                                         onClick={() => {
                                             setSelectedItem(item)
-                                            setQcModalOpen(true)
+                                            setModalOpen(true)
                                         }}
                                     >
-                                        Reject
+                                        <Camera className="w-4 h-4" />
+                                        Update Progress
                                     </Button>
-                                    <Button
-                                        className="flex-1 bg-green-600 hover:bg-green-700"
-                                        onClick={() => {
-                                            setSelectedItem(item)
-                                            setModalOpen(true) // Re-use standard complete for QC Pass
-                                        }}
-                                    >
-                                        <CheckCircle2 className="w-4 h-4 mr-2" />
-                                        Pass
-                                    </Button>
-                                </>
-                            ) : (
-                                <Button
-                                    className="w-full gap-2"
-                                    onClick={() => {
-                                        setSelectedItem(item)
-                                        setModalOpen(true)
-                                    }}
-                                >
-                                    <Camera className="w-4 h-4" />
-                                    Update Progress
-                                </Button>
-                            )}
-                        </CardFooter>
-                    </Card>
-                ))}
+                                )}
+                            </CardFooter>
+                        </Card>
+                    )
+                })}
             </div>
 
             <UpdateProgressModal
