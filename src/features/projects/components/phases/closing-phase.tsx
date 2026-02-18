@@ -79,6 +79,29 @@ export function ClosingPhase({ project }: ClosingPhaseProps) {
                                         </div>
                                         <p className="text-sm text-slate-500 mt-1">{step.description}</p>
                                         <p className="text-xs text-slate-400 mt-1">{step.date}</p>
+
+                                        {/* PPIC Shipment UI for Delivery Step */}
+                                        {step.name.includes('Delivery') && (
+                                            <div className="mt-4 p-4 bg-slate-50 rounded-lg border border-slate-200 space-y-4">
+                                                <h5 className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                                                    <Truck className="w-4 h-4" /> Shipment Details (PPIC)
+                                                </h5>
+                                                <div className="grid grid-cols-1 gap-3">
+                                                    <div>
+                                                        <label className="text-xs font-medium text-slate-500">Driver / Logistics</label>
+                                                        <input type="text" className="w-full text-sm border rounded px-2 py-1 mt-1" placeholder="e.g. Lalamove - B 1234 XYZ" />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-xs font-medium text-slate-500">Upload Delivery Photo</label>
+                                                        <div className="border-2 border-dashed border-slate-300 rounded-md p-3 text-center cursor-pointer hover:bg-white transition-colors mt-1">
+                                                            <Upload className="w-4 h-4 text-slate-400 mx-auto" />
+                                                            <span className="text-[10px] text-slate-500">Photo Proof (Loaded)</span>
+                                                        </div>
+                                                    </div>
+                                                    <Button size="sm" className="w-full bg-blue-600 hover:bg-blue-700">Save Shipment Info</Button>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             ))}

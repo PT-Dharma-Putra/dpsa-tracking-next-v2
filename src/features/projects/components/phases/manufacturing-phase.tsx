@@ -3,8 +3,17 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { CheckCircle2, Clock, AlertCircle, Play, Package, Loader, Calendar, Wrench } from "lucide-react"
+import { CheckCircle2, Clock, AlertCircle, Play, Package, Loader, Calendar, Wrench, Camera, FileCheck } from "lucide-react"
 import Link from "next/link"
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog"
 
 interface ManufacturingPhaseProps {
     project: any
@@ -98,8 +107,70 @@ export function ManufacturingPhase({ project }: ManufacturingPhaseProps) {
 
                                 {/* Content */}
                                 <div className="flex-1 pt-1">
-                                    <div className="flex justify-between items-center mb-1">
-                                        <h4 className="font-semibold text-lg text-slate-800">{stage.name}</h4>
+                                    <div className="flex justify-between items-start mb-1">
+                                        <div>
+                                            <h4 className="font-semibold text-lg text-slate-800">{stage.name}</h4>
+
+                                            {/* QC Verification UI */}
+                                            {stage.name === 'QC' && (
+                                                <div className="mt-2">
+                                                    <Dialog>
+                                                        <DialogTrigger asChild>
+                                                            <Button size="sm" variant="outline" className="gap-2 text-emerald-600 border-emerald-200 hover:bg-emerald-50">
+                                                                <FileCheck className="w-4 h-4" />
+                                                                QC Verification Form
+                                                            </Button>
+                                                        </DialogTrigger>
+                                                        <DialogContent className="sm:max-w-md">
+                                                            <DialogHeader>
+                                                                <DialogTitle>QC Verification Checklist</DialogTitle>
+                                                                <DialogDescription>
+                                                                    Complete the checklist and upload photo proof to pass QC.
+                                                                </DialogDescription>
+                                                            </DialogHeader>
+                                                            <div className="space-y-4 py-4">
+                                                                <div className="space-y-2">
+                                                                    <div className="flex items-center gap-2 p-2 border rounded-md bg-slate-50">
+                                                                        <input type="checkbox" defaultChecked className="h-4 w-4 text-emerald-600 rounded" />
+                                                                        <label className="text-sm font-medium">Dimension Check (P x L x T)</label>
+                                                                    </div>
+                                                                    <div className="flex items-center gap-2 p-2 border rounded-md bg-slate-50">
+                                                                        <input type="checkbox" defaultChecked className="h-4 w-4 text-emerald-600 rounded" />
+                                                                        <label className="text-sm font-medium">Edging Quality & Bonding</label>
+                                                                    </div>
+                                                                    <div className="flex items-center gap-2 p-2 border rounded-md bg-slate-50">
+                                                                        <input type="checkbox" defaultChecked className="h-4 w-4 text-emerald-600 rounded" />
+                                                                        <label className="text-sm font-medium">Surface Finish (Clean & Smooth)</label>
+                                                                    </div>
+                                                                    <div className="flex items-center gap-2 p-2 border rounded-md bg-slate-50">
+                                                                        <input type="checkbox" className="h-4 w-4 text-emerald-600 rounded" />
+                                                                        <label className="text-sm font-medium">Functionality (Hinges/Drawers)</label>
+                                                                    </div>
+                                                                </div>
+
+                                                                <div className="space-y-2">
+                                                                    <label className="text-sm font-medium">Upload Photo Proof (Required)</label>
+                                                                    <div className="border-2 border-dashed border-slate-200 rounded-lg p-6 text-center cursor-pointer hover:bg-slate-50">
+                                                                        <Camera className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                                                                        <span className="text-xs text-slate-500">Click to capture/upload QC photo</span>
+                                                                    </div>
+                                                                </div>
+
+                                                                <div className="space-y-2">
+                                                                    <label className="text-sm font-medium">QC Notes</label>
+                                                                    <textarea className="w-full min-h-[80px] p-2 text-sm border rounded-md" placeholder="Enter specific notes or defects found..."></textarea>
+                                                                </div>
+                                                            </div>
+                                                            <DialogFooter>
+                                                                <Button variant="outline">Save Draft</Button>
+                                                                <Button className="bg-emerald-600 hover:bg-emerald-700">Approve & Pass QC</Button>
+                                                            </DialogFooter>
+                                                        </DialogContent>
+                                                    </Dialog>
+                                                </div>
+                                            )}
+                                        </div>
+
                                         <Badge variant={stage.status === 'completed' ? 'default' : (stage.status === 'in_progress' ? 'secondary' : 'outline')}>
                                             {stage.status === 'in_progress' ? 'Running' : stage.status}
                                         </Badge>
@@ -127,6 +198,7 @@ export function ManufacturingPhase({ project }: ManufacturingPhaseProps) {
         </div>
     )
 }
+
 
 function getStatusColor(status: string) {
     switch (status) {
