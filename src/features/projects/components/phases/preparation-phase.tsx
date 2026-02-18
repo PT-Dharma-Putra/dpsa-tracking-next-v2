@@ -5,6 +5,7 @@ import { Project, ProjectService } from "@/features/projects/services/project-se
 import { DocumentService } from "@/features/projects/services/document-service"
 import { PPICService } from "@/features/projects/services/ppic-service"
 import { WarehouseService } from "@/features/projects/services/warehouse-service"
+import { MaterialService } from "@/features/projects/services/material-service"
 import { toast } from "sonner"
 import { ScheduleWidget } from "./preparation/schedule-widget"
 import { DivisionAssignmentWidget } from "./preparation/division-assignment-widget"
@@ -50,10 +51,44 @@ export function PreparationPhase({ project }: PreparationPhaseProps) {
         queryKey: ["warehouse-items", project.id],
         queryFn: () => WarehouseService.getWarehouseItems(project.id)
     });
-    const totalItems = warehouseItems?.data?.length || 0;
-    const readyItems = warehouseItems?.data?.filter((i: any) => i.material_status === 'Ready').length || 0;
-    const isMaterialReady = totalItems > 0 && readyItems === totalItems; // Strict: All must be ready
 
+    // NEW: Check ItemMaterials (Raw Materials) as well
+    const { data: rawMaterials } = useQuery({
+        queryKey: ["project-materials", project.id, "all"],
+        queryFn: () => MaterialService.getProjectMaterials(project.id, "all")
+    });
+
+    // Calculate Material Readiness
+    const calculateMaterialReadiness = () => {
+        // A. If Raw Materials exist, priority to them (Manufacturing Project)
+        const groups = rawMaterials?.data || [];
+        let totalRaw = 0;
+        let readyRaw = 0;
+
+        if (groups.length > 0) {
+            groups.forEach((group: any) => {
+                group.materials.forEach((m: any) => {
+                    totalRaw++;
+                    // 'released' means handed to production. 'available' means in warehouse. Both are "Ready" for Phase 3?
+                    // Strict: Must be 'released' to production to start production?
+                    // User said: "material semua item sudah released".
+                    if (m.status === 'released' || m.status === 'available') {
+                        readyRaw++;
+                    }
+                });
+            });
+            return totalRaw > 0 && readyRaw === totalRaw;
+        }
+
+        // B. Fallback: Check Project Items (Buying Finished Goods)
+        const totalItems = warehouseItems?.data?.length || 0;
+        const readyItems = warehouseItems?.data?.filter((i: any) => i.material_status === 'Ready').length || 0;
+
+        if (totalItems === 0) return false; // No items defined at all
+        return readyItems === totalItems;
+    };
+
+    const isMaterialReady = calculateMaterialReadiness();
 
     // 5. Division Assignment Check
     const { data: sphItems } = useQuery({
