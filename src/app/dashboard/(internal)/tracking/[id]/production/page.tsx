@@ -3,7 +3,7 @@
 import { useState, use } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
-import { QrCode, ClipboardList, Package, PaintBucket, Hammer, Scissors, ArrowLeft, Layers, Box, PenTool } from "lucide-react"
+import { QrCode, ClipboardList, Package, PaintBucket, Hammer, Scissors, ArrowLeft, Copy, Scan, Cpu } from "lucide-react"
 import { ProductionQueue } from "@/features/production/components/production-queue"
 import { useAuth } from "@/hooks/use-auth"
 import Link from "next/link"
@@ -46,15 +46,15 @@ export default function ProjectProductionPage({ params }: { params: Promise<{ id
                         <span className="hidden sm:inline">Cutting</span>
                     </TabsTrigger>
                     <TabsTrigger value="lamination" className="gap-2 min-w-[100px]">
-                        <Layers className="w-4 h-4" />
+                        <Copy className="w-4 h-4" />
                         <span className="hidden sm:inline">Lamination</span>
                     </TabsTrigger>
                     <TabsTrigger value="edging" className="gap-2 min-w-[100px]">
-                        <Box className="w-4 h-4" />
+                        <Scan className="w-4 h-4" />
                         <span className="hidden sm:inline">Edging</span>
                     </TabsTrigger>
                     <TabsTrigger value="cnc" className="gap-2 min-w-[100px]">
-                        <PenTool className="w-4 h-4" />
+                        <Cpu className="w-4 h-4" />
                         <span className="hidden sm:inline">CNC</span>
                     </TabsTrigger>
                     <TabsTrigger value="assembly" className="gap-2 min-w-[100px]">
