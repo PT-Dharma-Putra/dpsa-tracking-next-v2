@@ -7,6 +7,8 @@ import { ProjectService } from "@/features/projects/services/project-service"
 import { PhaseStepper } from "@/features/tracking/components/phase-stepper"
 import { CommercialPhase } from "@/features/projects/components/phases/commercial-phase"
 import { PreparationPhase } from "@/features/projects/components/phases/preparation-phase"
+import { ManufacturingPhase } from "@/features/projects/components/phases/manufacturing-phase"
+import { ClosingPhase } from "@/features/projects/components/phases/closing-phase"
 import { OverviewTab } from "@/features/projects/components/phases/overview-tab"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -131,15 +133,11 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
 
                             {/* OTHER TABS */}
                             <TabsContent value="manufacturing" className="mt-0 space-y-8 max-w-4xl mx-auto">
-                                <div className="text-center py-20">
-                                    <p className="text-neutral-400">Manufacturing Phase (Coming Soon)</p>
-                                </div>
+                                <ManufacturingPhase project={project} />
                             </TabsContent>
 
-                            <TabsContent value="closing" className="mt-0 space-y-8 max-w-4xl mx-auto">
-                                <div className="text-center py-20">
-                                    <p className="text-neutral-400">Closing Phase (Coming Soon)</p>
-                                </div>
+                            <TabsContent value="closing" className="mt-0 space-y-8 max-w-5xl mx-auto">
+                                <ClosingPhase project={project} />
                             </TabsContent>
                         </div>
                     </Tabs>
