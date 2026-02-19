@@ -18,7 +18,6 @@ import { SPHViewerDialog } from "@/features/projects/components/sph/sph-viewer-d
 import { SPKViewerDialog } from "@/features/projects/components/spk/spk-viewer-dialog"
 import { Separator } from "@/components/ui/separator"
 import { toast } from "sonner"
-
 import { MessageService } from "@/features/projects/services/message-service"
 
 export default function ClientProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
