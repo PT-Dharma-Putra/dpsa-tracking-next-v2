@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { ImagePlus, Loader2 } from "lucide-react"
-import { useToast } from "@/components/ui/use-toast"
+import { toast } from "sonner"
 import { axiosInstance } from "@/lib/axios"
 
 interface UpdateProgressModalProps {
@@ -17,7 +17,6 @@ interface UpdateProgressModalProps {
 }
 
 export function UpdateProgressModal({ open, onOpenChange, item, onSuccess }: UpdateProgressModalProps) {
-    const { toast } = useToast()
     const [loading, setLoading] = useState(false)
     const [file, setFile] = useState<File | null>(null)
     const [notes, setNotes] = useState("")
@@ -40,16 +39,14 @@ export function UpdateProgressModal({ open, onOpenChange, item, onSuccess }: Upd
                 headers: { 'Content-Type': 'multipart/form-data' }
             })
 
-            toast({ title: "Progress Updated", description: "Item moved to next stage." })
+            toast.success("Progress Updated", { description: "Item moved to next stage." })
             onSuccess()
             onOpenChange(false)
             setFile(null)
             setNotes("")
         } catch (error: any) {
-            toast({
-                title: "Error",
-                description: error.response?.data?.error || "Failed to update progress",
-                variant: "destructive"
+            toast.error("Error", {
+                description: error.response?.data?.error || "Failed to update progress"
             })
         } finally {
             setLoading(false)

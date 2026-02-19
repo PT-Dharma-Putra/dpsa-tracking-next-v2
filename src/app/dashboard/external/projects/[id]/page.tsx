@@ -282,23 +282,64 @@ function DocumentsTabContent({ projectId }: { projectId: string }) {
         : (Array.isArray(invoiceData?.data) ? invoiceData.data : []);
 
     const approveSPHMutation = useMutation({
-        mutationFn: () => DocumentService.approveSPH(projectId),
+        mutationFn: async (file: File | null) => {
+            if (file) {
+                // Return promise chain: Upload -> Approve
+                await DocumentService.uploadSignedSPH(projectId, file);
+                return DocumentService.approveSPH(projectId);
+            } else {
+                // should not happen given button logic but fallback
+                toast.error("Please upload signed SPH");
+                throw new Error("No file uploaded");
+            }
+        },
         onSuccess: () => {
-            toast.success("SPH Approved! We will prepare the SPK.");
+            toast.success("SPH Signed & Approved!");
             queryClient.invalidateQueries({ queryKey: ["sph", projectId] });
             setIsViewerOpen(false);
-        }
+        },
+        onError: () => toast.error("Failed to approve SPH")
     });
+
+    const rejectSPHMutation = useMutation({
+        mutationFn: (reason: string) => DocumentService.rejectSPH(projectId, reason),
+        onSuccess: () => {
+            toast.success("Revision Request Sent");
+            queryClient.invalidateQueries({ queryKey: ["sph", projectId] });
+            setIsViewerOpen(false);
+        },
+        onError: () => toast.error("Failed to send revision request")
+    });
+
 
     const [isSPKViewerOpen, setIsSPKViewerOpen] = useState(false);
 
     const approveSPKMutation = useMutation({
-        mutationFn: () => DocumentService.approveSPK(projectId),
+        mutationFn: async (file: File | null) => {
+            if (file) {
+                await DocumentService.uploadSignedSPK(projectId, file);
+                return DocumentService.approveSPK(projectId);
+            } else {
+                toast.error("Please upload signed SPK");
+                throw new Error("No file uploaded");
+            }
+        },
         onSuccess: () => {
             toast.success("SPK Signed & Approved!");
             queryClient.invalidateQueries({ queryKey: ["spk", projectId] });
             setIsSPKViewerOpen(false);
-        }
+        },
+        onError: () => toast.error("Failed to approve SPK")
+    });
+
+    const rejectSPKMutation = useMutation({
+        mutationFn: (reason: string) => DocumentService.rejectSPK(projectId, reason),
+        onSuccess: () => {
+            toast.success("Revision Request Sent");
+            queryClient.invalidateQueries({ queryKey: ["spk", projectId] });
+            setIsSPKViewerOpen(false);
+        },
+        onError: () => toast.error("Failed to send revision request")
     });
 
     if (isLoadingSPH || isLoadingSPK || isLoadingInvoices) return <div>Loading documents...</div>;
@@ -348,7 +389,8 @@ function DocumentsTabContent({ projectId }: { projectId: string }) {
                                             url={sph.file_url}
                                             sphNumber={sph.sph_number}
                                             status={sph.status}
-                                            onApprove={() => approveSPHMutation.mutate()}
+                                            onApprove={(file) => approveSPHMutation.mutate(file)}
+                                            onReject={(reason) => rejectSPHMutation.mutate(reason)}
                                             isApproving={approveSPHMutation.isPending}
                                         />
                                     </>
@@ -401,7 +443,8 @@ function DocumentsTabContent({ projectId }: { projectId: string }) {
                                             url={spk.spk_file_url || spk.file_path}
                                             spkNumber={spk.spk_number}
                                             status={spk.status} // creating new status prop or logic if needed, usually 'pending' for external if not signed
-                                            onApprove={() => approveSPKMutation.mutate()}
+                                            onApprove={(file) => approveSPKMutation.mutate(file)}
+                                            onReject={(reason) => rejectSPKMutation.mutate(reason)}
                                             isApproving={approveSPKMutation.isPending}
                                         />
                                     </>

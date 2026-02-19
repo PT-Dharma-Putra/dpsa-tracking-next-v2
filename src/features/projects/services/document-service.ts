@@ -64,7 +64,23 @@ export const DocumentService = {
         return response.data;
     },
 
-    // Revise SPH (create new version)
+    // Reject SPH (Client)
+    rejectSPH: async (projectId: number | string, reason: string) => {
+        const response = await apiClient.post(`/projects/${projectId}/sph/reject`, { reason });
+        return response.data;
+    },
+
+    // Upload Signed SPH (Client) -> Then usually followed by approve
+    uploadSignedSPH: async (projectId: number | string, file: File) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        const response = await apiClient.post(`/projects/${projectId}/sph/upload-file`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        return response.data;
+    },
+
+    // Revise SPH (Internal)
     reviseSPH: async (projectId: number | string, file: File, reason: string) => {
         const formData = new FormData();
         formData.append('file', file);
@@ -75,7 +91,7 @@ export const DocumentService = {
         return response.data;
     },
 
-    // Revise SPK (create new version)
+    // Revise SPK (Internal)
     reviseSPK: async (projectId: number | string, file: File, reason: string) => {
         const formData = new FormData();
         formData.append('file', file);
@@ -89,6 +105,24 @@ export const DocumentService = {
     // Approve SPK
     approveSPK: async (projectId: number | string) => {
         const response = await apiClient.post(`/projects/${projectId}/spk/approve`);
+        return response.data;
+    },
+
+    // Reject SPK (Client)
+    rejectSPK: async (projectId: number | string, reason: string) => {
+        const response = await apiClient.post(`/projects/${projectId}/spk/reject`, { reason });
+        return response.data;
+    },
+
+    // Upload Signed SPK (Client)
+    uploadSignedSPK: async (projectId: number | string, file: File) => {
+        const formData = new FormData();
+        formData.append('spk_file', file);
+        // spk_number required by validation but we can omit if already exists. Controller check needed.
+        // Assuming controller allows update if number exists.
+        const response = await apiClient.post(`/projects/${projectId}/spk/upload-file`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
         return response.data;
     },
 };

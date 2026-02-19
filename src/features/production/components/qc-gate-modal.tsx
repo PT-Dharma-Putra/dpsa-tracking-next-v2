@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useToast } from "@/components/ui/use-toast"
+import { toast } from "sonner"
 import { axiosInstance } from "@/lib/axios"
 import { AlertCircle, Loader2 } from "lucide-react"
 
@@ -18,7 +18,6 @@ interface QCGateModalProps {
 }
 
 export function QCGateModal({ open, onOpenChange, item, onSuccess }: QCGateModalProps) {
-    const { toast } = useToast()
     const [loading, setLoading] = useState(false)
     const [targetStage, setTargetStage] = useState("")
     const [notes, setNotes] = useState("")
@@ -33,7 +32,7 @@ export function QCGateModal({ open, onOpenChange, item, onSuccess }: QCGateModal
 
     const handleReject = async () => {
         if (!targetStage || !notes) {
-            toast({ title: "Validation Error", description: "Select a target stage and provide a reason.", variant: "destructive" })
+            toast.error("Validation Error", { description: "Select a target stage and provide a reason." })
             return
         }
 
@@ -45,16 +44,14 @@ export function QCGateModal({ open, onOpenChange, item, onSuccess }: QCGateModal
                 notes: notes
             })
 
-            toast({ title: "Item Rejected", description: `Returned to ${targetStage}.` })
+            toast.success("Item Rejected", { description: `Returned to ${targetStage}.` })
             onSuccess()
             onOpenChange(false)
             setTargetStage("")
             setNotes("")
         } catch (error: any) {
-            toast({
-                title: "Error",
-                description: error.response?.data?.error || "Failed to reject item",
-                variant: "destructive"
+            toast.error("Error", {
+                description: error.response?.data?.error || "Failed to reject item"
             })
         } finally {
             setLoading(false)
