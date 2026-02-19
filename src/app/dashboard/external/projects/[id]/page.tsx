@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Textarea } from "@/components/ui/textarea"
 import { OverviewTab } from "@/features/projects/components/phases/overview-tab"
 import { SPHViewerDialog } from "@/features/projects/components/sph/sph-viewer-dialog"
+import { SPKViewerDialog } from "@/features/projects/components/spk/spk-viewer-dialog"
 import { Separator } from "@/components/ui/separator"
 import { toast } from "sonner"
 
@@ -290,6 +291,17 @@ function DocumentsTabContent({ projectId }: { projectId: string }) {
         }
     });
 
+    const [isSPKViewerOpen, setIsSPKViewerOpen] = useState(false);
+
+    const approveSPKMutation = useMutation({
+        mutationFn: () => DocumentService.approveSPK(projectId),
+        onSuccess: () => {
+            toast.success("SPK Signed & Approved!");
+            queryClient.invalidateQueries({ queryKey: ["spk", projectId] });
+            setIsSPKViewerOpen(false);
+        }
+    });
+
     if (isLoadingSPH || isLoadingSPK || isLoadingInvoices) return <div>Loading documents...</div>;
 
     return (
@@ -374,9 +386,26 @@ function DocumentsTabContent({ projectId }: { projectId: string }) {
                             </div>
                             <div className="flex gap-2">
                                 {(spk.spk_file_url || spk.file_path) && (
-                                    <a href={spk.spk_file_url || spk.file_path || '#'} target="_blank" rel="noreferrer">
-                                        <Button variant="outline" size="sm"><Download className="h-4 w-4 mr-2" /> Download</Button>
-                                    </a>
+                                    <>
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            className="text-white bg-blue-600 hover:bg-blue-700 border-none"
+                                            onClick={() => setIsSPKViewerOpen(true)}
+                                        >
+                                            <Eye className="h-4 w-4 mr-2" /> View & Sign
+                                        </Button>
+
+                                        <SPKViewerDialog
+                                            open={isSPKViewerOpen}
+                                            onOpenChange={setIsSPKViewerOpen}
+                                            url={spk.spk_file_url || spk.file_path}
+                                            spkNumber={spk.spk_number}
+                                            status={spk.status} // creating new status prop or logic if needed, usually 'pending' for external if not signed
+                                            onApprove={() => approveSPKMutation.mutate()}
+                                            isApproving={approveSPKMutation.isPending}
+                                        />
+                                    </>
                                 )}
                             </div>
                         </div>
