@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { getAuthHeaders } from '@/lib/utils'; // Assuming this utility exists, if not we'll use standard headers
+// import { getAuthHeaders } from '@/lib/utils'; // Assuming this utility exists, if not we'll use standard headers
 // Or better, use the configured axios instance if available. 
 // Let's assume standard axios for now with local storage token.
 

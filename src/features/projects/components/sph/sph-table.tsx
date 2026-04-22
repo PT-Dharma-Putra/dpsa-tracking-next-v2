@@ -54,7 +54,6 @@ export function SPHTable({ items, onUpdate }: SPHTableProps) {
 
     return (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-            {/* @ts-expect-error - dnd-kit types not compatible with React 19 */}
             <SortableContext items={items} strategy={verticalListSortingStrategy}>
                 <Table>
                     <TableHeader className="bg-neutral-100">
