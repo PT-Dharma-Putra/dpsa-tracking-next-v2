@@ -346,7 +346,6 @@ function DocumentsTabContent({ projectId }: { projectId: string }) {
 
     return (
         <div className="space-y-6">
-
             {/* 1. SPH Section */}
             <Card>
                 <CardHeader>

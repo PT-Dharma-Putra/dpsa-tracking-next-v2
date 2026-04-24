@@ -79,7 +79,6 @@ export function CommercialPhase({ project }: CommercialPhaseProps) {
 
     return (
         <div className="space-y-8">
-
             {/* === HEADER === */}
             <div className="flex items-center justify-between">
                 <div>
