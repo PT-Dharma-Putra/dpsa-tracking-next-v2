@@ -14,7 +14,7 @@ interface SPHViewerDialogProps {
     onApprove: (file: File | null) => void // Updated signature
     onReject?: (reason: string) => void // Added onReject prop
     isApproving: boolean
-    status: 'pending' | 'approved' | 'rejected' | 'draft' | 'sent' | undefined
+    status: 'pending' | 'approved' | 'rejected' | 'draft' | 'sent' | 'revisied' | undefined
 }
 
 export function SPHViewerDialog({
@@ -83,7 +83,7 @@ export function SPHViewerDialog({
                     </div>
 
                     {/* Sidebar / Overlay for Actions */}
-                    {(status === 'pending' || status === 'sent') && (
+                    {(status === 'pending' || status === 'sent' || status === 'revisied') && (
                         <div className="w-full md:w-[320px] bg-white border-l p-6 flex flex-col gap-6 shrink-0 overflow-y-auto">
                             {!isRejectMode ? (
                                 <>

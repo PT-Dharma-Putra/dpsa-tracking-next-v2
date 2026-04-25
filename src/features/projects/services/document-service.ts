@@ -102,8 +102,16 @@ export const DocumentService = {
         return response.data;
     },
 
-    // Approve SPK
-    approveSPK: async (projectId: number | string) => {
+    // Approve SPK (with optional signed file)
+    approveSPK: async (projectId: number | string, signedFile?: File) => {
+        if (signedFile) {
+            const formData = new FormData();
+            formData.append('spk_signed_file', signedFile);
+            const response = await apiClient.post(`/projects/${projectId}/spk/approve`, formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            return response.data;
+        }
         const response = await apiClient.post(`/projects/${projectId}/spk/approve`);
         return response.data;
     },
@@ -121,6 +129,20 @@ export const DocumentService = {
         // spk_number required by validation but we can omit if already exists. Controller check needed.
         // Assuming controller allows update if number exists.
         const response = await apiClient.post(`/projects/${projectId}/spk/upload-file`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        return response.data;
+    },
+
+    // Upload Client SPK (with number, optional deadline, and file)
+    uploadClientSPK: async (projectId: number | string, data: { spk_number: string; deadline?: string; file: File }) => {
+        const formData = new FormData();
+        formData.append('spk_number', data.spk_number);
+        if (data.deadline) {
+            formData.append('deadline', data.deadline);
+        }
+        formData.append('spk_file', data.file);
+        const response = await apiClient.post(`/projects/${projectId}/spk`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
         return response.data;

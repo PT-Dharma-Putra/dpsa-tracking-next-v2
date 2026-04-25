@@ -1,9 +1,9 @@
 "use client"
 
-import { use, useState } from "react"
+import { use, useState, useRef } from "react"
 import Link from "next/link"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { ArrowLeft, Download, CheckCircle, AlertCircle, MessageSquare, PlusCircle, FileText, Eye } from "lucide-react"
+import { ArrowLeft, Download, CheckCircle, AlertCircle, MessageSquare, PlusCircle, FileText, Eye, Upload, CalendarIcon, Lock, X } from "lucide-react"
 import { ProjectService } from "@/features/projects/services/project-service"
 import { DesignService, Design } from "@/features/projects/services/design-service"
 import { DocumentService } from "@/features/projects/services/document-service"
@@ -13,6 +13,8 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { OverviewTab } from "@/features/projects/components/phases/overview-tab"
 import { SPHViewerDialog } from "@/features/projects/components/sph/sph-viewer-dialog"
 import { SPKViewerDialog } from "@/features/projects/components/spk/spk-viewer-dialog"
@@ -158,6 +160,8 @@ function DesignTabContent({ projectId }: { projectId: string }) {
     )
 }
 
+const STORAGE_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api').replace('/api', '');
+
 function DesignCard({ design, onApprove, onReject, isProcessing }: {
     design: Design,
     onApprove: () => void,
@@ -168,6 +172,19 @@ function DesignCard({ design, onApprove, onReject, isProcessing }: {
     const [isRejectOpen, setIsRejectOpen] = useState(false);
     const [isImageOpen, setIsImageOpen] = useState(false);
 
+    // Normalize URL: Ensure it's absolute and points to the correct backend
+    const getFullUrl = (url: string) => {
+        if (!url) return "";
+        if (url.startsWith('http')) {
+            // If backend APP_URL is 8081 but we are serving at 8000, fix it
+            return url.replace('localhost:8081', 'localhost:8000');
+        }
+        return `${STORAGE_BASE}/${url.startsWith('/') ? url.slice(1) : url}`;
+    };
+
+    const imageUrl = getFullUrl(design.image_url);
+    const isPdf = imageUrl.toLowerCase().endsWith('.pdf');
+
     return (
         <>
             <Card className={`overflow-hidden transition-all duration-300 ${design.status === 'approved' ? 'border-green-200 bg-green-50/10' : 'border-neutral-200 shadow-md hover:shadow-lg'}`}>
@@ -175,7 +192,15 @@ function DesignCard({ design, onApprove, onReject, isProcessing }: {
                     className="h-64 bg-neutral-200 relative group cursor-pointer overflow-hidden"
                     onClick={() => setIsImageOpen(true)}
                 >
-                    <img src={design.image_url} alt={design.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    {isPdf ? (
+                        <div className="w-full h-full flex flex-col items-center justify-center bg-neutral-100 text-neutral-400">
+                            <FileText className="h-12 w-12 mb-2" />
+                            <span className="text-xs font-medium">PDF Design Document</span>
+                            <span className="text-[10px]">Click to full view</span>
+                        </div>
+                    ) : (
+                        <img src={imageUrl} alt={design.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    )}
 
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
                         <Eye className="text-white opacity-0 group-hover:opacity-100 h-8 w-8 drop-shadow-lg transform scale-50 group-hover:scale-100 transition-all duration-300" />
@@ -237,18 +262,26 @@ function DesignCard({ design, onApprove, onReject, isProcessing }: {
             {/* Image Preview Dialog */}
             <Dialog open={isImageOpen} onOpenChange={setIsImageOpen}>
                 <DialogContent className="max-w-7xl h-[90vh] flex flex-col p-0 border-none bg-black/95">
-                    <DialogTitle className="sr-only">View Image: {design.title}</DialogTitle>
+                    <DialogTitle className="sr-only">View Design: {design.title}</DialogTitle>
                     <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
-                        <img
-                            src={design.image_url}
-                            alt={design.title}
-                            className="max-w-full max-h-full object-contain"
-                        />
+                        {isPdf ? (
+                            <iframe
+                                src={`${imageUrl}#toolbar=0`}
+                                className="w-full h-full border-none"
+                                title="Design Viewer"
+                            />
+                        ) : (
+                            <img
+                                src={imageUrl}
+                                alt={design.title}
+                                className="max-w-full max-h-full object-contain"
+                            />
+                        )}
                         <button
                             onClick={() => setIsImageOpen(false)}
-                            className="absolute top-4 right-4 bg-white/10 hover:bg-white/20 text-white rounded-full p-2 transition-colors"
+                            className="absolute top-4 right-4 bg-white/10 hover:bg-white/20 text-white rounded-full p-2 transition-colors z-20"
                         >
-                            <ArrowLeft className="h-6 w-6" /> {/* reusing ArrowLeft as 'Close' to avoid importing X if not available, or use native behavior */}
+                            <X className="h-6 w-6" />
                         </button>
                     </div>
 
@@ -314,6 +347,12 @@ function DocumentsTabContent({ projectId }: { projectId: string }) {
 
     const [isSPKViewerOpen, setIsSPKViewerOpen] = useState(false);
 
+    // Client SPK Upload State
+    const [spkNumber, setSpkNumber] = useState("");
+    const [spkDeadline, setSpkDeadline] = useState("");
+    const [spkFile, setSpkFile] = useState<File | null>(null);
+    const spkFileInputRef = useRef<HTMLInputElement>(null);
+
     const approveSPKMutation = useMutation({
         mutationFn: async (file: File | null) => {
             if (file) {
@@ -342,6 +381,31 @@ function DocumentsTabContent({ projectId }: { projectId: string }) {
         onError: () => toast.error("Failed to send revision request")
     });
 
+    const uploadClientSPKMutation = useMutation({
+        mutationFn: (data: { spk_number: string; deadline?: string; file: File }) =>
+            DocumentService.uploadClientSPK(projectId, data),
+        onSuccess: () => {
+            toast.success("SPK berhasil diupload!");
+            queryClient.invalidateQueries({ queryKey: ["spk", projectId] });
+            setSpkNumber("");
+            setSpkDeadline("");
+            setSpkFile(null);
+            if (spkFileInputRef.current) spkFileInputRef.current.value = "";
+        },
+        onError: () => toast.error("Gagal mengupload SPK")
+    });
+
+    const handleClientSPKUpload = () => {
+        if (!spkNumber.trim() || !spkFile) return;
+        uploadClientSPKMutation.mutate({
+            spk_number: spkNumber.trim(),
+            deadline: spkDeadline || undefined,
+            file: spkFile,
+        });
+    };
+
+    const isSPHApproved = sph?.status === 'approved';
+
     if (isLoadingSPH || isLoadingSPK || isLoadingInvoices) return <div>Loading documents...</div>;
 
     return (
@@ -354,6 +418,7 @@ function DocumentsTabContent({ projectId }: { projectId: string }) {
                         {sph?.status === 'approved' && <Badge className="bg-green-600">Approved</Badge>}
                         {sph?.status === 'pending' && <Badge variant="outline" className="text-orange-600 border-orange-200">Waiting Approval</Badge>}
                         {sph?.status === 'rejected' && <Badge className="bg-red-600">Revision Requested</Badge>}
+                        {sph?.status === 'revisied' && <Badge variant="outline" className="text-orange-600 border-orange-200">Revisied</Badge>}
                         {sph?.status === 'draft' && <Badge variant="outline" className="text-neutral-400">Draft</Badge>}
                     </CardTitle>
                     <CardDescription>Review and approve the commercial quotation.</CardDescription>
@@ -379,7 +444,8 @@ function DocumentsTabContent({ projectId }: { projectId: string }) {
                                             className="text-white bg-blue-600 hover:bg-blue-700 border-none"
                                             onClick={() => setIsViewerOpen(true)}
                                         >
-                                            <Eye className="h-4 w-4 mr-2" /> View & Approve
+                                            <Eye className="h-4 w-4 mr-2" />
+                                            {sph?.status === 'sent' || sph?.status === 'revisied' ? 'View & Aprove' : 'View'}
                                         </Button>
 
                                         <SPHViewerDialog
@@ -407,49 +473,81 @@ function DocumentsTabContent({ projectId }: { projectId: string }) {
             </Card>
 
             {/* 2. SPK Section */}
-            <Card>
+            <Card className={spk?.spk_status === 'approved' ? 'border-green-200' : ''}>
                 <CardHeader>
-                    <CardTitle>Contract (SPK)</CardTitle>
+                    <CardTitle className="flex justify-between">
+                        <span>Contract (SPK)</span>
+                        {spk?.spk_status === 'approved' && <Badge className="bg-green-600"><CheckCircle className="h-3 w-3 mr-1" /> Approved</Badge>}
+                        {spk?.spk_status === 'pending' && <Badge variant="outline" className="text-orange-600 border-orange-200">Waiting Approval</Badge>}
+                        {!spk?.spk_status && spk?.spk_number && <Badge variant="outline" className="text-neutral-400">Draft</Badge>}
+                    </CardTitle>
                     <CardDescription>Signed work agreement.</CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="space-y-3">
                     {spk ? (
-                        <div className="flex items-center justify-between p-4 bg-neutral-50 rounded-lg">
-                            <div className="flex items-center gap-4">
-                                <div className="h-10 w-10 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center">
-                                    <FileText className="h-5 w-5" />
+                        <>
+                            <div className="flex items-center justify-between p-4 bg-neutral-50 rounded-lg">
+                                <div className="flex items-center gap-4">
+                                    <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${spk.spk_status === 'approved' ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'}`}>
+                                        <FileText className="h-5 w-5" />
+                                    </div>
+                                    <div>
+                                        <p className="font-medium text-neutral-900">{spk.spk_number}</p>
+                                        <p className="text-xs text-neutral-500">
+                                            {spk.spk_status === 'approved' ? 'Approved & Signed' : spk.spk_file_url ? 'Waiting for admin approval' : 'Draft / Waiting Signature'}
+                                        </p>
+                                        {spk.deadline && (
+                                            <p className="text-xs text-neutral-400 mt-0.5">
+                                                Deadline: {new Date(spk.deadline).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                                            </p>
+                                        )}
+                                    </div>
                                 </div>
-                                <div>
-                                    <p className="font-medium text-neutral-900">{spk.spk_number}</p>
-                                    <p className="text-xs text-neutral-500">{spk.spk_file_url ? 'Signed & Valid' : 'Draft / Waiting Signature'}</p>
-                                </div>
-                            </div>
-                            <div className="flex gap-2">
-                                {(spk.spk_file_url || spk.file_path) && (
-                                    <>
-                                        <Button
-                                            size="sm"
-                                            variant="outline"
-                                            className="text-white bg-blue-600 hover:bg-blue-700 border-none"
-                                            onClick={() => setIsSPKViewerOpen(true)}
-                                        >
-                                            <Eye className="h-4 w-4 mr-2" /> View & Sign
-                                        </Button>
+                                <div className="flex gap-2">
+                                    {(spk.spk_file_url || spk.file_path) && spk.spk_status !== 'approved' && (
+                                        <>
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                className="text-white bg-blue-600 hover:bg-blue-700 border-none"
+                                                onClick={() => setIsSPKViewerOpen(true)}
+                                            >
+                                                <Eye className="h-4 w-4 mr-2" /> View
+                                            </Button>
 
-                                        <SPKViewerDialog
-                                            open={isSPKViewerOpen}
-                                            onOpenChange={setIsSPKViewerOpen}
-                                            url={spk.spk_file_url || spk.file_path}
-                                            spkNumber={spk.spk_number}
-                                            status={spk.status} // creating new status prop or logic if needed, usually 'pending' for external if not signed
-                                            onApprove={(file) => approveSPKMutation.mutate(file)}
-                                            onReject={(reason) => rejectSPKMutation.mutate(reason)}
-                                            isApproving={approveSPKMutation.isPending}
-                                        />
-                                    </>
-                                )}
+                                            <SPKViewerDialog
+                                                open={isSPKViewerOpen}
+                                                onOpenChange={setIsSPKViewerOpen}
+                                                url={spk.spk_file_url || spk.file_path}
+                                                spkNumber={spk.spk_number}
+                                                status={spk.status}
+                                                onApprove={(file) => approveSPKMutation.mutate(file)}
+                                                onReject={(reason) => rejectSPKMutation.mutate(reason)}
+                                                isApproving={approveSPKMutation.isPending}
+                                            />
+                                        </>
+                                    )}
+                                </div>
                             </div>
-                        </div>
+
+                            {/* Signed SPK from Admin */}
+                            {spk.spk_status === 'approved' && spk.spk_signed_file_url && (
+                                <div className="p-4 bg-green-50 border border-green-200 rounded-lg space-y-3">
+                                    <div className="flex items-center gap-2">
+                                        <CheckCircle className="h-4 w-4 text-green-600" />
+                                        <span className="text-sm font-medium text-green-700">SPK Bertanda Tangan (Signed)</span>
+                                    </div>
+                                    <p className="text-xs text-green-600/80">
+                                        Dokumen SPK yang sudah ditandatangani oleh admin tersedia untuk diunduh.
+                                    </p>
+                                    <a href={spk.spk_signed_file_url} target="_blank" rel="noopener noreferrer">
+                                        <Button size="sm" variant="outline" className="text-green-700 border-green-300 hover:bg-green-100">
+                                            <Eye className="h-4 w-4 mr-2" /> View SPK Bertanda Tangan
+                                        </Button>
+                                    </a>
+                                </div>
+                            )}
+                        </>
                     ) : (
                         <div className="text-center py-6 border-dashed border-2 rounded-lg text-neutral-400 text-sm">
                             SPK not yet available.
@@ -458,7 +556,139 @@ function DocumentsTabContent({ projectId }: { projectId: string }) {
                 </CardContent>
             </Card>
 
-            {/* 3. Invoices */}
+            {/* 3. Client SPK Upload Section — hidden after SPK is approved */}
+            {spk?.spk_status !== 'approved' && (
+            <Card className={`relative transition-all duration-300 ${!isSPHApproved ? 'opacity-60 pointer-events-none' : 'border-blue-200 shadow-sm'}`}>
+                {!isSPHApproved && (
+                    <div className="absolute inset-0 z-10 bg-white/50 backdrop-blur-[1px] rounded-lg flex flex-col items-center justify-center gap-2">
+                        <div className="h-12 w-12 rounded-full bg-neutral-100 flex items-center justify-center">
+                            <Lock className="h-5 w-5 text-neutral-400" />
+                        </div>
+                        <p className="text-sm font-medium text-neutral-500">SPH harus disetujui terlebih dahulu</p>
+                        <p className="text-xs text-neutral-400">Approve the quotation (SPH) above to unlock this section</p>
+                    </div>
+                )}
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <Upload className="h-5 w-5 text-blue-600" />
+                        Upload SPK (Surat Perintah Kerja)
+                    </CardTitle>
+                    <CardDescription>Upload your signed work order / contract document.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-5">
+                    {/* Nomor SPK */}
+                    <div className="space-y-2">
+                        <Label htmlFor="spk-number" className="text-sm font-medium text-neutral-700">
+                            Nomor SPK <span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                            id="spk-number"
+                            placeholder="Contoh: SPK-2026/04/001"
+                            value={spkNumber}
+                            onChange={(e) => setSpkNumber(e.target.value)}
+                            className="h-10"
+                        />
+                    </div>
+
+                    {/* Deadline (Optional) */}
+                    <div className="space-y-2">
+                        <Label htmlFor="spk-deadline" className="text-sm font-medium text-neutral-700">
+                            Deadline
+                            <span className="text-xs text-neutral-400 ml-1 font-normal">(opsional)</span>
+                        </Label>
+                        <div className="relative">
+                            <Input
+                                id="spk-deadline"
+                                type="date"
+                                value={spkDeadline}
+                                onChange={(e) => setSpkDeadline(e.target.value)}
+                                className="h-10"
+                            />
+                        </div>
+                    </div>
+
+                    {/* File Upload */}
+                    <div className="space-y-2">
+                        <Label htmlFor="spk-file" className="text-sm font-medium text-neutral-700">
+                            Upload File SPK <span className="text-red-500">*</span>
+                        </Label>
+                        <div
+                            className={`relative border-2 border-dashed rounded-xl p-6 text-center transition-all cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 ${
+                                spkFile ? 'border-green-300 bg-green-50/30' : 'border-neutral-200 bg-neutral-50/50'
+                            }`}
+                            onClick={() => spkFileInputRef.current?.click()}
+                        >
+                            <input
+                                ref={spkFileInputRef}
+                                id="spk-file"
+                                type="file"
+                                accept=".pdf"
+                                className="hidden"
+                                onChange={(e) => {
+                                    if (e.target.files && e.target.files[0]) {
+                                        setSpkFile(e.target.files[0]);
+                                    }
+                                }}
+                            />
+                            {spkFile ? (
+                                <div className="flex items-center justify-center gap-3">
+                                    <div className="h-10 w-10 rounded-lg bg-green-100 flex items-center justify-center">
+                                        <FileText className="h-5 w-5 text-green-600" />
+                                    </div>
+                                    <div className="text-left">
+                                        <p className="text-sm font-medium text-neutral-900">{spkFile.name}</p>
+                                        <p className="text-xs text-neutral-500">{(spkFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        className="ml-2 h-6 w-6 rounded-full bg-neutral-200 hover:bg-red-100 flex items-center justify-center transition-colors"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setSpkFile(null);
+                                            if (spkFileInputRef.current) spkFileInputRef.current.value = "";
+                                        }}
+                                    >
+                                        <X className="h-3 w-3 text-neutral-600" />
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="space-y-2">
+                                    <div className="h-10 w-10 rounded-full bg-blue-50 flex items-center justify-center mx-auto">
+                                        <Upload className="h-5 w-5 text-blue-500" />
+                                    </div>
+                                    <p className="text-sm text-neutral-600">Klik untuk memilih file</p>
+                                    <p className="text-xs text-neutral-400">Format: PDF (Maks. 10MB)</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Submit Button */}
+                    <Button
+                        onClick={handleClientSPKUpload}
+                        disabled={!spkNumber.trim() || !spkFile || uploadClientSPKMutation.isPending}
+                        className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-sm transition-all"
+                    >
+                        {uploadClientSPKMutation.isPending ? (
+                            <>
+                                <svg className="animate-spin h-4 w-4 mr-2" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                                </svg>
+                                Mengupload...
+                            </>
+                        ) : (
+                            <>
+                                <Upload className="h-4 w-4 mr-2" />
+                                Upload SPK
+                            </>
+                        )}
+                    </Button>
+                </CardContent>
+            </Card>
+            )}
+
+            {/* 4. Invoices */}
             <Card>
                 <CardHeader>
                     <CardTitle>Invoices</CardTitle>

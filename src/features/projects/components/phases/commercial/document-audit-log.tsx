@@ -51,10 +51,10 @@ export function DocumentAuditLog({ projectId }: Props) {
     // Filter activity_stream for document-related events
     const allActivities: ActivityEntry[] = data?.detailed_activities || [];
     const docActivities = allActivities.filter(a => {
-        const type = (a.type || a.action || '').toLowerCase();
-        return type.includes('sph') || type.includes('spk') || type.includes('document')
-            || type.includes('upload') || type.includes('approve') || type.includes('revise')
-            || type.includes('addendum') || type.includes('sign');
+        const text = ((a.action || '') + ' ' + (a.description || '') + ' ' + (a.type || '')).toLowerCase();
+        return text.includes('sph') || text.includes('spk') || text.includes('document')
+            || text.includes('upload') || text.includes('approve') || text.includes('revis')
+            || text.includes('addendum') || text.includes('sign') || text.includes('reject');
     });
 
     // Fallback: if no doc-specific filtering works, show all activities
