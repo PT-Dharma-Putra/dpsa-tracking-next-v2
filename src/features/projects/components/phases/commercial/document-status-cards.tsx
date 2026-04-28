@@ -96,7 +96,7 @@ export function DocumentStatusCards({ projectId, role }: Props) {
                     linkHref={`/dashboard/tracking/${projectId}/sph`}
                 />
 
-                {/* <DocumentCard
+                <DocumentCard
                     type="spk"
                     label="SPK (Contract)"
                     docNumber={spkData?.spk_number}
@@ -112,7 +112,7 @@ export function DocumentStatusCards({ projectId, role }: Props) {
                     locked={!isSphApproved}
                     lockReason="SPH must be approved first"
                     linkHref={`/dashboard/tracking/${projectId}/spk`}
-                /> */}
+                />
             </div>
 
             {/* Client SPK Review Card */}

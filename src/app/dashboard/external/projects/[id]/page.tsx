@@ -496,11 +496,11 @@ function DocumentsTabContent({ projectId }: { projectId: string }) {
                                         <p className="text-xs text-neutral-500">
                                             {spk.spk_status === 'approved' ? 'Approved & Signed' : spk.spk_file_url ? 'Waiting for admin approval' : 'Draft / Waiting Signature'}
                                         </p>
-                                        {spk.deadline && (
+                                        {/* {spk.deadline && (
                                             <p className="text-xs text-neutral-400 mt-0.5">
                                                 Deadline: {new Date(spk.deadline).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
                                             </p>
-                                        )}
+                                        )} */}
                                     </div>
                                 </div>
                                 <div className="flex gap-2">
@@ -591,7 +591,7 @@ function DocumentsTabContent({ projectId }: { projectId: string }) {
                     </div>
 
                     {/* Deadline (Optional) */}
-                    <div className="space-y-2">
+                    {/* <div className="space-y-2">
                         <Label htmlFor="spk-deadline" className="text-sm font-medium text-neutral-700">
                             Deadline
                             <span className="text-xs text-neutral-400 ml-1 font-normal">(opsional)</span>
@@ -605,7 +605,7 @@ function DocumentsTabContent({ projectId }: { projectId: string }) {
                                 className="h-10"
                             />
                         </div>
-                    </div>
+                    </div> */}
 
                     {/* File Upload */}
                     <div className="space-y-2">

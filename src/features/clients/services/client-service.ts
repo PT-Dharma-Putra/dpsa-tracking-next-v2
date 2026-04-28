@@ -7,7 +7,7 @@ export interface Client {
 }
 
 export const ClientService = {
-    getClients: async (params?: any) => {
+    getClients: async (params?: { page?: number; search?: string }) => {
         const response = await apiClient.get("/clients", { params });
         return response.data;
     },
