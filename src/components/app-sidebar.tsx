@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { ChevronRight } from "lucide-react"
 import {
     SquareTerminal,
     FileBox,
@@ -42,6 +43,12 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { authService } from "@/features/auth/api/auth-service"
 import { useAuthStore } from "@/lib/auth-store"
+// import { CollapsibleContent } from "./ui/collapsible"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "./ui/collapsible"
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const router = useRouter()
@@ -66,6 +73,37 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         if (href === '/dashboard') return pathname === '/dashboard'
         return pathname.startsWith(href)
     }
+
+    const data = {
+        versions: ["1.0.1", "1.1.0-alpha", "2.0.0-beta1"],
+        navMain: [
+            {
+                title: "Marketing",
+                url: "#",
+                items: [
+                    {
+                    title: "Projects V2",
+                    url: "/dashboard/projects-v2",
+                    }
+                ],
+            },
+            {
+                title: "Designer",
+                url: "#",
+                items: [
+                    {
+                    title: "Perintah Kerja",
+                    url: "#",
+                    },
+                    {
+                    title: "List Furnitur",
+                    url: "#",
+                    isActive: true,
+                    },
+                ],
+            },
+        ],
+        }
 
     return (
         <Sidebar collapsible="icon" {...props}>
@@ -144,6 +182,42 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                         </SidebarMenu>
                     </SidebarGroupContent>
                 </SidebarGroup>
+
+                {/* add sidebar collapse  */}
+                 {data.navMain.map((item) => (
+                    <Collapsible
+                        key={item.title}
+                        title={item.title}
+                        defaultOpen
+                        className="group/collapsible"
+                    >
+                        <SidebarGroup>
+                        <SidebarGroupLabel
+                            asChild
+                            className="group/label text-sm text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                        >
+                            <CollapsibleTrigger>
+                            {item.title}{" "}
+                            <ChevronRight className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90" />
+                            </CollapsibleTrigger>
+                        </SidebarGroupLabel>
+                        <CollapsibleContent>
+                            <SidebarGroupContent>
+                            <SidebarMenu>
+                                {item.items.map((item) => (
+                                <SidebarMenuItem key={item.title}>
+                                    <SidebarMenuButton asChild isActive={item.isActive}>
+                                    <a href={item.url}>{item.title}</a>
+                                    </SidebarMenuButton>
+                                </SidebarMenuItem>
+                                ))}
+                            </SidebarMenu>
+                            </SidebarGroupContent>
+                        </CollapsibleContent>
+                        </SidebarGroup>
+                    </Collapsible>
+                    ))}
+
             </SidebarContent>
 
             <SidebarFooter>
