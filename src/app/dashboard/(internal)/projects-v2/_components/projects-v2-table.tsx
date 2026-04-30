@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useRouter } from "next/navigation"
 import { useQuery, useMutation, useInfiniteQuery, useQueryClient } from "@tanstack/react-query"
 import { 
     Search, 
@@ -62,6 +63,7 @@ import { ClientService } from "@/features/clients/services/client-service"
 import { ProjectFormDialog } from "./project-form-dialog"
 
 export function ProjectsV2Table() {
+    const router = useRouter()
     const queryClient = useQueryClient()
     const [page, setPage] = React.useState(1)
     const [search, setSearch] = React.useState("")
@@ -338,6 +340,11 @@ export function ProjectsV2Table() {
                                                 </Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
+                                                <DropdownMenuItem onClick={() => router.push(`/dashboard/projects-v2/${project.id}/items`)}>
+                                                    <Plus className="mr-2 h-4 w-4" />
+                                                    Item
+                                                </DropdownMenuItem>
+                                                <DropdownMenuSeparator />
                                                 <DropdownMenuItem onClick={() => handleEdit(project)}>
                                                     <Pencil className="mr-2 h-4 w-4" />
                                                     Edit
