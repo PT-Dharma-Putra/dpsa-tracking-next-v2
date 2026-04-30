@@ -127,8 +127,8 @@ function ItemRow({
                     <p className="text-sm font-medium text-neutral-900 group-hover:text-orange-700 transition-colors">
                         {item.name}
                     </p>
-                    {item.description && (
-                        <p className="text-xs text-neutral-400 mt-0.5 line-clamp-1">{item.description}</p>
+                    {item.specs && (
+                        <p className="text-xs text-neutral-400 mt-0.5 line-clamp-1">{item.specs}</p>
                     )}
                 </div>
             </TableCell>

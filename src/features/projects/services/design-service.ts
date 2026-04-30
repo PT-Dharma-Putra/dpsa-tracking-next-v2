@@ -46,7 +46,7 @@ export const DesignService = {
         return response.data;
     },
 
-    createItem: async (projectId: string | number, data: { name: string, qty: number, description?: string, needs_design?: boolean }) => {
+    createItem: async (projectId: string | number, data: { name: string, qty: number, description?: string, needs_design?: boolean, floor?: string, room?: string }) => {
         const response = await axiosInstance.post(`/projects/${projectId}/sph/item`, {
             ...data,
             needs_design: data.needs_design !== undefined ? data.needs_design : true
@@ -69,7 +69,7 @@ export const DesignService = {
         return response.data;
     },
 
-    updateItem: async (projectId: string | number, itemId: number | string, data: { name?: string, qty?: number, specs?: string, needs_design?: boolean }) => {
+    updateItem: async (projectId: string | number, itemId: number | string, data: { name?: string, qty?: number, specs?: string, needs_design?: boolean, floor?: string, room?: string }) => {
         const response = await axiosInstance.put(`/projects/${projectId}/sph/items/${itemId}`, data);
         return response.data;
     },
@@ -115,6 +115,8 @@ export interface SPHItem {
     name: string;
     specs?: string;
     qty?: number;
+    floor?: string;
+    room?: string;
     unit_price?: number;
     total_price?: number;
     design_status: DesignStatus;

@@ -21,6 +21,13 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog"
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
 import { ArrowLeft, Upload, FileText, Check, Loader2, Info, Plus, Lock, X, Eye, Edit, Trash2, ChevronLeft, ChevronRight } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
@@ -125,6 +132,8 @@ export default function DesignMarketingPage({ params }: { params: Promise<{ id: 
                                     <th className="px-4 py-3 font-medium w-12 text-center">No</th>
                                     <th className="px-4 py-3 font-medium">Nama Item</th>
                                     <th className="px-4 py-3 font-medium w-24 text-center">Qty</th>
+                                    <th className="px-4 py-3 font-medium">Lantai</th>
+                                    <th className="px-4 py-3 font-medium">Ruang</th>
                                     <th className="px-4 py-3 font-medium">Deskripsi</th>
                                     <th className="px-4 py-3 font-medium w-32 text-center">Butuh Desain?</th>
                                     <th className="px-4 py-3 font-medium w-32 text-center">Progress</th>
@@ -182,14 +191,14 @@ export default function DesignMarketingPage({ params }: { params: Promise<{ id: 
     )
 }
 
-type ItemInput = { name: string, qty: number, description: string, needs_design: boolean };
+type ItemInput = { name: string, qty: number, description: string, needs_design: boolean, floor?: string, room?: string };
 
 function CreateItemDialog({ projectId }: { projectId: string }) {
     const queryClient = useQueryClient();
     const [open, setOpen] = useState(false);
-    const [items, setItems] = useState<ItemInput[]>([{ name: "", qty: 1, description: "", needs_design: true }]);
+    const [items, setItems] = useState<ItemInput[]>([{ name: "", qty: 1, description: "", needs_design: true, floor: "Lantai 1", room: "" }]);
 
-    const addRow = () => setItems([...items, { name: "", qty: 1, description: "", needs_design: true }]);
+    const addRow = () => setItems([...items, { name: "", qty: 1, description: "", needs_design: true, floor: "Lantai 1", room: "" }]);
     const removeRow = (index: number) => setItems(items.filter((_, i) => i !== index));
     const updateItem = (index: number, field: keyof ItemInput, value: string | number | boolean) => {
         const newItems = [...items];
@@ -208,14 +217,16 @@ function CreateItemDialog({ projectId }: { projectId: string }) {
                     name: item.name, 
                     qty: item.qty, 
                     description: item.description,
-                    needs_design: item.needs_design
+                    needs_design: item.needs_design,
+                    floor: item.floor,
+                    room: item.room
                 }))
             );
         },
         onSuccess: () => {
             toast.success("Items added successfully");
             setOpen(false);
-            setItems([{ name: "", qty: 1, description: "", needs_design: true }]);
+            setItems([{ name: "", qty: 1, description: "", needs_design: true, floor: "Lantai 1", room: "" }]);
             queryClient.invalidateQueries({ queryKey: ['design-items', projectId] });
         },
         onError: () => toast.error("Failed to add items")
@@ -228,8 +239,8 @@ function CreateItemDialog({ projectId }: { projectId: string }) {
                     <Plus className="h-4 w-4 mr-2" /> Add Item
                 </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-[1100px]">
-                <DialogHeader>
+            <DialogContent className="min-w-[calc(60vw-2rem)]">
+                <DialogHeader> 
                     <DialogTitle>Add New Item(s)</DialogTitle>
                     <DialogDescription>This will add new items to the project scope.</DialogDescription>
                 </DialogHeader>
@@ -238,8 +249,10 @@ function CreateItemDialog({ projectId }: { projectId: string }) {
                     <div className="flex items-start gap-2 px-1">
                         <Label className="flex-[2] mt-2">Nama Item</Label>
                         <Label className="w-16 text-center mt-2">Qty</Label>
-                        <Label className="flex-[3] mt-2">Deskripsi</Label>
-                        <Label className="w-24 text-center mt-2">Desain?</Label>
+                        <Label className="flex-[1.5] mt-2">Lantai</Label>
+                        <Label className="flex-[1.5] mt-2">Ruang</Label>
+                        <Label className="flex-[2] mt-2">Deskripsi</Label>
+                        <Label className="w-20 text-center mt-2">Desain?</Label>
                         <div className="w-8"></div> {/* Spacer for delete button */}
                     </div>
 
@@ -260,14 +273,32 @@ function CreateItemDialog({ projectId }: { projectId: string }) {
                                     value={item.qty} 
                                     onChange={(e) => updateItem(index, 'qty', Number(e.target.value))} 
                                 />
+                                <div className="flex-[1.5]">
+                                    <Select value={item.floor || "Lantai 1"} onValueChange={(v) => updateItem(index, 'floor', v)}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Pilih Lantai" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {Array.from({ length: 10 }, (_, i) => (
+                                                <SelectItem key={i + 1} value={`Lantai ${i + 1}`}>Lantai {i + 1}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <Input 
+                                    placeholder="e.g. Dapur" 
+                                    className="flex-[1.5]"
+                                    value={item.room || ""} 
+                                    onChange={(e) => updateItem(index, 'room', e.target.value)} 
+                                />
                                 <textarea 
                                     placeholder="Dimension, material, color..." 
-                                    className="flex-[3] min-h-[40px] resize-y rounded-md border border-neutral-200 bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-neutral-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-950"
+                                    className="flex-[2] min-h-[40px] resize-y rounded-md border border-neutral-200 bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-neutral-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-950"
                                     rows={2}
                                     value={item.description} 
                                     onChange={(e) => updateItem(index, 'description', e.target.value)} 
                                 />
-                                <div className="w-24 flex justify-center py-3">
+                                <div className="w-20 flex justify-center py-3">
                                     <Checkbox
                                         checked={item.needs_design}
                                         onCheckedChange={(c) => updateItem(index, 'needs_design', c as boolean)}
@@ -403,6 +434,12 @@ function DesignItemTableRow({ item, index, projectId, isFrozen }: { item: SPHIte
                 {item.qty}
             </td>
             <td className="px-4 py-3">
+                <span className="text-neutral-600">{item.floor || '-'}</span>
+            </td>
+            <td className="px-4 py-3">
+                <span className="text-neutral-600 truncate max-w-[150px] block" title={item.room}>{item.room || '-'}</span>
+            </td>
+            <td className="px-4 py-3">
                 <span className="italic truncate max-w-[200px] block" title={item.specs}>{item.specs || '-'}</span>
             </td>
             <td className="px-4 py-3 align-middle text-center">
@@ -447,6 +484,8 @@ function ItemDialog({ mode, setMode, item, projectId }: { mode: 'view' | 'edit' 
     const [qty, setQty] = useState(item.qty || 1);
     const [specs, setSpecs] = useState(item.specs || "");
     const [needsDesign, setNeedsDesign] = useState(item.needs_design);
+    const [floor, setFloor] = useState(item.floor || "Lantai 1");
+    const [room, setRoom] = useState(item.room || "");
 
     useEffect(() => {
         if (mode) {
@@ -454,11 +493,13 @@ function ItemDialog({ mode, setMode, item, projectId }: { mode: 'view' | 'edit' 
             setQty(item.qty || 1);
             setSpecs(item.specs || "");
             setNeedsDesign(item.needs_design);
+            setFloor(item.floor || "Lantai 1");
+            setRoom(item.room || "");
         }
     }, [mode, item]);
 
     const mutation = useMutation({
-        mutationFn: async () => DesignService.updateItem(projectId, item.id, { name, qty, specs, needs_design: needsDesign }),
+        mutationFn: async () => DesignService.updateItem(projectId, item.id, { name, qty, specs, needs_design: needsDesign, floor, room }),
         onSuccess: () => {
             toast.success("Item berhasil diperbarui");
             setMode(null);
@@ -483,10 +524,27 @@ function ItemDialog({ mode, setMode, item, projectId }: { mode: 'view' | 'edit' 
                         <Label>Nama Item</Label>
                         <Input readOnly={isView} value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Master Bedroom Wardrobe" />
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-3 gap-4">
                         <div className="space-y-2">
                             <Label>Quantity</Label>
                             <Input readOnly={isView} type="number" min={1} value={qty} onChange={(e) => setQty(Number(e.target.value))} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Lantai</Label>
+                            <Select disabled={isView} value={floor} onValueChange={setFloor}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Pilih Lantai" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {Array.from({ length: 10 }, (_, i) => (
+                                        <SelectItem key={i + 1} value={`Lantai ${i + 1}`}>Lantai {i + 1}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Ruang</Label>
+                            <Input readOnly={isView} value={room} onChange={(e) => setRoom(e.target.value)} placeholder="e.g. Dapur" />
                         </div>
                     </div>
                     <div className="space-y-2">
