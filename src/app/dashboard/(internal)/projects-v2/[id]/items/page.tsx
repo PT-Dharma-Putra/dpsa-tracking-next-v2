@@ -47,6 +47,13 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
@@ -132,7 +139,67 @@ export default function ProjectItemsPage() {
         uploadSpdMutation.mutate({ file: spdFile, date: spdDate })
     }
 
+    const [sphFile, setSphFile] = React.useState<File | null>(null)
+    const [sphNumber, setSphNumber] = React.useState<string>("")
+
+    const uploadSphMutation = useMutation({
+        mutationFn: ({ file, number }: { file: File, number: string }) => 
+            projectV2Service.uploadSPH(projectId, file, number),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["projects-v2", projectId] })
+            toast.success("SPH uploaded successfully")
+            setSphFile(null)
+            setSphNumber("")
+        },
+        onError: () => {
+            toast.error("Failed to upload SPH")
+        }
+    })
+
+    const handleSphUpload = () => {
+        if (!sphFile || !sphNumber) {
+            toast.error("Please provide both file and SPH number")
+            return
+        }
+        uploadSphMutation.mutate({ file: sphFile, number: sphNumber })
+    }
+
+    const [accSentDate, setAccSentDate] = React.useState<string>(format(new Date(), "yyyy-MM-dd"))
+    const [accDoneDate, setAccDoneDate] = React.useState<string>("")
+    const [accStatus, setAccStatus] = React.useState<string>("In Review")
+
+    const updateAccMutation = useMutation({
+        mutationFn: (payload: { tanggal_kirim?: string; tanggal_acc?: string; status: string }) => 
+            projectV2Service.updateAccDesign(projectId, payload),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["projects-v2", projectId] })
+            toast.success("ACC Design updated successfully")
+        },
+        onError: () => {
+            toast.error("Failed to update ACC Design")
+        }
+    })
+
+    const handleAccUpdate = () => {
+        updateAccMutation.mutate({
+            tanggal_kirim: accSentDate,
+            tanggal_acc: accDoneDate || undefined,
+            status: accStatus
+        })
+    }
+
     const existingSpd = project?.designs?.[0]
+    const existingSph = project?.sph
+    const existingAcc = existingSpd?.acc_design
+
+    // Sync state when project data loads
+    React.useEffect(() => {
+        if (existingAcc) {
+            if (existingAcc.tanggal_kirim) setAccSentDate(existingAcc.tanggal_kirim)
+            if (existingAcc.tanggal_acc) setAccDoneDate(existingAcc.tanggal_acc)
+            setAccStatus(existingAcc.status)
+        }
+    }, [existingAcc])
 
     if (isLoadingProject) {
         return (
@@ -192,65 +259,169 @@ export default function ProjectItemsPage() {
                         </div>
                     </div>
 
-                    <div className="space-y-4 pt-6 mt-6 border-t border-neutral-100">
-                        <div className="flex flex-col md:flex-row md:items-end gap-6">
-                            <div className="flex-1 space-y-2">
-                                <Label htmlFor="spd-file" className="text-xs font-bold text-neutral-500 uppercase tracking-widest">
-                                    Upload SPD (Surat Perintah Design)
-                                </Label>
-                                <div className="flex items-center gap-3">
-                                    <Input 
-                                        id="spd-file"
-                                        type="file" 
-                                        onChange={(e) => setSpdFile(e.target.files?.[0] || null)}
-                                        className="h-11 border-neutral-200 bg-white/50 shadow-sm focus:ring-orange-500 transition-all hover:bg-white"
-                                    />
-                                    <Input 
-                                        type="date"
-                                        value={spdDate}
-                                        onChange={(e) => setSpdDate(e.target.value)}
-                                        className="w-[200px] h-11 border-neutral-200 bg-white/50 shadow-sm focus:ring-orange-500 transition-all hover:bg-white"
-                                    />
-                                    <Button 
-                                        onClick={handleSpdUpload} 
-                                        disabled={!spdFile || uploadSpdMutation.isPending}
-                                        className="h-11 px-6 bg-orange-600 hover:bg-orange-700 text-white shadow-lg shadow-orange-200 transition-all active:scale-95 disabled:opacity-50"
-                                    >
-                                        {uploadSpdMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4 mr-2" />}
-                                        Upload
-                                    </Button>
+                    <div className="space-y-6 pt-6 mt-6 border-t border-neutral-100">
+                        <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-8">
+                            {/* SPD SECTION */}
+                            <div className="space-y-4 p-5 rounded-2xl bg-neutral-50/50 border border-neutral-100">
+                                <div className="space-y-3">
+                                    <Label htmlFor="spd-file" className="text-xs font-bold text-neutral-500 uppercase tracking-widest flex items-center gap-2">
+                                        <div className="h-1.5 w-1.5 rounded-full bg-orange-500" />
+                                        1. Upload SPD
+                                    </Label>
+                                    <div className="flex flex-col gap-3">
+                                        <div className="flex gap-2">
+                                            <Input 
+                                                id="spd-file"
+                                                type="file" 
+                                                onChange={(e) => setSpdFile(e.target.files?.[0] || null)}
+                                                className="h-10 border-neutral-200 bg-white shadow-sm focus:ring-orange-500 transition-all"
+                                            />
+                                            <Input 
+                                                type="date"
+                                                value={spdDate}
+                                                onChange={(e) => setSpdDate(e.target.value)}
+                                                className="w-[140px] h-10 border-neutral-200 bg-white shadow-sm focus:ring-orange-500 transition-all"
+                                            />
+                                        </div>
+                                        <Button 
+                                            onClick={handleSpdUpload} 
+                                            disabled={!spdFile || uploadSpdMutation.isPending}
+                                            className="w-full h-10 bg-orange-600 hover:bg-orange-700 text-white shadow-md shadow-orange-100 transition-all active:scale-95"
+                                        >
+                                            {uploadSpdMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4 mr-2" />}
+                                            Upload SPD
+                                        </Button>
+                                    </div>
+                                </div>
+
+                                {existingSpd?.spd_file && (
+                                    <div className="p-3 rounded-xl bg-white border border-orange-100 flex items-center justify-between shadow-sm">
+                                        <div className="flex items-center gap-3">
+                                            <div className="h-8 w-8 rounded-lg bg-orange-50 flex items-center justify-center text-orange-600">
+                                                <FileText className="h-4 w-4" />
+                                            </div>
+                                            <div>
+                                                <p className="text-xs font-bold text-neutral-800 line-clamp-1">SPD Available</p>
+                                                <p className="text-[10px] text-neutral-500">{format(new Date(existingSpd.tanggal || existingSpd.created_at), "MMM d, yyyy")}</p>
+                                            </div>
+                                        </div>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-orange-600" asChild>
+                                            <a href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/storage/${existingSpd.spd_file}`} target="_blank" rel="noopener noreferrer">
+                                                <FileDown className="h-4 w-4" />
+                                            </a>
+                                        </Button>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* ACC DESIGN SECTION */}
+                            <div className="space-y-4 p-5 rounded-2xl bg-neutral-50/50 border border-neutral-100">
+                                <div className="space-y-3">
+                                    <Label className="text-xs font-bold text-neutral-500 uppercase tracking-widest flex items-center gap-2">
+                                        <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                                        2. ACC Design
+                                    </Label>
+                                    <div className="flex flex-col gap-3">
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <div className="space-y-1">
+                                                <span className="text-[10px] font-medium text-neutral-400 ml-1">Tgl Kirim</span>
+                                                <Input 
+                                                    type="date"
+                                                    value={accSentDate}
+                                                    onChange={(e) => setAccSentDate(e.target.value)}
+                                                    className="h-10 border-neutral-200 bg-white shadow-sm focus:ring-emerald-500"
+                                                />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <span className="text-[10px] font-medium text-neutral-400 ml-1">Status</span>
+                                                <Select value={accStatus} onValueChange={setAccStatus}>
+                                                    <SelectTrigger className="h-10 border-neutral-200 bg-white shadow-sm focus:ring-emerald-500">
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="In Review">In Review</SelectItem>
+                                                        <SelectItem value="Approved">Approved</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                        </div>
+                                        
+                                        {accStatus === "Approved" && (
+                                            <div className="space-y-1 animate-in fade-in slide-in-from-top-2">
+                                                <span className="text-[10px] font-medium text-neutral-400 ml-1">Tgl Approved</span>
+                                                <Input 
+                                                    type="date"
+                                                    value={accDoneDate}
+                                                    onChange={(e) => setAccDoneDate(e.target.value)}
+                                                    className="h-10 border-neutral-200 bg-white shadow-sm focus:ring-emerald-500"
+                                                />
+                                            </div>
+                                        )}
+
+                                        <Button 
+                                            onClick={handleAccUpdate} 
+                                            disabled={updateAccMutation.isPending}
+                                            className="w-full h-10 bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-100 transition-all active:scale-95"
+                                        >
+                                            {updateAccMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4 mr-2" />}
+                                            Update ACC Status
+                                        </Button>
+                                    </div>
                                 </div>
                             </div>
 
-                            {existingSpd?.spd_file && (
-                                <div className="flex-1 p-5 rounded-2xl bg-gradient-to-r from-orange-50 to-orange-100/50 border border-orange-200/50 flex items-center justify-between group animate-in fade-in slide-in-from-top-4 duration-700 shadow-sm">
-                                    <div className="flex items-center gap-4">
-                                        <div className="h-12 w-12 rounded-2xl bg-white flex items-center justify-center text-orange-600 shadow-sm border border-orange-100">
-                                            <FileText className="h-6 w-6" />
+                            {/* SPH SECTION */}
+                            <div className="space-y-4 p-5 rounded-2xl bg-neutral-50/50 border border-neutral-100">
+                                <div className="space-y-3">
+                                    <Label htmlFor="sph-file" className="text-xs font-bold text-neutral-500 uppercase tracking-widest flex items-center gap-2">
+                                        <div className="h-1.5 w-1.5 rounded-full bg-blue-500" />
+                                        3. Upload SPH
+                                    </Label>
+                                    <div className="flex flex-col gap-3">
+                                        <div className="flex gap-2">
+                                            <Input 
+                                                id="sph-file"
+                                                type="file" 
+                                                onChange={(e) => setSphFile(e.target.files?.[0] || null)}
+                                                className="h-10 border-neutral-200 bg-white shadow-sm focus:ring-blue-500 transition-all"
+                                            />
+                                            <Input 
+                                                placeholder="No SPH"
+                                                value={sphNumber}
+                                                onChange={(e) => setSphNumber(e.target.value)}
+                                                className="w-[120px] h-10 border-neutral-200 bg-white shadow-sm focus:ring-blue-500 transition-all"
+                                            />
                                         </div>
-                                        <div>
-                                            <p className="text-sm font-extrabold text-neutral-800">SPD File Available</p>
-                                            <p className="text-[11px] text-neutral-500 flex items-center gap-1.5 mt-0.5">
-                                                <Calendar className="h-3 w-3" />
-                                                <span className="font-medium text-neutral-700">
-                                                    {existingSpd.tanggal ? format(new Date(existingSpd.tanggal), "MMM d, yyyy") : "-"}
-                                                </span>
-                                            </p>
-                                        </div>
+                                        <Button 
+                                            onClick={handleSphUpload} 
+                                            disabled={!sphFile || !sphNumber || uploadSphMutation.isPending}
+                                            className="w-full h-10 bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-100 transition-all active:scale-95"
+                                        >
+                                            {uploadSphMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4 mr-2" />}
+                                            Upload SPH
+                                        </Button>
                                     </div>
-                                    <Button 
-                                        variant="ghost" 
-                                        size="sm" 
-                                        asChild 
-                                        className="h-10 px-4 bg-white/80 hover:bg-orange-600 hover:text-white border border-orange-200 text-orange-700 transition-all hover:shadow-md active:scale-95"
-                                    >
-                                        <a href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/storage/${existingSpd.spd_file}`} target="_blank" rel="noopener noreferrer">
-                                            <FileDown className="h-4 w-4 mr-2" />
-                                            Download
-                                        </a>
-                                    </Button>
                                 </div>
-                            )}
+
+                                {existingSph?.file && (
+                                    <div className="p-3 rounded-xl bg-white border border-blue-100 flex items-center justify-between shadow-sm">
+                                        <div className="flex items-center gap-3">
+                                            <div className="h-8 w-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
+                                                <FileText className="h-4 w-4" />
+                                            </div>
+                                            <div>
+                                                <p className="text-xs font-bold text-neutral-800 line-clamp-1">{existingSph.nomor_sph}</p>
+                                                <p className="text-[10px] text-neutral-500">Document Uploaded</p>
+                                            </div>
+                                        </div>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600" asChild>
+                                            <a href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/storage/${existingSph.file}`} target="_blank" rel="noopener noreferrer">
+                                                <FileDown className="h-4 w-4" />
+                                            </a>
+                                        </Button>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </CardContent>

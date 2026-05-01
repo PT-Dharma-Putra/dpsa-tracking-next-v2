@@ -17,7 +17,18 @@ export interface ProjectV2 {
         id: number;
         spd_file: string | null;
         tanggal: string | null;
+        acc_design?: {
+            id: number;
+            tanggal_kirim: string | null;
+            tanggal_acc: string | null;
+            status: string;
+        };
     }>;
+    sph?: {
+        id: number;
+        nomor_sph: string | null;
+        file: string | null;
+    };
 }
 
 export interface ProjectV2Response {
@@ -95,6 +106,21 @@ export const projectV2Service = {
         const { data } = await apiClient.post(`/projects-v2/${projectId}/upload-spd`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
+        return data;
+    },
+
+    uploadSPH: async (projectId: number, file: File, nomor_sph: string) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('nomor_sph', nomor_sph);
+        const { data } = await apiClient.post(`/projects-v2/${projectId}/upload-sph`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        return data;
+    },
+
+    updateAccDesign: async (projectId: number, payload: { tanggal_kirim?: string; tanggal_acc?: string; status: string }) => {
+        const { data } = await apiClient.post(`/projects-v2/${projectId}/update-acc-design`, payload);
         return data;
     }
 }
