@@ -13,7 +13,10 @@ import {
     Building2,
     User,
     Calendar,
-    FileText
+    FileText,
+    Upload,
+    FileDown,
+    CheckCircle2
 } from "lucide-react"
 import { format } from "date-fns"
 
@@ -44,6 +47,8 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 
 import { projectV2Service, ProjectItemV2 } from "@/features/projects/services/project-v2-service"
@@ -103,6 +108,32 @@ export default function ProjectItemsPage() {
         }
     }
 
+    const [spdFile, setSpdFile] = React.useState<File | null>(null)
+    const [spdDate, setSpdDate] = React.useState<string>(format(new Date(), "yyyy-MM-dd"))
+
+    const uploadSpdMutation = useMutation({
+        mutationFn: ({ file, date }: { file: File, date: string }) => 
+            projectV2Service.uploadSPD(projectId, file, date),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["projects-v2", projectId] })
+            toast.success("SPD uploaded successfully")
+            setSpdFile(null)
+        },
+        onError: () => {
+            toast.error("Failed to upload SPD")
+        }
+    })
+
+    const handleSpdUpload = () => {
+        if (!spdFile) {
+            toast.error("Please select a file")
+            return
+        }
+        uploadSpdMutation.mutate({ file: spdFile, date: spdDate })
+    }
+
+    const existingSpd = project?.designs?.[0]
+
     if (isLoadingProject) {
         return (
             <div className="flex h-[400px] items-center justify-center">
@@ -158,6 +189,68 @@ export default function ProjectItemsPage() {
                             <p className="font-semibold text-neutral-900">
                                 {project.deadline ? format(new Date(project.deadline), "MMM d, yyyy") : "-"}
                             </p>
+                        </div>
+                    </div>
+
+                    <div className="space-y-4 pt-6 mt-6 border-t border-neutral-100">
+                        <div className="flex flex-col md:flex-row md:items-end gap-6">
+                            <div className="flex-1 space-y-2">
+                                <Label htmlFor="spd-file" className="text-xs font-bold text-neutral-500 uppercase tracking-widest">
+                                    Upload SPD (Surat Perintah Design)
+                                </Label>
+                                <div className="flex items-center gap-3">
+                                    <Input 
+                                        id="spd-file"
+                                        type="file" 
+                                        onChange={(e) => setSpdFile(e.target.files?.[0] || null)}
+                                        className="h-11 border-neutral-200 bg-white/50 shadow-sm focus:ring-orange-500 transition-all hover:bg-white"
+                                    />
+                                    <Input 
+                                        type="date"
+                                        value={spdDate}
+                                        onChange={(e) => setSpdDate(e.target.value)}
+                                        className="w-[200px] h-11 border-neutral-200 bg-white/50 shadow-sm focus:ring-orange-500 transition-all hover:bg-white"
+                                    />
+                                    <Button 
+                                        onClick={handleSpdUpload} 
+                                        disabled={!spdFile || uploadSpdMutation.isPending}
+                                        className="h-11 px-6 bg-orange-600 hover:bg-orange-700 text-white shadow-lg shadow-orange-200 transition-all active:scale-95 disabled:opacity-50"
+                                    >
+                                        {uploadSpdMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4 mr-2" />}
+                                        Upload
+                                    </Button>
+                                </div>
+                            </div>
+
+                            {existingSpd?.spd_file && (
+                                <div className="flex-1 p-5 rounded-2xl bg-gradient-to-r from-orange-50 to-orange-100/50 border border-orange-200/50 flex items-center justify-between group animate-in fade-in slide-in-from-top-4 duration-700 shadow-sm">
+                                    <div className="flex items-center gap-4">
+                                        <div className="h-12 w-12 rounded-2xl bg-white flex items-center justify-center text-orange-600 shadow-sm border border-orange-100">
+                                            <FileText className="h-6 w-6" />
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-extrabold text-neutral-800">SPD File Available</p>
+                                            <p className="text-[11px] text-neutral-500 flex items-center gap-1.5 mt-0.5">
+                                                <Calendar className="h-3 w-3" />
+                                                <span className="font-medium text-neutral-700">
+                                                    {existingSpd.tanggal ? format(new Date(existingSpd.tanggal), "MMM d, yyyy") : "-"}
+                                                </span>
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <Button 
+                                        variant="ghost" 
+                                        size="sm" 
+                                        asChild 
+                                        className="h-10 px-4 bg-white/80 hover:bg-orange-600 hover:text-white border border-orange-200 text-orange-700 transition-all hover:shadow-md active:scale-95"
+                                    >
+                                        <a href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/storage/${existingSpd.spd_file}`} target="_blank" rel="noopener noreferrer">
+                                            <FileDown className="h-4 w-4 mr-2" />
+                                            Download
+                                        </a>
+                                    </Button>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </CardContent>

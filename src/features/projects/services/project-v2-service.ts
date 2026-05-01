@@ -13,6 +13,11 @@ export interface ProjectV2 {
     };
     created_at: string;
     updated_at: string;
+    designs?: Array<{
+        id: number;
+        spd_file: string | null;
+        tanggal: string | null;
+    }>;
 }
 
 export interface ProjectV2Response {
@@ -80,6 +85,16 @@ export const projectV2Service = {
 
     getMDLItems: async (params?: { search?: string; page?: number; per_page?: number }) => {
         const { data } = await apiClient.get<any>('/mdl', { params });
+        return data;
+    },
+
+    uploadSPD: async (projectId: number, file: File, tanggal: string) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('tanggal', tanggal);
+        const { data } = await apiClient.post(`/projects-v2/${projectId}/upload-spd`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
         return data;
     }
 }
