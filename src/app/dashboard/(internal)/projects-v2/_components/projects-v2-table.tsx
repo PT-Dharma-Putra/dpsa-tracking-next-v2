@@ -365,10 +365,12 @@ export function ProjectsV2Table({ showSPD = false }: { showSPD?: boolean }) {
                                                 </Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
-                                                <DropdownMenuItem onClick={() => router.push(`/dashboard/projects-v2/${project.id}/items`)}>
-                                                    <Plus className="mr-2 h-4 w-4" />
-                                                    Item
-                                                </DropdownMenuItem>
+                                                {showSPD && (
+                                                    <DropdownMenuItem onClick={() => router.push(`/dashboard/projects-v2/perintah-kerja/${project.id}/detail`)}>
+                                                        <Plus className="mr-2 h-4 w-4" />
+                                                        Detail
+                                                    </DropdownMenuItem>
+                                                )}
                                                 <DropdownMenuSeparator />
                                                 <DropdownMenuItem onClick={() => handleEdit(project)}>
                                                     <Pencil className="mr-2 h-4 w-4" />

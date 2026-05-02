@@ -39,6 +39,19 @@ export interface ProjectV2 {
     };
 }
 
+export interface TahapDesign {
+    id: number;
+    nama: string;
+}
+
+export interface DesignProgres {
+    id: number;
+    design_id: number;
+    tahap_design_id: number;
+    tanggal_selesai: string | null;
+    tahap_design?: TahapDesign;
+}
+
 export interface ProjectV2Response {
     data: ProjectV2[];
     current_page: number;
@@ -139,6 +152,31 @@ export const projectV2Service = {
         const { data } = await apiClient.post(`/projects-v2/${projectId}/upload-spk`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
+        return data;
+    },
+
+    getDesignStages: async () => {
+        const { data } = await apiClient.get<TahapDesign[]>('/design-stages');
+        return data;
+    },
+
+    addDesignStage: async (nama: string) => {
+        const { data } = await apiClient.post<TahapDesign>('/design-stages', { nama });
+        return data;
+    },
+
+    getDesignProgress: async (designId: number) => {
+        const { data } = await apiClient.get<DesignProgres[]>(`/designs/${designId}/progress`);
+        return data;
+    },
+
+    updateDesignProgress: async (designId: number, payload: { tahap_design_id: number; tanggal_selesai?: string | null }) => {
+        const { data } = await apiClient.post<DesignProgres>(`/designs/${designId}/progress`, payload);
+        return data;
+    },
+
+    deleteDesignProgress: async (progressId: number) => {
+        const { data } = await apiClient.delete(`/design-progress/${progressId}`);
         return data;
     }
 }
