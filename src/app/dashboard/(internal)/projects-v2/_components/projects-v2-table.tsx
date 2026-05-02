@@ -62,7 +62,7 @@ import { projectV2Service, ProjectV2 } from "@/features/projects/services/projec
 import { ClientService } from "@/features/clients/services/client-service"
 import { ProjectFormDialog } from "./project-form-dialog"
 
-export function ProjectsV2Table() {
+export function ProjectsV2Table({ showSPD = false }: { showSPD?: boolean }) {
     const router = useRouter()
     const queryClient = useQueryClient()
     const [page, setPage] = React.useState(1)
@@ -299,6 +299,8 @@ export function ProjectsV2Table() {
                                     )}
                                 </div>
                             </TableHead>
+                            <TableHead>SPK Number</TableHead>
+                            {showSPD && <TableHead>SPD</TableHead>}
                             <TableHead className="w-[100px] text-right">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -331,6 +333,29 @@ export function ProjectsV2Table() {
                                     <TableCell>
                                         {project.deadline ? format(new Date(project.deadline), "MMM d, yyyy") : "-"}
                                     </TableCell>
+                                    <TableCell>{project.spk_number || "-"}</TableCell>
+                                    {showSPD && (
+                                        <TableCell>
+                                            {project.designs?.[0]?.spd_file ? (
+                                                <div className="flex items-center gap-2">
+                                                    <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
+                                                        Uploaded
+                                                    </Badge>
+                                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-orange-600" asChild>
+                                                        <a 
+                                                            href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/storage/${project.designs[0].spd_file}`} 
+                                                            target="_blank" 
+                                                            rel="noopener noreferrer"
+                                                        >
+                                                            <ArrowDown className="h-3 w-3" />
+                                                        </a>
+                                                    </Button>
+                                                </div>
+                                            ) : (
+                                                <span className="text-muted-foreground italic text-[10px]">Not Uploaded</span>
+                                            )}
+                                        </TableCell>
+                                    )}
                                     <TableCell className="text-right">
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>

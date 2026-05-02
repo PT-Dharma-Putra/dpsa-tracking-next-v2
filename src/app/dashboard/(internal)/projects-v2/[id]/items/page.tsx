@@ -256,7 +256,7 @@ export default function ProjectItemsPage() {
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                         <div className="space-y-1">
                             <div className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                                 <Building2 className="h-4 w-4" /> Project Name
@@ -274,6 +274,12 @@ export default function ProjectItemsPage() {
                                 <FileText className="h-4 w-4" /> Description
                             </div>
                             <p className="text-neutral-700">{project.description || "-"}</p>
+                        </div>
+                        <div className="space-y-1">
+                            <div className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                                <Calendar className="h-4 w-4" /> SPK Number
+                            </div>
+                            <p className="text-neutral-700">{project.spk_number || "-"}</p>
                         </div>
                         <div className="space-y-1">
                             <div className="text-sm font-medium text-muted-foreground flex items-center gap-2">

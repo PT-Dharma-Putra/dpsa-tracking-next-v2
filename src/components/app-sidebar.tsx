@@ -92,13 +92,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 url: "#",
                 items: [
                     {
-                    title: "Perintah Kerja",
-                    url: "#",
-                    },
-                    {
-                    title: "List Furnitur",
-                    url: "#",
-                    isActive: true,
+                    title: "Project V2 | Perintah Kerja",
+                    url: "/dashboard/projects-v2/perintah-kerja",
                     },
                 ],
             },

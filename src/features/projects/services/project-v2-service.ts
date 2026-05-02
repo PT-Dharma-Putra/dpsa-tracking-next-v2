@@ -4,6 +4,7 @@ export interface ProjectV2 {
     id: number;
     name: string;
     description: string | null;
+    spk_number: string | null;
     client_id: number;
     deadline: string | null;
     status: string;
