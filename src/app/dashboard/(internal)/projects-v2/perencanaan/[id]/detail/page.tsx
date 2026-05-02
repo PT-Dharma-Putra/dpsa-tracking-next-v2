@@ -62,6 +62,7 @@ import { toast } from "sonner"
 
 import { projectV2Service, ProjectItemV2, TahapDesign, DesignProgres } from "@/features/projects/services/project-v2-service"
 import { ProjectItemFormDialog } from "../../../_components/project-item-form-dialog"
+import { Badge } from "@/components/ui/badge"
 
 export default function PerencanaanDetailPage() {
     const params = useParams()
@@ -96,6 +97,11 @@ export default function PerencanaanDetailPage() {
         queryKey: ["design-progress", designId],
         queryFn: () => designId ? projectV2Service.getDesignProgress(designId) : Promise.resolve([]),
         enabled: !!designId
+    })
+
+    const { data: divisions } = useQuery({
+        queryKey: ["divisions"],
+        queryFn: () => projectV2Service.getDivisions(),
     })
 
     // Mutations
@@ -221,6 +227,21 @@ export default function PerencanaanDetailPage() {
         setGkFile(null)
         setIsGkDialogOpen(true)
     }
+
+    const [editingDivisiItemId, setEditingDivisiItemId] = React.useState<number | null>(null)
+
+    const updateItemDivisiMutation = useMutation({
+        mutationFn: ({ itemId, divisiId }: { itemId: number, divisiId: number }) => 
+            projectV2Service.updateProjectItem(itemId, { divisi_id: divisiId }),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["project-v2-items", projectId] })
+            toast.success("Division assigned successfully")
+            setEditingDivisiItemId(null)
+        },
+        onError: () => {
+            toast.error("Failed to assign division")
+        }
+    })
 
     React.useEffect(() => {
         if (project?.list_furnitur) {
@@ -533,6 +554,7 @@ export default function PerencanaanDetailPage() {
                                 <TableHead>Dimensions</TableHead>
                                 <TableHead>Qty</TableHead>
                                 <TableHead>Gambar Kerja</TableHead>
+                                <TableHead>PO Divisi</TableHead>
                                 <TableHead className="w-[80px] text-right">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -584,6 +606,49 @@ export default function PerencanaanDetailPage() {
                                                     <Upload className="h-3 w-3 mr-1" />
                                                     Upload
                                                 </Button>
+                                            )}
+                                        </TableCell>
+                                        <TableCell>
+                                            {item.divisi && editingDivisiItemId !== item.id ? (
+                                                <div className="flex items-center gap-2 group">
+                                                    <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 font-bold">
+                                                        {item.divisi.nama}
+                                                    </Badge>
+                                                    <Button 
+                                                        variant="ghost" 
+                                                        size="icon" 
+                                                        className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                        onClick={() => setEditingDivisiItemId(item.id)}
+                                                    >
+                                                        <Pencil className="h-3 w-3 text-neutral-400" />
+                                                    </Button>
+                                                </div>
+                                            ) : (
+                                                <div className="flex items-center gap-2">
+                                                    <Select 
+                                                        defaultValue={item.divisi_id?.toString()}
+                                                        onValueChange={(val) => updateItemDivisiMutation.mutate({ itemId: item.id, divisiId: parseInt(val) })}
+                                                    >
+                                                        <SelectTrigger className="h-7 text-[10px] w-[100px] bg-white border-neutral-200">
+                                                            <SelectValue placeholder="Pilih" />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            {divisions?.map(d => (
+                                                                <SelectItem key={d.id} value={d.id.toString()}>{d.nama}</SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                    {editingDivisiItemId === item.id && (
+                                                        <Button 
+                                                            variant="ghost" 
+                                                            size="icon" 
+                                                            className="h-6 w-6 text-neutral-400"
+                                                            onClick={() => setEditingDivisiItemId(null)}
+                                                        >
+                                                            <Trash2 className="h-3 w-3" />
+                                                        </Button>
+                                                    )}
+                                                </div>
                                             )}
                                         </TableCell>
                                         <TableCell className="text-right">

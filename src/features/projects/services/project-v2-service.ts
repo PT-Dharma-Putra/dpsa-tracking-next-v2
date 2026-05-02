@@ -210,6 +210,20 @@ export const projectV2Service = {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
         return data;
+    },
+
+    getDivisions: async () => {
+        const { data } = await apiClient.get<Divisi[]>('/divisi');
+        return data;
+    },
+
+    updateProjectItemDivisi: async (itemId: number, divisiId: number) => {
+        const { data } = await apiClient.put<ProjectItemV2>(`/projects-v2-items/${itemId}`, { 
+            divisi_id: divisiId,
+            // we need to send other required fields too if the backend validation requires them
+            // but for now let's see if partial update works or if I need to fetch the item first
+        });
+        return data;
     }
 }
 
@@ -237,6 +251,7 @@ export interface ProjectItemV2 {
     satuan: string | null;
     harga: number | null;
     jumlah: number;
+    divisi_id: number | null;
     created_at: string;
     updated_at: string;
     gambar_kerja?: {
@@ -245,4 +260,11 @@ export interface ProjectItemV2 {
         tanggal_selesai: string | null;
         file: string | null;
     };
+    divisi?: Divisi;
+}
+
+export interface Divisi {
+    id: number;
+    nama: string;
+    nama_panjang: string | null;
 }
