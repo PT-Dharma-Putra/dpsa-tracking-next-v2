@@ -10,8 +10,6 @@ import {
     MoreHorizontal,
     Loader2,
     ArrowLeft,
-    Building2,
-    User,
     Calendar,
     FileText,
     Activity,
@@ -65,7 +63,7 @@ import { toast } from "sonner"
 import { projectV2Service, ProjectItemV2, TahapDesign, DesignProgres } from "@/features/projects/services/project-v2-service"
 import { ProjectItemFormDialog } from "../../../_components/project-item-form-dialog"
 
-export default function DesignerDetailPage() {
+export default function PerencanaanDetailPage() {
     const params = useParams()
     const router = useRouter()
     const queryClient = useQueryClient()
@@ -252,8 +250,8 @@ export default function DesignerDetailPage() {
                     <ArrowLeft className="h-5 w-5" />
                 </Button>
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Perintah Kerja Detail</h1>
-                    <p className="text-sm text-muted-foreground">Designer View - Design Progress Tracking</p>
+                    <h1 className="text-2xl font-bold tracking-tight">Perencanaan Detail</h1>
+                    <p className="text-sm text-muted-foreground">PPIC View - Planning & Drawing Progress</p>
                 </div>
             </div>
 

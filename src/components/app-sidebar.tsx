@@ -88,12 +88,22 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 ],
             },
             {
-                title: "Designer",
+                title: "Studio",
                 url: "#",
                 items: [
                     {
-                    title: "Project V2 | Perintah Kerja",
+                    title: "Daftar Perintah Kerja",
                     url: "/dashboard/projects-v2/perintah-kerja",
+                    },
+                ],
+            },
+            {
+                title: "PPIC",
+                url: "#",
+                items: [
+                    {
+                    title: "Project V2 | PPIC",
+                    url: "/dashboard/projects-v2/perencanaan",
                     },
                 ],
             },
@@ -199,10 +209,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                         <CollapsibleContent>
                             <SidebarGroupContent>
                             <SidebarMenu>
-                                {item.items.map((item) => (
-                                <SidebarMenuItem key={item.title}>
-                                    <SidebarMenuButton asChild isActive={item.isActive}>
-                                    <a href={item.url}>{item.title}</a>
+                                {item.items.map((subItem) => (
+                                <SidebarMenuItem key={subItem.title}>
+                                    <SidebarMenuButton asChild isActive={isActive(subItem.url)}>
+                                    <a href={subItem.url}>{subItem.title}</a>
                                     </SidebarMenuButton>
                                 </SidebarMenuItem>
                                 ))}

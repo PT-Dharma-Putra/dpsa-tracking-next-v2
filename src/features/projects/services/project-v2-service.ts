@@ -15,6 +15,7 @@ export interface ProjectV2 {
     created_at: string;
     updated_at: string;
     designs?: Array<{
+        created_at: string | number | Date;
         id: number;
         spd_file: string | null;
         tanggal: string | null;
@@ -197,6 +198,18 @@ export const projectV2Service = {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
         return data;
+    },
+
+    uploadGambarKerja: async (itemId: number, payload: { file?: File; tanggal_mulai?: string; tanggal_selesai?: string }) => {
+        const formData = new FormData();
+        if (payload.file) formData.append('file', payload.file);
+        if (payload.tanggal_mulai) formData.append('tanggal_mulai', payload.tanggal_mulai);
+        if (payload.tanggal_selesai) formData.append('tanggal_selesai', payload.tanggal_selesai);
+
+        const { data } = await apiClient.post(`/projects-v2-items/${itemId}/upload-gambar-kerja`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        return data;
     }
 }
 
@@ -226,4 +239,10 @@ export interface ProjectItemV2 {
     jumlah: number;
     created_at: string;
     updated_at: string;
+    gambar_kerja?: {
+        id: number;
+        tanggal_mulai: string | null;
+        tanggal_selesai: string | null;
+        file: string | null;
+    };
 }

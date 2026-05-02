@@ -62,7 +62,7 @@ import { projectV2Service, ProjectV2 } from "@/features/projects/services/projec
 import { ClientService } from "@/features/clients/services/client-service"
 import { ProjectFormDialog } from "./project-form-dialog"
 
-export function ProjectsV2Table({ showSPD = false }: { showSPD?: boolean }) {
+export function ProjectsV2Table({ showSPD = false, showPerencanaan = false }: { showSPD?: boolean, showPerencanaan?: boolean }) {
     const router = useRouter()
     const queryClient = useQueryClient()
     const [page, setPage] = React.useState(1)
@@ -395,8 +395,18 @@ export function ProjectsV2Table({ showSPD = false }: { showSPD?: boolean }) {
                                                 </Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
+                                                <DropdownMenuItem onClick={() => router.push(`/dashboard/projects-v2/${project.id}/items`)}>
+                                                    <Plus className="mr-2 h-4 w-4" />
+                                                    Item
+                                                </DropdownMenuItem>
                                                 {showSPD && (
                                                     <DropdownMenuItem onClick={() => router.push(`/dashboard/projects-v2/perintah-kerja/${project.id}/detail`)}>
+                                                        <Plus className="mr-2 h-4 w-4" />
+                                                        Detail
+                                                    </DropdownMenuItem>
+                                                )}
+                                                {showPerencanaan && (
+                                                    <DropdownMenuItem onClick={() => router.push(`/dashboard/projects-v2/perencanaan/${project.id}/detail`)}>
                                                         <Plus className="mr-2 h-4 w-4" />
                                                         Detail
                                                     </DropdownMenuItem>
