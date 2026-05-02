@@ -300,7 +300,13 @@ export function ProjectsV2Table({ showSPD = false }: { showSPD?: boolean }) {
                                 </div>
                             </TableHead>
                             <TableHead>SPK Number</TableHead>
-                            {showSPD && <TableHead>SPD</TableHead>}
+                            {showSPD && (
+                                <>
+                                    <TableHead>SPD</TableHead>
+                                    <TableHead>Desain</TableHead>
+                                    <TableHead>List Furnitur</TableHead>
+                                </>
+                            )}
                             <TableHead className="w-[100px] text-right">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -335,26 +341,50 @@ export function ProjectsV2Table({ showSPD = false }: { showSPD?: boolean }) {
                                     </TableCell>
                                     <TableCell>{project.spk_number || "-"}</TableCell>
                                     {showSPD && (
-                                        <TableCell>
-                                            {project.designs?.[0]?.spd_file ? (
-                                                <div className="flex items-center gap-2">
-                                                    <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
-                                                        Uploaded
+                                        <>
+                                            <TableCell>
+                                                {project.designs?.[0]?.spd_file ? (
+                                                    <div className="flex items-center gap-2">
+                                                        <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
+                                                            Uploaded
+                                                        </Badge>
+                                                        <Button variant="ghost" size="icon" className="h-7 w-7 text-orange-600" asChild>
+                                                            <a 
+                                                                href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/storage/${project.designs[0].spd_file}`} 
+                                                                target="_blank" 
+                                                                rel="noopener noreferrer"
+                                                            >
+                                                                <ArrowDown className="h-3 w-3" />
+                                                            </a>
+                                                        </Button>
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-muted-foreground italic text-[10px]">Not Uploaded</span>
+                                                )}
+                                            </TableCell>
+                                            <TableCell>
+                                                {project.designs?.[0]?.design_progres && project.designs[0].design_progres.length > 0 ? (
+                                                    <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                                                        {project.designs[0].design_progres[project.designs[0].design_progres.length - 1].tahap_design?.nama}
                                                     </Badge>
-                                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-orange-600" asChild>
-                                                        <a 
-                                                            href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/storage/${project.designs[0].spd_file}`} 
-                                                            target="_blank" 
-                                                            rel="noopener noreferrer"
-                                                        >
-                                                            <ArrowDown className="h-3 w-3" />
-                                                        </a>
-                                                    </Button>
-                                                </div>
-                                            ) : (
-                                                <span className="text-muted-foreground italic text-[10px]">Not Uploaded</span>
-                                            )}
-                                        </TableCell>
+                                                ) : (
+                                                    <Badge variant="secondary" className="bg-neutral-100 text-neutral-500 border-none font-normal">
+                                                        Belum
+                                                    </Badge>
+                                                )}
+                                            </TableCell>
+                                            <TableCell>
+                                                {project.list_furnitur ? (
+                                                    <div className="flex items-center justify-center h-7 w-7 rounded-full bg-emerald-50 text-emerald-600 mx-auto">
+                                                        <Check className="h-4 w-4" />
+                                                    </div>
+                                                ) : (
+                                                    <Badge variant="secondary" className="bg-neutral-100 text-neutral-500 border-none font-normal">
+                                                        Belum
+                                                    </Badge>
+                                                )}
+                                            </TableCell>
+                                        </>
                                     )}
                                     <TableCell className="text-right">
                                         <DropdownMenu>

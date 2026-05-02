@@ -24,6 +24,7 @@ export interface ProjectV2 {
             tanggal_acc: string | null;
             status: string;
         };
+        design_progres?: DesignProgres[];
     }>;
     sph?: {
         id: number;
@@ -36,6 +37,12 @@ export interface ProjectV2 {
         nomor_spk: string | null;
         file: string | null;
         created_at: string;
+    };
+    list_furnitur?: {
+        id: number;
+        file: string | null;
+        tanggal_mulai: string | null;
+        tanggal_selesai: string | null;
     };
 }
 
@@ -177,6 +184,18 @@ export const projectV2Service = {
 
     deleteDesignProgress: async (progressId: number) => {
         const { data } = await apiClient.delete(`/design-progress/${progressId}`);
+        return data;
+    },
+
+    uploadListFurnitur: async (projectId: number, payload: { file?: File; tanggal_mulai?: string; tanggal_selesai?: string }) => {
+        const formData = new FormData();
+        if (payload.file) formData.append('file', payload.file);
+        if (payload.tanggal_mulai) formData.append('tanggal_mulai', payload.tanggal_mulai);
+        if (payload.tanggal_selesai) formData.append('tanggal_selesai', payload.tanggal_selesai);
+
+        const { data } = await apiClient.post(`/projects-v2/${projectId}/upload-list-furnitur`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
         return data;
     }
 }

@@ -158,6 +158,39 @@ export default function DesignerDetailPage() {
         })
     }
 
+    // List Furnitur State
+    const [lfFile, setLfFile] = React.useState<File | null>(null)
+    const [lfStart, setLfStart] = React.useState<string>("")
+    const [lfEnd, setLfEnd] = React.useState<string>("")
+
+    const uploadLfMutation = useMutation({
+        mutationFn: (payload: { file?: File; tanggal_mulai?: string; tanggal_selesai?: string }) => 
+            projectV2Service.uploadListFurnitur(projectId, payload),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["projects-v2", projectId] })
+            toast.success("List Furnitur updated")
+            setLfFile(null)
+        },
+        onError: () => {
+            toast.error("Failed to update List Furnitur")
+        }
+    })
+
+    const handleLfUpload = () => {
+        uploadLfMutation.mutate({
+            file: lfFile || undefined,
+            tanggal_mulai: lfStart || undefined,
+            tanggal_selesai: lfEnd || undefined
+        })
+    }
+
+    React.useEffect(() => {
+        if (project?.list_furnitur) {
+            if (project.list_furnitur.tanggal_mulai) setLfStart(project.list_furnitur.tanggal_mulai)
+            if (project.list_furnitur.tanggal_selesai) setLfEnd(project.list_furnitur.tanggal_selesai)
+        }
+    }, [project?.list_furnitur])
+
     if (isLoadingProject) {
         return (
             <div className="flex h-[400px] items-center justify-center">
@@ -217,7 +250,7 @@ export default function DesignerDetailPage() {
             </Card>
 
             {/* Designer Cards Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* SPD Date Card */}
                 <Card className="border-none shadow-sm border border-neutral-100 overflow-hidden">
                     <CardHeader className="bg-orange-50/50 border-b border-orange-100">
@@ -360,6 +393,77 @@ export default function DesignerDetailPage() {
                                     )}
                                 </div>
                             </>
+                        )}
+                    </CardContent>
+                </Card>
+
+                {/* List Furnitur Card */}
+                <Card className="border-none shadow-sm border border-neutral-100 flex flex-col">
+                    <CardHeader className="bg-purple-50/50 border-b border-purple-100">
+                        <CardTitle className="flex items-center gap-2 text-purple-800 text-base">
+                            <ListChecks className="h-5 w-5" />
+                            List Furnitur
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-6 space-y-4">
+                        <div className="space-y-3">
+                            <div className="space-y-1">
+                                <Label className="text-[10px] uppercase text-purple-600 font-bold">Upload File (PDF/XLS)</Label>
+                                <Input 
+                                    type="file" 
+                                    className="bg-white text-xs" 
+                                    onChange={e => setLfFile(e.target.files?.[0] || null)}
+                                />
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="space-y-1">
+                                    <Label className="text-[10px] uppercase text-purple-600 font-bold">Mulai</Label>
+                                    <Input 
+                                        type="date" 
+                                        className="bg-white text-xs" 
+                                        value={lfStart}
+                                        onChange={e => setLfStart(e.target.value)}
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <Label className="text-[10px] uppercase text-purple-600 font-bold">Selesai</Label>
+                                    <Input 
+                                        type="date" 
+                                        className="bg-white text-xs" 
+                                        value={lfEnd}
+                                        onChange={e => setLfEnd(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+                            <Button 
+                                className="w-full bg-purple-600 hover:bg-purple-700"
+                                onClick={handleLfUpload}
+                                disabled={uploadLfMutation.isPending}
+                            >
+                                {uploadLfMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save List Furnitur"}
+                            </Button>
+                        </div>
+
+                        {project?.list_furnitur?.file && (
+                            <div className="p-3 rounded-lg border border-purple-100 bg-white flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <div className="h-8 w-8 rounded-lg bg-purple-50 flex items-center justify-center text-purple-600">
+                                        <FileText className="h-4 w-4" />
+                                    </div>
+                                    <span className="text-xs font-medium text-neutral-600 truncate max-w-[120px]">
+                                        List Furnitur File
+                                    </span>
+                                </div>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-purple-600" asChild>
+                                    <a 
+                                        href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/storage/${project.list_furnitur.file}`} 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                    >
+                                        <Eye className="h-4 w-4" />
+                                    </a>
+                                </Button>
+                            </div>
                         )}
                     </CardContent>
                 </Card>
