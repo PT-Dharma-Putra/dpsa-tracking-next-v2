@@ -28,6 +28,13 @@ export interface ProjectV2 {
         id: number;
         nomor_sph: string | null;
         file: string | null;
+        created_at: string;
+    };
+    spk?: {
+        id: number;
+        nomor_spk: string | null;
+        file: string | null;
+        created_at: string;
     };
 }
 
@@ -121,6 +128,16 @@ export const projectV2Service = {
 
     updateAccDesign: async (projectId: number, payload: { tanggal_kirim?: string; tanggal_acc?: string; status: string }) => {
         const { data } = await apiClient.post(`/projects-v2/${projectId}/update-acc-design`, payload);
+        return data;
+    },
+
+    uploadSPK: async (projectId: number, file: File, nomor_spk: string) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('nomor_spk', nomor_spk);
+        const { data } = await apiClient.post(`/projects-v2/${projectId}/upload-spk`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
         return data;
     }
 }
