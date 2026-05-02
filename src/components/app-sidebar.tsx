@@ -188,6 +188,22 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     </SidebarGroupContent>
                 </SidebarGroup>
 
+                <SidebarGroup>
+                    <SidebarGroupLabel>Master Data</SidebarGroupLabel>
+                    <SidebarGroupContent>
+                        <SidebarMenu>
+                            <SidebarMenuItem>
+                                <SidebarMenuButton asChild tooltip="User Management" isActive={isActive('/dashboard/admin/users')}>
+                                    <Link href="/dashboard/master-data/divisi">
+                                        <Users />
+                                        <span>Divisi</span>
+                                    </Link>
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>
+                        </SidebarMenu>
+                    </SidebarGroupContent>
+                </SidebarGroup>
+
                 {/* add sidebar collapse  */}
                  {data.navMain.map((item) => (
                     <Collapsible

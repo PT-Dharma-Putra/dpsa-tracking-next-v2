@@ -228,6 +228,44 @@ export default function PerencanaanDetailPage() {
         setIsGkDialogOpen(true)
     }
 
+    // Dokubah State
+    const [isDokubahDialogOpen, setIsDokubahDialogOpen] = React.useState(false)
+    const [dokubahItem, setDokubahItem] = React.useState<ProjectItemV2 | null>(null)
+    const [dokubahFile, setDokubahFile] = React.useState<File | null>(null)
+    const [dokubahStart, setDokubahStart] = React.useState<string>("")
+    const [dokubahEnd, setDokubahEnd] = React.useState<string>("")
+
+    const uploadDokubahMutation = useMutation({
+        mutationFn: (payload: { file?: File; tanggal_mulai?: string; tanggal_selesai?: string }) =>
+            projectV2Service.uploadDokubah(dokubahItem!.id, payload),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["project-v2-items", projectId] })
+            toast.success("Dokubah updated")
+            setIsDokubahDialogOpen(false)
+            setDokubahFile(null)
+        },
+        onError: () => {
+            toast.error("Failed to update Dokubah")
+        }
+    })
+
+    const handleDokubahUpload = () => {
+        if (!dokubahItem) return
+        uploadDokubahMutation.mutate({
+            file: dokubahFile || undefined,
+            tanggal_mulai: dokubahStart || undefined,
+            tanggal_selesai: dokubahEnd || undefined
+        })
+    }
+
+    const openDokubahUpload = (item: ProjectItemV2) => {
+        setDokubahItem(item)
+        setDokubahStart(item.dokubah?.tanggal_mulai || "")
+        setDokubahEnd(item.dokubah?.tanggal_selesai || "")
+        setDokubahFile(null)
+        setIsDokubahDialogOpen(true)
+    }
+
     const [editingDivisiItemId, setEditingDivisiItemId] = React.useState<number | null>(null)
 
     const updateItemDivisiMutation = useMutation({
@@ -285,7 +323,7 @@ export default function PerencanaanDetailPage() {
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
                         <div className="space-y-1">
                             <Label className="text-[10px] text-muted-foreground uppercase">Project Name</Label>
                             <p className="font-bold text-neutral-900">{project.name}</p>
@@ -304,6 +342,31 @@ export default function PerencanaanDetailPage() {
                                 {project.deadline ? format(new Date(project.deadline), "MMM d, yyyy") : "-"}
                             </p>
                         </div>
+                        <div className="space-y-1">
+                            <Label className="text-[10px] text-muted-foreground uppercase">List Furnitur</Label>
+                            <p className="font-bold text-orange-600"></p>
+                                {project?.list_furnitur?.file && (
+                                    <div className="p-3 rounded-lg border border-purple-100 bg-white flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <div className="h-8 w-8 rounded-lg bg-purple-50 flex items-center justify-center text-purple-600">
+                                                <FileText className="h-4 w-4" />
+                                            </div>
+                                            <span className="text-xs font-medium text-neutral-600 truncate max-w-[120px]">
+                                                List Furnitur File
+                                            </span>
+                                        </div>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-purple-600" asChild>
+                                            <a 
+                                                href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/storage/${project.list_furnitur.file}`} 
+                                                target="_blank" 
+                                                rel="noopener noreferrer"
+                                            >
+                                                <Eye className="h-4 w-4" />
+                                            </a>
+                                        </Button>
+                                    </div>
+                                )}
+                        </div>
                     </div>
                 </CardContent>
             </Card>
@@ -311,7 +374,7 @@ export default function PerencanaanDetailPage() {
             {/* Designer Cards Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* SPD Date Card */}
-                <Card className="border-none shadow-sm border border-neutral-100 overflow-hidden">
+                {/* <Card className="border-none shadow-sm border border-neutral-100 overflow-hidden">
                     <CardHeader className="bg-orange-50/50 border-b border-orange-100">
                         <CardTitle className="flex items-center gap-2 text-orange-800 text-base">
                             <Calendar className="h-5 w-5" />
@@ -349,10 +412,10 @@ export default function PerencanaanDetailPage() {
                             </div>
                         )}
                     </CardContent>
-                </Card>
+                </Card> */}
 
                 {/* Design Progress Card */}
-                <Card className="border-none shadow-sm border border-neutral-100 flex flex-col">
+                {/* <Card className="border-none shadow-sm border border-neutral-100 flex flex-col">
                     <CardHeader className="bg-blue-50/50 border-b border-blue-100">
                         <CardTitle className="flex items-center justify-between text-blue-800 text-base">
                             <div className="flex items-center gap-2">
@@ -368,7 +431,6 @@ export default function PerencanaanDetailPage() {
                             </div>
                         ) : (
                             <>
-                                {/* Form to add progress */}
                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 rounded-xl bg-blue-50/50 border border-blue-100">
                                     <div className="space-y-1">
                                         <Label className="text-[10px] uppercase text-blue-600 font-bold">Select Stage</Label>
@@ -415,8 +477,7 @@ export default function PerencanaanDetailPage() {
                                         </Button>
                                     </div>
                                 </div>
-
-                                {/* Progress List */}
+                                
                                 <div className="space-y-3 mt-2">
                                     {progress && progress.length > 0 ? (
                                         progress.map((p) => (
@@ -454,10 +515,10 @@ export default function PerencanaanDetailPage() {
                             </>
                         )}
                     </CardContent>
-                </Card>
+                </Card> */}
 
                 {/* List Furnitur Card */}
-                <Card className="border-none shadow-sm border border-neutral-100 flex flex-col">
+                {/* <Card className="border-none shadow-sm border border-neutral-100 flex flex-col">
                     <CardHeader className="bg-purple-50/50 border-b border-purple-100">
                         <CardTitle className="flex items-center gap-2 text-purple-800 text-base">
                             <ListChecks className="h-5 w-5" />
@@ -525,7 +586,7 @@ export default function PerencanaanDetailPage() {
                             </div>
                         )}
                     </CardContent>
-                </Card>
+                </Card> */}
             </div>
 
             {/* Items Table Section */}
@@ -554,6 +615,7 @@ export default function PerencanaanDetailPage() {
                                 <TableHead>Dimensions</TableHead>
                                 <TableHead>Qty</TableHead>
                                 <TableHead>Gambar Kerja</TableHead>
+                                <TableHead>Dokubah</TableHead>
                                 <TableHead>PO Divisi</TableHead>
                                 <TableHead className="w-[80px] text-right">Actions</TableHead>
                             </TableRow>
@@ -561,7 +623,7 @@ export default function PerencanaanDetailPage() {
                         <TableBody>
                             {isLoadingItems ? (
                                 <TableRow>
-                                    <TableCell colSpan={9} className="h-32 text-center text-muted-foreground">
+                                    <TableCell colSpan={11} className="h-32 text-center text-muted-foreground">
                                         <Loader2 className="h-6 w-6 animate-spin mx-auto" />
                                     </TableCell>
                                 </TableRow>
@@ -602,6 +664,30 @@ export default function PerencanaanDetailPage() {
                                                     size="sm" 
                                                     className="h-7 text-[10px] border-orange-200 text-orange-600 hover:bg-orange-50"
                                                     onClick={() => openGkUpload(item)}
+                                                >
+                                                    <Upload className="h-3 w-3 mr-1" />
+                                                    Upload
+                                                </Button>
+                                            )}
+                                        </TableCell>
+                                        <TableCell>
+                                            {item.dokubah?.file ? (
+                                                <div className="flex items-center gap-2">
+                                                    <div className="h-6 w-6 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                                                        <CheckCircle2 className="h-3.5 w-3.5" />
+                                                    </div>
+                                                    <Button variant="ghost" size="icon" className="h-6 w-6 text-blue-600" asChild>
+                                                        <a href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/storage/${item.dokubah.file}`} target="_blank" rel="noopener noreferrer">
+                                                            <Eye className="h-3.5 w-3.5" />
+                                                        </a>
+                                                    </Button>
+                                                </div>
+                                            ) : (
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="h-7 text-[10px] border-blue-200 text-blue-600 hover:bg-blue-50"
+                                                    onClick={() => openDokubahUpload(item)}
                                                 >
                                                     <Upload className="h-3 w-3 mr-1" />
                                                     Upload
@@ -763,6 +849,65 @@ export default function PerencanaanDetailPage() {
                         >
                             {uploadGkMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
                             Save Gambar Kerja
+                        </Button>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Dokubah Upload Dialog */}
+            <AlertDialog open={isDokubahDialogOpen} onOpenChange={setIsDokubahDialogOpen}>
+                <AlertDialogContent className="max-w-md">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="flex items-center gap-2">
+                            <FileText className="h-5 w-5 text-blue-500" />
+                            Upload Dokubah
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Upload dokubah untuk item: <strong>{dokubahItem?.item}</strong>
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="dokubah-file">File (PDF/JPG/PNG/XLS)</Label>
+                            <Input
+                                id="dokubah-file"
+                                type="file"
+                                onChange={e => setDokubahFile(e.target.files?.[0] || null)}
+                                className="text-xs"
+                            />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="dokubah-start">Mulai</Label>
+                                <Input
+                                    id="dokubah-start"
+                                    type="date"
+                                    value={dokubahStart}
+                                    onChange={e => setDokubahStart(e.target.value)}
+                                    className="text-xs"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="dokubah-end">Selesai</Label>
+                                <Input
+                                    id="dokubah-end"
+                                    type="date"
+                                    value={dokubahEnd}
+                                    onChange={e => setDokubahEnd(e.target.value)}
+                                    className="text-xs"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => setIsDokubahDialogOpen(false)}>Cancel</AlertDialogCancel>
+                        <Button
+                            className="bg-blue-600 hover:bg-blue-700"
+                            onClick={handleDokubahUpload}
+                            disabled={uploadDokubahMutation.isPending}
+                        >
+                            {uploadDokubahMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
+                            Save Dokubah
                         </Button>
                     </AlertDialogFooter>
                 </AlertDialogContent>

@@ -217,11 +217,37 @@ export const projectV2Service = {
         return data;
     },
 
+    createDivisi: async (payload: { nama: string; nama_panjang?: string }) => {
+        const { data } = await apiClient.post<Divisi>('/divisi', payload);
+        return data;
+    },
+
+    updateDivisi: async (id: number, payload: { nama: string; nama_panjang?: string }) => {
+        const { data } = await apiClient.put<Divisi>(`/divisi/${id}`, payload);
+        return data;
+    },
+
+    deleteDivisi: async (id: number) => {
+        const { data } = await apiClient.delete(`/divisi/${id}`);
+        return data;
+    },
+
     updateProjectItemDivisi: async (itemId: number, divisiId: number) => {
         const { data } = await apiClient.put<ProjectItemV2>(`/projects-v2-items/${itemId}`, { 
             divisi_id: divisiId,
             // we need to send other required fields too if the backend validation requires them
             // but for now let's see if partial update works or if I need to fetch the item first
+        });
+        return data;
+    },
+
+    uploadDokubah: async (itemId: number, payload: { file?: File; tanggal_mulai?: string; tanggal_selesai?: string }) => {
+        const formData = new FormData();
+        if (payload.file) formData.append('file', payload.file);
+        if (payload.tanggal_mulai) formData.append('tanggal_mulai', payload.tanggal_mulai);
+        if (payload.tanggal_selesai) formData.append('tanggal_selesai', payload.tanggal_selesai);
+        const { data } = await apiClient.post(`/projects-v2-items/${itemId}/upload-dokubah`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
         });
         return data;
     }
@@ -260,6 +286,12 @@ export interface ProjectItemV2 {
         tanggal_selesai: string | null;
         file: string | null;
     };
+    dokubah?: {
+        id: number;
+        tanggal_mulai: string | null;
+        tanggal_selesai: string | null;
+        file: string | null;
+    };
     divisi?: Divisi;
 }
 
@@ -267,4 +299,6 @@ export interface Divisi {
     id: number;
     nama: string;
     nama_panjang: string | null;
+    created_at: string;
+    updated_at: string;
 }
