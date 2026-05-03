@@ -270,6 +270,84 @@ export const projectV2Service = {
     updateBarangJadiMasuk: async (itemId: number, payload: { tanggal: string; jumlah: number }) => {
         const { data } = await apiClient.post(`/projects-v2-items/${itemId}/barang-jadi-masuk`, payload);
         return data;
+    },
+
+    // Shipment Methods
+    getTahapPengiriman: async () => {
+        const { data } = await apiClient.get('/tahap-pengiriman');
+        return data;
+    },
+    createTahapPengiriman: async (nama: string) => {
+        const { data } = await apiClient.post('/tahap-pengiriman', { nama });
+        return data;
+    },
+    updateTahapPengiriman: async (id: number, nama: string) => {
+        const { data } = await apiClient.put(`/tahap-pengiriman/${id}`, { nama });
+        return data;
+    },
+    deleteTahapPengiriman: async (id: number) => {
+        const { data } = await apiClient.delete(`/tahap-pengiriman/${id}`);
+        return data;
+    },
+    getItemDetail: async (itemId: number) => {
+        const { data } = await apiClient.get(`/project-item-detail/${itemId}`);
+        return data;
+    },
+    storeBarangJadiKeluar: async (itemId: number, payload: any) => {
+        const { data } = await apiClient.post(`/project-item/${itemId}/barang-jadi-keluar`, payload);
+        return data;
+    },
+    updateBarangJadiKeluar: async (id: number, payload: any) => {
+        const { data } = await apiClient.put(`/barang-jadi-keluar/${id}`, payload);
+        return data;
+    },
+    deleteBarangJadiKeluar: async (id: number) => {
+        const { data } = await apiClient.delete(`/barang-jadi-keluar/${id}`);
+        return data;
+    },
+    storeSuratJalan: async (itemId: number, payload: FormData) => {
+        const { data } = await apiClient.post(`/project-item/${itemId}/surat-jalan`, payload, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        return data;
+    },
+    updateSuratJalan: async (id: number, payload: FormData) => {
+        const { data } = await apiClient.post(`/surat-jalan/${id}`, payload, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        return data;
+    },
+    deleteSuratJalan: async (id: number) => {
+        const { data } = await apiClient.delete(`/surat-jalan/${id}`);
+        return data;
+    },
+    storeSetrimKembali: async (itemId: number, payload: FormData) => {
+        const { data } = await apiClient.post(`/project-item/${itemId}/setrim-kembali`, payload, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        return data;
+    },
+    updateSetrimKembali: async (id: number, payload: FormData) => {
+        const { data } = await apiClient.post(`/setrim-kembali/${id}`, payload, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        return data;
+    },
+    deleteSetrimKembali: async (id: number) => {
+        const { data } = await apiClient.delete(`/setrim-kembali/${id}`);
+        return data;
+    },
+    storeSetting: async (itemId: number, payload: any) => {
+        const { data } = await apiClient.post(`/project-item/${itemId}/setting`, payload);
+        return data;
+    },
+    updateSetting: async (id: number, payload: any) => {
+        const { data } = await apiClient.put(`/setting/${id}`, payload);
+        return data;
+    },
+    deleteSetting: async (id: number) => {
+        const { data } = await apiClient.delete(`/setting/${id}`);
+        return data;
     }
 }
 
@@ -315,6 +393,10 @@ export interface ProjectItemV2 {
     bahan_baku?: BahanBaku;
     produksi?: Produksi;
     barang_jadi_masuk?: BarangJadiMasuk[];
+    barang_jadi_keluar?: BarangJadiKeluar[];
+    surat_jalan?: SuratJalan[];
+    setrim_kembali?: SetrimKembali[];
+    setting?: Setting[];
     divisi?: Divisi;
 }
 
@@ -366,4 +448,47 @@ export interface BarangJadiMasuk {
     jumlah: number;
     created_at: string;
     updated_at: string;
+}
+
+export interface TahapPengiriman {
+    id: number;
+    nama: string;
+}
+
+export interface BarangJadiKeluar {
+    id: number;
+    project_item_id: number;
+    tahap_pengiriman_id: number;
+    tanggal: string;
+    jumlah: number;
+    tahap_pengiriman?: TahapPengiriman;
+}
+
+export interface SuratJalan {
+    id: number;
+    project_item_id: number;
+    tahap_pengiriman_id: number;
+    tanggal: string;
+    file: string | null;
+    tahap_pengiriman?: TahapPengiriman;
+}
+
+export interface SetrimKembali {
+    id: number;
+    project_item_id: number;
+    tahap_pengiriman_id: number;
+    tanggal: string;
+    file: string | null;
+    tahap_pengiriman?: TahapPengiriman;
+}
+
+export interface Setting {
+    id: number;
+    project_item_id: number;
+    tahap_pengiriman_id: number;
+    tanggal_mulai: string;
+    jumlah: number;
+    koor_setting: string | null;
+    tanggal_selesai: string | null;
+    tahap_pengiriman?: TahapPengiriman;
 }

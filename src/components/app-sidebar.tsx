@@ -67,7 +67,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     }
 
     // Define menu items based on Role (Can be refined later)
-    const isAdmin = user?.roles?.some(r => r.name === "Super-Admin")
+    const userRoles = [
+        ...(user?.role ? [user.role] : []),
+        ...(user?.roles?.map(r => r.name) || [])
+    ];
+    const isAdmin = userRoles.includes("Super-Admin");
 
     const isActive = (href: string) => {
         if (href === '/dashboard') return pathname === '/dashboard'
@@ -80,6 +84,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             {
                 title: "Marketing",
                 url: "#",
+                allowedRoles: ["Super-Admin", "Marketing"],
                 items: [
                     {
                     title: "Projects V2",
@@ -90,6 +95,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             {
                 title: "Studio",
                 url: "#",
+                allowedRoles: ["Super-Admin", "Studio"],
                 items: [
                     {
                     title: "Daftar Perintah Kerja",
@@ -100,6 +106,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             {
                 title: "PPIC",
                 url: "#",
+                allowedRoles: ["Super-Admin", "PPIC"],
                 items: [
                     {
                     title: "Project V2 | PPIC",
@@ -110,6 +117,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             {
                 title: "Produksi",
                 url: "#",
+                allowedRoles: ["Super-Admin", "Produksi"],
                 items: [
                     {
                     title: "Project V2 | Produksi",
@@ -117,8 +125,19 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     },
                 ],
             },
-        ],
-        }
+        ].filter(group => {
+            if (!user) return false;
+            
+            // Collect all user roles into a single list
+            const userRoles = [
+                ...(user.role ? [user.role] : []),
+                ...(user.roles?.map(r => r.name) || [])
+            ];
+
+            // Check if any user role is in the group's allowedRoles
+            return group.allowedRoles.some(allowed => userRoles.includes(allowed));
+        }),
+    }
 
     return (
         <Sidebar collapsible="icon" {...props}>
@@ -174,45 +193,49 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     </SidebarGroupContent>
                 </SidebarGroup>
 
-                <SidebarGroup>
-                    <SidebarGroupLabel>Administration</SidebarGroupLabel>
-                    <SidebarGroupContent>
-                        <SidebarMenu>
-                            <SidebarMenuItem>
-                                <SidebarMenuButton asChild tooltip="User Management" isActive={isActive('/dashboard/admin/users')}>
-                                    <Link href="/dashboard/admin/users">
-                                        <Users />
-                                        <span>User Management</span>
-                                    </Link>
-                                </SidebarMenuButton>
-                            </SidebarMenuItem>
-                            <SidebarMenuItem>
-                                <SidebarMenuButton asChild tooltip="Reports" isActive={isActive('/dashboard/reports')}>
-                                    <Link href="/dashboard/reports">
-                                        <PieChart />
-                                        <span>Analytics & Reports</span>
-                                    </Link>
-                                </SidebarMenuButton>
-                            </SidebarMenuItem>
-                        </SidebarMenu>
-                    </SidebarGroupContent>
-                </SidebarGroup>
+                {isAdmin && (
+                    <SidebarGroup>
+                        <SidebarGroupLabel>Administration</SidebarGroupLabel>
+                        <SidebarGroupContent>
+                            <SidebarMenu>
+                                <SidebarMenuItem>
+                                    <SidebarMenuButton asChild tooltip="User Management" isActive={isActive('/dashboard/admin/users')}>
+                                        <Link href="/dashboard/admin/users">
+                                            <Users />
+                                            <span>User Management</span>
+                                        </Link>
+                                    </SidebarMenuButton>
+                                </SidebarMenuItem>
+                                <SidebarMenuItem>
+                                    <SidebarMenuButton asChild tooltip="Reports" isActive={isActive('/dashboard/reports')}>
+                                        <Link href="/dashboard/reports">
+                                            <PieChart />
+                                            <span>Analytics & Reports</span>
+                                        </Link>
+                                    </SidebarMenuButton>
+                                </SidebarMenuItem>
+                            </SidebarMenu>
+                        </SidebarGroupContent>
+                    </SidebarGroup>
+                )}
 
-                <SidebarGroup>
-                    <SidebarGroupLabel>Master Data</SidebarGroupLabel>
-                    <SidebarGroupContent>
-                        <SidebarMenu>
-                            <SidebarMenuItem>
-                                <SidebarMenuButton asChild tooltip="User Management" isActive={isActive('/dashboard/admin/users')}>
-                                    <Link href="/dashboard/master-data/divisi">
-                                        <Users />
-                                        <span>Divisi</span>
-                                    </Link>
-                                </SidebarMenuButton>
-                            </SidebarMenuItem>
-                        </SidebarMenu>
-                    </SidebarGroupContent>
-                </SidebarGroup>
+                {isAdmin && (
+                    <SidebarGroup>
+                        <SidebarGroupLabel>Master Data</SidebarGroupLabel>
+                        <SidebarGroupContent>
+                            <SidebarMenu>
+                                <SidebarMenuItem>
+                                    <SidebarMenuButton asChild tooltip="User Management" isActive={isActive('/dashboard/admin/users')}>
+                                        <Link href="/dashboard/master-data/divisi">
+                                            <Users />
+                                            <span>Divisi</span>
+                                        </Link>
+                                    </SidebarMenuButton>
+                                </SidebarMenuItem>
+                            </SidebarMenu>
+                        </SidebarGroupContent>
+                    </SidebarGroup>
+                )}
 
                 {/* add sidebar collapse  */}
                  {data.navMain.map((item) => (

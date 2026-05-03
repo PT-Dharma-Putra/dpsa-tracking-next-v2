@@ -18,9 +18,11 @@ import {
     Clock,
     Eye,
     Image as ImageIcon,
-    Upload
+    Upload,
+    ArrowUpRight
 } from "lucide-react"
 import { format } from "date-fns"
+import Link from "next/link"
 
 import {
   Table,
@@ -876,6 +878,12 @@ export default function PerencanaanDetailPage() {
                                                     <DropdownMenuItem onClick={() => { setSelectedItem(item); setIsItemFormOpen(true); }}>
                                                         <Pencil className="mr-2 h-4 w-4" />
                                                         Edit
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem asChild>
+                                                        <Link href={`/dashboard/projects-v2/perencanaan/${projectId}/item/${item.id}`}>
+                                                            <ArrowUpRight className="mr-2 h-4 w-4" />
+                                                            Detail Item
+                                                        </Link>
                                                     </DropdownMenuItem>
                                                     <DropdownMenuSeparator />
                                                     <DropdownMenuItem 
