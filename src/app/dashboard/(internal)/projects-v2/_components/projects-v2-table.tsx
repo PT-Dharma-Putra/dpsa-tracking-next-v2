@@ -62,7 +62,15 @@ import { projectV2Service, ProjectV2 } from "@/features/projects/services/projec
 import { ClientService } from "@/features/clients/services/client-service"
 import { ProjectFormDialog } from "./project-form-dialog"
 
-export function ProjectsV2Table({ showSPD = false, showPerencanaan = false }: { showSPD?: boolean, showPerencanaan?: boolean }) {
+export function ProjectsV2Table({ 
+    showSPD = false, 
+    showPerencanaan = false,
+    showProduksi = false 
+}: { 
+    showSPD?: boolean, 
+    showPerencanaan?: boolean,
+    showProduksi?: boolean 
+}) {
     const router = useRouter()
     const queryClient = useQueryClient()
     const [page, setPage] = React.useState(1)
@@ -407,6 +415,12 @@ export function ProjectsV2Table({ showSPD = false, showPerencanaan = false }: { 
                                                 )}
                                                 {showPerencanaan && (
                                                     <DropdownMenuItem onClick={() => router.push(`/dashboard/projects-v2/perencanaan/${project.id}/detail`)}>
+                                                        <Plus className="mr-2 h-4 w-4" />
+                                                        Detail
+                                                    </DropdownMenuItem>
+                                                )}
+                                                {showProduksi && (
+                                                    <DropdownMenuItem onClick={() => router.push(`/dashboard/projects-v2/produksi/${project.id}/detail`)}>
                                                         <Plus className="mr-2 h-4 w-4" />
                                                         Detail
                                                     </DropdownMenuItem>

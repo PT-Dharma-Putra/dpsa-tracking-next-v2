@@ -107,6 +107,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     },
                 ],
             },
+            {
+                title: "Produksi",
+                url: "#",
+                items: [
+                    {
+                    title: "Project V2 | Produksi",
+                    url: "/dashboard/projects-v2/produksi",
+                    },
+                ],
+            },
         ],
         }
 

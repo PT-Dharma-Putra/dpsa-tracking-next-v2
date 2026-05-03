@@ -260,6 +260,16 @@ export const projectV2Service = {
     updateBahanBaku: async (itemId: number, payload: { tanggal_menerima_dokubah?: string; ketersediaan_stok?: string; tanggal_keluar?: string; pic_id?: number }) => {
         const { data } = await apiClient.post(`/projects-v2-items/${itemId}/bahan-baku`, payload);
         return data;
+    },
+
+    updateProduksi: async (itemId: number, payload: any) => {
+        const { data } = await apiClient.post(`/projects-v2-items/${itemId}/produksi`, payload);
+        return data;
+    },
+
+    updateBarangJadiMasuk: async (itemId: number, payload: { tanggal: string; jumlah: number }) => {
+        const { data } = await apiClient.post(`/projects-v2-items/${itemId}/barang-jadi-masuk`, payload);
+        return data;
     }
 }
 
@@ -303,6 +313,8 @@ export interface ProjectItemV2 {
         file: string | null;
     };
     bahan_baku?: BahanBaku;
+    produksi?: Produksi;
+    barang_jadi_masuk?: BarangJadiMasuk[];
     divisi?: Divisi;
 }
 
@@ -326,6 +338,32 @@ export interface Divisi {
     id: number;
     nama: string;
     nama_panjang: string | null;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface Produksi {
+    id: number;
+    project_item_id: number;
+    jumlah_order: number;
+    cold_press: number;
+    running_saw: number;
+    edging: number;
+    cnc: number;
+    tukang_kayu: number;
+    tukang_jok: number;
+    finishing: number;
+    rakit: number;
+    quality_control: number;
+    packing: number;
+    persen: number;
+}
+
+export interface BarangJadiMasuk {
+    id: number;
+    project_item_id: number;
+    tanggal: string;
+    jumlah: number;
     created_at: string;
     updated_at: string;
 }

@@ -18,7 +18,8 @@ import {
     Clock,
     Eye,
     Image as ImageIcon,
-    Upload
+    Upload,
+    BarChart3
 } from "lucide-react"
 import { format } from "date-fns"
 
@@ -60,11 +61,12 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 
-import { projectV2Service, ProjectItemV2, TahapDesign, DesignProgres } from "@/features/projects/services/project-v2-service"
+import { projectV2Service, ProjectItemV2, TahapDesign, DesignProgres, Produksi } from "@/features/projects/services/project-v2-service"
 import { ProjectItemFormDialog } from "../../../_components/project-item-form-dialog"
 import { Badge } from "@/components/ui/badge"
+import { Progress } from "@/components/ui/progress"
 
-export default function PerencanaanDetailPage() {
+export default function ProduksiDetailPage() {
     const params = useParams()
     const router = useRouter()
     const queryClient = useQueryClient()
@@ -311,46 +313,72 @@ export default function PerencanaanDetailPage() {
         setIsStokDialogOpen(true)
     }
 
-    // Barang Jadi Masuk State
-    const [isBjDialogOpen, setIsBjDialogOpen] = React.useState(false)
-    const [bjItem, setBjItem] = React.useState<ProjectItemV2 | null>(null)
-    const [bjTanggal, setBjTanggal] = React.useState<string>(format(new Date(), "yyyy-MM-dd"))
-    const [bjJumlah, setBjJumlah] = React.useState<number>(0)
+    // Produksi State
+    const [isProduksiDialogOpen, setIsProduksiDialogOpen] = React.useState(false)
+    const [produksiItem, setProduksiItem] = React.useState<ProjectItemV2 | null>(null)
+    const [produksiData, setProduksiData] = React.useState<Partial<Produksi>>({})
 
-    const updateBjMutation = useMutation({
-        mutationFn: (payload: { tanggal: string; jumlah: number }) => 
-            projectV2Service.updateBarangJadiMasuk(bjItem!.id, payload),
+    const updateProduksiMutation = useMutation({
+        mutationFn: (payload: any) => projectV2Service.updateProduksi(produksiItem!.id, payload),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["project-v2-items", projectId] })
-            toast.success("Barang Masuk recorded")
-            setIsBjDialogOpen(false)
-            setBjJumlah(0)
+            toast.success("Produksi updated")
+            setIsProduksiDialogOpen(false)
         },
         onError: () => {
-            toast.error("Failed to record Barang Masuk")
+            toast.error("Failed to update Produksi")
         }
     })
 
-    const handleBjUpdate = () => {
-        if (!bjItem) return
-        
-        const currentTotal = bjItem.barang_jadi_masuk?.reduce((sum, bj) => sum + bj.jumlah, 0) || 0;
-        if (currentTotal + bjJumlah > bjItem.jumlah) {
-            toast.error(`Total barang (${currentTotal + bjJumlah}) tidak boleh melebihi jumlah order (${bjItem.jumlah})`);
-            return;
-        }
+    const handleProduksiUpdate = () => {
+        if (!produksiItem) return
+        updateProduksiMutation.mutate(produksiData)
+    }
 
-        updateBjMutation.mutate({
-            tanggal: bjTanggal,
-            jumlah: bjJumlah
+    const openProduksiDialog = (item: ProjectItemV2) => {
+        setProduksiItem(item)
+        setProduksiData(item.produksi || {
+            jumlah_order: item.jumlah,
+            cold_press: 0,
+            running_saw: 0,
+            edging: 0,
+            cnc: 0,
+            tukang_kayu: 0,
+            tukang_jok: 0,
+            finishing: 0,
+            rakit: 0,
+            quality_control: 0,
+            packing: 0,
+            persen: 0
         })
+        setIsProduksiDialogOpen(true)
     }
 
-    const openBjDialog = (item: ProjectItemV2) => {
-        setBjItem(item)
-        setBjJumlah(0)
-        setIsBjDialogOpen(true)
-    }
+    React.useEffect(() => {
+        if (isProduksiDialogOpen && produksiData) {
+            const fields = ['cold_press', 'running_saw', 'edging', 'cnc', 'tukang_kayu', 'tukang_jok', 'finishing', 'rakit', 'quality_control', 'packing'] as const;
+            const totalSum = fields.reduce((sum, field) => sum + (Number(produksiData[field]) || 0), 0);
+            const order = Number(produksiData.jumlah_order) || 1;
+            const calculatedPersen = (totalSum * 10) / order;
+            
+            if (produksiData.persen !== calculatedPersen) {
+                setProduksiData(prev => ({ ...prev, persen: calculatedPersen }));
+            }
+        }
+    }, [
+        produksiData.cold_press, 
+        produksiData.running_saw, 
+        produksiData.edging, 
+        produksiData.cnc, 
+        produksiData.tukang_kayu, 
+        produksiData.tukang_jok, 
+        produksiData.finishing, 
+        produksiData.rakit, 
+        produksiData.quality_control, 
+        produksiData.packing,
+        produksiData.jumlah_order,
+        isProduksiDialogOpen
+    ]);
 
     const [editingDivisiItemId, setEditingDivisiItemId] = React.useState<number | null>(null)
 
@@ -395,8 +423,8 @@ export default function PerencanaanDetailPage() {
                     <ArrowLeft className="h-5 w-5" />
                 </Button>
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Perencanaan Detail</h1>
-                    <p className="text-sm text-muted-foreground">PPIC View - Planning & Drawing Progress</p>
+                    <h1 className="text-2xl font-bold tracking-tight">Produksi Detail</h1>
+                    <p className="text-sm text-muted-foreground">Produksi View - Project Items Management</p>
                 </div>
             </div>
 
@@ -409,7 +437,7 @@ export default function PerencanaanDetailPage() {
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6">
                         <div className="space-y-1">
                             <Label className="text-[10px] text-muted-foreground uppercase">Project Name</Label>
                             <p className="font-bold text-neutral-900">{project.name}</p>
@@ -430,250 +458,49 @@ export default function PerencanaanDetailPage() {
                         </div>
                         <div className="space-y-1">
                             <Label className="text-[10px] text-muted-foreground uppercase">List Furnitur</Label>
-                            <p className="font-bold text-orange-600"></p>
-                                {project?.list_furnitur?.file && (
-                                    <div className="p-3 rounded-lg border border-purple-100 bg-white flex items-center justify-between">
+                            <div className="pt-1">
+                                {project?.list_furnitur?.file ? (
+                                    <div className="p-2 rounded-lg border border-purple-100 bg-white flex items-center justify-between">
                                         <div className="flex items-center gap-2">
-                                            <div className="h-8 w-8 rounded-lg bg-purple-50 flex items-center justify-center text-purple-600">
-                                                <FileText className="h-4 w-4" />
+                                            <div className="h-6 w-6 rounded bg-purple-50 flex items-center justify-center text-purple-600">
+                                                <FileText className="h-3 w-3" />
                                             </div>
-                                            <span className="text-xs font-medium text-neutral-600 truncate max-w-[120px]">
-                                                List Furnitur File
+                                            <span className="text-[10px] font-medium text-neutral-600 truncate max-w-[80px]">
+                                                File
                                             </span>
                                         </div>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-purple-600" asChild>
+                                        <Button variant="ghost" size="icon" className="h-6 w-6 text-purple-600" asChild>
                                             <a 
                                                 href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/storage/${project.list_furnitur.file}`} 
                                                 target="_blank" 
                                                 rel="noopener noreferrer"
                                             >
-                                                <Eye className="h-4 w-4" />
+                                                <Eye className="h-3 w-3" />
                                             </a>
                                         </Button>
                                     </div>
-                                )}
+                                ) : "-"}
+                            </div>
+                        </div>
+                        <div className="space-y-1">
+                            <Label className="text-[10px] text-muted-foreground uppercase">Persentase per SPK</Label>
+                            <div className="flex items-center gap-3">
+                                <div className="flex-1 max-w-[100px]">
+                                    <Progress 
+                                        value={items && items.length > 0 ? items.reduce((acc, item) => acc + (Number(item.produksi?.persen) || 0), 0) / items.length : 0} 
+                                        className="h-2 bg-neutral-100" 
+                                    />
+                                </div>
+                                <span className="text-sm font-bold text-neutral-900">
+                                    {items && items.length > 0 
+                                        ? (items.reduce((acc, item) => acc + (Number(item.produksi?.persen) || 0), 0) / items.length).toFixed(2) 
+                                        : 0}%
+                                </span>
+                            </div>
                         </div>
                     </div>
                 </CardContent>
             </Card>
-
-            {/* Designer Cards Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* SPD Date Card */}
-                {/* <Card className="border-none shadow-sm border border-neutral-100 overflow-hidden">
-                    <CardHeader className="bg-orange-50/50 border-b border-orange-100">
-                        <CardTitle className="flex items-center gap-2 text-orange-800 text-base">
-                            <Calendar className="h-5 w-5" />
-                            Tanggal SPD Dibuat
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="pt-6">
-                        {existingSpd ? (
-                            <div className="flex items-center gap-4 p-4 rounded-xl bg-orange-50 border border-orange-100">
-                                <div className="h-12 w-12 rounded-full bg-white flex items-center justify-center text-orange-600 shadow-sm">
-                                    <Clock className="h-6 w-6" />
-                                </div>
-                                <div>
-                                    <p className="text-sm font-medium text-orange-900">SPD Created On</p>
-                                    <p className="text-2xl font-bold text-orange-700">
-                                        {existingSpd.tanggal ? format(new Date(existingSpd.tanggal), "MMMM d, yyyy") : format(new Date(existingSpd.created_at), "MMMM d, yyyy")}
-                                    </p>
-                                </div>
-                                {existingSpd.spd_file && (
-                                    <Button variant="outline" className="ml-auto bg-white border-orange-200 text-orange-600 hover:bg-orange-50" asChild>
-                                        <a 
-                                            href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/storage/${existingSpd.spd_file}`} 
-                                            target="_blank" 
-                                            rel="noopener noreferrer"
-                                        >
-                                            <Eye className="h-4 w-4 mr-2" />
-                                            View File
-                                        </a>
-                                    </Button>
-                                )}
-                            </div>
-                        ) : (
-                            <div className="text-center py-8 bg-neutral-50 rounded-xl border border-dashed border-neutral-200">
-                                <p className="text-sm text-muted-foreground">SPD has not been created for this project.</p>
-                            </div>
-                        )}
-                    </CardContent>
-                </Card> */}
-
-                {/* Design Progress Card */}
-                {/* <Card className="border-none shadow-sm border border-neutral-100 flex flex-col">
-                    <CardHeader className="bg-blue-50/50 border-b border-blue-100">
-                        <CardTitle className="flex items-center justify-between text-blue-800 text-base">
-                            <div className="flex items-center gap-2">
-                                <Activity className="h-5 w-5" />
-                                Progres Desain
-                            </div>
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="pt-6 flex-1 flex flex-col gap-4">
-                        {!designId ? (
-                            <div className="text-center py-8 text-muted-foreground text-sm">
-                                Please create a design (SPD) first to track progress.
-                            </div>
-                        ) : (
-                            <>
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 rounded-xl bg-blue-50/50 border border-blue-100">
-                                    <div className="space-y-1">
-                                        <Label className="text-[10px] uppercase text-blue-600 font-bold">Select Stage</Label>
-                                        <Select value={selectedStageId} onValueChange={setSelectedStageId}>
-                                            <SelectTrigger className="bg-white">
-                                                <SelectValue placeholder="Stage..." />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {stages?.map(s => (
-                                                    <SelectItem key={s.id} value={s.id.toString()}>{s.nama}</SelectItem>
-                                                ))}
-                                                <div className="p-2 border-t mt-2">
-                                                    <div className="flex gap-2">
-                                                        <Input 
-                                                            placeholder="New stage..." 
-                                                            className="h-8 text-xs" 
-                                                            value={newStageName}
-                                                            onChange={e => setNewStageName(e.target.value)}
-                                                        />
-                                                        <Button size="icon" className="h-8 w-8" onClick={handleAddStage}>
-                                                            <Plus className="h-4 w-4" />
-                                                        </Button>
-                                                    </div>
-                                                </div>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <Label className="text-[10px] uppercase text-blue-600 font-bold">Completion Date</Label>
-                                        <Input 
-                                            type="date" 
-                                            className="bg-white" 
-                                            value={completionDate}
-                                            onChange={e => setCompletionDate(e.target.value)}
-                                        />
-                                    </div>
-                                    <div className="flex items-end">
-                                        <Button 
-                                            className="w-full bg-blue-600 hover:bg-blue-700"
-                                            onClick={handleUpdateProgress}
-                                            disabled={updateProgressMutation.isPending}
-                                        >
-                                            {updateProgressMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Set Progress"}
-                                        </Button>
-                                    </div>
-                                </div>
-                                
-                                <div className="space-y-3 mt-2">
-                                    {progress && progress.length > 0 ? (
-                                        progress.map((p) => (
-                                            <div key={p.id} className="flex items-center justify-between p-3 rounded-lg border border-neutral-100 bg-white shadow-sm hover:border-blue-200 transition-all">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="h-8 w-8 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600">
-                                                        <CheckCircle2 className="h-5 w-5" />
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-sm font-bold text-neutral-800">{p.tahap_design?.nama}</p>
-                                                        <p className="text-[10px] text-muted-foreground flex items-center gap-1">
-                                                            <Calendar className="h-3 w-3" />
-                                                            Completed: {p.tanggal_selesai ? format(new Date(p.tanggal_selesai), "MMM d, yyyy") : "Not set"}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                                <Button 
-                                                    variant="ghost" 
-                                                    size="icon" 
-                                                    className="h-8 w-8 text-neutral-400 hover:text-red-500"
-                                                    onClick={() => deleteProgressMutation.mutate(p.id)}
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
-                                            </div>
-                                        ))
-                                    ) : (
-                                        <div className="text-center py-6 border-2 border-dashed rounded-xl border-neutral-100">
-                                            <p className="text-xs text-muted-foreground flex items-center justify-center gap-2">
-                                                <ListChecks className="h-4 w-4" /> No progress recorded yet
-                                            </p>
-                                        </div>
-                                    )}
-                                </div>
-                            </>
-                        )}
-                    </CardContent>
-                </Card> */}
-
-                {/* List Furnitur Card */}
-                {/* <Card className="border-none shadow-sm border border-neutral-100 flex flex-col">
-                    <CardHeader className="bg-purple-50/50 border-b border-purple-100">
-                        <CardTitle className="flex items-center gap-2 text-purple-800 text-base">
-                            <ListChecks className="h-5 w-5" />
-                            List Furnitur
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="pt-6 space-y-4">
-                        <div className="space-y-3">
-                            <div className="space-y-1">
-                                <Label className="text-[10px] uppercase text-purple-600 font-bold">Upload File (PDF/XLS)</Label>
-                                <Input 
-                                    type="file" 
-                                    className="bg-white text-xs" 
-                                    onChange={e => setLfFile(e.target.files?.[0] || null)}
-                                />
-                            </div>
-                            <div className="grid grid-cols-2 gap-3">
-                                <div className="space-y-1">
-                                    <Label className="text-[10px] uppercase text-purple-600 font-bold">Mulai</Label>
-                                    <Input 
-                                        type="date" 
-                                        className="bg-white text-xs" 
-                                        value={lfStart}
-                                        onChange={e => setLfStart(e.target.value)}
-                                    />
-                                </div>
-                                <div className="space-y-1">
-                                    <Label className="text-[10px] uppercase text-purple-600 font-bold">Selesai</Label>
-                                    <Input 
-                                        type="date" 
-                                        className="bg-white text-xs" 
-                                        value={lfEnd}
-                                        onChange={e => setLfEnd(e.target.value)}
-                                    />
-                                </div>
-                            </div>
-                            <Button 
-                                className="w-full bg-purple-600 hover:bg-purple-700"
-                                onClick={handleLfUpload}
-                                disabled={uploadLfMutation.isPending}
-                            >
-                                {uploadLfMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save List Furnitur"}
-                            </Button>
-                        </div>
-
-                        {project?.list_furnitur?.file && (
-                            <div className="p-3 rounded-lg border border-purple-100 bg-white flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                    <div className="h-8 w-8 rounded-lg bg-purple-50 flex items-center justify-center text-purple-600">
-                                        <FileText className="h-4 w-4" />
-                                    </div>
-                                    <span className="text-xs font-medium text-neutral-600 truncate max-w-[120px]">
-                                        List Furnitur File
-                                    </span>
-                                </div>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 text-purple-600" asChild>
-                                    <a 
-                                        href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/storage/${project.list_furnitur.file}`} 
-                                        target="_blank" 
-                                        rel="noopener noreferrer"
-                                    >
-                                        <Eye className="h-4 w-4" />
-                                    </a>
-                                </Button>
-                            </div>
-                        )}
-                    </CardContent>
-                </Card> */}
-            </div>
 
             {/* Items Table Section */}
             <div className="space-y-4 pt-4 border-t">
@@ -704,20 +531,20 @@ export default function PerencanaanDetailPage() {
                                 <TableHead>Dokubah</TableHead>
                                 <TableHead>PO Divisi</TableHead>
                                 <TableHead>Stok Material</TableHead>
-                                <TableHead>Barang Masuk Lengkap</TableHead>
+                                <TableHead>Persentase Produksi</TableHead>
                                 <TableHead className="w-[80px] text-right">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {isLoadingItems ? (
                                 <TableRow>
-                                    <TableCell colSpan={13} className="h-32 text-center text-muted-foreground">
+                                    <TableCell colSpan={14} className="h-32 text-center text-muted-foreground">
                                         <Loader2 className="h-6 w-6 animate-spin mx-auto" />
                                     </TableCell>
                                 </TableRow>
                             ) : items?.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={9} className="h-32 text-center text-muted-foreground">
+                                    <TableCell colSpan={14} className="h-32 text-center text-muted-foreground">
                                         No items recorded for this project.
                                     </TableCell>
                                 </TableRow>
@@ -831,38 +658,33 @@ export default function PerencanaanDetailPage() {
                                                 onClick={() => openStokDialog(item)}
                                             >
                                                 {item.bahan_baku ? (
-                                                    <Badge variant="outline" className={`font-bold ${
-                                                        item.bahan_baku.ketersediaan_stok === 'Tersedia' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-                                                        item.bahan_baku.ketersediaan_stok === 'Belum Tersedia' ? 'bg-red-50 text-red-700 border-red-200' :
-                                                        'bg-amber-50 text-amber-700 border-amber-200'
-                                                    }`}>
-                                                        {item.bahan_baku.ketersediaan_stok}
-                                                    </Badge>
+                                                    <div className="space-y-1">
+                                                        <Badge variant="outline" className={`font-bold ${
+                                                            item.bahan_baku.ketersediaan_stok === 'Tersedia' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                                                            item.bahan_baku.ketersediaan_stok === 'Belum Tersedia' ? 'bg-red-50 text-red-700 border-red-200' :
+                                                            'bg-amber-50 text-amber-700 border-amber-200'
+                                                        }`}>
+                                                            {item.bahan_baku.ketersediaan_stok}
+                                                        </Badge>
+                                                        {item.bahan_baku.pic && (
+                                                            <p className="text-[9px] text-muted-foreground">PIC: {item.bahan_baku.pic.nama}</p>
+                                                        )}
+                                                    </div>
                                                 ) : (
                                                     <span className="text-[10px] text-muted-foreground italic">Set Stok</span>
-                                                )}
-                                                {item.bahan_baku?.pic && (
-                                                    <p className="text-[9px] text-muted-foreground mt-1">PIC: {item.bahan_baku.pic.nama}</p>
                                                 )}
                                             </div>
                                         </TableCell>
                                         <TableCell>
                                             <div 
-                                                className="cursor-pointer hover:bg-neutral-100 p-1 rounded transition-colors"
-                                                onClick={() => openBjDialog(item)}
+                                                className="cursor-pointer hover:bg-neutral-100 p-2 rounded-lg transition-colors group"
+                                                onClick={() => openProduksiDialog(item)}
                                             >
-                                                {item.barang_jadi_masuk && item.barang_jadi_masuk.length > 0 ? (
-                                                    <div className="space-y-1">
-                                                        <Badge className="bg-blue-600 text-white border-none font-bold">
-                                                            {item.barang_jadi_masuk.reduce((sum, bj) => sum + bj.jumlah, 0)} / {item.jumlah}
-                                                        </Badge>
-                                                        <p className="text-[9px] text-muted-foreground">
-                                                            Last: {format(new Date(item.barang_jadi_masuk[item.barang_jadi_masuk.length - 1].tanggal), "dd/MM/yy")}
-                                                        </p>
-                                                    </div>
-                                                ) : (
-                                                    <span className="text-[10px] text-muted-foreground italic">Input Barang</span>
-                                                )}
+                                                <div className="flex items-center justify-between mb-1">
+                                                    <span className="text-[10px] font-bold text-neutral-600">{Math.round(item.produksi?.persen || 0)}%</span>
+                                                    <BarChart3 className="h-3 w-3 text-neutral-300 group-hover:text-orange-500" />
+                                                </div>
+                                                <Progress value={item.produksi?.persen || 0} className="h-1.5 bg-neutral-100" />
                                             </div>
                                         </TableCell>
                                         <TableCell className="text-right">
@@ -1117,70 +939,127 @@ export default function PerencanaanDetailPage() {
                 </AlertDialogContent>
             </AlertDialog>
 
-            {/* Barang Jadi Masuk Dialog */}
-            <AlertDialog open={isBjDialogOpen} onOpenChange={setIsBjDialogOpen}>
-                <AlertDialogContent className="max-w-md">
+            {/* Produksi Update Dialog */}
+            <AlertDialog open={isProduksiDialogOpen} onOpenChange={setIsProduksiDialogOpen}>
+                <AlertDialogContent className="max-w-2xl">
                     <AlertDialogHeader>
                         <AlertDialogTitle className="flex items-center gap-2">
-                            <ListChecks className="h-5 w-5 text-blue-500" />
-                            Record Barang Masuk Lengkap
+                            <BarChart3 className="h-5 w-5 text-orange-500" />
+                            Update Progress Produksi
                         </AlertDialogTitle>
                         <AlertDialogDescription>
-                            Catat barang yang sudah masuk lengkap untuk item: <strong>{bjItem?.item}</strong>
+                            Input jumlah item yang telah selesai di setiap tahapan untuk: <strong>{produksiItem?.item}</strong>
                         </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <div className="grid gap-4 py-4">
-                        {bjItem?.barang_jadi_masuk && bjItem.barang_jadi_masuk.length > 0 && (
-                            <div className="bg-neutral-50 rounded-lg p-3 border border-neutral-100 mb-2">
-                                <Label className="text-[10px] uppercase text-neutral-500 font-bold mb-2 block">Riwayat Masuk Sebelumnya</Label>
-                                <div className="space-y-2">
-                                    {bjItem.barang_jadi_masuk.map((record, i) => (
-                                        <div key={i} className="flex justify-between text-xs border-b border-neutral-100 last:border-0 pb-1 last:pb-0">
-                                            <span className="text-neutral-600">{format(new Date(record.tanggal), "dd MMM yyyy")}</span>
-                                            <span className="font-bold text-blue-600">+{record.jumlah}</span>
-                                        </div>
-                                    ))}
-                                    <div className="flex justify-between text-xs pt-1 font-bold border-t border-neutral-200">
-                                        <span>Total Saat Ini</span>
-                                        <span className="text-neutral-900">{bjItem.barang_jadi_masuk.reduce((sum, r) => sum + r.jumlah, 0)} / {bjItem.jumlah}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
+                    <div className="grid grid-cols-2 gap-x-8 gap-y-4 py-4">
                         <div className="space-y-2">
-                            <Label>Tanggal Masuk</Label>
+                            <Label>Jumlah Order</Label>
                             <Input 
-                                type="date" 
-                                value={bjTanggal} 
-                                onChange={e => setBjTanggal(e.target.value)} 
-                                className="text-xs"
+                                type="number" 
+                                value={produksiData.jumlah_order || 0} 
+                                onChange={e => setProduksiData({...produksiData, jumlah_order: parseInt(e.target.value)})} 
+                                className="bg-neutral-50 font-bold"
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label>Jumlah Barang Baru</Label>
-                            <div className="flex items-center gap-4">
-                                <Input 
-                                    type="number" 
-                                    value={bjJumlah} 
-                                    onChange={e => setBjJumlah(parseInt(e.target.value) || 0)} 
-                                    className="font-bold"
-                                    max={bjItem ? bjItem.jumlah - (bjItem.barang_jadi_masuk?.reduce((sum, bj) => sum + bj.jumlah, 0) || 0) : undefined}
-                                />
-                                <span className="text-sm text-muted-foreground whitespace-nowrap">
-                                    Sisa: {(bjItem?.jumlah || 0) - (bjItem?.barang_jadi_masuk?.reduce((sum, bj) => sum + bj.jumlah, 0) || 0)}
-                                </span>
-                            </div>
+                            <Label>Cold Press</Label>
+                            <Input 
+                                type="number" 
+                                value={produksiData.cold_press || 0} 
+                                onChange={e => setProduksiData({...produksiData, cold_press: parseInt(e.target.value)})} 
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Running Saw</Label>
+                            <Input 
+                                type="number" 
+                                value={produksiData.running_saw || 0} 
+                                onChange={e => setProduksiData({...produksiData, running_saw: parseInt(e.target.value)})} 
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Edging</Label>
+                            <Input 
+                                type="number" 
+                                value={produksiData.edging || 0} 
+                                onChange={e => setProduksiData({...produksiData, edging: parseInt(e.target.value)})} 
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>CNC</Label>
+                            <Input 
+                                type="number" 
+                                value={produksiData.cnc || 0} 
+                                onChange={e => setProduksiData({...produksiData, cnc: parseInt(e.target.value)})} 
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Tukang Kayu</Label>
+                            <Input 
+                                type="number" 
+                                value={produksiData.tukang_kayu || 0} 
+                                onChange={e => setProduksiData({...produksiData, tukang_kayu: parseInt(e.target.value)})} 
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Tukang Jok</Label>
+                            <Input 
+                                type="number" 
+                                value={produksiData.tukang_jok || 0} 
+                                onChange={e => setProduksiData({...produksiData, tukang_jok: parseInt(e.target.value)})} 
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Finishing</Label>
+                            <Input 
+                                type="number" 
+                                value={produksiData.finishing || 0} 
+                                onChange={e => setProduksiData({...produksiData, finishing: parseInt(e.target.value)})} 
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Rakit</Label>
+                            <Input 
+                                type="number" 
+                                value={produksiData.rakit || 0} 
+                                onChange={e => setProduksiData({...produksiData, rakit: parseInt(e.target.value)})} 
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Quality Control</Label>
+                            <Input 
+                                type="number" 
+                                value={produksiData.quality_control || 0} 
+                                onChange={e => setProduksiData({...produksiData, quality_control: parseInt(e.target.value)})} 
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Packing</Label>
+                            <Input 
+                                type="number" 
+                                value={produksiData.packing || 0} 
+                                onChange={e => setProduksiData({...produksiData, packing: parseInt(e.target.value)})} 
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Persen (%)</Label>
+                            <Input 
+                                type="text" 
+                                value={typeof produksiData.persen === 'number' ? produksiData.persen.toFixed(2) : (Number(produksiData.persen) || 0).toFixed(2)} 
+                                disabled
+                                className="bg-orange-50 font-bold text-orange-700 disabled:opacity-100"
+                            />
                         </div>
                     </div>
                     <AlertDialogFooter>
-                        <AlertDialogCancel onClick={() => setIsBjDialogOpen(false)}>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel onClick={() => setIsProduksiDialogOpen(false)}>Cancel</AlertDialogCancel>
                         <Button
-                            className="bg-blue-600 hover:bg-blue-700"
-                            onClick={handleBjUpdate}
-                            disabled={updateBjMutation.isPending}
+                            className="bg-orange-600 hover:bg-orange-700"
+                            onClick={handleProduksiUpdate}
+                            disabled={updateProduksiMutation.isPending}
                         >
-                            {updateBjMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
-                            Record Barang
+                            {updateProduksiMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
+                            Update Progress
                         </Button>
                     </AlertDialogFooter>
                 </AlertDialogContent>
