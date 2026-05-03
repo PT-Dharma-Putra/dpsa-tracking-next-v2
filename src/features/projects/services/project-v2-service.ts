@@ -250,6 +250,16 @@ export const projectV2Service = {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
         return data;
+    },
+
+    getPics: async () => {
+        const { data } = await apiClient.get<Pic[]>('/pics');
+        return data;
+    },
+
+    updateBahanBaku: async (itemId: number, payload: { tanggal_menerima_dokubah?: string; ketersediaan_stok?: string; tanggal_keluar?: string; pic_id?: number }) => {
+        const { data } = await apiClient.post(`/projects-v2-items/${itemId}/bahan-baku`, payload);
+        return data;
     }
 }
 
@@ -292,7 +302,24 @@ export interface ProjectItemV2 {
         tanggal_selesai: string | null;
         file: string | null;
     };
+    bahan_baku?: BahanBaku;
     divisi?: Divisi;
+}
+
+export interface BahanBaku {
+    id: number;
+    project_item_id: number;
+    tanggal_menerima_dokubah: string | null;
+    ketersediaan_stok: string | null;
+    tanggal_keluar: string | null;
+    pic_id: number | null;
+    pic?: Pic;
+}
+
+export interface Pic {
+    id: number;
+    nama: string;
+    jabatan: string | null;
 }
 
 export interface Divisi {

@@ -104,6 +104,11 @@ export default function PerencanaanDetailPage() {
         queryFn: () => projectV2Service.getDivisions(),
     })
 
+    const { data: pics } = useQuery({
+        queryKey: ["pics"],
+        queryFn: () => projectV2Service.getPics(),
+    })
+
     // Mutations
     const deleteItemMutation = useMutation({
         mutationFn: (id: number) => projectV2Service.deleteProjectItem(id),
@@ -264,6 +269,46 @@ export default function PerencanaanDetailPage() {
         setDokubahEnd(item.dokubah?.tanggal_selesai || "")
         setDokubahFile(null)
         setIsDokubahDialogOpen(true)
+    }
+
+    // Stok Material State
+    const [isStokDialogOpen, setIsStokDialogOpen] = React.useState(false)
+    const [stokItem, setStokItem] = React.useState<ProjectItemV2 | null>(null)
+    const [stokMenerima, setStokMenerima] = React.useState<string>("")
+    const [stokKeluar, setStokKeluar] = React.useState<string>("")
+    const [stokPicId, setStokPicId] = React.useState<string>("")
+    const [stokStatus, setStokStatus] = React.useState<string>("")
+
+    const updateStokMutation = useMutation({
+        mutationFn: (payload: { tanggal_menerima_dokubah?: string; tanggal_keluar?: string; pic_id?: number; ketersediaan_stok?: string }) => 
+            projectV2Service.updateBahanBaku(stokItem!.id, payload),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["project-v2-items", projectId] })
+            toast.success("Stok Material updated")
+            setIsStokDialogOpen(false)
+        },
+        onError: () => {
+            toast.error("Failed to update Stok Material")
+        }
+    })
+
+    const handleStokUpdate = () => {
+        if (!stokItem) return
+        updateStokMutation.mutate({
+            tanggal_menerima_dokubah: stokMenerima || undefined,
+            tanggal_keluar: stokKeluar || undefined,
+            pic_id: stokPicId ? parseInt(stokPicId) : undefined,
+            ketersediaan_stok: stokStatus || undefined
+        })
+    }
+
+    const openStokDialog = (item: ProjectItemV2) => {
+        setStokItem(item)
+        setStokMenerima(item.bahan_baku?.tanggal_menerima_dokubah || "")
+        setStokKeluar(item.bahan_baku?.tanggal_keluar || "")
+        setStokPicId(item.bahan_baku?.pic_id?.toString() || "")
+        setStokStatus(item.bahan_baku?.ketersediaan_stok || "")
+        setIsStokDialogOpen(true)
     }
 
     const [editingDivisiItemId, setEditingDivisiItemId] = React.useState<number | null>(null)
@@ -617,6 +662,7 @@ export default function PerencanaanDetailPage() {
                                 <TableHead>Gambar Kerja</TableHead>
                                 <TableHead>Dokubah</TableHead>
                                 <TableHead>PO Divisi</TableHead>
+                                <TableHead>Stok Material</TableHead>
                                 <TableHead className="w-[80px] text-right">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -736,6 +782,27 @@ export default function PerencanaanDetailPage() {
                                                     )}
                                                 </div>
                                             )}
+                                        </TableCell>
+                                        <TableCell>
+                                            <div 
+                                                className="cursor-pointer hover:bg-neutral-100 p-1 rounded transition-colors"
+                                                onClick={() => openStokDialog(item)}
+                                            >
+                                                {item.bahan_baku ? (
+                                                    <Badge variant="outline" className={`font-bold ${
+                                                        item.bahan_baku.ketersediaan_stok === 'Tersedia' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                                                        item.bahan_baku.ketersediaan_stok === 'Belum Tersedia' ? 'bg-red-50 text-red-700 border-red-200' :
+                                                        'bg-amber-50 text-amber-700 border-amber-200'
+                                                    }`}>
+                                                        {item.bahan_baku.ketersediaan_stok}
+                                                    </Badge>
+                                                ) : (
+                                                    <span className="text-[10px] text-muted-foreground italic">Set Stok</span>
+                                                )}
+                                                {item.bahan_baku?.pic && (
+                                                    <p className="text-[9px] text-muted-foreground mt-1">PIC: {item.bahan_baku.pic.nama}</p>
+                                                )}
+                                            </div>
                                         </TableCell>
                                         <TableCell className="text-right">
                                             <DropdownMenu>
@@ -908,6 +975,82 @@ export default function PerencanaanDetailPage() {
                         >
                             {uploadDokubahMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
                             Save Dokubah
+                        </Button>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Stok Material Dialog */}
+            <AlertDialog open={isStokDialogOpen} onOpenChange={setIsStokDialogOpen}>
+                <AlertDialogContent className="max-w-md">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="flex items-center gap-2">
+                            <Activity className="h-5 w-5 text-emerald-500" />
+                            Update Stok Material
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Ketersediaan stok untuk item: <strong>{stokItem?.item}</strong>
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="space-y-2">
+                            <Label>Ketersediaan Stok</Label>
+                            <Select value={stokStatus} onValueChange={setStokStatus}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Pilih Status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="Tersedia">Tersedia</SelectItem>
+                                    <SelectItem value="Belum Tersedia">Belum Tersedia</SelectItem>
+                                    <SelectItem value="Mutasi">Mutasi</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label>Tgl Menerima Dokubah</Label>
+                                <Input 
+                                    type="date" 
+                                    value={stokMenerima} 
+                                    onChange={e => setStokMenerima(e.target.value)} 
+                                    className="text-xs"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Tgl Keluar</Label>
+                                <Input 
+                                    type="date" 
+                                    value={stokKeluar} 
+                                    onChange={e => setStokKeluar(e.target.value)} 
+                                    className="text-xs"
+                                />
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>PIC</Label>
+                            <Select value={stokPicId} onValueChange={setStokPicId}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Pilih PIC" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {pics?.map(p => (
+                                        <SelectItem key={p.id} value={p.id.toString()}>
+                                            {p.nama} ({p.jabatan})
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => setIsStokDialogOpen(false)}>Cancel</AlertDialogCancel>
+                        <Button
+                            className="bg-emerald-600 hover:bg-emerald-700"
+                            onClick={handleStokUpdate}
+                            disabled={updateStokMutation.isPending}
+                        >
+                            {updateStokMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
+                            Update Stok
                         </Button>
                     </AlertDialogFooter>
                 </AlertDialogContent>
