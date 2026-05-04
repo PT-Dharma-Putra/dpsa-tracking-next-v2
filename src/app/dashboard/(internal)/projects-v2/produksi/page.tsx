@@ -13,7 +13,7 @@ export default function ProduksiPage() {
             </div>
 
             <div className="bg-white rounded-xl shadow-sm border border-neutral-200">
-                <ProjectsV2Table showSPD={false} showProduksi={true} />
+                <ProjectsV2Table showSPD={false} showProduksi={true} onlyShowDetail={true} />
             </div>
         </div>
     )

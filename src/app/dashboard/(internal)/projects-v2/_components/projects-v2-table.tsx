@@ -319,6 +319,9 @@ export function ProjectsV2Table({
                                     <TableHead>List Furnitur</TableHead>
                                 </>
                             )}
+                            {showProduksi && (
+                                <TableHead>Progres Produksi</TableHead>
+                            )}
                             <TableHead className="w-[100px] text-right">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -397,6 +400,23 @@ export function ProjectsV2Table({
                                                 )}
                                             </TableCell>
                                         </>
+                                    )}
+                                    {showProduksi && (
+                                        <TableCell>
+                                            <div className="flex items-center gap-2">
+                                                <div className="flex-1 min-w-[60px]">
+                                                    <div className="h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden">
+                                                        <div 
+                                                            className="h-full bg-emerald-500 rounded-full transition-all duration-500" 
+                                                            style={{ width: `${project.progres_produksi || 0}%` }}
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <span className="text-xs font-bold text-neutral-700">
+                                                    {Math.round(project.progres_produksi || 0)}%
+                                                </span>
+                                            </div>
+                                        </TableCell>
                                     )}
                                     <TableCell className="text-right">
                                         {onlyShowDetail ? (
