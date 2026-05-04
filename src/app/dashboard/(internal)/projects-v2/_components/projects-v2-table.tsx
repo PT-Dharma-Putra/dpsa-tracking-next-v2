@@ -14,9 +14,11 @@ import {
     ChevronsUpDown,
     ArrowUpDown,
     ArrowDown,
-    ArrowUp
+    ArrowUp,
+    Truck,
+    CalendarDays
 } from "lucide-react"
-import { format } from "date-fns"
+import { format, differenceInDays, startOfDay } from "date-fns"
 
 import {
   Table,
@@ -61,6 +63,7 @@ import { toast } from "sonner"
 import { projectV2Service, ProjectV2 } from "@/features/projects/services/project-v2-service"
 import { ClientService } from "@/features/clients/services/client-service"
 import { ProjectFormDialog } from "./project-form-dialog"
+import { ScheduleDeliveryDialog } from "./schedule-delivery-dialog"
 
 export function ProjectsV2Table({ 
     showSPD = false, 
@@ -87,6 +90,9 @@ export function ProjectsV2Table({
     
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false)
     const [projectToDelete, setProjectToDelete] = React.useState<ProjectV2 | null>(null)
+    
+    const [isScheduleOpen, setIsScheduleOpen] = React.useState(false)
+    const [projectToSchedule, setProjectToSchedule] = React.useState<ProjectV2 | null>(null)
 
     // Debounce search
     React.useEffect(() => {
@@ -179,6 +185,11 @@ export function ProjectsV2Table({
     const handleDeleteClick = (project: ProjectV2) => {
         setProjectToDelete(project)
         setIsDeleteDialogOpen(true)
+    }
+
+    const handleScheduleClick = (project: ProjectV2) => {
+        setProjectToSchedule(project)
+        setIsScheduleOpen(true)
     }
 
     const confirmDelete = () => {
@@ -312,6 +323,8 @@ export function ProjectsV2Table({
                                 </div>
                             </TableHead>
                             <TableHead>SPK Number</TableHead>
+                            <TableHead>Sisa Hari</TableHead>
+                            <TableHead>Jadwal Pengiriman</TableHead>
                             {showSPD && (
                                 <>
                                     <TableHead>SPD</TableHead>
@@ -328,7 +341,7 @@ export function ProjectsV2Table({
                     <TableBody>
                         {isLoading ? (
                             <TableRow>
-                                <TableCell colSpan={6} className="h-32 text-center">
+                                <TableCell colSpan={15} className="h-32 text-center">
                                     <div className="flex items-center justify-center">
                                         <Loader2 className="h-6 w-6 animate-spin text-neutral-400" />
                                     </div>
@@ -336,7 +349,7 @@ export function ProjectsV2Table({
                             </TableRow>
                         ) : projects.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
+                                <TableCell colSpan={15} className="h-32 text-center text-muted-foreground">
                                     No projects found.
                                 </TableCell>
                             </TableRow>
@@ -355,6 +368,77 @@ export function ProjectsV2Table({
                                         {project.deadline ? format(new Date(project.deadline), "MMM d, yyyy") : "-"}
                                     </TableCell>
                                     <TableCell>{project.spk_number || project.spk?.nomor_spk || "-"}</TableCell>
+                                    <TableCell>
+                                        {project.deadline ? (
+                                            (() => {
+                                                const diff = differenceInDays(startOfDay(new Date(project.deadline)), startOfDay(new Date()));
+                                                return (
+                                                    <div className="flex items-center gap-1.5">
+                                                        <Badge 
+                                                            variant="outline" 
+                                                            className={cn(
+                                                                "font-bold",
+                                                                diff < 0 ? "bg-red-50 text-red-700 border-red-200" :
+                                                                diff <= 3 ? "bg-orange-50 text-orange-700 border-orange-200" :
+                                                                "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                                            )}
+                                                        >
+                                                            {diff < 0 ? `Lewat ${Math.abs(diff)} Hari` : `${diff} Hari`}
+                                                        </Badge>
+                                                    </div>
+                                                );
+                                            })()
+                                        ) : (
+                                            <span className="text-muted-foreground italic text-xs">-</span>
+                                        )}
+                                    </TableCell>
+                                    <TableCell>
+                                        {project.jadwal_pengiriman ? (
+                                            <div 
+                                                className="space-y-1 cursor-pointer hover:bg-neutral-50 p-1 rounded-md transition-colors group"
+                                                onClick={() => handleScheduleClick(project)}
+                                            >
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-1.5 text-xs font-medium text-neutral-900">
+                                                        <Truck className="h-3 w-3 text-orange-500" />
+                                                        {format(new Date(project.jadwal_pengiriman.tanggal_pengiriman?.tanggal || ""), "MMM d, yyyy")}
+                                                    </div>
+                                                    <Pencil className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                </div>
+                                                {(() => {
+                                                    const diff = differenceInDays(
+                                                        startOfDay(new Date(project.jadwal_pengiriman.tanggal_pengiriman?.tanggal || "")), 
+                                                        startOfDay(new Date())
+                                                    );
+                                                    return (
+                                                        <Badge 
+                                                            variant="secondary" 
+                                                            className={cn(
+                                                                "text-[10px] h-4 px-1.5",
+                                                                diff < 0 ? "bg-red-50 text-red-600" :
+                                                                diff <= 2 ? "bg-orange-50 text-orange-600" :
+                                                                "bg-emerald-50 text-emerald-600"
+                                                            )}
+                                                        >
+                                                            {diff < 0 ? `Lewat ${Math.abs(diff)} hari` :
+                                                             diff === 0 ? "Hari ini" :
+                                                             `${diff} hari lagi`}
+                                                        </Badge>
+                                                    );
+                                                })()}
+                                            </div>
+                                        ) : (
+                                            <Button 
+                                                variant="ghost" 
+                                                size="sm" 
+                                                className="h-8 text-xs text-muted-foreground hover:text-orange-600"
+                                                onClick={() => handleScheduleClick(project)}
+                                            >
+                                                <CalendarDays className="mr-1.5 h-3.5 w-3.5" />
+                                                Set Jadwal
+                                            </Button>
+                                        )}
+                                    </TableCell>
                                     {showSPD && (
                                         <>
                                             <TableCell>
@@ -488,6 +572,10 @@ export function ProjectsV2Table({
                                                         <Pencil className="mr-2 h-4 w-4" />
                                                         Edit
                                                     </DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => handleScheduleClick(project)}>
+                                                        <Truck className="mr-2 h-4 w-4" />
+                                                        Jadwalkan Pengiriman
+                                                    </DropdownMenuItem>
                                                     <DropdownMenuSeparator />
                                                     <DropdownMenuItem 
                                                         className="text-red-600 focus:text-red-600"
@@ -536,6 +624,12 @@ export function ProjectsV2Table({
                 open={isFormOpen} 
                 onOpenChange={setIsFormOpen} 
                 project={selectedProject} 
+            />
+
+            <ScheduleDeliveryDialog
+                open={isScheduleOpen}
+                onOpenChange={setIsScheduleOpen}
+                project={projectToSchedule}
             />
 
             <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
