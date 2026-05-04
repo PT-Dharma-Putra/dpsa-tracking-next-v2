@@ -61,7 +61,15 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
-import { projectV2Service, TahapPengiriman } from "@/features/projects/services/project-v2-service"
+import { 
+    projectV2Service, 
+    TahapPengiriman, 
+    BarangJadiMasuk, 
+    BarangJadiKeluar, 
+    SuratJalan, 
+    SetrimKembali, 
+    Setting 
+} from "@/features/projects/services/project-v2-service"
 
 export default function ItemDetailPage() {
     const params = useParams()
@@ -272,7 +280,7 @@ export default function ItemDetailPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-blue-600">
-                            {item.barang_jadi_masuk?.reduce((sum, bj) => sum + bj.jumlah, 0) || 0} / {item.jumlah}
+                            {item.barang_jadi_masuk?.reduce((sum: number, bj: BarangJadiMasuk) => sum + bj.jumlah, 0) || 0} / {item.jumlah}
                         </div>
                         <p className="text-[10px] text-muted-foreground">Status dari Gudang</p>
                     </CardContent>
@@ -283,7 +291,7 @@ export default function ItemDetailPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-orange-600">
-                            {item.barang_jadi_keluar?.reduce((sum, bj) => sum + bj.jumlah, 0) || 0}
+                            {item.barang_jadi_keluar?.reduce((sum: number, bj: BarangJadiKeluar) => sum + bj.jumlah, 0) || 0}
                         </div>
                         <p className="text-[10px] text-muted-foreground">Total Barang Keluar</p>
                     </CardContent>
@@ -294,7 +302,7 @@ export default function ItemDetailPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-emerald-600">
-                            {item.setting?.reduce((sum, s) => sum + s.jumlah, 0) || 0}
+                            {item.setting?.reduce((sum: number, s: Setting) => sum + s.jumlah, 0) || 0}
                         </div>
                         <p className="text-[10px] text-muted-foreground">Barang Ter-setting</p>
                     </CardContent>
@@ -305,7 +313,7 @@ export default function ItemDetailPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-neutral-900">
-                            {(item.barang_jadi_masuk?.reduce((sum, bj) => sum + bj.jumlah, 0) || 0) - (item.barang_jadi_keluar?.reduce((sum, bj) => sum + bj.jumlah, 0) || 0)}
+                            {(item.barang_jadi_masuk?.reduce((sum: number, bj: BarangJadiMasuk) => sum + bj.jumlah, 0) || 0) - (item.barang_jadi_keluar?.reduce((sum: number, bj: BarangJadiKeluar) => sum + bj.jumlah, 0) || 0)}
                         </div>
                         <p className="text-[10px] text-muted-foreground">Barang Tersedia</p>
                     </CardContent>
@@ -341,10 +349,10 @@ export default function ItemDetailPage() {
                             </TableHeader>
                             <TableBody>
                                 {stages?.map((stage: TahapPengiriman) => {
-                                    const keluar = item.barang_jadi_keluar?.filter(k => k.tahap_pengiriman_id === stage.id)
-                                    const sj = item.surat_jalan?.filter(s => s.tahap_pengiriman_id === stage.id)
-                                    const sk = item.setrim_kembali?.filter(s => s.tahap_pengiriman_id === stage.id)
-                                    const set = item.setting?.filter(s => s.tahap_pengiriman_id === stage.id)
+                                    const keluar = item.barang_jadi_keluar?.filter((k: BarangJadiKeluar) => k.tahap_pengiriman_id === stage.id)
+                                    const sj = item.surat_jalan?.filter((s: SuratJalan) => s.tahap_pengiriman_id === stage.id)
+                                    const sk = item.setrim_kembali?.filter((s: SetrimKembali) => s.tahap_pengiriman_id === stage.id)
+                                    const set = item.setting?.filter((s: Setting) => s.tahap_pengiriman_id === stage.id)
 
                                     return (
                                         <TableRow key={stage.id}>
@@ -374,7 +382,7 @@ export default function ItemDetailPage() {
                                                 </div>
                                             </TableCell>
                                             <TableCell>
-                                                {keluar?.map((k, i) => (
+                                                {keluar?.map((k: BarangJadiKeluar, i: number) => (
                                                     <div key={i} className="mb-1 p-2 rounded bg-orange-50 border border-orange-100 group relative">
                                                         <div className="flex justify-between items-start">
                                                             <div>
@@ -406,7 +414,7 @@ export default function ItemDetailPage() {
                                                 ))}
                                             </TableCell>
                                             <TableCell>
-                                                {sj?.map((s, i) => (
+                                                {sj?.map((s: SuratJalan, i: number) => (
                                                     <div key={i} className="mb-1 p-2 rounded bg-blue-50 border border-blue-100 group">
                                                         <div className="flex items-center justify-between">
                                                             <div>
@@ -444,7 +452,7 @@ export default function ItemDetailPage() {
                                                 ))}
                                             </TableCell>
                                             <TableCell>
-                                                {sk?.map((s, i) => (
+                                                {sk?.map((s: SetrimKembali, i: number) => (
                                                     <div key={i} className="mb-1 p-2 rounded bg-purple-50 border border-purple-100 group">
                                                         <div className="flex items-center justify-between">
                                                             <div>
@@ -482,7 +490,7 @@ export default function ItemDetailPage() {
                                                 ))}
                                             </TableCell>
                                             <TableCell>
-                                                {set?.map((s, i) => (
+                                                {set?.map((s: Setting, i: number) => (
                                                     <div key={i} className="mb-1 p-2 rounded bg-emerald-50 border border-emerald-100 group">
                                                         <div className="flex justify-between items-start">
                                                             <div>
@@ -562,7 +570,7 @@ export default function ItemDetailPage() {
                                 onValueChange={(val) => setFormData({...formData, tahap_pengiriman_id: val})}
                             >
                                 <SelectTrigger><SelectValue placeholder="Pilih Tahap" /></SelectTrigger>
-                                <SelectContent>{stages?.map((s: any) => <SelectItem key={s.id} value={s.id.toString()}>{s.nama}</SelectItem>)}</SelectContent>
+                                <SelectContent>{stages?.map((s: TahapPengiriman) => <SelectItem key={s.id} value={s.id.toString()}>{s.nama}</SelectItem>)}</SelectContent>
                             </Select>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
@@ -601,7 +609,7 @@ export default function ItemDetailPage() {
                                 onValueChange={(val) => setFormData({...formData, tahap_pengiriman_id: val})}
                             >
                                 <SelectTrigger><SelectValue placeholder="Pilih Tahap" /></SelectTrigger>
-                                <SelectContent>{stages?.map((s: any) => <SelectItem key={s.id} value={s.id.toString()}>{s.nama}</SelectItem>)}</SelectContent>
+                                <SelectContent>{stages?.map((s: TahapPengiriman) => <SelectItem key={s.id} value={s.id.toString()}>{s.nama}</SelectItem>)}</SelectContent>
                             </Select>
                         </div>
                         <div className="space-y-2">
@@ -630,7 +638,7 @@ export default function ItemDetailPage() {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
-
+                        
             {/* Setrim Kembali Dialog */}
             <AlertDialog open={isSkDialogOpen} onOpenChange={setIsSkDialogOpen}>
                 <AlertDialogContent>
@@ -643,7 +651,7 @@ export default function ItemDetailPage() {
                                 onValueChange={(val) => setFormData({...formData, tahap_pengiriman_id: val})}
                             >
                                 <SelectTrigger><SelectValue placeholder="Pilih Tahap" /></SelectTrigger>
-                                <SelectContent>{stages?.map((s: any) => <SelectItem key={s.id} value={s.id.toString()}>{s.nama}</SelectItem>)}</SelectContent>
+                                <SelectContent>{stages?.map((s: TahapPengiriman) => <SelectItem key={s.id} value={s.id.toString()}>{s.nama}</SelectItem>)}</SelectContent>
                             </Select>
                         </div>
                         <div className="space-y-2">
@@ -685,7 +693,7 @@ export default function ItemDetailPage() {
                                 onValueChange={(val) => setFormData({...formData, tahap_pengiriman_id: val})}
                             >
                                 <SelectTrigger><SelectValue placeholder="Pilih Tahap" /></SelectTrigger>
-                                <SelectContent>{stages?.map((s: any) => <SelectItem key={s.id} value={s.id.toString()}>{s.nama}</SelectItem>)}</SelectContent>
+                                <SelectContent>{stages?.map((s: TahapPengiriman) => <SelectItem key={s.id} value={s.id.toString()}>{s.nama}</SelectItem>)}</SelectContent>
                             </Select>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
