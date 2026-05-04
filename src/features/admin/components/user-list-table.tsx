@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/select"
 import { Loader2, MoreHorizontal, Pencil, Trash2, Plus, Search, ChevronLeft, ChevronRight } from "lucide-react"
 import { adminService } from "@/features/admin/api/admin-service"
+import { User } from "@/features/auth/types"
 import { projectV2Service } from "@/features/projects/services/project-v2-service"
 import { format } from "date-fns"
 import { useState, useEffect } from "react"
@@ -52,7 +53,7 @@ export function UserListTable() {
     
     const [isDialogOpen, setIsDialogOpen] = useState(false)
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-    const [selectedUser, setSelectedUser] = useState<any>(null)
+    const [selectedUser, setSelectedUser] = useState<User | null>(null)
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -215,7 +216,7 @@ export function UserListTable() {
                                 </TableCell>
                             </TableRow>
                         ) : (
-                            users.map((user: any, index: number) => (
+                            users.map((user: User, index: number) => (
                                 <TableRow key={user.id}>
                                     <TableCell className="font-medium text-neutral-500">
                                         {(page - 1) * (meta?.per_page || 15) + index + 1}
@@ -271,7 +272,7 @@ export function UserListTable() {
             {meta && meta.last_page > 1 && (
                 <div className="flex items-center justify-between px-2">
                     <div className="text-sm text-muted-foreground">
-                        Showing {(page - 1) * meta.per_page + 1} to {Math.min(page * meta.per_page, meta.total)} of {meta.total} users
+                        Showing {(page - 1) * (meta?.per_page || 0) + 1} to {Math.min(page * (meta?.per_page || 0), meta?.total || 0)} of {meta?.total || 0} users
                     </div>
                     <div className="flex items-center gap-2">
                         <Button
@@ -433,7 +434,7 @@ export function UserListTable() {
                         <Button 
                             variant="destructive"
                             disabled={deleteMutation.isPending}
-                            onClick={() => deleteMutation.mutate(selectedUser.id)}
+                            onClick={() => selectedUser && deleteMutation.mutate(selectedUser.id)}
                         >
                             {deleteMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                             Delete User

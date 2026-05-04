@@ -7,6 +7,13 @@ export interface ApprovalStats {
     pending_client: number;
 }
 
+export interface Role {
+    id: number;
+    name: string;
+    created_at?: string;
+    updated_at?: string;
+}
+
 export const adminService = {
     // Get all pending users
     getPendingUsers: async () => {
@@ -18,7 +25,12 @@ export const adminService = {
     getAllUsers: async (params?: { page?: number, search?: string, per_page?: number }) => {
         const { data } = await axiosInstance.get<{ 
             data: User[], 
-            meta?: { current_page: number, last_page: number, total: number } 
+            meta: { 
+                current_page: number, 
+                last_page: number, 
+                total: number, 
+                per_page: number 
+            } 
         }>('/users', { params });
         return data;
     },
@@ -63,7 +75,15 @@ export const adminService = {
 
     // Detailed Roles CRUD
     getRolesPaginated: async (params?: { page?: number, search?: string }) => {
-        const { data } = await axiosInstance.get<any>('/roles', { params });
+        const { data } = await axiosInstance.get<{
+            data: {
+                data: Role[],
+                current_page: number,
+                last_page: number,
+                total: number,
+                per_page: number
+            }
+        }>('/roles', { params });
         return data.data;
     },
 
