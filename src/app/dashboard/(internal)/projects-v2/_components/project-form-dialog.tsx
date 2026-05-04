@@ -1,18 +1,22 @@
-"use client";
+"use client"
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { useMutation, useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
+import * as React from "react"
+import { useForm } from "react-hook-form"
+import { z } from "zod"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useMutation, useQuery, useInfiniteQuery, useQueryClient } from "@tanstack/react-query"
+import { CalendarIcon, Loader2, Check, ChevronsUpDown } from "lucide-react"
+import { format } from "date-fns"
+
+import { Button } from "@/components/ui/button"
 import {
     Dialog,
     DialogContent,
+    DialogDescription,
+    DialogFooter,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+} from "@/components/ui/dialog"
 import {
     Form,
     FormControl,
@@ -20,14 +24,11 @@ import {
     FormItem,
     FormLabel,
     FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from "@/components/ui/popover";
+} from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Calendar } from "@/components/ui/calendar"
 import {
     Command,
     CommandEmpty,
@@ -35,49 +36,47 @@ import {
     CommandInput,
     CommandItem,
     CommandList,
-} from "@/components/ui/command";
-import { ProjectService } from "../services/project-service";
-import { ClientService } from "@/features/clients/services/client-service";
-import { toast } from "sonner";
-import { Plus, Check, ChevronsUpDown, Loader2 } from "lucide-react";
-import { cn } from "@/lib/utils";
+} from "@/components/ui/command"
+import { toast } from "sonner"
+import { cn } from "@/lib/utils"
+
+import { projectV2Service, ProjectV2 } from "@/features/projects/services/project-v2-service"
+import { ClientService } from "@/features/clients/services/client-service"
 
 const formSchema = z.object({
-    name: z.string().min(3, "Project name must be at least 3 characters"),
-    client_id: z.string().min(1, "Please select a client"),
+    name: z.string().min(1, "Project Name is required"),
+    client_id: z.string().min(1, "Client is required"),
     description: z.string().optional(),
-    due_date: z.string().optional(),
-});
+    deadline: z.date().optional().nullable(),
+})
 
-export function CreateProjectModal() {
-    const [open, setOpen] = useState(false);
-    const [clientPopoverOpen, setClientPopoverOpen] = useState(false);
-    const [searchQuery, setSearchQuery] = useState("");
-    const [debouncedSearch, setDebouncedSearch] = useState("");
-    const queryClient = useQueryClient();
+type FormValues = z.infer<typeof formSchema>
 
-    const form = useForm<z.infer<typeof formSchema>>({
-        resolver: zodResolver(formSchema),
-        defaultValues: {
-            name: "",
-            client_id: "",
-            description: "",
-            due_date: "",
-        },
-    });
+interface ProjectFormDialogProps {
+    open: boolean
+    onOpenChange: (open: boolean) => void
+    project?: ProjectV2 | null
+}
 
-    useEffect(() => {
-        const timer = setTimeout(() => setDebouncedSearch(searchQuery), 500);
-        return () => clearTimeout(timer);
-    }, [searchQuery]);
+export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDialogProps) {
+    const queryClient = useQueryClient()
+    const isEdit = !!project
 
-    // Fetch Clients with Infinite Query
+    const [clientPopoverOpen, setClientPopoverOpen] = React.useState(false)
+    const [searchQuery, setSearchQuery] = React.useState("")
+    const [debouncedSearch, setDebouncedSearch] = React.useState("")
+
+    React.useEffect(() => {
+        const timer = setTimeout(() => setDebouncedSearch(searchQuery), 500)
+        return () => clearTimeout(timer)
+    }, [searchQuery])
+
     const {
         data: clientsData,
         fetchNextPage,
         hasNextPage,
         isFetchingNextPage,
-        isLoading: clientsLoading,
+        isLoading: isLoadingClients,
     } = useInfiniteQuery({
         queryKey: ["clients", debouncedSearch],
         queryFn: ({ pageParam = 1 }) => ClientService.getClients({ page: pageParam, search: debouncedSearch }),
@@ -87,63 +86,97 @@ export function CreateProjectModal() {
             return current_page < last_page ? current_page + 1 : undefined;
         },
         initialPageParam: 1,
-    });
+    })
 
-    const clientsRaw = clientsData?.pages.flatMap((page) => page.data) || [];
-    // Ensure uniqueness to prevent React duplicate key errors from pagination overlaps
-    const clients = Array.from(new Map(clientsRaw.map((c: any) => [c.id, c])).values());
+    const clientsRaw = clientsData?.pages.flatMap((page) => page.data) || []
+    const clients = Array.from(new Map(clientsRaw.map((c: any) => [c.id, c])).values())
 
-    const observerRef = useRef<IntersectionObserver>(null);
-    const loadMoreRef = useCallback(
+    const observerRef = React.useRef<IntersectionObserver>(null)
+    const loadMoreRef = React.useCallback(
         (node: HTMLDivElement | null) => {
-            if (isFetchingNextPage) return;
-            if (observerRef.current) observerRef.current.disconnect();
+            if (isFetchingNextPage) return
+            if (observerRef.current) observerRef.current.disconnect()
             
             observerRef.current = new IntersectionObserver((entries) => {
                 if (entries[0].isIntersecting && hasNextPage) {
-                    fetchNextPage();
+                    fetchNextPage()
                 }
-            });
+            })
             
-            if (node) observerRef.current.observe(node);
+            if (node) observerRef.current.observe(node)
         },
         [isFetchingNextPage, hasNextPage, fetchNextPage]
-    );
+    )
 
-    // Create Mutation
+    const form = useForm<FormValues>({
+        resolver: zodResolver(formSchema),
+        defaultValues: {
+            name: "",
+            client_id: "",
+            description: "",
+            deadline: null,
+        },
+    })
+
+    React.useEffect(() => {
+        if (open) {
+            if (project) {
+                form.reset({
+                    name: project.name,
+                    client_id: project.client_id.toString(),
+                    description: project.description || "",
+                    deadline: project.deadline ? new Date(project.deadline) : null,
+                })
+            } else {
+                form.reset({
+                    name: "",
+                    client_id: "",
+                    description: "",
+                    deadline: null,
+                })
+            }
+        }
+    }, [open, project, form])
+
     const mutation = useMutation({
-        mutationFn: ProjectService.createProject,
+        mutationFn: async (values: FormValues) => {
+            const payload = {
+                name: values.name,
+                client_id: parseInt(values.client_id),
+                description: values.description,
+                deadline: values.deadline ? format(values.deadline, "yyyy-MM-dd") : undefined,
+            }
+
+            if (isEdit) {
+                return projectV2Service.updateProject(project.id, payload)
+            } else {
+                return projectV2Service.createProject(payload)
+            }
+        },
         onSuccess: () => {
-            toast.success("Project created successfully");
-            queryClient.invalidateQueries({ queryKey: ["projects"] });
-            setOpen(false);
-            form.reset();
-            setSearchQuery("");
-            setDebouncedSearch("");
+            queryClient.invalidateQueries({ queryKey: ["projects-v2"] })
+            toast.success(isEdit ? "Project updated successfully" : "Project created successfully")
+            onOpenChange(false)
         },
         onError: (error) => {
-            toast.error("Failed to create project");
-            console.error(error);
-        },
-    });
+            toast.error("Failed to save project")
+            console.error(error)
+        }
+    })
 
-    function onSubmit(values: z.infer<typeof formSchema>) {
-        mutation.mutate(values);
+    const onSubmit = (values: FormValues) => {
+        mutation.mutate(values)
     }
 
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-                <Button>
-                    <Plus className="mr-2 h-4 w-4" />
-                    New Project
-                </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px]">
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
-                    <DialogTitle>Create New Project</DialogTitle>
+                    <DialogTitle>{isEdit ? "Edit Project" : "Create Project"}</DialogTitle>
+                    <DialogDescription>
+                        {isEdit ? "Update project details." : "Fill in the details to create a new project."}
+                    </DialogDescription>
                 </DialogHeader>
-
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                         <FormField
@@ -153,7 +186,7 @@ export function CreateProjectModal() {
                                 <FormItem>
                                     <FormLabel>Project Name</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="e.g. Villa Bali Renovation" {...field} />
+                                        <Input placeholder="Enter project name" {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -186,7 +219,7 @@ export function CreateProjectModal() {
                                                 </Button>
                                             </FormControl>
                                         </PopoverTrigger>
-                                        <PopoverContent className="w-full p-0 sm:w-[450px]" align="start">
+                                        <PopoverContent className="w-[400px] p-0" align="start">
                                             <Command shouldFilter={false}>
                                                 <CommandInput 
                                                     placeholder="Search clients..." 
@@ -195,7 +228,7 @@ export function CreateProjectModal() {
                                                 />
                                                 <CommandList>
                                                     <CommandEmpty>
-                                                        {clientsLoading ? 'Loading clients...' : 'No clients found.'}
+                                                        {isLoadingClients ? 'Loading clients...' : 'No clients found.'}
                                                     </CommandEmpty>
                                                     <CommandGroup>
                                                         {clients.map((client) => (
@@ -241,10 +274,7 @@ export function CreateProjectModal() {
                                 <FormItem>
                                     <FormLabel>Description</FormLabel>
                                     <FormControl>
-                                        <Textarea
-                                            placeholder="Brief details about the project..."
-                                            {...field}
-                                        />
+                                        <Textarea placeholder="Optional description" {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -253,26 +283,58 @@ export function CreateProjectModal() {
 
                         <FormField
                             control={form.control}
-                            name="due_date"
+                            name="deadline"
                             render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Target Deadline (Optional)</FormLabel>
-                                    <FormControl>
-                                        <Input type="date" {...field} />
-                                    </FormControl>
+                                <FormItem className="flex flex-col">
+                                    <FormLabel>Deadline (Optional)</FormLabel>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <FormControl>
+                                                <Button
+                                                    variant={"outline"}
+                                                    className={cn(
+                                                        "w-full pl-3 text-left font-normal",
+                                                        !field.value && "text-muted-foreground"
+                                                    )}
+                                                >
+                                                    {field.value ? (
+                                                        format(field.value, "PPP")
+                                                    ) : (
+                                                        <span>Pick a date</span>
+                                                    )}
+                                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                                </Button>
+                                            </FormControl>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0" align="start">
+                                            <Calendar
+                                                mode="single"
+                                                selected={field.value || undefined}
+                                                onSelect={field.onChange}
+                                                disabled={(date) =>
+                                                    date < new Date("1900-01-01")
+                                                }
+                                                initialFocus
+                                            />
+                                        </PopoverContent>
+                                    </Popover>
                                     <FormMessage />
                                 </FormItem>
                             )}
                         />
 
-                        <div className="flex justify-end pt-4">
-                            <Button type="submit" disabled={mutation.isPending}>
-                                {mutation.isPending ? "Creating..." : "Create Project"}
+                        <DialogFooter>
+                            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                                Cancel
                             </Button>
-                        </div>
+                            <Button type="submit" disabled={mutation.isPending}>
+                                {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                {isEdit ? "Update" : "Create"}
+                            </Button>
+                        </DialogFooter>
                     </form>
                 </Form>
             </DialogContent>
         </Dialog>
-    );
+    )
 }

@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { ChevronRight } from "lucide-react"
 import {
     SquareTerminal,
     FileBox,
@@ -42,6 +43,12 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { authService } from "@/features/auth/api/auth-service"
 import { useAuthStore } from "@/lib/auth-store"
+// import { CollapsibleContent } from "./ui/collapsible"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "./ui/collapsible"
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const router = useRouter()
@@ -60,11 +67,76 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     }
 
     // Define menu items based on Role (Can be refined later)
-    const isAdmin = user?.roles?.some(r => r.name === "Super-Admin")
+    const userRoles = [
+        ...(user?.role ? [user.role] : []),
+        ...(user?.roles?.map(r => r.name) || [])
+    ];
+    const isAdmin = userRoles.includes("Super-Admin");
 
     const isActive = (href: string) => {
         if (href === '/dashboard') return pathname === '/dashboard'
         return pathname.startsWith(href)
+    }
+
+    const data = {
+        versions: ["1.0.1", "1.1.0-alpha", "2.0.0-beta1"],
+        navMain: [
+            {
+                title: "Marketing",
+                url: "#",
+                allowedRoles: ["Super-Admin", "Marketing"],
+                items: [
+                    {
+                    title: "Projects V2",
+                    url: "/dashboard/projects-v2",
+                    }
+                ],
+            },
+            {
+                title: "Studio",
+                url: "#",
+                allowedRoles: ["Super-Admin", "Studio"],
+                items: [
+                    {
+                    title: "Daftar Perintah Kerja",
+                    url: "/dashboard/projects-v2/perintah-kerja",
+                    },
+                ],
+            },
+            {
+                title: "PPIC",
+                url: "#",
+                allowedRoles: ["Super-Admin", "PPIC"],
+                items: [
+                    {
+                    title: "Project V2 | PPIC",
+                    url: "/dashboard/projects-v2/perencanaan",
+                    },
+                ],
+            },
+            {
+                title: "Produksi",
+                url: "#",
+                allowedRoles: ["Super-Admin", "Produksi"],
+                items: [
+                    {
+                    title: "Project V2 | Produksi",
+                    url: "/dashboard/projects-v2/produksi",
+                    },
+                ],
+            },
+        ].filter(group => {
+            if (!user) return false;
+            
+            // Collect all user roles into a single list
+            const userRoles = [
+                ...(user.role ? [user.role] : []),
+                ...(user.roles?.map(r => r.name) || [])
+            ];
+
+            // Check if any user role is in the group's allowedRoles
+            return group.allowedRoles.some(allowed => userRoles.includes(allowed));
+        }),
     }
 
     return (
@@ -121,29 +193,85 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     </SidebarGroupContent>
                 </SidebarGroup>
 
-                <SidebarGroup>
-                    <SidebarGroupLabel>Administration</SidebarGroupLabel>
-                    <SidebarGroupContent>
-                        <SidebarMenu>
-                            <SidebarMenuItem>
-                                <SidebarMenuButton asChild tooltip="User Management" isActive={isActive('/dashboard/admin/users')}>
-                                    <Link href="/dashboard/admin/users">
-                                        <Users />
-                                        <span>User Management</span>
-                                    </Link>
-                                </SidebarMenuButton>
-                            </SidebarMenuItem>
-                            <SidebarMenuItem>
-                                <SidebarMenuButton asChild tooltip="Reports" isActive={isActive('/dashboard/reports')}>
-                                    <Link href="/dashboard/reports">
-                                        <PieChart />
-                                        <span>Analytics & Reports</span>
-                                    </Link>
-                                </SidebarMenuButton>
-                            </SidebarMenuItem>
-                        </SidebarMenu>
-                    </SidebarGroupContent>
-                </SidebarGroup>
+                {isAdmin && (
+                    <SidebarGroup>
+                        <SidebarGroupLabel>Administration</SidebarGroupLabel>
+                        <SidebarGroupContent>
+                            <SidebarMenu>
+                                <SidebarMenuItem>
+                                    <SidebarMenuButton asChild tooltip="User Management" isActive={isActive('/dashboard/admin/users')}>
+                                        <Link href="/dashboard/admin/users">
+                                            <Users />
+                                            <span>User Management</span>
+                                        </Link>
+                                    </SidebarMenuButton>
+                                </SidebarMenuItem>
+                                <SidebarMenuItem>
+                                    <SidebarMenuButton asChild tooltip="Reports" isActive={isActive('/dashboard/reports')}>
+                                        <Link href="/dashboard/reports">
+                                            <PieChart />
+                                            <span>Analytics & Reports</span>
+                                        </Link>
+                                    </SidebarMenuButton>
+                                </SidebarMenuItem>
+                            </SidebarMenu>
+                        </SidebarGroupContent>
+                    </SidebarGroup>
+                )}
+
+                {isAdmin && (
+                    <SidebarGroup>
+                        <SidebarGroupLabel>Master Data</SidebarGroupLabel>
+                        <SidebarGroupContent>
+                            <SidebarMenu>
+                                <SidebarMenuItem>
+                                    <SidebarMenuButton asChild tooltip="User Management" isActive={isActive('/dashboard/admin/users')}>
+                                        <Link href="/dashboard/master-data/divisi">
+                                            <Users />
+                                            <span>Divisi</span>
+                                        </Link>
+                                    </SidebarMenuButton>
+                                </SidebarMenuItem>
+                            </SidebarMenu>
+                        </SidebarGroupContent>
+                    </SidebarGroup>
+                )}
+
+                {/* add sidebar collapse  */}
+                 {data.navMain.map((item) => (
+                    <Collapsible
+                        key={item.title}
+                        title={item.title}
+                        defaultOpen
+                        className="group/collapsible"
+                    >
+                        <SidebarGroup>
+                        <SidebarGroupLabel
+                            asChild
+                            className="group/label text-sm text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                        >
+                            <CollapsibleTrigger>
+                            {item.title}{" "}
+                            <ChevronRight className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90" />
+                            </CollapsibleTrigger>
+                        </SidebarGroupLabel>
+                        <CollapsibleContent>
+                            <SidebarGroupContent>
+                            <SidebarMenu>
+                                {item.items.map((subItem) => (
+                                <SidebarMenuItem key={subItem.title}>
+                                    <SidebarMenuButton asChild isActive={isActive(subItem.url)}>
+                                    <a href={subItem.url}>{subItem.title}</a>
+                                    </SidebarMenuButton>
+                                </SidebarMenuItem>
+                                ))}
+                            </SidebarMenu>
+                            </SidebarGroupContent>
+                        </CollapsibleContent>
+                        </SidebarGroup>
+                    </Collapsible>
+                    ))}
+
             </SidebarContent>
 
             <SidebarFooter>

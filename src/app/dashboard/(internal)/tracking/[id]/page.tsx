@@ -52,7 +52,6 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
 
     return (
         <div className="flex flex-col h-[calc(100vh-theme(spacing.4))] w-full bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
-
             {/* === 1. HEADER === */}
             <header className="flex items-center justify-between px-6 py-4 border-b border-neutral-100 bg-white shrink-0">
                 <div className="flex items-center gap-4">

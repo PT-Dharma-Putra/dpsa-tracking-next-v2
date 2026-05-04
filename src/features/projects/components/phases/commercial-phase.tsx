@@ -62,7 +62,7 @@ export function CommercialPhase({ project }: CommercialPhaseProps) {
         (i: any) => i.design_status === 'DONE' || !i.needs_design
     );
     const isSphApproved = quoteData?.status === 'approved';
-    const isSpkSigned = spkData?.status === 'signed';
+    const isSpkSigned = spkData?.spk_status === 'approved';
     const canAdvance = designFreeze && isSphApproved && isSpkSigned;
 
     // Advance Phase
@@ -79,7 +79,6 @@ export function CommercialPhase({ project }: CommercialPhaseProps) {
 
     return (
         <div className="space-y-8">
-
             {/* === HEADER === */}
             <div className="flex items-center justify-between">
                 <div>

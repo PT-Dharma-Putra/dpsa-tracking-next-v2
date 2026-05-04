@@ -114,8 +114,8 @@ export function PreparationPhase({ project }: PreparationPhaseProps) {
             <Tabs defaultValue="overview" className="w-full">
                 <TabsList className="grid w-full grid-cols-4 mb-8">
                     <TabsTrigger value="overview">Overview</TabsTrigger>
-                    <TabsTrigger value="ppic">PPIC & Planning</TabsTrigger>
                     <TabsTrigger value="engineering">Engineering</TabsTrigger>
+                    <TabsTrigger value="ppic">PPIC & Planning</TabsTrigger>
                     <TabsTrigger value="warehouse">Warehouse</TabsTrigger>
                 </TabsList>
 

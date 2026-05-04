@@ -16,6 +16,7 @@ import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 
 const STATUS_COLUMNS: DesignStatus[] = ['TODO', 'ON_DESIGN', 'IN_REVIEW', 'REVISION', 'DONE'];
+const STORAGE_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api').replace('/api', '');
 
 export default function DesignStudioPage({ params }: { params: Promise<{ id: string }> }) {
     const { id: projectId } = use(params);
@@ -94,7 +95,7 @@ function KanbanCard({ item }: { item: SPHItem }) {
     const queryClient = useQueryClient();
     const [showPDF, setShowPDF] = useState(false);
     const pdfUrl = item.design_brief
-        ? `${process.env.NEXT_PUBLIC_API_URL?.replace('/api', '')}/storage/${item.design_brief}`
+        ? `${STORAGE_BASE}/storage/${item.design_brief}`
         : null;
 
     // Upload Design Mutation
@@ -175,7 +176,7 @@ function KanbanCard({ item }: { item: SPHItem }) {
                                 Design Uploaded
                             </span>
                             <a
-                                href={`${process.env.NEXT_PUBLIC_API_URL?.replace('/api', '')}/storage/${item.design_file}`}
+                                href={`${STORAGE_BASE}/storage/${item.design_file}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-blue-600 hover:underline"
