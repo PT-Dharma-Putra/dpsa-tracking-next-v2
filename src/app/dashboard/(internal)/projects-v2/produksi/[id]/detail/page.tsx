@@ -448,7 +448,7 @@ export default function ProduksiDetailPage() {
                         </div>
                         <div className="space-y-1">
                             <Label className="text-[10px] text-muted-foreground uppercase">SPK Number</Label>
-                            <p className="text-neutral-700">{project.spk_number || "-"}</p>
+                            <p className="text-neutral-700">{project.spk_number || project.spk?.nomor_spk || "-"}</p>
                         </div>
                         <div className="space-y-1">
                             <Label className="text-[10px] text-muted-foreground uppercase">Deadline</Label>

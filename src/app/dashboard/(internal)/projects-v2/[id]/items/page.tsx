@@ -279,7 +279,7 @@ export default function ProjectItemsPage() {
                             <div className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                                 <Calendar className="h-4 w-4" /> SPK Number
                             </div>
-                            <p className="text-neutral-700">{project.spk_number || "-"}</p>
+                            <p className="text-neutral-700">{project.spk_number || project.spk?.nomor_spk || "-"}</p>
                         </div>
                         <div className="space-y-1">
                             <div className="text-sm font-medium text-muted-foreground flex items-center gap-2">

@@ -28,7 +28,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Loader2, MoreHorizontal, Pencil, Trash2, Plus, Search, ChevronLeft, ChevronRight } from "lucide-react"
-import { adminService } from "@/features/admin/api/admin-service"
+import { adminService, Role } from "@/features/admin/api/admin-service"
 import { useState, useEffect } from "react"
 import { toast } from "sonner"
 import { useDebounce } from "@/hooks/use-debounce"
@@ -43,7 +43,7 @@ export function RoleList() {
     
     const [isDialogOpen, setIsDialogOpen] = useState(false)
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-    const [selectedRole, setSelectedRole] = useState<any>(null)
+    const [selectedRole, setSelectedRole] = useState<Role | null>(null)
     const [roleName, setRoleName] = useState('')
 
     // Reset page when search changes
@@ -161,7 +161,7 @@ export function RoleList() {
                                 </TableCell>
                             </TableRow>
                         ) : (
-                            roles.map((role: any, index: number) => (
+                            roles.map((role: Role, index: number) => (
                                 <TableRow key={role.id}>
                                     <TableCell className="font-medium text-neutral-500">
                                         {(page - 1) * (meta?.per_page || 15) + index + 1}
@@ -208,7 +208,7 @@ export function RoleList() {
             {meta && meta.last_page > 1 && (
                 <div className="flex items-center justify-between px-2">
                     <div className="text-sm text-muted-foreground">
-                        Showing {(page - 1) * meta.per_page + 1} to {Math.min(page * meta.per_page, meta.total)} of {meta.total} roles
+                        Showing {(page - 1) * (meta?.per_page || 0) + 1} to {Math.min(page * (meta?.per_page || 0), meta?.total || 0)} of {meta?.total || 0} roles
                     </div>
                     <div className="flex items-center gap-2">
                         <Button
@@ -295,7 +295,7 @@ export function RoleList() {
                         <Button 
                             variant="destructive"
                             disabled={deleteMutation.isPending}
-                            onClick={() => deleteMutation.mutate(selectedRole.id)}
+                            onClick={() => selectedRole && deleteMutation.mutate(selectedRole.id)}
                         >
                             {deleteMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                             Delete Role

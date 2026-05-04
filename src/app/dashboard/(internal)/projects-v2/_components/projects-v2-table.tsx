@@ -65,11 +65,13 @@ import { ProjectFormDialog } from "./project-form-dialog"
 export function ProjectsV2Table({ 
     showSPD = false, 
     showPerencanaan = false,
-    showProduksi = false 
+    showProduksi = false,
+    onlyShowDetail = false
 }: { 
     showSPD?: boolean, 
     showPerencanaan?: boolean,
-    showProduksi?: boolean 
+    showProduksi?: boolean,
+    onlyShowDetail?: boolean
 }) {
     const router = useRouter()
     const queryClient = useQueryClient()
@@ -272,10 +274,12 @@ export function ProjectsV2Table({
                         </PopoverContent>
                     </Popover>
                 </div>
-                <Button onClick={handleCreate} className="bg-orange-600 hover:bg-orange-700">
-                    <Plus className="mr-2 h-4 w-4" />
-                    New Project
-                </Button>
+                {!onlyShowDetail && (
+                    <Button onClick={handleCreate} className="bg-orange-600 hover:bg-orange-700">
+                        <Plus className="mr-2 h-4 w-4" />
+                        New Project
+                    </Button>
+                )}
             </div>
 
             <div className="rounded-md border overflow-hidden">
@@ -347,7 +351,7 @@ export function ProjectsV2Table({
                                     <TableCell>
                                         {project.deadline ? format(new Date(project.deadline), "MMM d, yyyy") : "-"}
                                     </TableCell>
-                                    <TableCell>{project.spk_number || "-"}</TableCell>
+                                    <TableCell>{project.spk_number || project.spk?.nomor_spk || "-"}</TableCell>
                                     {showSPD && (
                                         <>
                                             <TableCell>
@@ -395,51 +399,86 @@ export function ProjectsV2Table({
                                         </>
                                     )}
                                     <TableCell className="text-right">
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" className="h-8 w-8 p-0">
-                                                    <span className="sr-only">Open menu</span>
-                                                    <MoreHorizontal className="h-4 w-4" />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuItem onClick={() => router.push(`/dashboard/projects-v2/${project.id}/items`)}>
-                                                    <Plus className="mr-2 h-4 w-4" />
-                                                    Item
-                                                </DropdownMenuItem>
+                                        {onlyShowDetail ? (
+                                            <div className="flex justify-end">
                                                 {showSPD && (
-                                                    <DropdownMenuItem onClick={() => router.push(`/dashboard/projects-v2/perintah-kerja/${project.id}/detail`)}>
-                                                        <Plus className="mr-2 h-4 w-4" />
+                                                    <Button 
+                                                        variant="outline" 
+                                                        size="sm" 
+                                                        className="h-8 px-3 text-orange-600 border-orange-200 hover:bg-orange-50 hover:text-orange-700"
+                                                        onClick={() => router.push(`/dashboard/projects-v2/perintah-kerja/${project.id}/detail`)}
+                                                    >
                                                         Detail
-                                                    </DropdownMenuItem>
+                                                    </Button>
                                                 )}
                                                 {showPerencanaan && (
-                                                    <DropdownMenuItem onClick={() => router.push(`/dashboard/projects-v2/perencanaan/${project.id}/detail`)}>
-                                                        <Plus className="mr-2 h-4 w-4" />
+                                                    <Button 
+                                                        variant="outline" 
+                                                        size="sm" 
+                                                        className="h-8 px-3 text-blue-600 border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                                                        onClick={() => router.push(`/dashboard/projects-v2/perencanaan/${project.id}/detail`)}
+                                                    >
                                                         Detail
-                                                    </DropdownMenuItem>
+                                                    </Button>
                                                 )}
                                                 {showProduksi && (
-                                                    <DropdownMenuItem onClick={() => router.push(`/dashboard/projects-v2/produksi/${project.id}/detail`)}>
-                                                        <Plus className="mr-2 h-4 w-4" />
+                                                    <Button 
+                                                        variant="outline" 
+                                                        size="sm" 
+                                                        className="h-8 px-3 text-emerald-600 border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700"
+                                                        onClick={() => router.push(`/dashboard/projects-v2/produksi/${project.id}/detail`)}
+                                                    >
                                                         Detail
-                                                    </DropdownMenuItem>
+                                                    </Button>
                                                 )}
-                                                <DropdownMenuSeparator />
-                                                <DropdownMenuItem onClick={() => handleEdit(project)}>
-                                                    <Pencil className="mr-2 h-4 w-4" />
-                                                    Edit
-                                                </DropdownMenuItem>
-                                                <DropdownMenuSeparator />
-                                                <DropdownMenuItem 
-                                                    className="text-red-600 focus:text-red-600"
-                                                    onClick={() => handleDeleteClick(project)}
-                                                >
-                                                    <Trash2 className="mr-2 h-4 w-4" />
-                                                    Delete
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
+                                            </div>
+                                        ) : (
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" className="h-8 w-8 p-0">
+                                                        <span className="sr-only">Open menu</span>
+                                                        <MoreHorizontal className="h-4 w-4" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    <DropdownMenuItem onClick={() => router.push(`/dashboard/projects-v2/${project.id}/items`)}>
+                                                        <Plus className="mr-2 h-4 w-4" />
+                                                        Item
+                                                    </DropdownMenuItem>
+                                                    {showSPD && (
+                                                        <DropdownMenuItem onClick={() => router.push(`/dashboard/projects-v2/perintah-kerja/${project.id}/detail`)}>
+                                                            <Plus className="mr-2 h-4 w-4" />
+                                                            Detail
+                                                        </DropdownMenuItem>
+                                                    )}
+                                                    {showPerencanaan && (
+                                                        <DropdownMenuItem onClick={() => router.push(`/dashboard/projects-v2/perencanaan/${project.id}/detail`)}>
+                                                            <Plus className="mr-2 h-4 w-4" />
+                                                            Detail
+                                                        </DropdownMenuItem>
+                                                    )}
+                                                    {showProduksi && (
+                                                        <DropdownMenuItem onClick={() => router.push(`/dashboard/projects-v2/produksi/${project.id}/detail`)}>
+                                                            <Plus className="mr-2 h-4 w-4" />
+                                                            Detail
+                                                        </DropdownMenuItem>
+                                                    )}
+                                                    <DropdownMenuSeparator />
+                                                    <DropdownMenuItem onClick={() => handleEdit(project)}>
+                                                        <Pencil className="mr-2 h-4 w-4" />
+                                                        Edit
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuSeparator />
+                                                    <DropdownMenuItem 
+                                                        className="text-red-600 focus:text-red-600"
+                                                        onClick={() => handleDeleteClick(project)}
+                                                    >
+                                                        <Trash2 className="mr-2 h-4 w-4" />
+                                                        Delete
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        )}
                                     </TableCell>
                                 </TableRow>
                             ))

@@ -13,7 +13,7 @@ export default function PerintahKerjaPage() {
             </div>
 
             <div className="bg-white rounded-xl shadow-sm border border-neutral-200">
-                <ProjectsV2Table showSPD={true} />
+                <ProjectsV2Table showSPD={true} onlyShowDetail={true} />
             </div>
         </div>
     )
