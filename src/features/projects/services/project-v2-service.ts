@@ -46,6 +46,7 @@ export interface ProjectV2 {
         tanggal_mulai: string | null;
         tanggal_selesai: string | null;
     };
+    jadwal_pengiriman?: JadwalPengiriman;
 }
 
 export interface TahapDesign {
@@ -349,6 +350,28 @@ export const projectV2Service = {
     deleteSetting: async (id: number) => {
         const { data } = await apiClient.delete(`/setting/${id}`);
         return data;
+    },
+
+    // Delivery Schedule
+    getTanggalPengiriman: async () => {
+        const { data } = await apiClient.get<TanggalPengiriman[]>('/tanggal-pengiriman');
+        return data;
+    },
+    storeTanggalPengiriman: async (tanggal: string) => {
+        const { data } = await apiClient.post<TanggalPengiriman>('/tanggal-pengiriman', { tanggal });
+        return data;
+    },
+    getJadwalPengiriman: async (params?: { tanggal_pengiriman_id?: number }) => {
+        const { data } = await apiClient.get<JadwalPengiriman[]>('/jadwal-pengiriman', { params });
+        return data;
+    },
+    storeJadwalPengiriman: async (payload: { project_id: number; tanggal_pengiriman_id: number; keterangan?: string }) => {
+        const { data } = await apiClient.post<JadwalPengiriman>('/jadwal-pengiriman', payload);
+        return data;
+    },
+    deleteJadwalPengiriman: async (id: number) => {
+        const { data } = await apiClient.delete(`/jadwal-pengiriman/${id}`);
+        return data;
     }
 }
 
@@ -492,4 +515,22 @@ export interface Setting {
     koor_setting: string | null;
     tanggal_selesai: string | null;
     tahap_pengiriman?: TahapPengiriman;
+}
+
+export interface TanggalPengiriman {
+    id: number;
+    tanggal: string;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface JadwalPengiriman {
+    id: number;
+    project_id: number;
+    tanggal_pengiriman_id: number;
+    keterangan: string | null;
+    project?: ProjectV2;
+    tanggal_pengiriman?: TanggalPengiriman;
+    created_at: string;
+    updated_at: string;
 }
