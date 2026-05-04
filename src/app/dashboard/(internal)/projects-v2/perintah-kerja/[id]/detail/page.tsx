@@ -277,7 +277,7 @@ export default function DesignerDetailPage() {
                         </div>
                         <div className="space-y-1">
                             <Label className="text-[10px] text-muted-foreground uppercase">SPK Number</Label>
-                            <p className="text-neutral-700">{project.spk_number || "-"}</p>
+                            <p className="text-neutral-700">{project.spk_number || project.spk?.nomor_spk || "-"}</p>
                         </div>
                         <div className="space-y-1">
                             <Label className="text-[10px] text-muted-foreground uppercase">Deadline</Label>
@@ -516,10 +516,6 @@ export default function DesignerDetailPage() {
                         <ListChecks className="h-5 w-5 text-neutral-400" />
                         Project Items
                     </h2>
-                    <Button onClick={() => setIsItemFormOpen(true)} className="bg-orange-600 hover:bg-orange-700">
-                        <Plus className="mr-2 h-4 w-4" />
-                        Add Item
-                    </Button>
                 </div>
 
                 <div className="rounded-xl border border-neutral-200 bg-white overflow-hidden shadow-sm">
@@ -535,7 +531,6 @@ export default function DesignerDetailPage() {
                                 <TableHead>Dimensions</TableHead>
                                 <TableHead>Qty</TableHead>
                                 <TableHead>Gambar Kerja</TableHead>
-                                <TableHead className="w-[80px] text-right">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -587,29 +582,6 @@ export default function DesignerDetailPage() {
                                                     Upload
                                                 </Button>
                                             )}
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-neutral-100">
-                                                        <MoreHorizontal className="h-4 w-4" />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end" className="w-[160px]">
-                                                    <DropdownMenuItem onClick={() => { setSelectedItem(item); setIsItemFormOpen(true); }}>
-                                                        <Pencil className="mr-2 h-4 w-4" />
-                                                        Edit
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuSeparator />
-                                                    <DropdownMenuItem 
-                                                        className="text-red-600 focus:text-red-600"
-                                                        onClick={() => { setItemToDelete(item); setIsItemDeleteDialogOpen(true); }}
-                                                    >
-                                                        <Trash2 className="mr-2 h-4 w-4" />
-                                                        Delete
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
                                         </TableCell>
                                     </TableRow>
                                 ))

@@ -8,6 +8,7 @@ export interface ProjectV2 {
     client_id: number;
     deadline: string | null;
     status: string;
+    progres_produksi?: number;
     client?: {
         id: number;
         name: string;
