@@ -136,6 +136,23 @@ export function ProjectItemFormDialog({ open, onOpenChange, projectId, item }: P
         if (activeIndex !== null) {
             form.setValue(`items.${activeIndex}.mdl_item_id` as any, mdlItem.id)
             form.setValue(`items.${activeIndex}.item` as any, mdlItem.nama_barang)
+            form.setValue(`items.${activeIndex}.ruang` as any, mdlItem.lokasi_ruangan || "")
+            form.setValue(`items.${activeIndex}.keterangan` as any, mdlItem.spesifikasi_dan_material || "")
+            form.setValue(`items.${activeIndex}.panjang` as any, mdlItem.dimensi_panjang ?? null)
+            form.setValue(`items.${activeIndex}.lebar` as any, mdlItem.dimensi_lebar ?? null)
+            form.setValue(`items.${activeIndex}.tinggi` as any, mdlItem.dimensi_tinggi ?? null)
+            form.setValue(`items.${activeIndex}.volume` as any, mdlItem.volume ?? null)
+            if (mdlItem.kode_satuan_beli) {
+                // Determine if kode_satuan_beli matches the allowed enum values: 'M1', 'M2', 'UNIT', 'SET'
+                const normalizedSatuan = mdlItem.kode_satuan_beli.toUpperCase();
+                if (['M1', 'M2', 'UNIT', 'SET'].includes(normalizedSatuan)) {
+                    form.setValue(`items.${activeIndex}.satuan` as any, normalizedSatuan)
+                } else if (normalizedSatuan === 'PCS') {
+                    form.setValue(`items.${activeIndex}.satuan` as any, 'UNIT')
+                } else {
+                    form.setValue(`items.${activeIndex}.satuan` as any, normalizedSatuan) // Let it pass if the Select accepts it or just use it
+                }
+            }
             setSelectorOpen(false)
             setActiveIndex(null)
         }
@@ -274,7 +291,7 @@ export function ProjectItemFormDialog({ open, onOpenChange, projectId, item }: P
                                                 render={({ field }) => (
                                                     <FormItem>
                                                         <FormControl>
-                                                            <Input type="number" placeholder="P" className="h-8 text-xs text-center px-1" {...field} value={field.value === null ? '' : field.value} />
+                                                            <Input type="number" placeholder="P" className="h-8 text-xs text-center px-1" {...field} value={field.value === null || field.value === 0 ? '' : field.value} />
                                                         </FormControl>
                                                         <FormMessage />
                                                     </FormItem>
@@ -286,7 +303,7 @@ export function ProjectItemFormDialog({ open, onOpenChange, projectId, item }: P
                                                 render={({ field }) => (
                                                     <FormItem>
                                                         <FormControl>
-                                                            <Input type="number" placeholder="L" className="h-8 text-xs text-center px-1" {...field} value={field.value === null ? '' : field.value} />
+                                                            <Input type="number" placeholder="L" className="h-8 text-xs text-center px-1" {...field} value={field.value === null || field.value === 0 ? '' : field.value} />
                                                         </FormControl>
                                                         <FormMessage />
                                                     </FormItem>
@@ -298,7 +315,7 @@ export function ProjectItemFormDialog({ open, onOpenChange, projectId, item }: P
                                                 render={({ field }) => (
                                                     <FormItem>
                                                         <FormControl>
-                                                            <Input type="number" placeholder="T" className="h-8 text-xs text-center px-1" {...field} value={field.value === null ? '' : field.value} />
+                                                            <Input type="number" placeholder="T" className="h-8 text-xs text-center px-1" {...field} value={field.value === null || field.value === 0 ? '' : field.value} />
                                                         </FormControl>
                                                         <FormMessage />
                                                     </FormItem>
@@ -310,7 +327,7 @@ export function ProjectItemFormDialog({ open, onOpenChange, projectId, item }: P
                                                 render={({ field }) => (
                                                     <FormItem>
                                                         <FormControl>
-                                                            <Input type="number" placeholder="Vol" className="h-8 text-xs text-center px-1" {...field} value={field.value === null ? '' : field.value} />
+                                                            <Input type="number" placeholder="Vol" className="h-8 text-xs text-center px-1" {...field} value={field.value === null || field.value === 0 ? '' : field.value} />
                                                         </FormControl>
                                                         <FormMessage />
                                                     </FormItem>
@@ -344,7 +361,7 @@ export function ProjectItemFormDialog({ open, onOpenChange, projectId, item }: P
                                                 render={({ field }) => (
                                                     <FormItem>
                                                         <FormControl>
-                                                            <Input type="number" placeholder="Qty" className="h-8 text-xs text-center px-1" {...field} value={field.value === null ? '' : field.value} />
+                                                            <Input type="number" placeholder="Qty" className="h-8 text-xs text-center px-1" {...field} value={field.value === null || field.value === 0 ? '' : field.value} />
                                                         </FormControl>
                                                         <FormMessage />
                                                     </FormItem>

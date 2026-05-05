@@ -125,6 +125,9 @@ export default function ItemDetailPage() {
             queryClient.invalidateQueries({ queryKey: ["project-item-detail", itemId] })
             toast.success("Barang keluar recorded")
             setIsKeluarDialogOpen(false)
+        },
+        onError: (error: any) => {
+            toast.error(error.response?.data?.message || "Gagal mencatat barang keluar");
         }
     })
 
@@ -154,6 +157,9 @@ export default function ItemDetailPage() {
             queryClient.invalidateQueries({ queryKey: ["project-item-detail", itemId] })
             toast.success(formData.id ? "Setting updated" : "Setting recorded")
             setIsSettingDialogOpen(false)
+        },
+        onError: (error: any) => {
+            toast.error(error.response?.data?.message || "Gagal menyimpan setting");
         }
     })
 
@@ -179,6 +185,9 @@ export default function ItemDetailPage() {
             queryClient.invalidateQueries({ queryKey: ["project-item-detail", itemId] })
             toast.success("Barang keluar updated")
             setIsKeluarDialogOpen(false)
+        },
+        onError: (error: any) => {
+            toast.error(error.response?.data?.message || "Gagal mengupdate barang keluar");
         }
     })
 
@@ -349,10 +358,10 @@ export default function ItemDetailPage() {
                             </TableHeader>
                             <TableBody>
                                 {stages?.map((stage: TahapPengiriman) => {
-                                    const keluar = item.barang_jadi_keluar?.filter((k: BarangJadiKeluar) => k.tahap_pengiriman_id === stage.id)
-                                    const sj = item.surat_jalan?.filter((s: SuratJalan) => s.tahap_pengiriman_id === stage.id)
-                                    const sk = item.setrim_kembali?.filter((s: SetrimKembali) => s.tahap_pengiriman_id === stage.id)
-                                    const set = item.setting?.filter((s: Setting) => s.tahap_pengiriman_id === stage.id)
+                                    const keluar = item.barang_jadi_keluar?.filter((k: BarangJadiKeluar) => k.tahap_pengiriman_id == stage.id)
+                                    const sj = item.surat_jalan?.filter((s: SuratJalan) => s.tahap_pengiriman_id == stage.id)
+                                    const sk = item.setrim_kembali?.filter((s: SetrimKembali) => s.tahap_pengiriman_id == stage.id)
+                                    const set = item.setting?.filter((s: Setting) => s.tahap_pengiriman_id == stage.id)
 
                                     return (
                                         <TableRow key={stage.id}>
@@ -423,7 +432,7 @@ export default function ItemDetailPage() {
                                                             <div className="flex items-center">
                                                                 {s.file && (
                                                                     <Button size="icon" variant="ghost" className="h-6 w-6" asChild>
-                                                                        <a href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/storage/${s.file}`} target="_blank"><Eye className="h-3 w-3" /></a>
+                                                                        <a href={`${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '')}/storage/${s.file}`} target="_blank"><Eye className="h-3 w-3" /></a>
                                                                     </Button>
                                                                 )}
                                                                 <DropdownMenu>
@@ -461,7 +470,7 @@ export default function ItemDetailPage() {
                                                             <div className="flex items-center">
                                                                 {s.file && (
                                                                     <Button size="icon" variant="ghost" className="h-6 w-6" asChild>
-                                                                        <a href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/storage/${s.file}`} target="_blank"><Eye className="h-3 w-3" /></a>
+                                                                        <a href={`${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '')}/storage/${s.file}`} target="_blank"><Eye className="h-3 w-3" /></a>
                                                                     </Button>
                                                                 )}
                                                                 <DropdownMenu>
@@ -580,7 +589,7 @@ export default function ItemDetailPage() {
                             </div>
                             <div className="space-y-2">
                                 <Label>Jumlah</Label>
-                                <Input type="number" value={formData.jumlah} onChange={e => setFormData({...formData, jumlah: parseInt(e.target.value)})} />
+                                <Input type="number" value={formData.jumlah === 0 ? "" : (formData.jumlah || "")} onChange={e => setFormData({...formData, jumlah: parseInt(e.target.value) || 0})} />
                             </div>
                         </div>
                     </div>
@@ -709,7 +718,7 @@ export default function ItemDetailPage() {
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label>Jumlah</Label>
-                                <Input type="number" value={formData.jumlah} onChange={e => setFormData({...formData, jumlah: parseInt(e.target.value)})} />
+                                <Input type="number" value={formData.jumlah === 0 ? "" : (formData.jumlah || "")} onChange={e => setFormData({...formData, jumlah: parseInt(e.target.value) || 0})} />
                             </div>
                             <div className="space-y-2">
                                 <Label>Koordinator Setting</Label>
