@@ -381,7 +381,13 @@ export interface MDLItem {
     sub_kategori: string | null;
     kode_barang: string | null;
     nama_barang: string;
-    // other fields omitted for brevity
+    lokasi_ruangan: string | null;
+    spesifikasi_dan_material: string | null;
+    dimensi_panjang: number | null;
+    dimensi_lebar: number | null;
+    dimensi_tinggi: number | null;
+    volume: number | null;
+    kode_satuan_beli: string | null;
 }
 
 export interface ProjectItemV2 {

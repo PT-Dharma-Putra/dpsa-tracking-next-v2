@@ -472,7 +472,7 @@ export default function ProduksiDetailPage() {
                                         </div>
                                         <Button variant="ghost" size="icon" className="h-6 w-6 text-purple-600" asChild>
                                             <a 
-                                                href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/storage/${project.list_furnitur.file}`} 
+                                                href={`${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '')}/storage/${project.list_furnitur.file}`} 
                                                 target="_blank" 
                                                 rel="noopener noreferrer"
                                             >
@@ -562,7 +562,7 @@ export default function ProduksiDetailPage() {
                                                         <CheckCircle2 className="h-3.5 w-3.5" />
                                                     </div>
                                                     <Button variant="ghost" size="icon" className="h-6 w-6 text-blue-600" asChild>
-                                                        <a href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/storage/${item.gambar_kerja.file}`} target="_blank" rel="noopener noreferrer">
+                                                        <a href={`${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '')}/storage/${item.gambar_kerja.file}`} target="_blank" rel="noopener noreferrer">
                                                             <Eye className="h-3.5 w-3.5" />
                                                         </a>
                                                     </Button>
@@ -586,7 +586,7 @@ export default function ProduksiDetailPage() {
                                                         <CheckCircle2 className="h-3.5 w-3.5" />
                                                     </div>
                                                     <Button variant="ghost" size="icon" className="h-6 w-6 text-blue-600" asChild>
-                                                        <a href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/storage/${item.dokubah.file}`} target="_blank" rel="noopener noreferrer">
+                                                        <a href={`${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '')}/storage/${item.dokubah.file}`} target="_blank" rel="noopener noreferrer">
                                                             <Eye className="h-3.5 w-3.5" />
                                                         </a>
                                                     </Button>
@@ -922,104 +922,126 @@ export default function ProduksiDetailPage() {
                             Input jumlah item yang telah selesai di setiap tahapan untuk: <strong>{produksiItem?.item}</strong>
                         </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <div className="grid grid-cols-2 gap-x-8 gap-y-4 py-4">
-                        <div className="space-y-2">
-                            <Label>Jumlah Order</Label>
-                            <Input 
-                                type="number" 
-                                value={produksiData.jumlah_order || 0} 
-                                onChange={e => setProduksiData({...produksiData, jumlah_order: parseInt(e.target.value)})} 
-                                className="bg-neutral-50 font-bold"
-                            />
+                    <div className="py-4 space-y-6">
+                        {/* Jumlah Order - Top Center */}
+                        <div className="flex justify-center">
+                            <div className="w-1/2 space-y-2 text-center">
+                                <Label className="text-sm font-bold">Jumlah Order</Label>
+                                <Input 
+                                    type="number" 
+                                    value={produksiData.jumlah_order || 0} 
+                                    onChange={e => setProduksiData({...produksiData, jumlah_order: parseInt(e.target.value)})} 
+                                    disabled
+                                    className="bg-neutral-50 font-bold text-center text-lg h-12"
+                                />
+                            </div>
                         </div>
-                        <div className="space-y-2">
-                            <Label>Cold Press</Label>
-                            <Input 
-                                type="number" 
-                                value={produksiData.cold_press || 0} 
-                                onChange={e => setProduksiData({...produksiData, cold_press: parseInt(e.target.value)})} 
-                            />
+
+                        {/* Mesin Section */}
+                        <div className="space-y-3">
+                            <h4 className="font-semibold text-sm text-neutral-500 uppercase tracking-wider border-b pb-2">Mesin</h4>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label>Cold Press</Label>
+                                    <Input 
+                                        type="number" 
+                                        value={produksiData.cold_press === 0 ? "" : (produksiData.cold_press || "")} 
+                                        onChange={e => setProduksiData({...produksiData, cold_press: parseInt(e.target.value) || 0})} 
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Running Saw</Label>
+                                    <Input 
+                                        type="number" 
+                                        value={produksiData.running_saw === 0 ? "" : (produksiData.running_saw || "")} 
+                                        onChange={e => setProduksiData({...produksiData, running_saw: parseInt(e.target.value) || 0})} 
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Edging</Label>
+                                    <Input 
+                                        type="number" 
+                                        value={produksiData.edging === 0 ? "" : (produksiData.edging || "")} 
+                                        onChange={e => setProduksiData({...produksiData, edging: parseInt(e.target.value) || 0})} 
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>CNC</Label>
+                                    <Input 
+                                        type="number" 
+                                        value={produksiData.cnc === 0 ? "" : (produksiData.cnc || "")} 
+                                        onChange={e => setProduksiData({...produksiData, cnc: parseInt(e.target.value) || 0})} 
+                                    />
+                                </div>
+                            </div>
                         </div>
-                        <div className="space-y-2">
-                            <Label>Running Saw</Label>
-                            <Input 
-                                type="number" 
-                                value={produksiData.running_saw || 0} 
-                                onChange={e => setProduksiData({...produksiData, running_saw: parseInt(e.target.value)})} 
-                            />
+
+                        {/* Manual Section */}
+                        <div className="space-y-3">
+                            <h4 className="font-semibold text-sm text-neutral-500 uppercase tracking-wider border-b pb-2">Manual</h4>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                <div className="space-y-2">
+                                    <Label>Tukang Kayu</Label>
+                                    <Input 
+                                        type="number" 
+                                        value={produksiData.tukang_kayu === 0 ? "" : (produksiData.tukang_kayu || "")} 
+                                        onChange={e => setProduksiData({...produksiData, tukang_kayu: parseInt(e.target.value) || 0})} 
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Tukang Jok</Label>
+                                    <Input 
+                                        type="number" 
+                                        value={produksiData.tukang_jok === 0 ? "" : (produksiData.tukang_jok || "")} 
+                                        onChange={e => setProduksiData({...produksiData, tukang_jok: parseInt(e.target.value) || 0})} 
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Finishing</Label>
+                                    <Input 
+                                        type="number" 
+                                        value={produksiData.finishing === 0 ? "" : (produksiData.finishing || "")} 
+                                        onChange={e => setProduksiData({...produksiData, finishing: parseInt(e.target.value) || 0})} 
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Rakit</Label>
+                                    <Input 
+                                        type="number" 
+                                        value={produksiData.rakit === 0 ? "" : (produksiData.rakit || "")} 
+                                        onChange={e => setProduksiData({...produksiData, rakit: parseInt(e.target.value) || 0})} 
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Quality Control</Label>
+                                    <Input 
+                                        type="number" 
+                                        value={produksiData.quality_control === 0 ? "" : (produksiData.quality_control || "")} 
+                                        onChange={e => setProduksiData({...produksiData, quality_control: parseInt(e.target.value) || 0})} 
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Packing</Label>
+                                    <Input 
+                                        type="number" 
+                                        value={produksiData.packing === 0 ? "" : (produksiData.packing || "")} 
+                                        onChange={e => setProduksiData({...produksiData, packing: parseInt(e.target.value) || 0})} 
+                                    />
+                                </div>
+                            </div>
                         </div>
-                        <div className="space-y-2">
-                            <Label>Edging</Label>
-                            <Input 
-                                type="number" 
-                                value={produksiData.edging || 0} 
-                                onChange={e => setProduksiData({...produksiData, edging: parseInt(e.target.value)})} 
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>CNC</Label>
-                            <Input 
-                                type="number" 
-                                value={produksiData.cnc || 0} 
-                                onChange={e => setProduksiData({...produksiData, cnc: parseInt(e.target.value)})} 
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Tukang Kayu</Label>
-                            <Input 
-                                type="number" 
-                                value={produksiData.tukang_kayu || 0} 
-                                onChange={e => setProduksiData({...produksiData, tukang_kayu: parseInt(e.target.value)})} 
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Tukang Jok</Label>
-                            <Input 
-                                type="number" 
-                                value={produksiData.tukang_jok || 0} 
-                                onChange={e => setProduksiData({...produksiData, tukang_jok: parseInt(e.target.value)})} 
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Finishing</Label>
-                            <Input 
-                                type="number" 
-                                value={produksiData.finishing || 0} 
-                                onChange={e => setProduksiData({...produksiData, finishing: parseInt(e.target.value)})} 
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Rakit</Label>
-                            <Input 
-                                type="number" 
-                                value={produksiData.rakit || 0} 
-                                onChange={e => setProduksiData({...produksiData, rakit: parseInt(e.target.value)})} 
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Quality Control</Label>
-                            <Input 
-                                type="number" 
-                                value={produksiData.quality_control || 0} 
-                                onChange={e => setProduksiData({...produksiData, quality_control: parseInt(e.target.value)})} 
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Packing</Label>
-                            <Input 
-                                type="number" 
-                                value={produksiData.packing || 0} 
-                                onChange={e => setProduksiData({...produksiData, packing: parseInt(e.target.value)})} 
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Persen (%)</Label>
-                            <Input 
-                                type="text" 
-                                value={typeof produksiData.persen === 'number' ? produksiData.persen.toFixed(2) : (Number(produksiData.persen) || 0).toFixed(2)} 
-                                disabled
-                                className="bg-orange-50 font-bold text-orange-700 disabled:opacity-100"
-                            />
+
+                        {/* Persen Section */}
+                        <div className="pt-2 border-t">
+                            <div className="space-y-2 max-w-[200px] mx-auto text-center">
+                                <Label className="text-sm font-bold">Persen (%)</Label>
+                                <Input 
+                                    type="text" 
+                                    value={typeof produksiData.persen === 'number' ? produksiData.persen.toFixed(2) : (Number(produksiData.persen) || 0).toFixed(2)} 
+                                    disabled
+                                    className="bg-orange-50 font-bold text-orange-700 text-center text-lg h-12 disabled:opacity-100"
+                                />
+                            </div>
                         </div>
                     </div>
                     <AlertDialogFooter>

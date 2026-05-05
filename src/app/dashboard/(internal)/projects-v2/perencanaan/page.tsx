@@ -13,7 +13,7 @@ export default function PerencanaanPage() {
             </div>
 
             <div className="bg-white rounded-xl shadow-sm border border-neutral-200">
-                <ProjectsV2Table showSPD={false} showPerencanaan={true} />
+                <ProjectsV2Table showSPD={false} showPerencanaan={true} onlyShowDetail={true} />
             </div>
         </div>
     )

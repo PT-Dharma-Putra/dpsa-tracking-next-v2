@@ -304,6 +304,7 @@ export default function ProjectItemsPage() {
                                         <Input 
                                             id="spd-file"
                                             type="file" 
+                                            accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
                                             onChange={(e) => setSpdFile(e.target.files?.[0] || null)}
                                             className="h-9 text-xs border-neutral-200 bg-white shadow-sm focus:ring-orange-500"
                                         />
@@ -336,7 +337,7 @@ export default function ProjectItemsPage() {
                                             </div>
                                         </div>
                                         <Button variant="ghost" size="icon" className="h-7 w-7 text-orange-600" asChild>
-                                            <a href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/storage/${existingSpd.spd_file}`} target="_blank" rel="noopener noreferrer">
+                                            <a href={`${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '')}/storage/${existingSpd.spd_file}`} target="_blank" rel="noopener noreferrer">
                                                 <FileDown className="h-4 w-4" />
                                             </a>
                                         </Button>
@@ -411,6 +412,7 @@ export default function ProjectItemsPage() {
                                         <Input 
                                             id="sph-file"
                                             type="file" 
+                                            accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
                                             onChange={(e) => setSphFile(e.target.files?.[0] || null)}
                                             className="h-9 text-xs border-neutral-200 bg-white shadow-sm focus:ring-blue-500"
                                         />
@@ -445,7 +447,7 @@ export default function ProjectItemsPage() {
                                             </div>
                                         </div>
                                         <Button variant="ghost" size="icon" className="h-7 w-7 text-blue-600" asChild>
-                                            <a href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/storage/${existingSph.file}`} target="_blank" rel="noopener noreferrer">
+                                            <a href={`${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '')}/storage/${existingSph.file}`} target="_blank" rel="noopener noreferrer">
                                                 <FileDown className="h-4 w-4" />
                                             </a>
                                         </Button>
@@ -464,6 +466,7 @@ export default function ProjectItemsPage() {
                                         <Input 
                                             id="spk-file"
                                             type="file" 
+                                            accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
                                             onChange={(e) => setSpkFile(e.target.files?.[0] || null)}
                                             className="h-9 text-xs border-neutral-200 bg-white shadow-sm focus:ring-purple-500"
                                         />
@@ -498,7 +501,7 @@ export default function ProjectItemsPage() {
                                             </div>
                                         </div>
                                         <Button variant="ghost" size="icon" className="h-7 w-7 text-purple-600" asChild>
-                                            <a href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/storage/${existingSpk.file}`} target="_blank" rel="noopener noreferrer">
+                                            <a href={`${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '')}/storage/${existingSpk.file}`} target="_blank" rel="noopener noreferrer">
                                                 <FileDown className="h-4 w-4" />
                                             </a>
                                         </Button>
