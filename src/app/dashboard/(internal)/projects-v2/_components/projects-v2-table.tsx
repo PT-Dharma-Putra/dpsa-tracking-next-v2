@@ -449,7 +449,7 @@ export function ProjectsV2Table({
                                                         </Badge>
                                                         <Button variant="ghost" size="icon" className="h-7 w-7 text-orange-600" asChild>
                                                             <a 
-                                                                href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/storage/${project.designs[0].spd_file}`} 
+                                                                href={`${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '')}/storage/${project.designs[0].spd_file}`} 
                                                                 target="_blank" 
                                                                 rel="noopener noreferrer"
                                                             >

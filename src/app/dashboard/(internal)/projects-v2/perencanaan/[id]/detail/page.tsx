@@ -445,7 +445,7 @@ export default function PerencanaanDetailPage() {
                                         </div>
                                         <Button variant="ghost" size="icon" className="h-8 w-8 text-purple-600" asChild>
                                             <a 
-                                                href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/storage/${project.list_furnitur.file}`} 
+                                                href={`${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '')}/storage/${project.list_furnitur.file}`} 
                                                 target="_blank" 
                                                 rel="noopener noreferrer"
                                             >
@@ -484,7 +484,7 @@ export default function PerencanaanDetailPage() {
                                 {existingSpd.spd_file && (
                                     <Button variant="outline" className="ml-auto bg-white border-orange-200 text-orange-600 hover:bg-orange-50" asChild>
                                         <a 
-                                            href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/storage/${existingSpd.spd_file}`} 
+                                            href={`${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '')}/storage/${existingSpd.spd_file}`} 
                                             target="_blank" 
                                             rel="noopener noreferrer"
                                         >
@@ -664,7 +664,7 @@ export default function PerencanaanDetailPage() {
                                 </div>
                                 <Button variant="ghost" size="icon" className="h-8 w-8 text-purple-600" asChild>
                                     <a 
-                                        href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/storage/${project.list_furnitur.file}`} 
+                                        href={`${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '')}/storage/${project.list_furnitur.file}`} 
                                         target="_blank" 
                                         rel="noopener noreferrer"
                                     >
@@ -743,7 +743,7 @@ export default function PerencanaanDetailPage() {
                                                         <CheckCircle2 className="h-3.5 w-3.5" />
                                                     </div>
                                                     <Button variant="ghost" size="icon" className="h-6 w-6 text-blue-600" asChild>
-                                                        <a href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/storage/${item.gambar_kerja.file}`} target="_blank" rel="noopener noreferrer">
+                                                        <a href={`${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '')}/storage/${item.gambar_kerja.file}`} target="_blank" rel="noopener noreferrer">
                                                             <Eye className="h-3.5 w-3.5" />
                                                         </a>
                                                     </Button>
@@ -767,7 +767,7 @@ export default function PerencanaanDetailPage() {
                                                         <CheckCircle2 className="h-3.5 w-3.5" />
                                                     </div>
                                                     <Button variant="ghost" size="icon" className="h-6 w-6 text-blue-600" asChild>
-                                                        <a href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/storage/${item.dokubah.file}`} target="_blank" rel="noopener noreferrer">
+                                                        <a href={`${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '')}/storage/${item.dokubah.file}`} target="_blank" rel="noopener noreferrer">
                                                             <Eye className="h-3.5 w-3.5" />
                                                         </a>
                                                     </Button>
@@ -1169,7 +1169,7 @@ export default function PerencanaanDetailPage() {
                             <div className="flex items-center gap-4">
                                 <Input 
                                     type="number" 
-                                    value={bjJumlah} 
+                                    value={bjJumlah === 0 ? "" : bjJumlah} 
                                     onChange={e => setBjJumlah(parseInt(e.target.value) || 0)} 
                                     className="font-bold"
                                     max={bjItem ? bjItem.jumlah - (bjItem.barang_jadi_masuk?.reduce((sum, bj) => sum + bj.jumlah, 0) || 0) : undefined}
@@ -1185,7 +1185,7 @@ export default function PerencanaanDetailPage() {
                         <Button
                             className="bg-blue-600 hover:bg-blue-700"
                             onClick={handleBjUpdate}
-                            disabled={updateBjMutation.isPending}
+                            disabled={updateBjMutation.isPending || bjJumlah < 1 || bjJumlah > ((bjItem?.jumlah || 0) - (bjItem?.barang_jadi_masuk?.reduce((sum, bj) => sum + bj.jumlah, 0) || 0))}
                         >
                             {updateBjMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
                             Record Barang

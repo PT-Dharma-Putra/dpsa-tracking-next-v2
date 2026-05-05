@@ -168,9 +168,17 @@ export function ScheduleDeliveryDialog({
                                                             !field.value && "text-muted-foreground"
                                                         )}
                                                     >
-                                                        {field.value && tanggalList
-                                                            ? format(new Date(tanggalList.find(t => t.id === field.value)?.tanggal || ""), "EEEE, d MMMM yyyy")
-                                                            : "Pilih tanggal..."}
+                                                        {(() => {
+                                                            const selected = tanggalList?.find(t => t.id === field.value);
+                                                            if (selected && selected.tanggal) {
+                                                                try {
+                                                                    return format(new Date(selected.tanggal), "EEEE, d MMMM yyyy");
+                                                                } catch(e) {
+                                                                    return selected.tanggal;
+                                                                }
+                                                            }
+                                                            return "Pilih tanggal...";
+                                                        })()}
                                                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                                     </Button>
                                                 </FormControl>

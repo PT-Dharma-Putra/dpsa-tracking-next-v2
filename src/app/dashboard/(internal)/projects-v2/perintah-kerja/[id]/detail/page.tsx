@@ -64,6 +64,7 @@ import { toast } from "sonner"
 
 import { projectV2Service, ProjectItemV2, TahapDesign, DesignProgres } from "@/features/projects/services/project-v2-service"
 import { ProjectItemFormDialog } from "../../../_components/project-item-form-dialog"
+import { Badge } from "@/components/ui/badge"
 
 export default function DesignerDetailPage() {
     const params = useParams()
@@ -314,7 +315,7 @@ export default function DesignerDetailPage() {
                                 {existingSpd.spd_file && (
                                     <Button variant="outline" className="ml-auto bg-white border-orange-200 text-orange-600 hover:bg-orange-50" asChild>
                                         <a 
-                                            href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/storage/${existingSpd.spd_file}`} 
+                                            href={`${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '')}/storage/${existingSpd.spd_file}`} 
                                             target="_blank" 
                                             rel="noopener noreferrer"
                                         >
@@ -496,7 +497,7 @@ export default function DesignerDetailPage() {
                                 </div>
                                 <Button variant="ghost" size="icon" className="h-8 w-8 text-purple-600" asChild>
                                     <a 
-                                        href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/storage/${project.list_furnitur.file}`} 
+                                        href={`${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '')}/storage/${project.list_furnitur.file}`} 
                                         target="_blank" 
                                         rel="noopener noreferrer"
                                     >
@@ -530,6 +531,7 @@ export default function DesignerDetailPage() {
                                 <TableHead>Vol</TableHead>
                                 <TableHead>Dimensions</TableHead>
                                 <TableHead>Qty</TableHead>
+                                <TableHead>PO Divisi</TableHead>
                                 <TableHead>Gambar Kerja</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -560,13 +562,22 @@ export default function DesignerDetailPage() {
                                         </TableCell>
                                         <TableCell className="font-bold">{item.jumlah}</TableCell>
                                         <TableCell>
+                                            {item.divisi ? (
+                                                <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 font-bold">
+                                                    {item.divisi.nama}
+                                                </Badge>
+                                            ) : (
+                                                <span className="text-[10px] text-muted-foreground italic">-</span>
+                                            )}
+                                        </TableCell>
+                                        <TableCell>
                                             {item.gambar_kerja?.file ? (
                                                 <div className="flex items-center gap-2">
                                                     <div className="h-6 w-6 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center">
                                                         <CheckCircle2 className="h-3.5 w-3.5" />
                                                     </div>
                                                     <Button variant="ghost" size="icon" className="h-6 w-6 text-blue-600" asChild>
-                                                        <a href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/storage/${item.gambar_kerja.file}`} target="_blank" rel="noopener noreferrer">
+                                                        <a href={`${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '')}/storage/${item.gambar_kerja.file}`} target="_blank" rel="noopener noreferrer">
                                                             <Eye className="h-3.5 w-3.5" />
                                                         </a>
                                                     </Button>
