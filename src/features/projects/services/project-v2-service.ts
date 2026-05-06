@@ -25,18 +25,19 @@ export interface ProjectV2 {
             tanggal_kirim: string | null;
             tanggal_acc: string | null;
             status: string;
+            bukti_acc?: string | null;
         };
         design_progres?: DesignProgres[];
     }>;
     sph?: {
         id: number;
-        nomor_sph: string | null;
+        nomor_sph?: string;
         file: string | null;
         created_at: string;
     };
     spk?: {
         id: number;
-        nomor_spk: string | null;
+        nomor_spk?: string;
         file: string | null;
         created_at: string;
     };
@@ -125,8 +126,18 @@ export const projectV2Service = {
         return data;
     },
 
-    getMDLItems: async (params?: { search?: string; page?: number; per_page?: number }) => {
+    getMDLItems: async (params?: { search?: string; kategori?: string; lokasi_ruangan?: string; min_price?: number; max_price?: number; page?: number; per_page?: number }) => {
         const { data } = await apiClient.get<any>('/mdl', { params });
+        return data;
+    },
+
+    getMDLCategories: async () => {
+        const { data } = await apiClient.get<string[]>('/mdl/categories');
+        return data;
+    },
+
+    getMDLLocations: async () => {
+        const { data } = await apiClient.get<string[]>('/mdl/locations');
         return data;
     },
 
@@ -150,8 +161,16 @@ export const projectV2Service = {
         return data;
     },
 
-    updateAccDesign: async (projectId: number, payload: { tanggal_kirim?: string; tanggal_acc?: string; status: string }) => {
-        const { data } = await apiClient.post(`/projects-v2/${projectId}/update-acc-design`, payload);
+    updateAccDesign: async (projectId: number, payload: { tanggal_kirim?: string; tanggal_acc?: string; status: string; bukti_acc?: File | null }) => {
+        const formData = new FormData();
+        if (payload.tanggal_kirim) formData.append('tanggal_kirim', payload.tanggal_kirim);
+        if (payload.tanggal_acc) formData.append('tanggal_acc', payload.tanggal_acc);
+        formData.append('status', payload.status);
+        if (payload.bukti_acc) formData.append('bukti_acc', payload.bukti_acc);
+
+        const { data } = await apiClient.post(`/projects-v2/${projectId}/update-acc-design`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
         return data;
     },
 
@@ -395,9 +414,9 @@ export interface ProjectItemV2 {
     project_id: number;
     mdl_item_id: number | null;
     lantai: string | null;
-    ruang: string | null;
+    ruang?: string;
     item: string;
-    keterangan: string | null;
+    keterangan?: string;
     volume: number | null;
     panjang: number | null;
     lebar: number | null;

@@ -523,7 +523,6 @@ export default function ProduksiDetailPage() {
                                 <TableHead>Dimensions</TableHead>
                                 <TableHead>Qty</TableHead>
                                 <TableHead>Gambar Kerja</TableHead>
-                                <TableHead>Dokubah</TableHead>
                                 <TableHead>PO Divisi</TableHead>
                                 <TableHead>Stok Material</TableHead>
                                 <TableHead>Persentase Produksi</TableHead>
@@ -573,30 +572,6 @@ export default function ProduksiDetailPage() {
                                                     size="sm" 
                                                     className="h-7 text-[10px] border-orange-200 text-orange-600 hover:bg-orange-50"
                                                     onClick={() => openGkUpload(item)}
-                                                >
-                                                    <Upload className="h-3 w-3 mr-1" />
-                                                    Upload
-                                                </Button>
-                                            )}
-                                        </TableCell>
-                                        <TableCell>
-                                            {item.dokubah?.file ? (
-                                                <div className="flex items-center gap-2">
-                                                    <div className="h-6 w-6 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                                                        <CheckCircle2 className="h-3.5 w-3.5" />
-                                                    </div>
-                                                    <Button variant="ghost" size="icon" className="h-6 w-6 text-blue-600" asChild>
-                                                        <a href={`${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '')}/storage/${item.dokubah.file}`} target="_blank" rel="noopener noreferrer">
-                                                            <Eye className="h-3.5 w-3.5" />
-                                                        </a>
-                                                    </Button>
-                                                </div>
-                                            ) : (
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    className="h-7 text-[10px] border-blue-200 text-blue-600 hover:bg-blue-50"
-                                                    onClick={() => openDokubahUpload(item)}
                                                 >
                                                     <Upload className="h-3 w-3 mr-1" />
                                                     Upload

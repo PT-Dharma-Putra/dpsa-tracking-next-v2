@@ -289,7 +289,10 @@ export default function ItemDetailPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-blue-600">
-                            {item.barang_jadi_masuk?.reduce((sum: number, bj: BarangJadiMasuk) => sum + bj.jumlah, 0) || 0} / {item.jumlah}
+                            {item.barang_jadi_masuk?.reduce(
+                                (sum: number, bj: BarangJadiMasuk) => sum + Number(bj.jumlah || 0),
+                                0
+                            ) || 0} / {Number(item.jumlah || 0)}
                         </div>
                         <p className="text-[10px] text-muted-foreground">Status dari Gudang</p>
                     </CardContent>
@@ -300,7 +303,9 @@ export default function ItemDetailPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-orange-600">
-                            {item.barang_jadi_keluar?.reduce((sum: number, bj: BarangJadiKeluar) => sum + bj.jumlah, 0) || 0}
+                            {item.barang_jadi_keluar?.reduce(
+                                (sum: number, bj: BarangJadiKeluar) => sum + Number(bj.jumlah || 0), 0
+                            ) || 0}
                         </div>
                         <p className="text-[10px] text-muted-foreground">Total Barang Keluar</p>
                     </CardContent>
@@ -311,7 +316,7 @@ export default function ItemDetailPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-emerald-600">
-                            {item.setting?.reduce((sum: number, s: Setting) => sum + s.jumlah, 0) || 0}
+                            {item.setting?.reduce((sum: number, s: Setting) => sum + Number(s.jumlah || 0), 0) || 0}
                         </div>
                         <p className="text-[10px] text-muted-foreground">Barang Ter-setting</p>
                     </CardContent>

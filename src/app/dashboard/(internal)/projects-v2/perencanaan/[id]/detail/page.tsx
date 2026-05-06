@@ -702,9 +702,9 @@ export default function PerencanaanDetailPage() {
                                 <TableHead>Vol</TableHead>
                                 <TableHead>Dimensions</TableHead>
                                 <TableHead>Qty</TableHead>
+                                <TableHead>PO Divisi</TableHead>
                                 <TableHead>Gambar Kerja</TableHead>
                                 <TableHead>Dokubah</TableHead>
-                                <TableHead>PO Divisi</TableHead>
                                 <TableHead>Stok Material</TableHead>
                                 <TableHead>Barang Masuk Lengkap</TableHead>
                                 <TableHead className="w-[80px] text-right">Actions</TableHead>
@@ -736,6 +736,49 @@ export default function PerencanaanDetailPage() {
                                             {item.panjang || "-"}x{item.lebar || "-"}x{item.tinggi || "-"} {item.satuan}
                                         </TableCell>
                                         <TableCell className="font-bold">{item.jumlah}</TableCell>
+                                        <TableCell>
+                                            {item.divisi && editingDivisiItemId !== item.id ? (
+                                                <div className="flex items-center gap-2 group">
+                                                    <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 font-bold">
+                                                        {item.divisi.nama}
+                                                    </Badge>
+                                                    <Button 
+                                                        variant="ghost" 
+                                                        size="icon" 
+                                                        className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                        onClick={() => setEditingDivisiItemId(item.id)}
+                                                    >
+                                                        <Pencil className="h-3 w-3 text-neutral-400" />
+                                                    </Button>
+                                                </div>
+                                            ) : (
+                                                <div className="flex items-center gap-2">
+                                                    <Select 
+                                                        defaultValue={item.divisi_id?.toString()}
+                                                        onValueChange={(val) => updateItemDivisiMutation.mutate({ itemId: item.id, divisiId: parseInt(val) })}
+                                                    >
+                                                        <SelectTrigger className="h-7 text-[10px] w-[100px] bg-white border-neutral-200">
+                                                            <SelectValue placeholder="Pilih" />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            {divisions?.map(d => (
+                                                                <SelectItem key={d.id} value={d.id.toString()}>{d.nama}</SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                    {editingDivisiItemId === item.id && (
+                                                        <Button 
+                                                            variant="ghost" 
+                                                            size="icon" 
+                                                            className="h-6 w-6 text-neutral-400"
+                                                            onClick={() => setEditingDivisiItemId(null)}
+                                                        >
+                                                            <Trash2 className="h-3 w-3" />
+                                                        </Button>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </TableCell>
                                         <TableCell>
                                             {item.gambar_kerja?.file ? (
                                                 <div className="flex items-center gap-2">
@@ -784,49 +827,7 @@ export default function PerencanaanDetailPage() {
                                                 </Button>
                                             )}
                                         </TableCell>
-                                        <TableCell>
-                                            {item.divisi && editingDivisiItemId !== item.id ? (
-                                                <div className="flex items-center gap-2 group">
-                                                    <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 font-bold">
-                                                        {item.divisi.nama}
-                                                    </Badge>
-                                                    <Button 
-                                                        variant="ghost" 
-                                                        size="icon" 
-                                                        className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                        onClick={() => setEditingDivisiItemId(item.id)}
-                                                    >
-                                                        <Pencil className="h-3 w-3 text-neutral-400" />
-                                                    </Button>
-                                                </div>
-                                            ) : (
-                                                <div className="flex items-center gap-2">
-                                                    <Select 
-                                                        defaultValue={item.divisi_id?.toString()}
-                                                        onValueChange={(val) => updateItemDivisiMutation.mutate({ itemId: item.id, divisiId: parseInt(val) })}
-                                                    >
-                                                        <SelectTrigger className="h-7 text-[10px] w-[100px] bg-white border-neutral-200">
-                                                            <SelectValue placeholder="Pilih" />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            {divisions?.map(d => (
-                                                                <SelectItem key={d.id} value={d.id.toString()}>{d.nama}</SelectItem>
-                                                            ))}
-                                                        </SelectContent>
-                                                    </Select>
-                                                    {editingDivisiItemId === item.id && (
-                                                        <Button 
-                                                            variant="ghost" 
-                                                            size="icon" 
-                                                            className="h-6 w-6 text-neutral-400"
-                                                            onClick={() => setEditingDivisiItemId(null)}
-                                                        >
-                                                            <Trash2 className="h-3 w-3" />
-                                                        </Button>
-                                                    )}
-                                                </div>
-                                            )}
-                                        </TableCell>
+                                        
                                         <TableCell>
                                             <div 
                                                 className="cursor-pointer hover:bg-neutral-100 p-1 rounded transition-colors"
