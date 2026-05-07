@@ -413,6 +413,7 @@ export interface ProjectItemV2 {
     id: number;
     project_id: number;
     mdl_item_id: number | null;
+    mdl_item?: MDLItem;
     lantai: string | null;
     ruang?: string;
     item: string;
