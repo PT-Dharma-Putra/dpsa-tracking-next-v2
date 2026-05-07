@@ -480,7 +480,9 @@ export function ProjectsV2Table({
                           )}
                         </div>
                         {(() => {
-                          const jadwalTanggal = project.jadwal_pengiriman.tanggal_pengiriman?.tanggal;
+                          const jadwalTanggal =
+                            project.jadwal_pengiriman.tanggal_pengiriman
+                              ?.tanggal;
                           if (!jadwalTanggal || !project.deadline) return null;
                           const diff = differenceInDays(
                             startOfDay(new Date(project.deadline)),
@@ -793,8 +795,8 @@ export function ProjectsV2Table({
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete the project "{projectToDelete?.name}
-              ". This action cannot be undone.
+              This will permanently delete the project {projectToDelete?.name}.
+              This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -490,7 +490,9 @@ export default function ProjectItemsPage() {
                     <TableHead className='w-[50px] whitespace-nowrap'>
                       #
                     </TableHead>
-                    <TableHead className='whitespace-nowrap'>Kode Barang</TableHead>
+                    <TableHead className='whitespace-nowrap'>
+                      Kode Barang
+                    </TableHead>
                     <TableHead className='whitespace-nowrap min-w-[200px]'>
                       Item
                     </TableHead>
@@ -532,7 +534,7 @@ export default function ProjectItemsPage() {
                               No items found
                             </p>
                             <p className='text-xs text-neutral-500'>
-                              Click "Add Item" to start adding project items.
+                              Click Add Item to start adding project items.
                             </p>
                           </div>
                         </div>
@@ -1316,7 +1318,7 @@ export default function ProjectItemsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete the item "{itemToDelete?.item}". This
+              This will permanently delete the item {itemToDelete?.item}. This
               action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
