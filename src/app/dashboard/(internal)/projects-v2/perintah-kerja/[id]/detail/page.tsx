@@ -19,8 +19,13 @@ import {
     CheckCircle2,
     Clock,
     Eye,
-    Image as ImageIcon,
-    Upload
+    ImageIcon,
+    Upload,
+    Package,
+    ClipboardCheck,
+    ChevronDown,
+    Info,
+    FileDown
 } from "lucide-react"
 import { format } from "date-fns"
 
@@ -225,6 +230,16 @@ export default function DesignerDetailPage() {
         setIsGkDialogOpen(true)
     }
 
+    const [isSpdCollapsed, setIsSpdCollapsed] = React.useState(true);
+    const [isAccCollapsed, setIsAccCollapsed] = React.useState(true);
+    const [isProgressCollapsed, setIsProgressCollapsed] = React.useState(true);
+    const [isLfCollapsed, setIsLfCollapsed] = React.useState(true);
+
+    const existingSpd = project?.designs?.[0];
+    const existingAcc = existingSpd?.acc_design;
+    const existingSph = project?.sph;
+    const existingSpk = project?.spk;
+
     React.useEffect(() => {
         if (project?.list_furnitur) {
             if (project.list_furnitur.tanggal_mulai) setLfStart(project.list_furnitur.tanggal_mulai)
@@ -244,286 +259,575 @@ export default function DesignerDetailPage() {
         return <div className="p-8 text-center text-muted-foreground">Project not found.</div>
     }
 
-    const existingSpd = project?.designs?.[0]
+    const flowSteps = [
+        {
+            id: 1,
+            title: 'Upload SPD',
+            description: project.need_design === 0 ? 'Not Required' : 'Surat Permintaan Desain',
+            isCompleted: !!existingSpd?.spd_file,
+            isActive: project.need_design !== 0,
+            icon: FileText,
+            color: 'text-orange-600',
+            bgColor: 'bg-orange-500',
+            lightBg: 'bg-orange-50',
+            borderColor: 'border-orange-200',
+        },
+        {
+            id: 2,
+            title: 'ACC Design',
+            description: project.need_design === 0 ? 'Not Required' : 'Approval Desain',
+            isCompleted: existingAcc?.status === 'Approved',
+            isActive: project.need_design !== 0 && !!existingSpd?.spd_file,
+            icon: CheckCircle2,
+            color: 'text-emerald-600',
+            bgColor: 'bg-emerald-500',
+            lightBg: 'bg-emerald-50',
+            borderColor: 'border-emerald-200',
+        },
+        {
+            id: 3,
+            title: 'Upload SPH',
+            description: 'Surat Penawaran Harga',
+            isCompleted: !!existingSph?.file,
+            isActive: project.need_design === 0 || existingAcc?.status === 'Approved',
+            icon: FileText,
+            color: 'text-blue-600',
+            bgColor: 'bg-blue-500',
+            lightBg: 'bg-blue-50',
+            borderColor: 'border-blue-200',
+        },
+        {
+            id: 4,
+            title: 'Upload SPK',
+            description: 'Surat Perintah Kerja',
+            isCompleted: !!existingSpk?.file,
+            isActive: !!existingSph?.file,
+            icon: ClipboardCheck,
+            color: 'text-purple-600',
+            bgColor: 'bg-purple-500',
+            lightBg: 'bg-purple-50',
+            borderColor: 'border-purple-200',
+        },
+        {
+            id: 5,
+            title: 'Project Items',
+            description: 'Add items',
+            isCompleted: items && items.length > 0,
+            isActive: !!existingSpk?.file,
+            icon: Package,
+            color: 'text-blue-600',
+            bgColor: 'bg-blue-500',
+            lightBg: 'bg-blue-50',
+            borderColor: 'border-blue-200',
+        },
+    ];
 
     return (
-        <div className="flex flex-col gap-6 p-6">
-            <div className="flex items-center gap-4">
-                <Button variant="ghost" size="icon" onClick={() => router.back()}>
-                    <ArrowLeft className="h-5 w-5" />
-                </Button>
-                <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Perintah Kerja Detail</h1>
-                    <p className="text-sm text-muted-foreground">Designer View - Design Progress Tracking</p>
+        <div className='flex flex-col gap-6 p-6 max-w-[1600px] mx-auto w-full'>
+            <div className='flex flex-col sm:flex-row sm:items-center gap-4'>
+                <div className='flex items-start gap-4 shrink-0'>
+                    <Button
+                        variant='ghost'
+                        size='icon'
+                        onClick={() => router.back()}
+                        className='rounded-full hover:bg-neutral-100 mt-0.5'
+                    >
+                        <ArrowLeft className='h-5 w-5' />
+                    </Button>
+                    <div className='space-y-1.5'>
+                        <div>
+                            <h1 className='text-2xl font-bold tracking-tight text-neutral-900'>
+                                {project.name}
+                            </h1>
+                            <p className='text-xs text-muted-foreground'>Designer View - Design Progress Tracking</p>
+                        </div>
+                        <div className='flex flex-wrap items-center gap-x-3 gap-y-1'>
+                            {project.client?.name && (
+                                <span className='flex items-center gap-1 text-xs text-neutral-600'>
+                                    <Building2 className='h-3 w-3 text-neutral-400' />
+                                    {project.client.name}
+                                </span>
+                            )}
+                            {(project.spk_number || project.spk?.nomor_spk) && (
+                                <span className='flex items-center gap-1 text-xs text-neutral-600'>
+                                    <FileText className='h-3 w-3 text-neutral-400' />
+                                    {project.spk_number || project.spk?.nomor_spk}
+                                </span>
+                            )}
+                            {project.deadline && (
+                                <span className='flex items-center gap-1 text-xs text-neutral-600'>
+                                    <Calendar className='h-3 w-3 text-neutral-400' />
+                                    {format(new Date(project.deadline), 'MMM d, yyyy')}
+                                </span>
+                            )}
+                            {project.need_design ? (
+                                <span className='flex items-center gap-1 text-xs text-emerald-600'>
+                                    <Info className='h-3 w-3 text-emerald-500' />
+                                    Perlu Desain
+                                </span>
+                            ) : (
+                                <span className='flex items-center gap-1 text-xs text-neutral-600'>
+                                    <Info className='h-3 w-3 text-neutral-400' />
+                                    Tidak Perlu Desain
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Stepper Progress */}
+                <div className='ml-auto overflow-x-auto hide-scrollbar shrink-0'>
+                    <div className='flex items-center gap-1 min-w-max'>
+                        {flowSteps.map((step, index) => {
+                            const Icon = step.icon;
+                            return (
+                                <React.Fragment key={step.id}>
+                                    <div
+                                        className={`flex items-center gap-1.5 transition-all duration-300 ${
+                                            step.isActive ? 'opacity-100' : 'opacity-40 grayscale'
+                                        }`}
+                                    >
+                                        <div
+                                            className={`h-6 w-6 rounded-full flex items-center justify-center border shadow-sm transition-all duration-500 shrink-0 ${
+                                                step.isCompleted
+                                                    ? step.bgColor + ' border-transparent text-white'
+                                                    : step.isActive
+                                                    ? step.lightBg +
+                                                      ' ' +
+                                                      step.borderColor +
+                                                      ' ' +
+                                                      step.color
+                                                    : 'bg-neutral-100 border-neutral-200 text-neutral-400'
+                                            }`}
+                                        >
+                                            {step.isCompleted ? (
+                                                <CheckCircle2 className='h-3 w-3' />
+                                            ) : (
+                                                <Icon className='h-3 w-3' />
+                                            )}
+                                        </div>
+                                        <div className='flex flex-col leading-none'>
+                                            <span
+                                                className={`text-[10px] font-bold whitespace-nowrap ${
+                                                    step.isCompleted || step.isActive
+                                                        ? 'text-neutral-800'
+                                                        : 'text-neutral-400'
+                                                }`}
+                                            >
+                                                {step.title}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    {index < flowSteps.length - 1 && (
+                                        <div className='w-6 h-[2px] rounded-full bg-neutral-200 overflow-hidden relative mx-0.5 shrink-0'>
+                                            <div
+                                                className={`absolute top-0 left-0 h-full w-full transition-transform duration-700 origin-left ${
+                                                    step.isCompleted
+                                                        ? step.bgColor + ' scale-x-100'
+                                                        : 'scale-x-0'
+                                                }`}
+                                            />
+                                        </div>
+                                    )}
+                                </React.Fragment>
+                            );
+                        })}
+                    </div>
                 </div>
             </div>
 
-            {/* Project Info Card */}
-            <Card className="border-none shadow-sm bg-gradient-to-br from-white to-neutral-50/50">
-                <CardHeader className="pb-3">
-                    <CardTitle className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-neutral-500">
-                        <FileText className="h-4 w-4 text-orange-500" />
-                        Project Information
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        <div className="space-y-1">
-                            <Label className="text-[10px] text-muted-foreground uppercase">Project Name</Label>
-                            <p className="font-bold text-neutral-900">{project.name}</p>
-                        </div>
-                        <div className="space-y-1">
-                            <Label className="text-[10px] text-muted-foreground uppercase">Client</Label>
-                            <p className="font-semibold text-neutral-800">{project.client?.name || "-"}</p>
-                        </div>
-                        <div className="space-y-1">
-                            <Label className="text-[10px] text-muted-foreground uppercase">SPK Number</Label>
-                            <p className="text-neutral-700">{project.spk_number || project.spk?.nomor_spk || "-"}</p>
-                        </div>
-                        <div className="space-y-1">
-                            <Label className="text-[10px] text-muted-foreground uppercase">Deadline</Label>
-                            <p className="font-bold text-orange-600">
-                                {project.deadline ? format(new Date(project.deadline), "MMM d, yyyy") : "-"}
-                            </p>
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
-
-            {/* Designer Cards Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* SPD Date Card */}
-                <Card className="border-none shadow-sm border border-neutral-100 overflow-hidden">
-                    <CardHeader className="bg-orange-50/50 border-b border-orange-100">
-                        <CardTitle className="flex items-center gap-2 text-orange-800 text-base">
-                            <Calendar className="h-5 w-5" />
-                            Tanggal SPD Dibuat
-                        </CardTitle>
+            {/* Document Section at Top */}
+            <div className='grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 w-full'>
+                {/* 1. SPD SECTION */}
+                <Card
+                    className={`border shadow-sm transition-all duration-300 ${
+                        flowSteps[0].isActive
+                            ? flowSteps[0].isCompleted
+                                ? 'border-orange-200 bg-white ring-1 ring-orange-100'
+                                : 'border-orange-300 bg-white ring-2 ring-orange-500 ring-offset-2'
+                            : 'border-neutral-200 bg-neutral-50/80 opacity-60 grayscale-[0.5]'
+                    }`}
+                >
+                    <CardHeader className='pb-3 flex flex-row items-center justify-between gap-3'>
+                        <button
+                            className='flex items-center gap-3 flex-1 text-left'
+                            onClick={() => setIsSpdCollapsed((v) => !v)}
+                        >
+                            <div
+                                className={`h-8 w-8 rounded-full flex items-center justify-center font-bold ${
+                                    flowSteps[0].isActive
+                                        ? 'bg-orange-100 text-orange-600'
+                                        : 'bg-neutral-200 text-neutral-500'
+                                }`}
+                            >
+                                1
+                            </div>
+                            <div className='flex-1'>
+                                <CardTitle className='text-base text-neutral-800'>
+                                    SPD Document
+                                </CardTitle>
+                                <p className='text-[10px] text-muted-foreground uppercase tracking-wider'>
+                                    Surat Permintaan Desain
+                                </p>
+                            </div>
+                            <ChevronDown
+                                className={`h-4 w-4 text-neutral-400 transition-transform duration-200 mr-1 ${
+                                    isSpdCollapsed ? '-rotate-90' : ''
+                                }`}
+                            />
+                        </button>
                     </CardHeader>
-                    <CardContent className="pt-6">
-                        {existingSpd ? (
-                            <div className="flex items-center gap-4 p-4 rounded-xl bg-orange-50 border border-orange-100">
-                                <div className="h-12 w-12 rounded-full bg-white flex items-center justify-center text-orange-600 shadow-sm">
-                                    <Clock className="h-6 w-6" />
-                                </div>
-                                <div>
-                                    <p className="text-sm font-medium text-orange-900">SPD Created On</p>
-                                    <p className="text-2xl font-bold text-orange-700">
-                                        {existingSpd.tanggal ? format(new Date(existingSpd.tanggal), "MMMM d, yyyy") : format(new Date(existingSpd.created_at), "MMMM d, yyyy")}
-                                    </p>
-                                </div>
-                                {existingSpd.spd_file && (
-                                    <Button variant="outline" className="ml-auto bg-white border-orange-200 text-orange-600 hover:bg-orange-50" asChild>
-                                        <a 
-                                            href={`${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '')}/storage/${existingSpd.spd_file}`} 
-                                            target="_blank" 
-                                            rel="noopener noreferrer"
+                    {!isSpdCollapsed && (
+                        <CardContent>
+                            {existingSpd?.spd_file ? (
+                                <div className='p-3 rounded-xl bg-orange-50/80 border border-orange-100 flex items-center justify-between shadow-sm'>
+                                    <div className='flex items-center gap-3'>
+                                        <div className='h-8 w-8 rounded-lg bg-white shadow-sm border border-orange-100 flex items-center justify-center text-orange-600'>
+                                            <FileText className='h-4 w-4' />
+                                        </div>
+                                        <div>
+                                            <p className='text-xs font-bold text-orange-900'>
+                                                SPD Document
+                                            </p>
+                                            <p className='text-[10px] text-orange-600/80'>
+                                                {format(
+                                                    new Date(
+                                                        existingSpd.tanggal || existingSpd.created_at
+                                                    ),
+                                                    'MMM d, yyyy'
+                                                )}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <Button
+                                        variant='ghost'
+                                        size='icon'
+                                        className='h-8 w-8 text-orange-600 hover:bg-orange-200 bg-white shadow-sm border border-orange-100'
+                                        asChild
+                                    >
+                                        <a
+                                            href={`${(
+                                                process.env.NEXT_PUBLIC_API_URL ||
+                                                'http://localhost:8000'
+                                            ).replace('/api', '')}/storage/${existingSpd.spd_file}`}
+                                            target='_blank'
+                                            rel='noopener noreferrer'
                                         >
-                                            <Eye className="h-4 w-4 mr-2" />
-                                            View File
+                                            <FileDown className='h-4 w-4' />
                                         </a>
                                     </Button>
-                                )}
-                            </div>
-                        ) : (
-                            <div className="text-center py-8 bg-neutral-50 rounded-xl border border-dashed border-neutral-200">
-                                <p className="text-sm text-muted-foreground">SPD has not been created for this project.</p>
-                            </div>
-                        )}
-                    </CardContent>
+                                </div>
+                            ) : (
+                                <p className='text-xs text-muted-foreground italic'>
+                                    Belum ada file SPD.
+                                </p>
+                            )}
+                        </CardContent>
+                    )}
                 </Card>
 
-                {/* Design Progress Card */}
-                <Card className="border-none shadow-sm border border-neutral-100 flex flex-col">
-                    <CardHeader className="bg-blue-50/50 border-b border-blue-100">
-                        <CardTitle className="flex items-center justify-between text-blue-800 text-base">
-                            <div className="flex items-center gap-2">
-                                <Activity className="h-5 w-5" />
-                                Progres Desain
+                {/* 2. DESIGN PROGRESS SECTION (Replacing original Stage Tracking) */}
+                <Card
+                    className={`border shadow-sm transition-all duration-300 ${
+                        designId
+                            ? 'border-blue-200 bg-white ring-1 ring-blue-100'
+                            : 'border-neutral-200 bg-neutral-50/80 opacity-60 grayscale-[0.5]'
+                    }`}
+                >
+                    <CardHeader className='pb-3 flex flex-row items-center justify-between gap-3'>
+                        <button
+                            className='flex items-center gap-3 flex-1 text-left'
+                            onClick={() => setIsProgressCollapsed((v) => !v)}
+                        >
+                            <div
+                                className={`h-8 w-8 rounded-full flex items-center justify-center font-bold ${
+                                    designId
+                                        ? 'bg-blue-100 text-blue-600'
+                                        : 'bg-neutral-200 text-neutral-500'
+                                }`}
+                            >
+                                2
                             </div>
-                        </CardTitle>
+                            <div className='flex-1'>
+                                <CardTitle className='text-base text-neutral-800'>
+                                    Progres Desain
+                                </CardTitle>
+                                <p className='text-[10px] text-muted-foreground uppercase tracking-wider'>
+                                    Stage Tracking
+                                </p>
+                            </div>
+                            <ChevronDown
+                                className={`h-4 w-4 text-neutral-400 transition-transform duration-200 mr-1 ${
+                                    isProgressCollapsed ? '-rotate-90' : ''
+                                }`}
+                            />
+                        </button>
                     </CardHeader>
-                    <CardContent className="pt-6 flex-1 flex flex-col gap-4">
-                        {!designId ? (
-                            <div className="text-center py-8 text-muted-foreground text-sm">
-                                Please create a design (SPD) first to track progress.
-                            </div>
-                        ) : (
-                            <>
-                                {/* Form to add progress */}
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 rounded-xl bg-blue-50/50 border border-blue-100">
-                                    <div className="space-y-1">
-                                        <Label className="text-[10px] uppercase text-blue-600 font-bold">Select Stage</Label>
-                                        <Select value={selectedStageId} onValueChange={setSelectedStageId}>
-                                            <SelectTrigger className="bg-white">
-                                                <SelectValue placeholder="Stage..." />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {stages?.map(s => (
-                                                    <SelectItem key={s.id} value={s.id.toString()}>{s.nama}</SelectItem>
-                                                ))}
-                                                <div className="p-2 border-t mt-2">
-                                                    <div className="flex gap-2">
-                                                        <Input 
-                                                            placeholder="New stage..." 
-                                                            className="h-8 text-xs" 
-                                                            value={newStageName}
-                                                            onChange={e => setNewStageName(e.target.value)}
-                                                        />
-                                                        <Button size="icon" className="h-8 w-8" onClick={handleAddStage}>
-                                                            <Plus className="h-4 w-4" />
-                                                        </Button>
-                                                    </div>
-                                                </div>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <Label className="text-[10px] uppercase text-blue-600 font-bold">Completion Date</Label>
-                                        <Input 
-                                            type="date" 
-                                            className="bg-white" 
-                                            value={completionDate}
-                                            onChange={e => setCompletionDate(e.target.value)}
-                                        />
-                                    </div>
-                                    <div className="flex items-end">
+                    {!isProgressCollapsed && (
+                        <CardContent className="space-y-4">
+                            {!designId ? (
+                                <p className="text-xs text-muted-foreground italic">Create SPD to track progress.</p>
+                            ) : (
+                                <>
+                                    <div className="space-y-2">
+                                        <div className="flex gap-2">
+                                            <div className="flex-1 space-y-1">
+                                                <Label className="text-[10px] uppercase font-bold text-neutral-500">Stage</Label>
+                                                <Select value={selectedStageId} onValueChange={setSelectedStageId}>
+                                                    <SelectTrigger className="h-8 text-xs">
+                                                        <SelectValue placeholder="Stage..." />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {stages?.map(s => (
+                                                            <SelectItem key={s.id} value={s.id.toString()}>{s.nama}</SelectItem>
+                                                        ))}
+                                                        <div className="p-2 border-t mt-2">
+                                                            <div className="flex gap-1">
+                                                                <Input 
+                                                                    placeholder="New..." 
+                                                                    className="h-7 text-[10px]" 
+                                                                    value={newStageName}
+                                                                    onChange={e => setNewStageName(e.target.value)}
+                                                                />
+                                                                <Button size="icon" className="h-7 w-7" onClick={handleAddStage}>
+                                                                    <Plus className="h-3 w-3" />
+                                                                </Button>
+                                                            </div>
+                                                        </div>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                            <div className="flex-1 space-y-1">
+                                                <Label className="text-[10px] uppercase font-bold text-neutral-500">Date</Label>
+                                                <Input 
+                                                    type="date" 
+                                                    className="h-8 text-xs" 
+                                                    value={completionDate}
+                                                    onChange={e => setCompletionDate(e.target.value)}
+                                                />
+                                            </div>
+                                        </div>
                                         <Button 
-                                            className="w-full bg-blue-600 hover:bg-blue-700"
+                                            size="sm"
+                                            className="w-full h-8 bg-blue-600 hover:bg-blue-700 text-xs"
                                             onClick={handleUpdateProgress}
                                             disabled={updateProgressMutation.isPending}
                                         >
-                                            {updateProgressMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Set Progress"}
+                                            Update Progress
                                         </Button>
                                     </div>
-                                </div>
-
-                                {/* Progress List */}
-                                <div className="space-y-3 mt-2">
-                                    {progress && progress.length > 0 ? (
-                                        progress.map((p) => (
-                                            <div key={p.id} className="flex items-center justify-between p-3 rounded-lg border border-neutral-100 bg-white shadow-sm hover:border-blue-200 transition-all">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="h-8 w-8 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600">
-                                                        <CheckCircle2 className="h-5 w-5" />
-                                                    </div>
+                                    <div className="max-h-[200px] overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+                                        {progress?.map((p) => (
+                                            <div key={p.id} className="flex items-center justify-between p-2 rounded-lg border border-neutral-100 bg-neutral-50/50">
+                                                <div className="flex items-center gap-2">
+                                                    <CheckCircle2 className="h-3 w-3 text-emerald-500" />
                                                     <div>
-                                                        <p className="text-sm font-bold text-neutral-800">{p.tahap_design?.nama}</p>
-                                                        <p className="text-[10px] text-muted-foreground flex items-center gap-1">
-                                                            <Calendar className="h-3 w-3" />
-                                                            Completed: {p.tanggal_selesai ? format(new Date(p.tanggal_selesai), "MMM d, yyyy") : "Not set"}
-                                                        </p>
+                                                        <p className="text-[10px] font-bold text-neutral-800">{p.tahap_design?.nama}</p>
+                                                        <p className="text-[8px] text-muted-foreground">{p.tanggal_selesai ? format(new Date(p.tanggal_selesai), "MMM d, yy") : "-"}</p>
                                                     </div>
                                                 </div>
-                                                <Button 
-                                                    variant="ghost" 
-                                                    size="icon" 
-                                                    className="h-8 w-8 text-neutral-400 hover:text-red-500"
-                                                    onClick={() => deleteProgressMutation.mutate(p.id)}
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
+                                                <Button variant="ghost" size="icon" className="h-5 w-5 text-neutral-400 hover:text-red-500" onClick={() => deleteProgressMutation.mutate(p.id)}>
+                                                    <Trash2 className="h-3 w-3" />
                                                 </Button>
                                             </div>
-                                        ))
-                                    ) : (
-                                        <div className="text-center py-6 border-2 border-dashed rounded-xl border-neutral-100">
-                                            <p className="text-xs text-muted-foreground flex items-center justify-center gap-2">
-                                                <ListChecks className="h-4 w-4" /> No progress recorded yet
-                                            </p>
-                                        </div>
-                                    )}
-                                </div>
-                            </>
-                        )}
-                    </CardContent>
+                                        ))}
+                                    </div>
+                                </>
+                            )}
+                        </CardContent>
+                    )}
                 </Card>
 
-                {/* List Furnitur Card */}
-                <Card className="border-none shadow-sm border border-neutral-100 flex flex-col">
-                    <CardHeader className="bg-purple-50/50 border-b border-purple-100">
-                        <CardTitle className="flex items-center gap-2 text-purple-800 text-base">
-                            <ListChecks className="h-5 w-5" />
-                            List Furnitur
-                        </CardTitle>
+                {/* 3. ACC DESIGN SECTION */}
+                <Card
+                    className={`border shadow-sm transition-all duration-300 ${
+                        flowSteps[1].isActive
+                            ? flowSteps[1].isCompleted
+                                ? 'border-emerald-200 bg-white ring-1 ring-emerald-100'
+                                : 'border-emerald-300 bg-white ring-2 ring-emerald-500 ring-offset-2'
+                            : 'border-neutral-200 bg-neutral-50/80 opacity-60 grayscale-[0.5]'
+                    }`}
+                >
+                    <CardHeader className='pb-3 flex flex-row items-center justify-between gap-3'>
+                        <button
+                            className='flex items-center gap-3 flex-1 text-left'
+                            onClick={() => setIsAccCollapsed((v) => !v)}
+                        >
+                            <div
+                                className={`h-8 w-8 rounded-full flex items-center justify-center font-bold ${
+                                    flowSteps[1].isActive
+                                        ? 'bg-emerald-100 text-emerald-600'
+                                        : 'bg-neutral-200 text-neutral-500'
+                                }`}
+                            >
+                                3
+                            </div>
+                            <div className='flex-1'>
+                                <CardTitle className='text-base text-neutral-800'>
+                                    ACC Design
+                                </CardTitle>
+                                <p className='text-[10px] text-muted-foreground uppercase tracking-wider'>
+                                    Approval Status
+                                </p>
+                            </div>
+                            <ChevronDown
+                                className={`h-4 w-4 text-neutral-400 transition-transform duration-200 mr-1 ${
+                                    isAccCollapsed ? '-rotate-90' : ''
+                                }`}
+                            />
+                        </button>
                     </CardHeader>
-                    <CardContent className="pt-6 space-y-4">
-                        <div className="space-y-3">
-                            <div className="space-y-1">
-                                <Label className="text-[10px] uppercase text-purple-600 font-bold">Upload File (PDF/XLS)</Label>
+                    {!isAccCollapsed && (
+                        <CardContent>
+                            {existingAcc ? (
+                                <div className='space-y-2'>
+                                    <div
+                                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${
+                                            existingAcc.status === 'Approved'
+                                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                        }`}
+                                    >
+                                        <CheckCircle2 className='h-3 w-3' />
+                                        {existingAcc.status}
+                                    </div>
+                                    {existingAcc.tanggal_kirim && (
+                                        <p className='text-[10px] text-muted-foreground'>
+                                            Kirim:{' '}
+                                            {format(
+                                                new Date(existingAcc.tanggal_kirim),
+                                                'MMM d, yyyy'
+                                            )}
+                                        </p>
+                                    )}
+                                    {existingAcc.tanggal_acc && (
+                                        <p className='text-[10px] text-muted-foreground'>
+                                            ACC:{' '}
+                                            {format(
+                                                new Date(existingAcc.tanggal_acc),
+                                                'MMM d, yyyy'
+                                            )}
+                                        </p>
+                                    )}
+                                    {existingAcc.bukti_acc && (
+                                        <a
+                                            href={`${(
+                                                process.env.NEXT_PUBLIC_API_URL ||
+                                                'http://localhost:8000'
+                                            ).replace('/api', '')}/storage/${
+                                                existingAcc.bukti_acc
+                                            }`}
+                                            target='_blank'
+                                            rel='noopener noreferrer'
+                                            className='text-[10px] text-emerald-600 hover:underline flex items-center gap-1'
+                                        >
+                                            <FileDown className='h-3 w-3' />
+                                            Bukti ACC
+                                        </a>
+                                    )}
+                                </div>
+                            ) : (
+                                <p className='text-xs text-muted-foreground italic'>
+                                    Belum ada data ACC.
+                                </p>
+                            )}
+                        </CardContent>
+                    )}
+                </Card>
+
+                {/* 4. LIST FURNITUR SECTION */}
+                <Card
+                    className={`border shadow-sm transition-all duration-300 ${
+                        project.list_furnitur
+                            ? 'border-purple-200 bg-white ring-1 ring-purple-100'
+                            : 'border-neutral-200 bg-neutral-50/80 opacity-60 grayscale-[0.5]'
+                    }`}
+                >
+                    <CardHeader className='pb-3 flex flex-row items-center justify-between gap-3'>
+                        <button
+                            className='flex items-center gap-3 flex-1 text-left'
+                            onClick={() => setIsLfCollapsed((v) => !v)}
+                        >
+                            <div
+                                className={`h-8 w-8 rounded-full flex items-center justify-center font-bold ${
+                                    project.list_furnitur
+                                        ? 'bg-purple-100 text-purple-600'
+                                        : 'bg-neutral-200 text-neutral-500'
+                                }`}
+                            >
+                                4
+                            </div>
+                            <div className='flex-1'>
+                                <CardTitle className='text-base text-neutral-800'>
+                                    List Furnitur
+                                </CardTitle>
+                                <p className='text-[10px] text-muted-foreground uppercase tracking-wider'>
+                                    Item Specifications
+                                </p>
+                            </div>
+                            <ChevronDown
+                                className={`h-4 w-4 text-neutral-400 transition-transform duration-200 mr-1 ${
+                                    isLfCollapsed ? '-rotate-90' : ''
+                                }`}
+                            />
+                        </button>
+                    </CardHeader>
+                    {!isLfCollapsed && (
+                        <CardContent className="space-y-3">
+                            <div className="space-y-2">
                                 <Input 
                                     type="file" 
-                                    className="bg-white text-xs" 
+                                    className="h-8 text-[10px] bg-neutral-50" 
                                     onChange={e => setLfFile(e.target.files?.[0] || null)}
                                 />
-                            </div>
-                            <div className="grid grid-cols-2 gap-3">
-                                <div className="space-y-1">
-                                    <Label className="text-[10px] uppercase text-purple-600 font-bold">Mulai</Label>
-                                    <Input 
-                                        type="date" 
-                                        className="bg-white text-xs" 
-                                        value={lfStart}
-                                        onChange={e => setLfStart(e.target.value)}
-                                    />
-                                </div>
-                                <div className="space-y-1">
-                                    <Label className="text-[10px] uppercase text-purple-600 font-bold">Selesai</Label>
-                                    <Input 
-                                        type="date" 
-                                        className="bg-white text-xs" 
-                                        value={lfEnd}
-                                        onChange={e => setLfEnd(e.target.value)}
-                                    />
-                                </div>
-                            </div>
-                            <Button 
-                                className="w-full bg-purple-600 hover:bg-purple-700"
-                                onClick={handleLfUpload}
-                                disabled={uploadLfMutation.isPending}
-                            >
-                                {uploadLfMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save List Furnitur"}
-                            </Button>
-                        </div>
-
-                        {project?.list_furnitur?.file && (
-                            <div className="p-3 rounded-lg border border-purple-100 bg-white flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                    <div className="h-8 w-8 rounded-lg bg-purple-50 flex items-center justify-center text-purple-600">
-                                        <FileText className="h-4 w-4" />
+                                <div className="grid grid-cols-2 gap-2">
+                                    <div className="space-y-1">
+                                        <Label className="text-[8px] uppercase text-neutral-500">Mulai</Label>
+                                        <Input type="date" className="h-7 text-[10px]" value={lfStart} onChange={e => setLfStart(e.target.value)} />
                                     </div>
-                                    <span className="text-xs font-medium text-neutral-600 truncate max-w-[120px]">
-                                        List Furnitur File
-                                    </span>
+                                    <div className="space-y-1">
+                                        <Label className="text-[8px] uppercase text-neutral-500">Selesai</Label>
+                                        <Input type="date" className="h-7 text-[10px]" value={lfEnd} onChange={e => setLfEnd(e.target.value)} />
+                                    </div>
                                 </div>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 text-purple-600" asChild>
-                                    <a 
-                                        href={`${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '')}/storage/${project.list_furnitur.file}`} 
-                                        target="_blank" 
-                                        rel="noopener noreferrer"
-                                    >
-                                        <Eye className="h-4 w-4" />
-                                    </a>
+                                <Button 
+                                    size="sm" 
+                                    className="w-full h-8 bg-purple-600 hover:bg-purple-700 text-xs"
+                                    onClick={handleLfUpload}
+                                    disabled={uploadLfMutation.isPending}
+                                >
+                                    Save List Furnitur
                                 </Button>
                             </div>
-                        )}
-                    </CardContent>
+                            {project.list_furnitur?.file && (
+                                <div className="flex items-center justify-between p-2 rounded-lg bg-purple-50/50 border border-purple-100 mt-2">
+                                    <span className="text-[10px] font-medium text-purple-700">File Uploaded</span>
+                                    <Button variant="ghost" size="icon" className="h-6 w-6 text-purple-600" asChild>
+                                        <a href={`${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '')}/storage/${project.list_furnitur.file}`} target="_blank" rel="noopener noreferrer">
+                                            <FileDown className="h-3.5 w-3.5" />
+                                        </a>
+                                    </Button>
+                                </div>
+                            )}
+                        </CardContent>
+                    )}
                 </Card>
             </div>
 
             {/* Items Table Section */}
-            <div className="space-y-4 pt-4 border-t">
-                <div className="flex justify-between items-center">
-                    <h2 className="text-xl font-bold flex items-center gap-2">
-                        <ListChecks className="h-5 w-5 text-neutral-400" />
+            <div className='flex flex-col gap-4'>
+                <div className='flex items-center justify-between'>
+                    <h2 className='text-lg font-bold flex items-center gap-2 text-neutral-800'>
+                        <Package className='h-5 w-5 text-neutral-400' />
                         Project Items
                     </h2>
                 </div>
 
-                <div className="rounded-xl border border-neutral-200 bg-white overflow-hidden shadow-sm">
+                <div className='rounded-xl border border-neutral-200 bg-white overflow-hidden shadow-sm'>
                     <Table>
-                        <TableHeader className="bg-neutral-50/80">
+                        <TableHeader className='bg-neutral-50/80'>
                             <TableRow>
-                                <TableHead className="w-[50px]">#</TableHead>
+                                <TableHead className='w-[50px]'>#</TableHead>
                                 <TableHead>Floor</TableHead>
                                 <TableHead>Room</TableHead>
                                 <TableHead>Item Name</TableHead>
@@ -532,64 +836,107 @@ export default function DesignerDetailPage() {
                                 <TableHead>Dimensions</TableHead>
                                 <TableHead>Qty</TableHead>
                                 <TableHead>PO Divisi</TableHead>
-                                <TableHead>Gambar Kerja</TableHead>
+                                <TableHead className='text-right'>Gambar Kerja</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {isLoadingItems ? (
                                 <TableRow>
-                                    <TableCell colSpan={9} className="h-32 text-center text-muted-foreground">
-                                        <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                                    <TableCell
+                                        colSpan={10}
+                                        className='h-32 text-center text-muted-foreground'
+                                    >
+                                        <Loader2 className='h-6 w-6 animate-spin mx-auto' />
                                     </TableCell>
                                 </TableRow>
                             ) : items?.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={9} className="h-32 text-center text-muted-foreground">
+                                    <TableCell
+                                        colSpan={10}
+                                        className='h-32 text-center text-muted-foreground'
+                                    >
                                         No items recorded for this project.
                                     </TableCell>
                                 </TableRow>
                             ) : (
                                 items?.map((item, index) => (
-                                    <TableRow key={item.id} className="hover:bg-neutral-50/50 transition-colors">
-                                        <TableCell className="text-muted-foreground font-medium">{index + 1}</TableCell>
-                                        <TableCell className="text-xs font-medium">{item.lantai || "-"}</TableCell>
-                                        <TableCell className="text-xs max-w-[120px] truncate">{item.ruang || "-"}</TableCell>
-                                        <TableCell className="font-bold text-neutral-800">{item.item}</TableCell>
-                                        <TableCell className="max-w-[150px] truncate text-xs text-muted-foreground">{item.keterangan || "-"}</TableCell>
-                                        <TableCell className="font-bold text-blue-600 text-xs">{item.volume || "-"}</TableCell>
-                                        <TableCell className="text-[10px] text-muted-foreground">
-                                            {item.panjang || "-"}x{item.lebar || "-"}x{item.tinggi || "-"} {item.satuan}
+                                    <TableRow
+                                        key={item.id}
+                                        className='hover:bg-neutral-50/50 transition-colors'
+                                    >
+                                        <TableCell className='text-muted-foreground font-medium'>
+                                            {index + 1}
                                         </TableCell>
-                                        <TableCell className="font-bold">{item.jumlah}</TableCell>
+                                        <TableCell className='text-xs font-medium'>
+                                            {item.lantai || '-'}
+                                        </TableCell>
+                                        <TableCell className='text-xs max-w-[120px] truncate'>
+                                            {item.ruang || '-'}
+                                        </TableCell>
+                                        <TableCell className='font-bold text-neutral-800'>
+                                            {item.item}
+                                        </TableCell>
+                                        <TableCell className='max-w-[150px] truncate text-[10px] text-muted-foreground'>
+                                            {item.keterangan || '-'}
+                                        </TableCell>
+                                        <TableCell className='font-bold text-blue-600 text-xs'>
+                                            {item.volume || '-'}
+                                        </TableCell>
+                                        <TableCell className='text-[10px] text-muted-foreground whitespace-nowrap'>
+                                            {item.panjang || '-'}x{item.lebar || '-'}x
+                                            {item.tinggi || '-'} {item.satuan}
+                                        </TableCell>
+                                        <TableCell className='font-bold text-neutral-900'>
+                                            {item.jumlah}
+                                        </TableCell>
                                         <TableCell>
                                             {item.divisi ? (
-                                                <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 font-bold">
+                                                <Badge
+                                                    variant='outline'
+                                                    className='bg-purple-50 text-purple-700 border-purple-200 text-[10px] h-5'
+                                                >
                                                     {item.divisi.nama}
                                                 </Badge>
                                             ) : (
-                                                <span className="text-[10px] text-muted-foreground italic">-</span>
+                                                <span className='text-[10px] text-muted-foreground italic'>
+                                                    -
+                                                </span>
                                             )}
                                         </TableCell>
-                                        <TableCell>
+                                        <TableCell className='text-right'>
                                             {item.gambar_kerja?.file ? (
-                                                <div className="flex items-center gap-2">
-                                                    <div className="h-6 w-6 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                                                        <CheckCircle2 className="h-3.5 w-3.5" />
+                                                <div className='flex items-center justify-end gap-2'>
+                                                    <div className='h-6 w-6 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shadow-sm'>
+                                                        <CheckCircle2 className='h-3.5 w-3.5' />
                                                     </div>
-                                                    <Button variant="ghost" size="icon" className="h-6 w-6 text-blue-600" asChild>
-                                                        <a href={`${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '')}/storage/${item.gambar_kerja.file}`} target="_blank" rel="noopener noreferrer">
-                                                            <Eye className="h-3.5 w-3.5" />
+                                                    <Button
+                                                        variant='ghost'
+                                                        size='icon'
+                                                        className='h-7 w-7 text-blue-600 hover:bg-blue-50'
+                                                        asChild
+                                                    >
+                                                        <a
+                                                            href={`${(
+                                                                process.env.NEXT_PUBLIC_API_URL ||
+                                                                'http://localhost:8000'
+                                                            ).replace('/api', '')}/storage/${
+                                                                item.gambar_kerja.file
+                                                            }`}
+                                                            target='_blank'
+                                                            rel='noopener noreferrer'
+                                                        >
+                                                            <Eye className='h-3.5 w-3.5' />
                                                         </a>
                                                     </Button>
                                                 </div>
                                             ) : (
-                                                <Button 
-                                                    variant="outline" 
-                                                    size="sm" 
-                                                    className="h-7 text-[10px] border-orange-200 text-orange-600 hover:bg-orange-50"
+                                                <Button
+                                                    variant='outline'
+                                                    size='sm'
+                                                    className='h-7 text-[10px] border-orange-200 text-orange-600 hover:bg-orange-50'
                                                     onClick={() => openGkUpload(item)}
                                                 >
-                                                    <Upload className="h-3 w-3 mr-1" />
+                                                    <Upload className='h-3 w-3 mr-1' />
                                                     Upload
                                                 </Button>
                                             )}
@@ -602,6 +949,7 @@ export default function DesignerDetailPage() {
                 </div>
             </div>
 
+            {/* Same Item Form Dialog as before */}
             <ProjectItemFormDialog 
                 open={isItemFormOpen} 
                 onOpenChange={setIsItemFormOpen} 
@@ -609,6 +957,7 @@ export default function DesignerDetailPage() {
                 item={selectedItem}
             />
 
+            {/* Same Delete Dialog as before */}
             <AlertDialog open={isItemDeleteDialogOpen} onOpenChange={setIsItemDeleteDialogOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader>

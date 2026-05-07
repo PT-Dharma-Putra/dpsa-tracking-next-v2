@@ -194,6 +194,29 @@ export function ProjectsV2Table({
     },
   });
 
+  // PIC Management
+  const { data: designers = [] } = useQuery({
+    queryKey: ['designers'],
+    queryFn: () => projectV2Service.getDesigners(),
+    enabled: showSPD,
+  });
+
+  const updatePicMutation = useMutation({
+    mutationFn: ({ projectId, studioId }: { projectId: number; studioId: number }) =>
+      projectV2Service.updatePic(projectId, studioId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects-v2'] });
+      toast.success('PIC updated successfully');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to update PIC');
+    },
+  });
+
+  const handlePicChange = (projectId: number, studioId: number) => {
+    updatePicMutation.mutate({ projectId, studioId });
+  };
+
   const handleEdit = (project: ProjectV2) => {
     setSelectedProject(project);
     setIsFormOpen(true);
@@ -339,37 +362,43 @@ export function ProjectsV2Table({
               <TableHead>Project Name</TableHead>
               <TableHead>Client</TableHead>
               <TableHead>Description</TableHead>
-              <TableHead
-                className='cursor-pointer hover:bg-neutral-100 transition-colors group'
-                onClick={() => {
-                  if (sortBy === 'deadline') {
-                    setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                  } else {
-                    setSortBy('deadline');
-                    setSortOrder('asc');
-                  }
-                  setPage(1);
-                }}
-              >
-                <div className='flex items-center gap-1'>
-                  Deadline
-                  {sortBy === 'deadline' ? (
-                    sortOrder === 'asc' ? (
-                      <ArrowUp className='h-3 w-3' />
-                    ) : (
-                      <ArrowDown className='h-3 w-3' />
-                    )
-                  ) : (
-                    <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
-                  )}
-                </div>
-              </TableHead>
-              <TableHead>SPK Number</TableHead>
-              <TableHead>Sisa Hari</TableHead>
-              <TableHead>Jadwal Pengiriman</TableHead>
+              {!showSPD && (
+                <>
+                  <TableHead
+                    className='cursor-pointer hover:bg-neutral-100 transition-colors group'
+                    onClick={() => {
+                      if (sortBy === 'deadline') {
+                        setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                      } else {
+                        setSortBy('deadline');
+                        setSortOrder('asc');
+                      }
+                      setPage(1);
+                    }}
+                  >
+                    <div className='flex items-center gap-1'>
+                      Deadline
+                      {sortBy === 'deadline' ? (
+                        sortOrder === 'asc' ? (
+                          <ArrowUp className='h-3 w-3' />
+                        ) : (
+                          <ArrowDown className='h-3 w-3' />
+                        )
+                      ) : (
+                        <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
+                      )}
+                    </div>
+                  </TableHead>
+                  <TableHead>SPK Number</TableHead>
+                  <TableHead>Sisa Hari</TableHead>
+                </>
+              )}
+              <TableHead>Pakai Desain</TableHead>
+              {!showSPD && <TableHead>Jadwal Pengiriman</TableHead>}
               {showSPD && (
                 <>
                   <TableHead>SPD</TableHead>
+                  <TableHead>Pic</TableHead>
                   <TableHead>Desain</TableHead>
                   <TableHead>List Furnitur</TableHead>
                 </>
@@ -409,122 +438,131 @@ export function ProjectsV2Table({
                       <span className='text-muted-foreground italic'>None</span>
                     )}
                   </TableCell>
-                  <TableCell>
-                    {project.deadline
-                      ? format(new Date(project.deadline), 'MMM d, yyyy')
-                      : '-'}
-                  </TableCell>
-                  <TableCell>
-                    {project.spk_number || project.spk?.nomor_spk || '-'}
-                  </TableCell>
-                  <TableCell>
-                    {project.deadline ? (
-                      (() => {
-                        const diff = differenceInDays(
-                          startOfDay(new Date(project.deadline)),
-                          startOfDay(new Date())
-                        );
-                        return (
-                          <div className='flex items-center gap-1.5'>
-                            <Badge
-                              variant='outline'
-                              className={cn(
-                                'font-bold',
-                                diff < 0
-                                  ? 'bg-red-50 text-red-700 border-red-200'
-                                  : diff <= 3
-                                  ? 'bg-orange-50 text-orange-700 border-orange-200'
-                                  : 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                              )}
-                            >
-                              {diff < 0
-                                ? `Lewat ${Math.abs(diff)} Hari`
-                                : `${diff} Hari`}
-                            </Badge>
-                          </div>
-                        );
-                      })()
-                    ) : (
-                      <span className='text-muted-foreground italic text-xs'>
-                        -
-                      </span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {project.jadwal_pengiriman ? (
-                      <div
-                        className={cn(
-                          'space-y-1 p-1 rounded-md',
-                          !showProduksi &&
-                            'cursor-pointer hover:bg-neutral-50 transition-colors group'
+                  {!showSPD && (
+                    <>
+                      <TableCell>
+                        {project.deadline
+                          ? format(new Date(project.deadline), 'MMM d, yyyy')
+                          : '-'}
+                      </TableCell>
+                      <TableCell>
+                        {project.spk_number || project.spk?.nomor_spk || '-'}
+                      </TableCell>
+                      <TableCell>
+                        {project.deadline ? (
+                          (() => {
+                            const diff = differenceInDays(
+                              startOfDay(new Date(project.deadline)),
+                              startOfDay(new Date())
+                            );
+                            return (
+                              <div className='flex items-center gap-1.5'>
+                                <Badge
+                                  variant='outline'
+                                  className={cn(
+                                    'font-bold',
+                                    diff < 0
+                                      ? 'bg-red-50 text-red-700 border-red-200'
+                                      : diff <= 3
+                                      ? 'bg-orange-50 text-orange-700 border-orange-200'
+                                      : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                  )}
+                                >
+                                  {diff < 0
+                                    ? `Lewat ${Math.abs(diff)} Hari`
+                                    : `${diff} Hari`}
+                                </Badge>
+                              </div>
+                            );
+                          })()
+                        ) : (
+                          <span className='text-muted-foreground italic text-xs'>
+                            -
+                          </span>
                         )}
-                        onClick={
-                          !showProduksi
-                            ? () => handleScheduleClick(project)
-                            : undefined
-                        }
-                      >
-                        <div className='flex items-center justify-between'>
-                          <div className='flex items-center gap-1.5 text-xs font-medium text-neutral-900'>
-                            <Truck className='h-3 w-3 text-orange-500' />
-                            {format(
-                              new Date(
-                                project.jadwal_pengiriman.tanggal_pengiriman
-                                  ?.tanggal || ''
-                              ),
-                              'MMM d, yyyy'
+                      </TableCell>
+                    </>
+                  )}
+                  <TableCell>
+                    {project.need_design ? 'Ya' : 'Tidak'}
+                  </TableCell>
+                  {!showSPD && (
+                    <TableCell>
+                      {project.jadwal_pengiriman ? (
+                        <div
+                          className={cn(
+                            'space-y-1 p-1 rounded-md',
+                            !showProduksi &&
+                              'cursor-pointer hover:bg-neutral-50 transition-colors group'
+                          )}
+                          onClick={
+                            !showProduksi
+                              ? () => handleScheduleClick(project)
+                              : undefined
+                          }
+                        >
+                          <div className='flex items-center justify-between'>
+                            <div className='flex items-center gap-1.5 text-xs font-medium text-neutral-900'>
+                              <Truck className='h-3 w-3 text-orange-500' />
+                              {format(
+                                new Date(
+                                  project.jadwal_pengiriman.tanggal_pengiriman
+                                    ?.tanggal || ''
+                                ),
+                                'MMM d, yyyy'
+                              )}
+                            </div>
+                            {!showProduksi && (
+                              <Pencil className='h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity' />
                             )}
                           </div>
-                          {!showProduksi && (
-                            <Pencil className='h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity' />
-                          )}
+                          {(() => {
+                            const jadwalTanggal =
+                              project.jadwal_pengiriman.tanggal_pengiriman
+                                ?.tanggal;
+                            if (!jadwalTanggal || !project.deadline) return null;
+                            const diff = differenceInDays(
+                              startOfDay(new Date(project.deadline)),
+                              startOfDay(new Date(jadwalTanggal))
+                            );
+                            return (
+                              <Badge
+                                variant='secondary'
+                                className={cn(
+                                  'text-[10px] h-4 px-1.5',
+                                  diff < 0
+                                    ? 'bg-red-50 text-red-600'
+                                    : diff <= 2
+                                    ? 'bg-orange-50 text-orange-600'
+                                    : 'bg-emerald-50 text-emerald-600'
+                                )}
+                              >
+                                {diff < 0
+                                  ? `Lewat ${Math.abs(diff)} hari`
+                                  : diff === 0
+                                  ? 'Tepat Deadline'
+                                  : `${diff} hari sebelum deadline`}
+                              </Badge>
+                            );
+                          })()}
                         </div>
-                        {(() => {
-                          const jadwalTanggal =
-                            project.jadwal_pengiriman.tanggal_pengiriman
-                              ?.tanggal;
-                          if (!jadwalTanggal || !project.deadline) return null;
-                          const diff = differenceInDays(
-                            startOfDay(new Date(project.deadline)),
-                            startOfDay(new Date(jadwalTanggal))
-                          );
-                          return (
-                            <Badge
-                              variant='secondary'
-                              className={cn(
-                                'text-[10px] h-4 px-1.5',
-                                diff < 0
-                                  ? 'bg-red-50 text-red-600'
-                                  : diff <= 2
-                                  ? 'bg-orange-50 text-orange-600'
-                                  : 'bg-emerald-50 text-emerald-600'
-                              )}
-                            >
-                              {diff < 0
-                                ? `Lewat ${Math.abs(diff)} hari`
-                                : diff === 0
-                                ? 'Tepat Deadline'
-                                : `${diff} hari sebelum deadline`}
-                            </Badge>
-                          );
-                        })()}
-                      </div>
-                    ) : !showProduksi ? (
-                      <Button
-                        variant='ghost'
-                        size='sm'
-                        className='h-8 text-xs text-muted-foreground hover:text-orange-600'
-                        onClick={() => handleScheduleClick(project)}
-                      >
-                        <CalendarDays className='mr-1.5 h-3.5 w-3.5' />
-                        Set Jadwal
-                      </Button>
-                    ) : (
-                      <span className='text-muted-foreground italic text-xs'>
-                        -
-                      </span>
-                    )}
-                  </TableCell>
+                      ) : !showProduksi ? (
+                        <Button
+                          variant='ghost'
+                          size='sm'
+                          className='h-8 text-xs text-muted-foreground hover:text-orange-600'
+                          onClick={() => handleScheduleClick(project)}
+                        >
+                          <CalendarDays className='mr-1.5 h-3.5 w-3.5' />
+                          Set Jadwal
+                        </Button>
+                      ) : (
+                        <span className='text-muted-foreground italic text-xs'>
+                          -
+                        </span>
+                      )}
+                    </TableCell>
+                  )}
                   {showSPD && (
                     <>
                       <TableCell>
@@ -561,6 +599,54 @@ export function ProjectsV2Table({
                             Not Uploaded
                           </span>
                         )}
+                      </TableCell>
+                      <TableCell>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant='ghost'
+                              size='sm'
+                              className={cn(
+                                'h-8 px-2 font-medium flex items-center gap-1.5',
+                                project.designs?.[0]?.studio?.name 
+                                  ? 'text-neutral-900' 
+                                  : 'text-muted-foreground italic'
+                              )}
+                            >
+                              {project.designs?.[0]?.studio?.name || (project.designs?.[0]?.studio_id ? `ID: ${project.designs[0].studio_id}` : 'Select Pic')}
+                              <ChevronsUpDown className='h-3 w-3 opacity-50' />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className='w-[200px] p-0' align='start'>
+                            <Command>
+                              <CommandInput placeholder='Search designer...' />
+                              <CommandList>
+                                <CommandEmpty>No designer found.</CommandEmpty>
+                                <CommandGroup>
+                                  {designers.map((designer) => (
+                                    <CommandItem
+                                      key={designer.id}
+                                      value={designer.name}
+                                      onSelect={() => {
+                                        handlePicChange(project.id, designer.id);
+                                      }}
+                                    >
+                                      <Check
+                                        className={cn(
+                                          'mr-2 h-4 w-4',
+                                          project.designs?.[0]?.studio_id === designer.id
+                                            ? 'opacity-100'
+                                            : 'opacity-0'
+                                        )}
+                                      />
+                                      {designer.name}
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
                       </TableCell>
                       <TableCell>
                         {project.designs?.[0]?.design_progres &&

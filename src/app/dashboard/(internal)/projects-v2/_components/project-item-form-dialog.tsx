@@ -33,6 +33,14 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Badge } from "@/components/ui/badge"
+import { Check, ChevronsUpDown, X } from "lucide-react"
 import { toast } from "sonner"
 import { projectV2Service, ProjectItemV2, MDLItem } from "@/features/projects/services/project-v2-service"
 import { cn } from "@/lib/utils"
@@ -239,20 +247,82 @@ export function ProjectItemFormDialog({ open, onOpenChange, projectId, item }: P
                                                 name={`items.${index}.lantai`}
                                                 render={({ field }) => (
                                                     <FormItem>
-                                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                            <FormControl>
-                                                                <SelectTrigger className="h-8 text-xs">
-                                                                    <SelectValue placeholder="L" />
-                                                                </SelectTrigger>
-                                                            </FormControl>
-                                                            <SelectContent>
-                                                                {Array.from({ length: 10 }, (_, i) => (
-                                                                    <SelectItem key={i + 1} value={`Lantai ${i + 1}`} className="text-xs">
-                                                                        L{i + 1}
-                                                                    </SelectItem>
-                                                                ))}
-                                                            </SelectContent>
-                                                        </Select>
+                                                        <Popover>
+                                                            <PopoverTrigger asChild>
+                                                                <FormControl>
+                                                                    <Button
+                                                                        variant="outline"
+                                                                        role="combobox"
+                                                                        className={cn(
+                                                                            "h-8 w-full text-xs justify-between font-normal px-2 bg-white",
+                                                                            !field.value && "text-muted-foreground"
+                                                                        )}
+                                                                    >
+                                                                        <div className="flex gap-1 flex-wrap truncate max-w-[90%]">
+                                                                            {field.value ? (
+                                                                                field.value.split(", ").map((val: string) => (
+                                                                                    <Badge variant="secondary" key={val} className="text-[10px] h-5 px-1 font-normal">
+                                                                                        {val.replace("Lantai ", "L")}
+                                                                                    </Badge>
+                                                                                ))
+                                                                            ) : (
+                                                                                "L"
+                                                                            )}
+                                                                        </div>
+                                                                        <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
+                                                                    </Button>
+                                                                </FormControl>
+                                                            </PopoverTrigger>
+                                                            <PopoverContent className="w-[200px] p-2" align="start">
+                                                                <div className="space-y-2">
+                                                                    <div className="flex items-center justify-between pb-2 border-b">
+                                                                        <span className="text-xs font-semibold">Pilih Lantai</span>
+                                                                        <Button 
+                                                                            variant="ghost" 
+                                                                            size="sm" 
+                                                                            className="h-6 px-2 text-[10px]"
+                                                                            onClick={() => field.onChange("")}
+                                                                        >
+                                                                            Reset
+                                                                        </Button>
+                                                                    </div>
+                                                                    <div className="max-h-[200px] overflow-y-auto space-y-1 py-1">
+                                                                        {Array.from({ length: 10 }, (_, i) => {
+                                                                            const floorValue = `Lantai ${i + 1}`;
+                                                                            const isSelected = field.value?.split(", ").includes(floorValue);
+                                                                            return (
+                                                                                <div 
+                                                                                    key={floorValue} 
+                                                                                    className="flex items-center space-x-2 p-1 hover:bg-neutral-100 rounded-md cursor-pointer"
+                                                                                    onClick={() => {
+                                                                                        const currentValues = field.value ? field.value.split(", ") : [];
+                                                                                        let newValues;
+                                                                                        if (isSelected) {
+                                                                                            newValues = currentValues.filter((v: string) => v !== floorValue);
+                                                                                        } else {
+                                                                                            newValues = [...currentValues, floorValue].sort();
+                                                                                        }
+                                                                                        field.onChange(newValues.join(", "));
+                                                                                    }}
+                                                                                >
+                                                                                    <Checkbox 
+                                                                                        id={`floor-${index}-${i}`} 
+                                                                                        checked={isSelected}
+                                                                                        onCheckedChange={() => {}} // handled by div onClick
+                                                                                    />
+                                                                                    <label
+                                                                                        htmlFor={`floor-${index}-${i}`}
+                                                                                        className="text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
+                                                                                    >
+                                                                                        {floorValue}
+                                                                                    </label>
+                                                                                </div>
+                                                                            );
+                                                                        })}
+                                                                    </div>
+                                                                </div>
+                                                            </PopoverContent>
+                                                        </Popover>
                                                         <FormMessage />
                                                     </FormItem>
                                                 )}

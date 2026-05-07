@@ -8,6 +8,7 @@ export interface ProjectV2 {
     client_id: number;
     deadline: string | null;
     status: string;
+    need_design: number;
     progres_produksi?: number;
     client?: {
         id: number;
@@ -26,6 +27,11 @@ export interface ProjectV2 {
             tanggal_acc: string | null;
             status: string;
             bukti_acc?: string | null;
+        };
+        studio_id: number | null;
+        studio?: {
+            id: number;
+            name: string;
         };
         design_progres?: DesignProgres[];
     }>;
@@ -90,18 +96,30 @@ export const projectV2Service = {
         return data;
     },
 
-    createProject: async (payload: { name: string; client_id: number; description?: string; deadline?: string }) => {
+    createProject: async (payload: { name: string; client_id: number; description?: string; deadline?: string; need_design?: number }) => {
         const { data } = await apiClient.post<ProjectV2>('/projects-v2', payload);
         return data;
     },
 
-    updateProject: async (id: number, payload: { name: string; client_id: number; description?: string; deadline?: string }) => {
+    updateProject: async (id: number, payload: { name: string; client_id: number; description?: string; deadline?: string; need_design?: number }) => {
         const { data } = await apiClient.put<ProjectV2>(`/projects-v2/${id}`, payload);
         return data;
     },
 
     deleteProject: async (id: number) => {
         const { data } = await apiClient.delete(`/projects-v2/${id}`);
+        return data;
+    },
+
+    updatePic: async (projectId: number, studioId: number) => {
+        const { data } = await apiClient.post(`/projects-v2/${projectId}/update-pic`, {
+            studio_id: studioId
+        });
+        return data;
+    },
+
+    getDesigners: async () => {
+        const { data } = await apiClient.get<Array<{ id: number, name: string }>>('/designers');
         return data;
     },
 

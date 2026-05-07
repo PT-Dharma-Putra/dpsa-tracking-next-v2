@@ -242,29 +242,6 @@ export function CatalogModal({ isOpen, onClose, projectId }: CatalogModalProps) 
                 </RadioGroup>
               </div>
 
-              {/* Price Range */}
-              <div className="space-y-4">
-                <Label className="text-xs font-bold text-neutral-500 uppercase tracking-wider">Price Range</Label>
-                <div className="space-y-4">
-                  <div className="flex gap-2">
-                    <Input 
-                      type="number" 
-                      placeholder="Min" 
-                      value={minPrice} 
-                      onChange={(e) => setMinPrice(Number(e.target.value))} 
-                      className="h-9 text-xs"
-                    />
-                    <Input 
-                      type="number" 
-                      placeholder="Max" 
-                      value={maxPrice} 
-                      onChange={(e) => setMaxPrice(Number(e.target.value))} 
-                      className="h-9 text-xs"
-                    />
-                  </div>
-                </div>
-              </div>
-
               <Button variant="outline" onClick={handleClearFilters} className="w-full h-10 border-neutral-200 text-neutral-600 font-medium hover:bg-neutral-50">
                 <X className="w-4 h-4 mr-2" />
                 Clear Filters

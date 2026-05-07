@@ -20,6 +20,7 @@ import {
   Package,
   ClipboardCheck,
   ChevronDown,
+  Info,
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -287,22 +288,10 @@ export default function ProjectItemsPage() {
   const flowSteps = [
     {
       id: 1,
-      title: 'Project Items',
-      description: 'Add items',
-      isCompleted: items && items.length > 0,
-      isActive: true,
-      icon: Package,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-500',
-      lightBg: 'bg-blue-50',
-      borderColor: 'border-blue-200',
-    },
-    {
-      id: 2,
       title: 'Upload SPD',
-      description: 'Surat Permintaan Desain',
+      description: project.need_design === 0 ? 'Not Required' : 'Surat Permintaan Desain',
       isCompleted: !!existingSpd?.spd_file,
-      isActive: items && items.length > 0,
+      isActive: project.need_design !== 0,
       icon: FileText,
       color: 'text-orange-600',
       bgColor: 'bg-orange-500',
@@ -310,11 +299,11 @@ export default function ProjectItemsPage() {
       borderColor: 'border-orange-200',
     },
     {
-      id: 3,
+      id: 2,
       title: 'ACC Design',
-      description: 'Approval Desain',
+      description: project.need_design === 0 ? 'Not Required' : 'Approval Desain',
       isCompleted: existingAcc?.status === 'Approved',
-      isActive: !!existingSpd?.spd_file,
+      isActive: project.need_design !== 0 && !!existingSpd?.spd_file,
       icon: CheckCircle2,
       color: 'text-emerald-600',
       bgColor: 'bg-emerald-500',
@@ -322,11 +311,11 @@ export default function ProjectItemsPage() {
       borderColor: 'border-emerald-200',
     },
     {
-      id: 4,
+      id: 3,
       title: 'Upload SPH',
       description: 'Surat Penawaran Harga',
       isCompleted: !!existingSph?.file,
-      isActive: existingAcc?.status === 'Approved',
+      isActive: project.need_design === 0 || existingAcc?.status === 'Approved',
       icon: FileText,
       color: 'text-blue-600',
       bgColor: 'bg-blue-500',
@@ -334,7 +323,7 @@ export default function ProjectItemsPage() {
       borderColor: 'border-blue-200',
     },
     {
-      id: 5,
+      id: 4,
       title: 'Upload SPK',
       description: 'Surat Perintah Kerja',
       isCompleted: !!existingSpk?.file,
@@ -344,6 +333,18 @@ export default function ProjectItemsPage() {
       bgColor: 'bg-purple-500',
       lightBg: 'bg-purple-50',
       borderColor: 'border-purple-200',
+    },
+    {
+      id: 5,
+      title: 'Project Items',
+      description: 'Add items',
+      isCompleted: items && items.length > 0,
+      isActive: !!existingSpk?.file,
+      icon: Package,
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-500',
+      lightBg: 'bg-blue-50',
+      borderColor: 'border-blue-200',
     },
   ];
 
@@ -383,6 +384,17 @@ export default function ProjectItemsPage() {
                 <span className='flex items-center gap-1 text-xs text-neutral-600'>
                   <Calendar className='h-3 w-3 text-neutral-400' />
                   {format(new Date(project.deadline), 'MMM d, yyyy')}
+                </span>
+              )}
+              {project.need_design ? (
+                <span className='flex items-center gap-1 text-xs text-emerald-600'>
+                  <Info className='h-3 w-3 text-emerald-500' />
+                  Perlu Desain
+                </span>
+              ) : (
+                <span className='flex items-center gap-1 text-xs text-neutral-600'>
+                  <Info className='h-3 w-3 text-neutral-400' />
+                  Tidak Perlu Desain
                 </span>
               )}
             </div>
@@ -450,206 +462,32 @@ export default function ProjectItemsPage() {
         </div>
       </div>
 
-      {/* Step 1 + Steps 2-5 side by side */}
-      <div className='flex flex-col xl:flex-row gap-6 items-start'>
-        {/* Step 1: Project Items */}
-        <Card
-          className={`border-none shadow-sm overflow-hidden transition-all duration-300 flex-1 min-w-0 w-full ${
-            flowSteps[0].isActive && !flowSteps[0].isCompleted
-              ? 'ring-2 ring-blue-500 ring-offset-2'
-              : 'ring-1 ring-neutral-200/50'
-          }`}
-        >
-          <CardHeader className='bg-blue-50/50 border-b border-blue-100 flex flex-row items-center justify-between py-4'>
-            <div className='flex items-center gap-3'>
-              <div className='h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold'>
-                1
-              </div>
-              <div>
-                <CardTitle className='text-lg text-blue-900'>
-                  Project Items
-                </CardTitle>
-                <p className='text-xs text-blue-600/80'>
-                  Add and manage items for this project
-                </p>
-              </div>
-            </div>
-            <Button
-              onClick={handleAddItem}
-              className='bg-blue-600 hover:bg-blue-700 shadow-sm transition-all hover:scale-105 active:scale-95'
-            >
-              <Plus className='mr-2 h-4 w-4' />
-              Add Item
-            </Button>
-          </CardHeader>
-          <CardContent className='p-0'>
-            <div className='overflow-x-auto'>
-              <Table>
-                <TableHeader className='bg-white'>
-                  <TableRow>
-                    <TableHead className='w-[50px] whitespace-nowrap'>
-                      #
-                    </TableHead>
-                    <TableHead className='whitespace-nowrap'>
-                      Kode Barang
-                    </TableHead>
-                    <TableHead className='whitespace-nowrap min-w-[200px]'>
-                      Item
-                    </TableHead>
-                    <TableHead className='whitespace-nowrap'>Lantai</TableHead>
-                    <TableHead className='whitespace-nowrap'>Ruang</TableHead>
-                    <TableHead className='whitespace-nowrap min-w-[200px]'>
-                      Keterangan
-                    </TableHead>
-                    <TableHead className='whitespace-nowrap'>Vol</TableHead>
-                    <TableHead className='whitespace-nowrap'>
-                      Size (P x L x T)
-                    </TableHead>
-                    <TableHead className='whitespace-nowrap text-center'>
-                      Qty
-                    </TableHead>
-                    <TableHead className='w-[80px] text-right whitespace-nowrap'>
-                      Actions
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {isLoadingItems ? (
-                    <TableRow>
-                      <TableCell colSpan={10} className='h-32 text-center'>
-                        <div className='flex items-center justify-center'>
-                          <Loader2 className='h-6 w-6 animate-spin text-neutral-400' />
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ) : items?.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={10} className='h-40 text-center'>
-                        <div className='flex flex-col items-center justify-center text-muted-foreground space-y-3'>
-                          <div className='h-12 w-12 rounded-full bg-neutral-100 flex items-center justify-center'>
-                            <Package className='h-6 w-6 text-neutral-400' />
-                          </div>
-                          <div className='space-y-1'>
-                            <p className='font-semibold text-neutral-700'>
-                              No items found
-                            </p>
-                            <p className='text-xs text-neutral-500'>
-                              Click Add Item to start adding project items.
-                            </p>
-                          </div>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    items?.map((item, index) => (
-                      <TableRow
-                        key={item.id}
-                        className='hover:bg-blue-50/30 transition-colors group'
-                      >
-                        <TableCell className='text-muted-foreground font-medium'>
-                          {index + 1}
-                        </TableCell>
-                        <TableCell className='text-xs text-neutral-500 whitespace-nowrap'>
-                          {item.mdl_item?.kode_barang || '-'}
-                        </TableCell>
-                        <TableCell
-                          className='font-semibold text-neutral-800 text-sm max-w-[200px] truncate'
-                          title={item.item}
-                        >
-                          {item.item}
-                        </TableCell>
-                        <TableCell className='text-xs'>
-                          {item.lantai || '-'}
-                        </TableCell>
-                        <TableCell
-                          className='text-xs max-w-[120px] truncate'
-                          title={item.ruang}
-                        >
-                          {item.ruang || '-'}
-                        </TableCell>
-                        <TableCell
-                          className='max-w-[200px] truncate text-xs text-neutral-600'
-                          title={item.keterangan}
-                        >
-                          {item.keterangan || '-'}
-                        </TableCell>
-                        <TableCell className='font-medium text-blue-600 text-sm'>
-                          {item.volume || '-'}
-                        </TableCell>
-                        <TableCell className='text-xs text-muted-foreground whitespace-nowrap bg-neutral-50/50 group-hover:bg-transparent'>
-                          {item.panjang || '-'} x {item.lebar || '-'} x{' '}
-                          {item.tinggi || '-'} {item.satuan}
-                        </TableCell>
-                        <TableCell className='font-semibold text-sm text-center bg-blue-50/30 group-hover:bg-transparent text-blue-700'>
-                          {item.jumlah}
-                        </TableCell>
-                        <TableCell className='text-right'>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant='ghost'
-                                size='icon'
-                                className='h-8 w-8 hover:bg-white shadow-sm ring-1 ring-neutral-200/50'
-                              >
-                                <MoreHorizontal className='h-4 w-4' />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent
-                              align='end'
-                              className='w-[160px]'
-                            >
-                              <DropdownMenuItem
-                                onClick={() => handleEdit(item)}
-                              >
-                                <Pencil className='mr-2 h-4 w-4' />
-                                Edit
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                className='text-red-600 focus:text-red-600 focus:bg-red-50'
-                                onClick={() => handleDeleteClick(item)}
-                              >
-                                <Trash2 className='mr-2 h-4 w-4' />
-                                Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Steps 2-5: Documents & Status */}
-        <div className='flex flex-col gap-4 xl:w-75 shrink-0 w-full'>
-          {/* 2. SPD SECTION */}
+      {/* Document Section at Top */}
+      <div className='grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 w-full'>
+        {/* 1. SPD SECTION */}
           <Card
             className={`border shadow-sm transition-all duration-300 ${
-              flowSteps[1].isActive
-                ? flowSteps[1].isCompleted
+              flowSteps[0].isActive
+                ? flowSteps[0].isCompleted
                   ? 'border-orange-200 bg-white ring-1 ring-orange-100'
                   : 'border-orange-300 bg-white ring-2 ring-orange-500 ring-offset-2'
                 : 'border-neutral-200 bg-neutral-50/80 opacity-60 grayscale-[0.5]'
             }`}
           >
             <CardHeader className='pb-3 flex flex-row items-center justify-between gap-3'>
-              <button
-                className='flex items-center gap-3 flex-1 text-left'
-                onClick={() => setIsSpdCollapsed((v) => !v)}
+            <button
+              className='flex items-center gap-3 flex-1 text-left'
+              onClick={() => setIsSpdCollapsed((v) => !v)}
+            >
+              <div
+                className={`h-8 w-8 rounded-full flex items-center justify-center font-bold ${
+                  flowSteps[0].isActive
+                    ? 'bg-orange-100 text-orange-600'
+                    : 'bg-neutral-200 text-neutral-500'
+                }`}
               >
-                <div
-                  className={`h-8 w-8 rounded-full flex items-center justify-center font-bold ${
-                    flowSteps[1].isActive
-                      ? 'bg-orange-100 text-orange-600'
-                      : 'bg-neutral-200 text-neutral-500'
-                  }`}
-                >
-                  2
-                </div>
+                1
+              </div>
                 <div className='flex-1'>
                   <CardTitle className='text-base text-neutral-800'>
                     Upload SPD
@@ -668,7 +506,7 @@ export default function ProjectItemsPage() {
                 size='sm'
                 variant='outline'
                 className='h-7 text-[10px] border-orange-200 text-orange-600 hover:bg-orange-50'
-                disabled={!flowSteps[1].isActive}
+                disabled={!flowSteps[0].isActive}
                 onClick={() => setIsSpdModalOpen(true)}
               >
                 <Upload className='h-3 w-3 mr-1' />
@@ -724,11 +562,11 @@ export default function ProjectItemsPage() {
             )}
           </Card>
 
-          {/* 3. ACC DESIGN SECTION */}
+          {/* 2. ACC DESIGN SECTION */}
           <Card
             className={`border shadow-sm transition-all duration-300 ${
-              flowSteps[2].isActive
-                ? flowSteps[2].isCompleted
+              flowSteps[1].isActive
+                ? flowSteps[1].isCompleted
                   ? 'border-emerald-200 bg-white ring-1 ring-emerald-100'
                   : 'border-emerald-300 bg-white ring-2 ring-emerald-500 ring-offset-2'
                 : 'border-neutral-200 bg-neutral-50/80 opacity-60 grayscale-[0.5]'
@@ -741,12 +579,12 @@ export default function ProjectItemsPage() {
               >
                 <div
                   className={`h-8 w-8 rounded-full flex items-center justify-center font-bold ${
-                    flowSteps[2].isActive
+                    flowSteps[1].isActive
                       ? 'bg-emerald-100 text-emerald-600'
                       : 'bg-neutral-200 text-neutral-500'
                   }`}
                 >
-                  3
+                  2
                 </div>
                 <div className='flex-1'>
                   <CardTitle className='text-base text-neutral-800'>
@@ -766,7 +604,7 @@ export default function ProjectItemsPage() {
                 size='sm'
                 variant='outline'
                 className='h-7 text-[10px] border-emerald-200 text-emerald-600 hover:bg-emerald-50'
-                disabled={!flowSteps[2].isActive}
+                disabled={!flowSteps[1].isActive}
                 onClick={() => setIsAccModalOpen(true)}
               >
                 <Pencil className='h-3 w-3 mr-1' />
@@ -831,11 +669,11 @@ export default function ProjectItemsPage() {
             )}
           </Card>
 
-          {/* 4. SPH SECTION */}
+          {/* 3. SPH SECTION */}
           <Card
             className={`border shadow-sm transition-all duration-300 ${
-              flowSteps[3].isActive
-                ? flowSteps[3].isCompleted
+              flowSteps[2].isActive
+                ? flowSteps[2].isCompleted
                   ? 'border-blue-200 bg-white ring-1 ring-blue-100'
                   : 'border-blue-300 bg-white ring-2 ring-blue-500 ring-offset-2'
                 : 'border-neutral-200 bg-neutral-50/80 opacity-60 grayscale-[0.5]'
@@ -848,12 +686,12 @@ export default function ProjectItemsPage() {
               >
                 <div
                   className={`h-8 w-8 rounded-full flex items-center justify-center font-bold ${
-                    flowSteps[3].isActive
+                    flowSteps[2].isActive
                       ? 'bg-blue-100 text-blue-600'
                       : 'bg-neutral-200 text-neutral-500'
                   }`}
                 >
-                  4
+                  3
                 </div>
                 <div className='flex-1'>
                   <CardTitle className='text-base text-neutral-800'>
@@ -873,7 +711,7 @@ export default function ProjectItemsPage() {
                 size='sm'
                 variant='outline'
                 className='h-7 text-[10px] border-blue-200 text-blue-600 hover:bg-blue-50'
-                disabled={!flowSteps[3].isActive}
+                disabled={!flowSteps[2].isActive}
                 onClick={() => setIsSphModalOpen(true)}
               >
                 <Upload className='h-3 w-3 mr-1' />
@@ -927,11 +765,11 @@ export default function ProjectItemsPage() {
             )}
           </Card>
 
-          {/* 5. SPK SECTION */}
+          {/* 4. SPK SECTION */}
           <Card
             className={`border shadow-sm transition-all duration-300 ${
-              flowSteps[4].isActive
-                ? flowSteps[4].isCompleted
+              flowSteps[3].isActive
+                ? flowSteps[3].isCompleted
                   ? 'border-purple-200 bg-white ring-1 ring-purple-100'
                   : 'border-purple-300 bg-white ring-2 ring-purple-500 ring-offset-2'
                 : 'border-neutral-200 bg-neutral-50/80 opacity-60 grayscale-[0.5]'
@@ -944,12 +782,12 @@ export default function ProjectItemsPage() {
               >
                 <div
                   className={`h-8 w-8 rounded-full flex items-center justify-center font-bold ${
-                    flowSteps[4].isActive
+                    flowSteps[3].isActive
                       ? 'bg-purple-100 text-purple-600'
                       : 'bg-neutral-200 text-neutral-500'
                   }`}
                 >
-                  5
+                  4
                 </div>
                 <div className='flex-1'>
                   <CardTitle className='text-base text-neutral-800'>
@@ -969,7 +807,7 @@ export default function ProjectItemsPage() {
                 size='sm'
                 variant='outline'
                 className='h-7 text-[10px] border-purple-200 text-purple-600 hover:bg-purple-50'
-                disabled={!flowSteps[4].isActive}
+                disabled={!flowSteps[3].isActive}
                 onClick={() => setIsSpkModalOpen(true)}
               >
                 <Upload className='h-3 w-3 mr-1' />
@@ -1022,8 +860,170 @@ export default function ProjectItemsPage() {
               </CardContent>
             )}
           </Card>
-        </div>
       </div>
+      <Card
+        className={`border shadow-sm overflow-hidden transition-all duration-300 w-full ${
+          flowSteps[4].isActive && !flowSteps[4].isCompleted
+            ? 'ring-2 ring-blue-500 ring-offset-2'
+            : 'ring-1 ring-neutral-200/50'
+        }`}
+      >
+        <CardHeader className='bg-blue-50/50 border-b border-blue-100 flex flex-row items-center justify-between py-4'>
+          <div className='flex items-center gap-3'>
+            <div className='h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold'>
+              5
+            </div>
+            <div>
+              <CardTitle className='text-lg text-blue-900'>
+                Project Items
+              </CardTitle>
+              <p className='text-xs text-blue-600/80'>
+                Add and manage items for this project
+              </p>
+            </div>
+          </div>
+          <Button
+            onClick={handleAddItem}
+            className='bg-blue-600 hover:bg-blue-700 shadow-sm transition-all hover:scale-105 active:scale-95'
+          >
+            <Plus className='mr-2 h-4 w-4' />
+            Add Item
+          </Button>
+        </CardHeader>
+        <CardContent className='p-0'>
+          <div className='overflow-x-auto'>
+            <Table>
+              <TableHeader className='bg-white'>
+                <TableRow>
+                  <TableHead className='w-[50px] whitespace-nowrap'>#</TableHead>
+                  <TableHead className='whitespace-nowrap'>
+                    Kode Barang
+                  </TableHead>
+                  <TableHead className='whitespace-nowrap min-w-[200px]'>
+                    Item
+                  </TableHead>
+                  <TableHead className='whitespace-nowrap'>Lantai</TableHead>
+                  <TableHead className='whitespace-nowrap'>Ruang</TableHead>
+                  <TableHead className='whitespace-nowrap min-w-[200px]'>
+                    Keterangan
+                  </TableHead>
+                  <TableHead className='whitespace-nowrap'>Vol</TableHead>
+                  <TableHead className='whitespace-nowrap'>
+                    Size (P x L x T)
+                  </TableHead>
+                  <TableHead className='whitespace-nowrap text-center'>
+                    Qty
+                  </TableHead>
+                  <TableHead className='w-[80px] text-right whitespace-nowrap'>
+                    Actions
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoadingItems ? (
+                  <TableRow>
+                    <TableCell colSpan={10} className='h-32 text-center'>
+                      <div className='flex items-center justify-center'>
+                        <Loader2 className='h-6 w-6 animate-spin text-neutral-400' />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : items?.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={10} className='h-40 text-center'>
+                      <div className='flex flex-col items-center justify-center text-muted-foreground space-y-3'>
+                        <div className='h-12 w-12 rounded-full bg-neutral-100 flex items-center justify-center'>
+                          <Package className='h-6 w-6 text-neutral-400' />
+                        </div>
+                        <div className='space-y-1'>
+                          <p className='font-semibold text-neutral-700'>
+                            No items found
+                          </p>
+                          <p className='text-xs text-neutral-500'>
+                            Click Add Item to start adding project items.
+                          </p>
+                        </div>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  items?.map((item, index) => (
+                    <TableRow
+                      key={item.id}
+                      className='hover:bg-blue-50/30 transition-colors group'
+                    >
+                      <TableCell className='text-muted-foreground font-medium'>
+                        {index + 1}
+                      </TableCell>
+                      <TableCell className='text-xs text-neutral-500 whitespace-nowrap'>
+                        {item.mdl_item?.kode_barang || '-'}
+                      </TableCell>
+                      <TableCell
+                        className='font-semibold text-neutral-800 text-sm max-w-[200px] truncate'
+                        title={item.item}
+                      >
+                        {item.item}
+                      </TableCell>
+                      <TableCell className='text-xs'>
+                        {item.lantai || '-'}
+                      </TableCell>
+                      <TableCell
+                        className='text-xs max-w-[120px] truncate'
+                        title={item.ruang}
+                      >
+                        {item.ruang || '-'}
+                      </TableCell>
+                      <TableCell
+                        className='max-w-[200px] truncate text-xs text-neutral-600'
+                        title={item.keterangan}
+                      >
+                        {item.keterangan || '-'}
+                      </TableCell>
+                      <TableCell className='font-medium text-blue-600 text-sm'>
+                        {item.volume || '-'}
+                      </TableCell>
+                      <TableCell className='text-xs text-muted-foreground whitespace-nowrap bg-neutral-50/50 group-hover:bg-transparent'>
+                        {item.panjang || '-'} x {item.lebar || '-'} x{' '}
+                        {item.tinggi || '-'} {item.satuan}
+                      </TableCell>
+                      <TableCell className='font-semibold text-sm text-center bg-blue-50/30 group-hover:bg-transparent text-blue-700'>
+                        {item.jumlah}
+                      </TableCell>
+                      <TableCell className='text-right'>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant='ghost'
+                              size='icon'
+                              className='h-8 w-8 hover:bg-white shadow-sm ring-1 ring-neutral-200/50'
+                            >
+                              <MoreHorizontal className='h-4 w-4' />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align='end' className='w-[160px]'>
+                            <DropdownMenuItem onClick={() => handleEdit(item)}>
+                              <Pencil className='mr-2 h-4 w-4' />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className='text-red-600 focus:text-red-600 focus:bg-red-50'
+                              onClick={() => handleDeleteClick(item)}
+                            >
+                              <Trash2 className='mr-2 h-4 w-4' />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Modal SPD */}
       <Dialog open={isSpdModalOpen} onOpenChange={setIsSpdModalOpen}>
