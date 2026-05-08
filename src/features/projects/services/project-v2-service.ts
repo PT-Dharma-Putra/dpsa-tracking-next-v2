@@ -21,6 +21,7 @@ export interface ProjectV2 {
         id: number;
         spd_file: string | null;
         tanggal: string | null;
+        target_selesai: string | null;
         acc_design?: {
             id: number;
             tanggal_kirim: string | null;
@@ -65,7 +66,10 @@ export interface DesignProgres {
     id: number;
     design_id: number;
     tahap_design_id: number;
+    tanggal_mulai: string | null;
     tanggal_selesai: string | null;
+    file: string | null;
+    catatan: string | null;
     tahap_design?: TahapDesign;
 }
 
@@ -159,10 +163,10 @@ export const projectV2Service = {
         return data;
     },
 
-    uploadSPD: async (projectId: number, file: File, tanggal: string) => {
+    uploadSPD: async (projectId: number, file: File, target_selesai: string) => {
         const formData = new FormData();
         formData.append('file', file);
-        formData.append('tanggal', tanggal);
+        formData.append('target_selesai', target_selesai);
         const { data } = await apiClient.post(`/projects-v2/${projectId}/upload-spd`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
@@ -217,8 +221,23 @@ export const projectV2Service = {
         return data;
     },
 
-    updateDesignProgress: async (designId: number, payload: { tahap_design_id: number; tanggal_selesai?: string | null }) => {
-        const { data } = await apiClient.post<DesignProgres>(`/designs/${designId}/progress`, payload);
+    updateDesignProgress: async (designId: number, payload: { 
+        tahap_design_id: number; 
+        tanggal_mulai?: string | null;
+        tanggal_selesai?: string | null;
+        catatan?: string | null;
+        file?: File | null;
+    }) => {
+        const formData = new FormData();
+        formData.append('tahap_design_id', payload.tahap_design_id.toString());
+        if (payload.tanggal_mulai) formData.append('tanggal_mulai', payload.tanggal_mulai);
+        if (payload.tanggal_selesai) formData.append('tanggal_selesai', payload.tanggal_selesai);
+        if (payload.catatan) formData.append('catatan', payload.catatan);
+        if (payload.file) formData.append('file', payload.file);
+
+        const { data } = await apiClient.post<DesignProgres>(`/designs/${designId}/progress`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
         return data;
     },
 

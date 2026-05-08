@@ -400,6 +400,10 @@ export function ProjectsV2Table({
                   <TableHead>SPD</TableHead>
                   <TableHead>Pic</TableHead>
                   <TableHead>Desain</TableHead>
+                  <TableHead>Approval Status</TableHead>
+                  <TableHead>Target Desain</TableHead>
+                  <TableHead>Submit</TableHead>
+                  <TableHead>Tepat Waktu</TableHead>
                   <TableHead>List Furnitur</TableHead>
                 </>
               )}
@@ -601,52 +605,70 @@ export function ProjectsV2Table({
                         )}
                       </TableCell>
                       <TableCell>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant='ghost'
-                              size='sm'
-                              className={cn(
-                                'h-8 px-2 font-medium flex items-center gap-1.5',
-                                project.designs?.[0]?.studio?.name 
-                                  ? 'text-neutral-900' 
-                                  : 'text-muted-foreground italic'
-                              )}
+                        {project.need_design === 0 ? (
+                          <span className='text-muted-foreground italic text-xs'>-</span>
+                        ) : project.designs?.[0]?.spd_file ? (
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant='ghost'
+                                size='sm'
+                                className={cn(
+                                  'h-8 px-2 font-medium flex items-center gap-1.5',
+                                  project.designs?.[0]?.studio?.name
+                                    ? 'text-neutral-900'
+                                    : 'text-muted-foreground italic'
+                                )}
+                              >
+                                {project.designs?.[0]?.studio?.name ||
+                                  (project.designs?.[0]?.studio_id
+                                    ? `ID: ${project.designs[0].studio_id}`
+                                    : 'Select Pic')}
+                                <ChevronsUpDown className='h-3 w-3 opacity-50' />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent
+                              className='w-[200px] p-0'
+                              align='start'
                             >
-                              {project.designs?.[0]?.studio?.name || (project.designs?.[0]?.studio_id ? `ID: ${project.designs[0].studio_id}` : 'Select Pic')}
-                              <ChevronsUpDown className='h-3 w-3 opacity-50' />
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className='w-[200px] p-0' align='start'>
-                            <Command>
-                              <CommandInput placeholder='Search designer...' />
-                              <CommandList>
-                                <CommandEmpty>No designer found.</CommandEmpty>
-                                <CommandGroup>
-                                  {designers.map((designer) => (
-                                    <CommandItem
-                                      key={designer.id}
-                                      value={designer.name}
-                                      onSelect={() => {
-                                        handlePicChange(project.id, designer.id);
-                                      }}
-                                    >
-                                      <Check
-                                        className={cn(
-                                          'mr-2 h-4 w-4',
-                                          project.designs?.[0]?.studio_id === designer.id
-                                            ? 'opacity-100'
-                                            : 'opacity-0'
-                                        )}
-                                      />
-                                      {designer.name}
-                                    </CommandItem>
-                                  ))}
-                                </CommandGroup>
-                              </CommandList>
-                            </Command>
-                          </PopoverContent>
-                        </Popover>
+                              <Command>
+                                <CommandInput placeholder='Search designer...' />
+                                <CommandList>
+                                  <CommandEmpty>No designer found.</CommandEmpty>
+                                  <CommandGroup>
+                                    {designers.map((designer) => (
+                                      <CommandItem
+                                        key={designer.id}
+                                        value={designer.name}
+                                        onSelect={() => {
+                                          handlePicChange(
+                                            project.id,
+                                            designer.id
+                                          );
+                                        }}
+                                      >
+                                        <Check
+                                          className={cn(
+                                            'mr-2 h-4 w-4',
+                                            project.designs?.[0]?.studio_id ===
+                                              designer.id
+                                              ? 'opacity-100'
+                                              : 'opacity-0'
+                                          )}
+                                        />
+                                        {designer.name}
+                                      </CommandItem>
+                                    ))}
+                                  </CommandGroup>
+                                </CommandList>
+                              </Command>
+                            </PopoverContent>
+                          </Popover>
+                        ) : (
+                          <div className='flex items-center gap-1.5 px-2 py-1 text-muted-foreground italic text-[10px] bg-neutral-50 rounded border border-dashed border-neutral-200 w-fit'>
+                            Menunggu SPD
+                          </div>
+                        )}
                       </TableCell>
                       <TableCell>
                         {project.designs?.[0]?.design_progres &&
@@ -669,6 +691,64 @@ export function ProjectsV2Table({
                             Belum
                           </Badge>
                         )}
+                      </TableCell>
+                      <TableCell>
+                        {project.designs?.[0]?.acc_design?.status ? (
+                          <Badge
+                            variant='outline'
+                            className={cn(
+                              'font-bold',
+                              project.designs[0].acc_design.status === 'Approved'
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                : 'bg-amber-50 text-amber-700 border-amber-200'
+                            )}
+                          >
+                            {project.designs[0].acc_design.status}
+                          </Badge>
+                        ) : (
+                          <span className='text-muted-foreground italic text-[10px]'>-</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {project.designs?.[0]?.target_selesai ? (
+                           <span className="text-xs">{format(new Date(project.designs[0].target_selesai), 'MMM d, yyyy')}</span>
+                        ) : (
+                           <span className='text-muted-foreground italic text-[10px]'>-</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {project.designs?.[0]?.design_progres && project.designs[0].design_progres.length > 0 ? (
+                           <span className="text-xs">
+                             {(() => {
+                               const latest = project.designs[0].design_progres[project.designs[0].design_progres.length - 1];
+                               return latest.tanggal_selesai ? format(new Date(latest.tanggal_selesai), 'MMM d, yyyy') : '-';
+                             })()}
+                           </span>
+                        ) : (
+                           <span className='text-muted-foreground italic text-[10px]'>-</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {(() => {
+                           const design = project.designs?.[0];
+                           const target = design?.target_selesai;
+                           const latest = design?.design_progres && design.design_progres.length > 0 
+                             ? design.design_progres[design.design_progres.length - 1] 
+                             : null;
+                           const submit = latest?.tanggal_selesai;
+
+                           if (!target || !submit) return <span className='text-muted-foreground italic text-[10px]'>-</span>;
+
+                           const isOnTime = new Date(submit) <= new Date(target);
+                           return (
+                             <Badge variant="outline" className={cn(
+                               "font-bold",
+                               isOnTime ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-red-50 text-red-700 border-red-200"
+                             )}>
+                               {isOnTime ? "Ya" : "Tidak"}
+                             </Badge>
+                           );
+                        })()}
                       </TableCell>
                       <TableCell>
                         {project.list_furnitur ? (

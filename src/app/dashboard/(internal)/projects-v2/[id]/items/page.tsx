@@ -21,6 +21,7 @@ import {
   ClipboardCheck,
   ChevronDown,
   Info,
+  ImageIcon,
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -137,7 +138,7 @@ export default function ProjectItemsPage() {
   };
 
   const [spdFile, setSpdFile] = React.useState<File | null>(null);
-  const [spdDate, setSpdDate] = React.useState<string>(
+  const [targetSelesaiDate, setTargetSelesaiDate] = React.useState<string>(
     format(new Date(), 'yyyy-MM-dd')
   );
 
@@ -159,7 +160,7 @@ export default function ProjectItemsPage() {
       toast.error('Please select a file');
       return;
     }
-    uploadSpdMutation.mutate({ file: spdFile, date: spdDate });
+    uploadSpdMutation.mutate({ file: spdFile, date: targetSelesaiDate });
   };
 
   const [sphFile, setSphFile] = React.useState<File | null>(null);
@@ -215,7 +216,7 @@ export default function ProjectItemsPage() {
     updateAccMutation.mutate({
       tanggal_kirim: accSentDate,
       tanggal_acc: accDoneDate || undefined,
-      status: accStatus,
+      status: 'Approved',
       bukti_acc: buktiAccFile,
     });
   };
@@ -528,7 +529,7 @@ export default function ProjectItemsPage() {
                         <p className='text-[10px] text-orange-600/80'>
                           {format(
                             new Date(
-                              existingSpd.tanggal || existingSpd.created_at
+                              existingSpd.target_selesai || existingSpd.tanggal || existingSpd.created_at
                             ),
                             'MMM d, yyyy'
                           )}
@@ -612,7 +613,7 @@ export default function ProjectItemsPage() {
               </Button>
             </CardHeader>
             {!isAccCollapsed && (
-              <CardContent>
+              <CardContent className="space-y-4">
                 {existingAcc ? (
                   <div className='space-y-2'>
                     <div
@@ -664,6 +665,40 @@ export default function ProjectItemsPage() {
                   <p className='text-xs text-muted-foreground italic'>
                     Belum ada data ACC.
                   </p>
+                )}
+
+                {/* Design Progress Files from Studio */}
+                {existingSpd?.design_progres && existingSpd.design_progres.length > 0 && (
+                  <div className="pt-4 border-t border-neutral-100 space-y-3">
+                    <p className="text-[10px] uppercase font-bold text-neutral-500 flex items-center gap-1.5">
+                      <ImageIcon className="h-3 w-3" />
+                      Design Progress Files
+                    </p>
+                    <div className="space-y-2 max-h-[250px] overflow-y-auto pr-1 custom-scrollbar">
+                      {existingSpd.design_progres.map((p) => (
+                        <div key={p.id} className="p-2 rounded-lg border border-neutral-100 bg-neutral-50/50 space-y-1.5">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0 flex-1">
+                              <p className="text-[10px] font-bold text-neutral-800 truncate">{p.tahap_design?.nama}</p>
+                              <p className="text-[8px] text-muted-foreground">Submit: {p.tanggal_selesai ? format(new Date(p.tanggal_selesai), "MMM d, yyyy") : "-"}</p>
+                            </div>
+                            {p.file && (
+                              <Button variant="ghost" size="icon" className="h-6 w-6 text-blue-600 bg-white shadow-sm border border-blue-50 shrink-0" asChild>
+                                <a href={`${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '')}/storage/${p.file}`} target="_blank" rel="noopener noreferrer">
+                                  <FileDown className="h-3 w-3" />
+                                </a>
+                              </Button>
+                            )}
+                          </div>
+                          {p.catatan && (
+                            <p className="text-[9px] text-neutral-600 bg-white p-1.5 rounded border border-neutral-50 italic">
+                              "{p.catatan}"
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 )}
               </CardContent>
             )}
@@ -719,7 +754,26 @@ export default function ProjectItemsPage() {
               </Button>
             </CardHeader>
             {!isSphCollapsed && (
-              <CardContent>
+              <CardContent className="space-y-3">
+                {/* List Furnitur from Studio */}
+                {project?.list_furnitur?.file && (
+                  <div className="p-3 rounded-xl bg-purple-50/80 border border-purple-100 flex items-center justify-between shadow-sm">
+                    <div className="flex items-center gap-3">
+                       <div className="h-8 w-8 rounded-lg bg-white shadow-sm border border-purple-100 flex items-center justify-center text-purple-600">
+                          <FileText className="h-4 w-4" />
+                       </div>
+                       <div>
+                          <p className="text-xs font-bold text-purple-900">List Furnitur</p>
+                          <p className="text-[10px] text-purple-600/80">Uploaded by Studio</p>
+                       </div>
+                    </div>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-purple-600 hover:bg-purple-200 bg-white shadow-sm border border-purple-100 shrink-0" asChild>
+                       <a href={`${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '')}/storage/${project.list_furnitur.file}`} target="_blank" rel="noopener noreferrer">
+                          <FileDown className="h-4 w-4" />
+                       </a>
+                    </Button>
+                  </div>
+                )}
                 {existingSph?.file ? (
                   <div className='p-3 rounded-xl bg-blue-50/80 border border-blue-100 flex items-center justify-between shadow-sm'>
                     <div className='flex items-center gap-3'>
@@ -1047,11 +1101,11 @@ export default function ProjectItemsPage() {
               />
             </div>
             <div className='space-y-1.5'>
-              <Label className='text-xs font-medium'>Tanggal</Label>
+              <Label className='text-xs font-medium'>Target Penyelesaian</Label>
               <Input
                 type='date'
-                value={spdDate}
-                onChange={(e) => setSpdDate(e.target.value)}
+                value={targetSelesaiDate}
+                onChange={(e) => setTargetSelesaiDate(e.target.value)}
                 className='h-9 text-xs'
               />
             </div>
@@ -1090,12 +1144,12 @@ export default function ProjectItemsPage() {
           <DialogHeader>
             <DialogTitle className='flex items-center gap-2 text-emerald-700'>
               <CheckCircle2 className='h-5 w-5' />
-              ACC Design
+              ACC Design Confirmation
             </DialogTitle>
           </DialogHeader>
           <div className='flex flex-col gap-3 py-2'>
             <div className='space-y-1.5'>
-              <Label className='text-xs font-medium'>Tanggal Kirim</Label>
+              <Label className='text-xs font-medium text-neutral-600'>Tanggal Kirim ke Client</Label>
               <Input
                 type='date'
                 value={accSentDate}
@@ -1104,58 +1158,31 @@ export default function ProjectItemsPage() {
               />
             </div>
             <div className='space-y-1.5'>
-              <Label className='text-xs font-medium'>Status</Label>
-              <Select value={accStatus} onValueChange={setAccStatus}>
-                <SelectTrigger className='h-9 text-xs'>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value='In Review'>In Review</SelectItem>
-                  <SelectItem value='Approved'>Approved</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label className='text-xs font-medium text-emerald-700'>
+                Tanggal Approved
+              </Label>
+              <Input
+                type='date'
+                value={accDoneDate}
+                onChange={(e) => setAccDoneDate(e.target.value)}
+                className='h-9 text-xs border-emerald-200'
+              />
             </div>
-            {accStatus === 'Approved' && (
-              <>
-                <div className='space-y-1.5'>
-                  <Label className='text-xs font-medium text-emerald-600'>
-                    Tanggal Approved
-                  </Label>
-                  <Input
-                    type='date'
-                    value={accDoneDate}
-                    onChange={(e) => setAccDoneDate(e.target.value)}
-                    className='h-9 text-xs border-emerald-200'
-                  />
-                </div>
-                <div className='space-y-1.5'>
-                  <Label className='text-xs font-medium text-emerald-600'>
-                    Bukti ACC
-                  </Label>
-                  <Input
-                    type='file'
-                    onChange={(e) =>
-                      setBuktiAccFile(e.target.files?.[0] || null)
-                    }
-                    className='h-9 text-xs border-emerald-200'
-                  />
-                  {existingAcc?.bukti_acc && (
-                    <a
-                      href={`${(
-                        process.env.NEXT_PUBLIC_API_URL ||
-                        'http://localhost:8000'
-                      ).replace('/api', '')}/storage/${existingAcc.bukti_acc}`}
-                      target='_blank'
-                      rel='noopener noreferrer'
-                      className='text-[10px] text-emerald-600 hover:underline flex items-center gap-1'
-                    >
-                      <FileText className='h-3 w-3' />
-                      Lihat file sebelumnya
-                    </a>
-                  )}
-                </div>
-              </>
-            )}
+            <div className='space-y-1.5'>
+              <Label className='text-xs font-medium text-emerald-700'>
+                Bukti ACC (File/Foto)
+              </Label>
+              <Input
+                type='file'
+                onChange={(e) =>
+                  setBuktiAccFile(e.target.files?.[0] || null)
+                }
+                className='h-9 text-[10px] border-emerald-200 bg-emerald-50/30'
+              />
+              {existingAcc?.bukti_acc && (
+                <p className="text-[10px] text-muted-foreground italic">File exists. Upload new to replace.</p>
+              )}
+            </div>
           </div>
           <DialogFooter>
             <Button
@@ -1169,7 +1196,7 @@ export default function ProjectItemsPage() {
               size='sm'
               className='bg-emerald-600 hover:bg-emerald-700'
               onClick={() => {
-                handleAccUpdate();
+                handleAccUpdate('Approved');
                 setIsAccModalOpen(false);
               }}
               disabled={updateAccMutation.isPending}
@@ -1179,7 +1206,7 @@ export default function ProjectItemsPage() {
               ) : (
                 <CheckCircle2 className='h-4 w-4 mr-1' />
               )}
-              Simpan
+              Confirm ACC
             </Button>
           </DialogFooter>
         </DialogContent>

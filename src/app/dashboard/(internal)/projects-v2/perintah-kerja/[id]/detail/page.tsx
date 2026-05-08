@@ -128,17 +128,26 @@ export default function DesignerDetailPage() {
     })
 
     const updateProgressMutation = useMutation({
-        mutationFn: (payload: { tahap_design_id: number, tanggal_selesai?: string | null }) => 
-            projectV2Service.updateDesignProgress(designId!, payload),
+        mutationFn: (payload: { 
+            tahap_design_id: number, 
+            tanggal_mulai?: string | null,
+            tanggal_selesai?: string | null,
+            catatan?: string | null,
+            file?: File | null
+        }) => projectV2Service.updateDesignProgress(designId!, payload),
         onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["projects-v2", projectId] })
             queryClient.invalidateQueries({ queryKey: ["design-progress", designId] })
             toast.success("Progress updated")
+            setProgressFile(null)
+            setProgressNote("")
         }
     })
 
     const deleteProgressMutation = useMutation({
         mutationFn: (id: number) => projectV2Service.deleteDesignProgress(id),
         onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["projects-v2", projectId] })
             queryClient.invalidateQueries({ queryKey: ["design-progress", designId] })
             toast.success("Progress milestone removed")
         }
@@ -147,7 +156,10 @@ export default function DesignerDetailPage() {
     // Local States for Progress Form
     const [newStageName, setNewStageName] = React.useState("")
     const [selectedStageId, setSelectedStageId] = React.useState<string>("")
+    const [startDate, setStartDate] = React.useState<string>(format(new Date(), "yyyy-MM-dd"))
     const [completionDate, setCompletionDate] = React.useState<string>(format(new Date(), "yyyy-MM-dd"))
+    const [progressNote, setProgressNote] = React.useState<string>("")
+    const [progressFile, setProgressFile] = React.useState<File | null>(null)
 
     const handleAddStage = () => {
         if (!newStageName) return
@@ -162,7 +174,10 @@ export default function DesignerDetailPage() {
         }
         updateProgressMutation.mutate({
             tahap_design_id: parseInt(selectedStageId),
-            tanggal_selesai: completionDate || null
+            tanggal_mulai: startDate || null,
+            tanggal_selesai: completionDate || null,
+            catatan: progressNote || null,
+            file: progressFile || null
         })
     }
 
@@ -239,6 +254,7 @@ export default function DesignerDetailPage() {
     const existingAcc = existingSpd?.acc_design;
     const existingSph = project?.sph;
     const existingSpk = project?.spk;
+    const hasProgress = (existingSpd?.design_progres?.length || 0) > 0;
 
     React.useEffect(() => {
         if (project?.list_furnitur) {
@@ -246,6 +262,16 @@ export default function DesignerDetailPage() {
             if (project.list_furnitur.tanggal_selesai) setLfEnd(project.list_furnitur.tanggal_selesai)
         }
     }, [project?.list_furnitur])
+
+    React.useEffect(() => {
+        if (existingSpd?.spd_file) {
+            setIsProgressCollapsed(false);
+            setIsSpdCollapsed(true);
+        } else {
+            setIsProgressCollapsed(true);
+            setIsSpdCollapsed(false);
+        }
+    }, [existingSpd?.spd_file]);
 
     if (isLoadingProject) {
         return (
@@ -262,10 +288,10 @@ export default function DesignerDetailPage() {
     const flowSteps = [
         {
             id: 1,
-            title: 'Upload SPD',
-            description: project.need_design === 0 ? 'Not Required' : 'Surat Permintaan Desain',
+            title: 'SPD Document',
+            description: 'Surat Permintaan Desain',
             isCompleted: !!existingSpd?.spd_file,
-            isActive: project.need_design !== 0,
+            isActive: true,
             icon: FileText,
             color: 'text-orange-600',
             bgColor: 'bg-orange-500',
@@ -274,10 +300,22 @@ export default function DesignerDetailPage() {
         },
         {
             id: 2,
-            title: 'ACC Design',
-            description: project.need_design === 0 ? 'Not Required' : 'Approval Desain',
+            title: 'Progres Desain',
+            description: 'Tracking Progress',
+            isCompleted: hasProgress,
+            isActive: !!existingSpd?.spd_file,
+            icon: ImageIcon,
+            color: 'text-blue-600',
+            bgColor: 'bg-blue-500',
+            lightBg: 'bg-blue-50',
+            borderColor: 'border-blue-200',
+        },
+        {
+            id: 3,
+            title: 'Acc Desain',
+            description: 'Approval Status',
             isCompleted: existingAcc?.status === 'Approved',
-            isActive: project.need_design !== 0 && !!existingSpd?.spd_file,
+            isActive: hasProgress,
             icon: CheckCircle2,
             color: 'text-emerald-600',
             bgColor: 'bg-emerald-500',
@@ -285,40 +323,16 @@ export default function DesignerDetailPage() {
             borderColor: 'border-emerald-200',
         },
         {
-            id: 3,
-            title: 'Upload SPH',
-            description: 'Surat Penawaran Harga',
-            isCompleted: !!existingSph?.file,
-            isActive: project.need_design === 0 || existingAcc?.status === 'Approved',
-            icon: FileText,
-            color: 'text-blue-600',
-            bgColor: 'bg-blue-500',
-            lightBg: 'bg-blue-50',
-            borderColor: 'border-blue-200',
-        },
-        {
             id: 4,
-            title: 'Upload SPK',
-            description: 'Surat Perintah Kerja',
-            isCompleted: !!existingSpk?.file,
-            isActive: !!existingSph?.file,
-            icon: ClipboardCheck,
+            title: 'List Furnitur',
+            description: 'Item Specifications',
+            isCompleted: !!project.list_furnitur?.file,
+            isActive: existingAcc?.status === 'Approved',
+            icon: ListChecks,
             color: 'text-purple-600',
             bgColor: 'bg-purple-500',
             lightBg: 'bg-purple-50',
             borderColor: 'border-purple-200',
-        },
-        {
-            id: 5,
-            title: 'Project Items',
-            description: 'Add items',
-            isCompleted: items && items.length > 0,
-            isActive: !!existingSpk?.file,
-            icon: Package,
-            color: 'text-blue-600',
-            bgColor: 'bg-blue-500',
-            lightBg: 'bg-blue-50',
-            borderColor: 'border-blue-200',
         },
     ];
 
@@ -569,13 +583,21 @@ export default function DesignerDetailPage() {
                                 <p className="text-xs text-muted-foreground italic">Create SPD to track progress.</p>
                             ) : (
                                 <>
-                                    <div className="space-y-2">
-                                        <div className="flex gap-2">
-                                            <div className="flex-1 space-y-1">
-                                                <Label className="text-[10px] uppercase font-bold text-neutral-500">Stage</Label>
+                                    <div className="space-y-3">
+                                        {existingSpd?.target_selesai && (
+                                            <div className="p-2 rounded-lg bg-red-50 border border-red-100 flex items-center gap-2">
+                                                <Calendar className="h-3 w-3 text-red-500" />
+                                                <p className="text-[10px] font-bold text-red-700">
+                                                    Target Selesai: {format(new Date(existingSpd.target_selesai), 'MMM d, yyyy')}
+                                                </p>
+                                            </div>
+                                        )}
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <div className="space-y-1">
+                                                <Label className="text-[10px] uppercase font-bold text-neutral-500">Tahap</Label>
                                                 <Select value={selectedStageId} onValueChange={setSelectedStageId}>
                                                     <SelectTrigger className="h-8 text-xs">
-                                                        <SelectValue placeholder="Stage..." />
+                                                        <SelectValue placeholder="Tahap..." />
                                                     </SelectTrigger>
                                                     <SelectContent>
                                                         {stages?.map(s => (
@@ -597,8 +619,19 @@ export default function DesignerDetailPage() {
                                                     </SelectContent>
                                                 </Select>
                                             </div>
-                                            <div className="flex-1 space-y-1">
-                                                <Label className="text-[10px] uppercase font-bold text-neutral-500">Date</Label>
+                                            <div className="space-y-1">
+                                                <Label className="text-[10px] uppercase font-bold text-neutral-500">Tanggal Mulai</Label>
+                                                <Input 
+                                                    type="date" 
+                                                    className="h-8 text-xs" 
+                                                    value={startDate}
+                                                    onChange={e => setStartDate(e.target.value)}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <div className="space-y-1">
+                                                <Label className="text-[10px] uppercase font-bold text-neutral-500">Tanggal Selesai</Label>
                                                 <Input 
                                                     type="date" 
                                                     className="h-8 text-xs" 
@@ -606,6 +639,23 @@ export default function DesignerDetailPage() {
                                                     onChange={e => setCompletionDate(e.target.value)}
                                                 />
                                             </div>
+                                            <div className="space-y-1">
+                                                <Label className="text-[10px] uppercase font-bold text-neutral-500">File</Label>
+                                                <Input 
+                                                    type="file" 
+                                                    className="h-8 text-[10px] bg-neutral-50" 
+                                                    onChange={e => setProgressFile(e.target.files?.[0] || null)}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <Label className="text-[10px] uppercase font-bold text-neutral-500">Catatan</Label>
+                                            <Input 
+                                                className="h-8 text-xs" 
+                                                placeholder="Tambahkan catatan..."
+                                                value={progressNote}
+                                                onChange={e => setProgressNote(e.target.value)}
+                                            />
                                         </div>
                                         <Button 
                                             size="sm"
@@ -618,12 +668,33 @@ export default function DesignerDetailPage() {
                                     </div>
                                     <div className="max-h-[200px] overflow-y-auto space-y-2 pr-1 custom-scrollbar">
                                         {progress?.map((p) => (
-                                            <div key={p.id} className="flex items-center justify-between p-2 rounded-lg border border-neutral-100 bg-neutral-50/50">
-                                                <div className="flex items-center gap-2">
-                                                    <CheckCircle2 className="h-3 w-3 text-emerald-500" />
-                                                    <div>
-                                                        <p className="text-[10px] font-bold text-neutral-800">{p.tahap_design?.nama}</p>
-                                                        <p className="text-[8px] text-muted-foreground">{p.tanggal_selesai ? format(new Date(p.tanggal_selesai), "MMM d, yy") : "-"}</p>
+                                            <div key={p.id} className="flex items-start justify-between p-2 rounded-lg border border-neutral-100 bg-neutral-50/50">
+                                                <div className="flex items-start gap-2">
+                                                    <CheckCircle2 className="h-3 w-3 text-emerald-500 mt-1" />
+                                                    <div className="space-y-1">
+                                                        <p className="text-[10px] font-bold text-neutral-800 leading-tight">{p.tahap_design?.nama}</p>
+                                                        <div className="flex gap-2">
+                                                            {p.tanggal_mulai && (
+                                                                <p className="text-[8px] text-muted-foreground italic">Mulai: {format(new Date(p.tanggal_mulai), "MMM d, yy")}</p>
+                                                            )}
+                                                            {p.tanggal_selesai && (
+                                                                <p className="text-[8px] text-muted-foreground italic">Selesai: {format(new Date(p.tanggal_selesai), "MMM d, yy")}</p>
+                                                            )}
+                                                        </div>
+                                                        {p.catatan && (
+                                                            <p className="text-[9px] text-neutral-600 bg-white p-1 rounded border border-neutral-100">{p.catatan}</p>
+                                                        )}
+                                                        {p.file && (
+                                                            <a 
+                                                                href={`${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '')}/storage/${p.file}`}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="text-[8px] text-blue-600 hover:underline flex items-center gap-1"
+                                                            >
+                                                                <Eye className="h-2 w-2" />
+                                                                View File
+                                                            </a>
+                                                        )}
                                                     </div>
                                                 </div>
                                                 <Button variant="ghost" size="icon" className="h-5 w-5 text-neutral-400 hover:text-red-500" onClick={() => deleteProgressMutation.mutate(p.id)}>
@@ -641,10 +712,8 @@ export default function DesignerDetailPage() {
                 {/* 3. ACC DESIGN SECTION */}
                 <Card
                     className={`border shadow-sm transition-all duration-300 ${
-                        flowSteps[1].isActive
-                            ? flowSteps[1].isCompleted
-                                ? 'border-emerald-200 bg-white ring-1 ring-emerald-100'
-                                : 'border-emerald-300 bg-white ring-2 ring-emerald-500 ring-offset-2'
+                        existingAcc || hasProgress
+                            ? 'border-emerald-200 bg-white ring-1 ring-emerald-100'
                             : 'border-neutral-200 bg-neutral-50/80 opacity-60 grayscale-[0.5]'
                     }`}
                 >
@@ -655,7 +724,7 @@ export default function DesignerDetailPage() {
                         >
                             <div
                                 className={`h-8 w-8 rounded-full flex items-center justify-center font-bold ${
-                                    flowSteps[1].isActive
+                                    existingAcc || hasProgress
                                         ? 'bg-emerald-100 text-emerald-600'
                                         : 'bg-neutral-200 text-neutral-500'
                                 }`}
@@ -738,7 +807,7 @@ export default function DesignerDetailPage() {
                 {/* 4. LIST FURNITUR SECTION */}
                 <Card
                     className={`border shadow-sm transition-all duration-300 ${
-                        project.list_furnitur
+                        project.list_furnitur || hasProgress
                             ? 'border-purple-200 bg-white ring-1 ring-purple-100'
                             : 'border-neutral-200 bg-neutral-50/80 opacity-60 grayscale-[0.5]'
                     }`}
@@ -750,7 +819,7 @@ export default function DesignerDetailPage() {
                         >
                             <div
                                 className={`h-8 w-8 rounded-full flex items-center justify-center font-bold ${
-                                    project.list_furnitur
+                                    project.list_furnitur || hasProgress
                                         ? 'bg-purple-100 text-purple-600'
                                         : 'bg-neutral-200 text-neutral-500'
                                 }`}
