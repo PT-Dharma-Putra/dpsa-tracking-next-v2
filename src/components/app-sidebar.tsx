@@ -98,8 +98,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 allowedRoles: ["Super-Admin", "Studio"],
                 items: [
                     {
-                    title: "Daftar Perintah Kerja",
-                    url: "/dashboard/projects-v2/perintah-kerja",
+                        title: "Desainer",
+                        url: "/dashboard/projects-v2/perintah-kerja",
+                    },
+                    {
+                        title: "Engineer",
+                        url: "/dashboard/projects-v2/engineer",
                     },
                 ],
             },
