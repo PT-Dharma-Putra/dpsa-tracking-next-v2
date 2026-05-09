@@ -196,10 +196,11 @@ export const projectV2Service = {
         return data;
     },
 
-    uploadSPK: async (projectId: number, file: File, nomor_spk: string) => {
+    uploadSPK: async (projectId: number, file: File, nomor_spk: string, deadline?: string) => {
         const formData = new FormData();
         formData.append('file', file);
         formData.append('nomor_spk', nomor_spk);
+        if (deadline) formData.append('deadline', deadline);
         const { data } = await apiClient.post(`/projects-v2/${projectId}/upload-spk`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
         });

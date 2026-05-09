@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { useForm, useFieldArray } from "react-hook-form"
+import { useForm, useFieldArray, useWatch } from "react-hook-form"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
@@ -137,6 +137,42 @@ export function ProjectItemFormDialog({ open, onOpenChange, projectId, item }: P
         }
     }, [open, item, replace])
 
+    const watchedItems = useWatch({
+        control: form.control,
+        name: "items"
+    });
+
+    React.useEffect(() => {
+        if (!watchedItems) return;
+
+        watchedItems.forEach((item, index) => {
+            const panjang = Number(item.panjang) || 0;
+            const lebar = Number(item.lebar) || 0;
+            const tinggi = Number(item.tinggi) || 0;
+            const qty = Number(item.jumlah) || 0;
+            const satuan = item.satuan;
+
+            let calculatedVolume = item.volume;
+
+            if (satuan === "M1") {
+                calculatedVolume = panjang;
+            } else if (satuan === "M2 (pxl)" || satuan === "M2_PXL") {
+                calculatedVolume = panjang * lebar;
+            } else if (satuan === "M2 (pxt)" || satuan === "M2_PXT") {
+                calculatedVolume = panjang * tinggi;
+            } else if (satuan === "UNIT" || satuan === "SET") {
+                calculatedVolume = qty;
+            }
+
+            if (calculatedVolume !== item.volume) {
+                form.setValue(`items.${index}.volume` as any, calculatedVolume, { 
+                    shouldDirty: true,
+                    shouldValidate: true
+                });
+            }
+        });
+    }, [watchedItems, form]);
+
     const [selectorOpen, setSelectorOpen] = React.useState(false)
     const [activeIndex, setActiveIndex] = React.useState<number | null>(null)
 
@@ -203,23 +239,23 @@ export function ProjectItemFormDialog({ open, onOpenChange, projectId, item }: P
                     <form onSubmit={form.handleSubmit(onSubmit as any)} className="flex flex-col gap-4 overflow-hidden">
                         <div className="overflow-x-auto pb-4">
                             <div className="min-w-[1200px] space-y-2">
-                                <div className="grid grid-cols-[1.2fr_0.5fr_0.9fr_1.1fr_0.4fr_0.4fr_0.4fr_0.5fr_0.6fr_0.4fr_40px] gap-0.5 px-1 text-xs font-medium text-muted-foreground uppercase">
+                                <div className="grid grid-cols-[1.2fr_0.5fr_0.9fr_0.4fr_0.4fr_0.4fr_0.5fr_0.6fr_0.4fr_1.1fr_40px] gap-0.5 px-1 text-xs font-medium text-muted-foreground uppercase">
                                     <div>Item Name</div>
                                     <div>Lantai</div>
                                     <div>Ruang</div>
-                                    <div>Keterangan</div>
                                     <div className="text-center">P</div>
                                     <div className="text-center">L</div>
                                     <div className="text-center">T</div>
                                     <div className="text-center">Vol</div>
                                     <div>Satuan</div>
                                     <div className="text-center">Qty</div>
+                                    <div>Keterangan</div>
                                     <div></div>
                                 </div>
                                 
                                 <div className="space-y-2 max-h-[400px] overflow-y-auto px-1">
                                     {fields.map((field, index) => (
-                                        <div key={field.id} className="grid grid-cols-[1.2fr_0.5fr_0.9fr_1.1fr_0.4fr_0.4fr_0.4fr_0.5fr_0.6fr_0.4fr_40px] gap-0.5 items-start">
+                                        <div key={field.id} className="grid grid-cols-[1.2fr_0.5fr_0.9fr_0.4fr_0.4fr_0.4fr_0.5fr_0.6fr_0.4fr_1.1fr_40px] gap-0.5 items-start">
                                             <FormField
                                                 control={form.control as any}
                                                 name={`items.${index}.item`}
@@ -345,23 +381,11 @@ export function ProjectItemFormDialog({ open, onOpenChange, projectId, item }: P
                                             />
                                             <FormField
                                                 control={form.control as any}
-                                                name={`items.${index}.keterangan`}
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormControl>
-                                                            <Input placeholder="Keterangan" className="h-8 text-xs" {...field} />
-                                                        </FormControl>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
-                                            <FormField
-                                                control={form.control as any}
                                                 name={`items.${index}.panjang`}
                                                 render={({ field }) => (
                                                     <FormItem>
                                                         <FormControl>
-                                                            <Input type="number" placeholder="P" className="h-8 text-xs text-center px-1" {...field} value={field.value === null || field.value === 0 ? '' : field.value} />
+                                                            <Input type="number" placeholder="P" className="h-8 text-xs text-center px-1" {...field} value={field.value ?? ''} />
                                                         </FormControl>
                                                         <FormMessage />
                                                     </FormItem>
@@ -373,7 +397,7 @@ export function ProjectItemFormDialog({ open, onOpenChange, projectId, item }: P
                                                 render={({ field }) => (
                                                     <FormItem>
                                                         <FormControl>
-                                                            <Input type="number" placeholder="L" className="h-8 text-xs text-center px-1" {...field} value={field.value === null || field.value === 0 ? '' : field.value} />
+                                                            <Input type="number" placeholder="L" className="h-8 text-xs text-center px-1" {...field} value={field.value ?? ''} />
                                                         </FormControl>
                                                         <FormMessage />
                                                     </FormItem>
@@ -385,7 +409,7 @@ export function ProjectItemFormDialog({ open, onOpenChange, projectId, item }: P
                                                 render={({ field }) => (
                                                     <FormItem>
                                                         <FormControl>
-                                                            <Input type="number" placeholder="T" className="h-8 text-xs text-center px-1" {...field} value={field.value === null || field.value === 0 ? '' : field.value} />
+                                                            <Input type="number" placeholder="T" className="h-8 text-xs text-center px-1" {...field} value={field.value ?? ''} />
                                                         </FormControl>
                                                         <FormMessage />
                                                     </FormItem>
@@ -397,7 +421,7 @@ export function ProjectItemFormDialog({ open, onOpenChange, projectId, item }: P
                                                 render={({ field }) => (
                                                     <FormItem>
                                                         <FormControl>
-                                                            <Input type="number" placeholder="Vol" className="h-8 text-xs text-center px-1" {...field} value={field.value === null || field.value === 0 ? '' : field.value} />
+                                                            <Input type="number" placeholder="Vol" className="h-8 text-xs text-center px-1" {...field} value={field.value ?? ''} />
                                                         </FormControl>
                                                         <FormMessage />
                                                     </FormItem>
@@ -408,15 +432,16 @@ export function ProjectItemFormDialog({ open, onOpenChange, projectId, item }: P
                                                 name={`items.${index}.satuan`}
                                                 render={({ field }) => (
                                                     <FormItem>
-                                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                        <Select onValueChange={field.onChange} value={field.value || "UNIT"}>
                                                             <FormControl>
-                                                                <SelectTrigger className="h-8 text-xs">
+                                                                 <SelectTrigger className="h-8 text-xs">
                                                                     <SelectValue placeholder="Unit" />
                                                                 </SelectTrigger>
                                                             </FormControl>
                                                             <SelectContent>
                                                                 <SelectItem value="M1" className="text-xs">M1</SelectItem>
-                                                                <SelectItem value="M2" className="text-xs">M2</SelectItem>
+                                                                <SelectItem value="M2 (pxl)" className="text-xs">M2 (pxl)</SelectItem>
+                                                                <SelectItem value="M2 (pxt)" className="text-xs">M2 (pxt)</SelectItem>
                                                                 <SelectItem value="UNIT" className="text-xs">UNIT</SelectItem>
                                                                 <SelectItem value="SET" className="text-xs">SET</SelectItem>
                                                             </SelectContent>
@@ -431,7 +456,19 @@ export function ProjectItemFormDialog({ open, onOpenChange, projectId, item }: P
                                                 render={({ field }) => (
                                                     <FormItem>
                                                         <FormControl>
-                                                            <Input type="number" placeholder="Qty" className="h-8 text-xs text-center px-1" {...field} value={field.value === null || field.value === 0 ? '' : field.value} />
+                                                            <Input type="number" placeholder="Qty" className="h-8 text-xs text-center px-1" {...field} value={field.value ?? ''} />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                            <FormField
+                                                control={form.control as any}
+                                                name={`items.${index}.keterangan`}
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormControl>
+                                                            <Input placeholder="Keterangan" className="h-8 text-xs" {...field} />
                                                         </FormControl>
                                                         <FormMessage />
                                                     </FormItem>

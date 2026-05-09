@@ -223,15 +223,17 @@ export default function ProjectItemsPage() {
 
   const [spkFile, setSpkFile] = React.useState<File | null>(null);
   const [spkNumber, setSpkNumber] = React.useState<string>('');
+  const [spkDeadline, setSpkDeadline] = React.useState<string>('');
 
   const uploadSpkMutation = useMutation({
-    mutationFn: ({ file, number }: { file: File; number: string }) =>
-      projectV2Service.uploadSPK(projectId, file, number),
+    mutationFn: ({ file, number, deadline }: { file: File; number: string; deadline?: string }) =>
+      projectV2Service.uploadSPK(projectId, file, number, deadline),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects-v2', projectId] });
       toast.success('SPK uploaded successfully');
       setSpdFile(null);
       setSpkNumber('');
+      setSpkDeadline('');
     },
     onError: () => {
       toast.error('Failed to upload SPK');
@@ -243,7 +245,7 @@ export default function ProjectItemsPage() {
       toast.error('Please provide both file and SPK number');
       return;
     }
-    uploadSpkMutation.mutate({ file: spkFile, number: spkNumber });
+    uploadSpkMutation.mutate({ file: spkFile, number: spkNumber, deadline: spkDeadline });
   };
 
   const [isSpdModalOpen, setIsSpdModalOpen] = React.useState(false);
@@ -958,15 +960,16 @@ export default function ProjectItemsPage() {
                   </TableHead>
                   <TableHead className='whitespace-nowrap'>Lantai</TableHead>
                   <TableHead className='whitespace-nowrap'>Ruang</TableHead>
-                  <TableHead className='whitespace-nowrap min-w-[200px]'>
-                    Keterangan
+                  <TableHead className='whitespace-nowrap'>
+                    Size (P x L x T) <br/> (Meter)
                   </TableHead>
                   <TableHead className='whitespace-nowrap'>Vol</TableHead>
-                  <TableHead className='whitespace-nowrap'>
-                    Size (P x L x T)
-                  </TableHead>
+                  <TableHead className='whitespace-nowrap'>Satuan</TableHead>
                   <TableHead className='whitespace-nowrap text-center'>
                     Qty
+                  </TableHead>
+                  <TableHead className='whitespace-nowrap min-w-[200px]'>
+                    Keterangan
                   </TableHead>
                   <TableHead className='w-[80px] text-right whitespace-nowrap'>
                     Actions
@@ -1027,21 +1030,24 @@ export default function ProjectItemsPage() {
                       >
                         {item.ruang || '-'}
                       </TableCell>
+                      <TableCell className='text-xs text-muted-foreground whitespace-nowrap bg-neutral-50/50 group-hover:bg-transparent'>
+                        {item.panjang || '-'} x {item.lebar || '-'} x{' '}
+                        {item.tinggi || '-'}
+                      </TableCell>
+                      <TableCell className='font-medium text-blue-600 text-sm'>
+                        {item.volume || '-'}
+                      </TableCell>
+                      <TableCell className='text-xs'>
+                        {item.satuan || '-'}
+                      </TableCell>
+                      <TableCell className='font-semibold text-sm text-center bg-blue-50/30 group-hover:bg-transparent text-blue-700'>
+                        {item.jumlah}
+                      </TableCell>
                       <TableCell
                         className='max-w-[200px] truncate text-xs text-neutral-600'
                         title={item.keterangan}
                       >
                         {item.keterangan || '-'}
-                      </TableCell>
-                      <TableCell className='font-medium text-blue-600 text-sm'>
-                        {item.volume || '-'}
-                      </TableCell>
-                      <TableCell className='text-xs text-muted-foreground whitespace-nowrap bg-neutral-50/50 group-hover:bg-transparent'>
-                        {item.panjang || '-'} x {item.lebar || '-'} x{' '}
-                        {item.tinggi || '-'} {item.satuan}
-                      </TableCell>
-                      <TableCell className='font-semibold text-sm text-center bg-blue-50/30 group-hover:bg-transparent text-blue-700'>
-                        {item.jumlah}
                       </TableCell>
                       <TableCell className='text-right'>
                         <DropdownMenu>
@@ -1196,7 +1202,7 @@ export default function ProjectItemsPage() {
               size='sm'
               className='bg-emerald-600 hover:bg-emerald-700'
               onClick={() => {
-                handleAccUpdate('Approved');
+                handleAccUpdate();
                 setIsAccModalOpen(false);
               }}
               disabled={updateAccMutation.isPending}
@@ -1293,12 +1299,21 @@ export default function ProjectItemsPage() {
               />
             </div>
             <div className='space-y-1.5'>
-              <Label className='text-xs font-medium'>Nomor SPK</Label>
+              <Label className='text-xs font-medium text-purple-700'>Nomor SPK</Label>
               <Input
                 placeholder='Nomor SPK'
                 value={spkNumber}
                 onChange={(e) => setSpkNumber(e.target.value)}
-                className='h-9 text-xs'
+                className='h-9 text-xs border-purple-200'
+              />
+            </div>
+            <div className='space-y-1.5'>
+              <Label className='text-xs font-medium text-purple-700'>Deadline Project</Label>
+              <Input
+                type='date'
+                value={spkDeadline}
+                onChange={(e) => setSpkDeadline(e.target.value)}
+                className='h-9 text-xs border-purple-200'
               />
             </div>
           </div>
