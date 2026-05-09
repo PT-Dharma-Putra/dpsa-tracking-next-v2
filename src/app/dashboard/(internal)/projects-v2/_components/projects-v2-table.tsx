@@ -43,6 +43,13 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   Command,
   CommandEmpty,
   CommandGroup,
@@ -99,6 +106,8 @@ export function ProjectsV2Table({
   const [clientId, setClientId] = React.useState<string>('all');
   const [sortBy, setSortBy] = React.useState<string>('created_at');
   const [sortOrder, setSortOrder] = React.useState<'asc' | 'desc'>('desc');
+  const [selectedMonth, setSelectedMonth] = React.useState<string>('all');
+  const [selectedYear, setSelectedYear] = React.useState<string>('all');
 
   const [isFormOpen, setIsFormOpen] = React.useState(false);
   const [selectedProject, setSelectedProject] =
@@ -122,12 +131,14 @@ export function ProjectsV2Table({
   }, [searchInput]);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['projects-v2', page, search, clientId, sortBy, sortOrder],
+    queryKey: ['projects-v2', page, search, clientId, selectedMonth, selectedYear, sortBy, sortOrder],
     queryFn: () =>
       projectV2Service.getProjects({
         page,
         search,
         client_id: clientId !== 'all' ? clientId : undefined,
+        month: selectedMonth !== 'all' ? selectedMonth : undefined,
+        year: selectedYear !== 'all' ? selectedYear : undefined,
         sort_by: sortBy,
         sort_order: sortOrder,
       }),
@@ -218,6 +229,22 @@ export function ProjectsV2Table({
 
   const handlePicChange = (projectId: number, studioId: number) => {
     updatePicMutation.mutate({ projectId, studioId });
+  };
+
+  const updateNoteMutation = useMutation({
+    mutationFn: ({ projectId, note }: { projectId: number; note: string }) =>
+      projectV2Service.updateNote(projectId, note),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects-v2'] });
+      toast.success('Note updated successfully');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to update note');
+    },
+  });
+
+  const handleUpdateNote = (projectId: number, note: string) => {
+    updateNoteMutation.mutate({ projectId, note });
   };
 
   const handleEdit = (project: ProjectV2) => {
@@ -346,6 +373,41 @@ export function ProjectsV2Table({
             </PopoverContent>
           </Popover>
         </div>
+
+        <div className='flex flex-wrap gap-2 items-center'>
+          <Select value={selectedMonth} onValueChange={(v: string) => { setSelectedMonth(v); setPage(1); }}>
+            <SelectTrigger className="w-[130px]">
+              <SelectValue placeholder="Month" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Months</SelectItem>
+              <SelectItem value="1">January</SelectItem>
+              <SelectItem value="2">February</SelectItem>
+              <SelectItem value="3">March</SelectItem>
+              <SelectItem value="4">April</SelectItem>
+              <SelectItem value="5">May</SelectItem>
+              <SelectItem value="6">June</SelectItem>
+              <SelectItem value="7">July</SelectItem>
+              <SelectItem value="8">August</SelectItem>
+              <SelectItem value="9">September</SelectItem>
+              <SelectItem value="10">October</SelectItem>
+              <SelectItem value="11">November</SelectItem>
+              <SelectItem value="12">December</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={selectedYear} onValueChange={(v: string) => { setSelectedYear(v); setPage(1); }}>
+            <SelectTrigger className="w-[110px]">
+              <SelectValue placeholder="Year" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Years</SelectItem>
+              {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map(year => (
+                <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         {!onlyShowDetail && (
           <Button
             onClick={handleCreate}
@@ -363,6 +425,7 @@ export function ProjectsV2Table({
             <TableRow>
               <TableHead className='w-[50px]'>#</TableHead>
               <TableHead>Project Name</TableHead>
+              <TableHead>Nomor SPK</TableHead>
               {!showEngineer && <TableHead>Client</TableHead>}
               <TableHead>Description</TableHead>
               {!showSPD && (
@@ -393,7 +456,7 @@ export function ProjectsV2Table({
                     </div>
                   </TableHead>
                   <TableHead>SPH Number</TableHead>
-                  <TableHead>SPK Number</TableHead>
+
                   <TableHead>Sisa Hari</TableHead>
                 </>
               )}
@@ -406,11 +469,12 @@ export function ProjectsV2Table({
                   {showEngineer ? <TableHead>Desainer</TableHead> : (!showEngineer && <TableHead>Desain</TableHead>)}
                   {!showEngineer && <TableHead>Approval Status</TableHead>}
                   {!showEngineer && <TableHead>Target Desain</TableHead>}
-                  {showEngineer && <TableHead>Desain</TableHead>}
                   {showEngineer && <TableHead>Target</TableHead>}
+                  {showEngineer && <TableHead>Persentase</TableHead>}
                   {!showEngineer && <TableHead>Submit</TableHead>}
                   {showEngineer && <TableHead>Submit</TableHead>}
                   <TableHead>Tepat Waktu</TableHead>
+                  {showEngineer && <TableHead>Note</TableHead>}
                   {!showEngineer && <TableHead>List Furnitur</TableHead>}
                 </>
               )}
@@ -421,7 +485,7 @@ export function ProjectsV2Table({
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={showEngineer ? 14 : 16} className='h-32 text-center text-muted-foreground'>
+                <TableCell colSpan={showEngineer ? 15 : 16} className='h-32 text-center text-muted-foreground'>
                   <div className='flex items-center justify-center'>
                     <Loader2 className='h-6 w-6 animate-spin text-neutral-400' />
                   </div>
@@ -430,7 +494,7 @@ export function ProjectsV2Table({
             ) : projects.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={showEngineer ? 14 : 16}
+                  colSpan={showEngineer ? 15 : 16}
                   className='h-32 text-center text-muted-foreground'
                 >
                   No projects found.
@@ -442,7 +506,10 @@ export function ProjectsV2Table({
                   <TableCell className='font-medium text-muted-foreground'>
                     {(page - 1) * 10 + index + 1}
                   </TableCell>
-                  <TableCell className='font-medium'>{project.name}</TableCell>
+                   <TableCell className='font-medium'>{project.name}</TableCell>
+                   <TableCell className='font-medium text-blue-600'>
+                     {project.spk_number || project.spk?.nomor_spk || '-'}
+                   </TableCell>
                   {!showEngineer && <TableCell>{project.client?.name || '-'}</TableCell>}
                   <TableCell className='max-w-[200px] truncate'>
                     {project.description || (
@@ -459,9 +526,7 @@ export function ProjectsV2Table({
                       <TableCell>
                         {project.sph?.nomor_sph || '-'}
                       </TableCell>
-                      <TableCell>
-                        {project.spk_number || project.spk?.nomor_spk || '-'}
-                      </TableCell>
+
                       <TableCell>
                         {project.deadline ? (
                           (() => {
@@ -685,8 +750,30 @@ export function ProjectsV2Table({
                         </TableCell>
                       )}
                       {showEngineer && (
-                        <TableCell className='text-xs'>
-                          {project.designs?.[0]?.studio?.name || '-'}
+                        <TableCell>
+                          <div className='flex flex-col gap-1'>
+                            <span className='text-xs font-medium'>{project.designs?.[0]?.studio?.name || '-'}</span>
+                            {project.designs?.[0]?.design_progres && project.designs[0].design_progres.length > 0 && (
+                                (() => {
+                                    const latest = project.designs[0].design_progres[project.designs[0].design_progres.length - 1];
+                                    return (
+                                        <div className='flex items-center gap-2'>
+                                            {latest.file && (
+                                                <Button variant='ghost' size='icon' className='h-5 w-5 text-blue-600' asChild>
+                                                    <a 
+                                                        href={`${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '')}/storage/${latest.file}`}
+                                                        target='_blank'
+                                                        rel='noopener noreferrer'
+                                                    >
+                                                        <Eye className='h-3 w-3' />
+                                                    </a>
+                                                </Button>
+                                            )}
+                                        </div>
+                                    );
+                                })()
+                            )}
+                          </div>
                         </TableCell>
                       )}
                       {!showEngineer && (
@@ -713,41 +800,26 @@ export function ProjectsV2Table({
                           )}
                         </TableCell>
                       )}
-                      {showEngineer && (
-                         <TableCell>
-                            {project.designs?.[0]?.design_progres && project.designs[0].design_progres.length > 0 ? (
-                                (() => {
-                                    const latest = project.designs[0].design_progres[project.designs[0].design_progres.length - 1];
-                                    return (
-                                        <div className='flex items-center gap-2'>
-                                            <Badge variant='outline' className='bg-blue-50 text-blue-700 border-blue-200 text-[10px]'>
-                                                {latest.tahap_design?.nama}
-                                            </Badge>
-                                            {latest.file && (
-                                                <Button variant='ghost' size='icon' className='h-6 w-6 text-blue-600' asChild>
-                                                    <a 
-                                                        href={`${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '')}/storage/${latest.file}`}
-                                                        target='_blank'
-                                                        rel='noopener noreferrer'
-                                                    >
-                                                        <Eye className='h-3.5 w-3.5' />
-                                                    </a>
-                                                </Button>
-                                            )}
-                                        </div>
-                                    );
-                                })()
-                            ) : (
-                                <span className='text-[10px] text-muted-foreground italic'>-</span>
-                            )}
-                         </TableCell>
-                      )}
+
                       {showEngineer && (
                          <TableCell className='text-xs'>
                             {project.order_gambar_kerja?.[0]?.target_selesai 
                                 ? format(new Date(project.order_gambar_kerja[0].target_selesai), 'MMM d, yyyy') 
                                 : '-'}
                          </TableCell>
+                      )}
+                      {showEngineer && (
+                        <TableCell>
+                          <div className='flex items-center gap-2 min-w-[80px]'>
+                            <div className='h-1.5 flex-1 bg-neutral-100 rounded-full overflow-hidden'>
+                              <div 
+                                className='h-full bg-orange-500 transition-all duration-500' 
+                                style={{ width: `${project.drawing_progress ?? 0}%` }} 
+                              />
+                            </div>
+                            <span className='text-[10px] font-bold text-orange-600 tabular-nums'>{project.drawing_progress ?? 0}%</span>
+                          </div>
+                        </TableCell>
                       )}
                       {!showEngineer && (
                         <TableCell>
@@ -793,9 +865,9 @@ export function ProjectsV2Table({
                       )}
                       {showEngineer && (
                         <TableCell className='text-xs'>
-                           {/* Submit comes from gambar_kerja, which is item-level. 
-                               For the project table, we'll show '-' unless backend provides a summary. */}
-                           -
+                           {project.latest_drawing_submit 
+                             ? format(new Date(project.latest_drawing_submit), 'MMM d, yyyy') 
+                             : '-'}
                         </TableCell>
                       )}
                       <TableCell>
@@ -805,13 +877,9 @@ export function ProjectsV2Table({
                                ? project.order_gambar_kerja?.[0]?.target_selesai 
                                : design?.target_selesai;
                            
-                           // For showEngineer, submit should come from gambar_kerja items.
-                           // Since it's not available here, we'll return '-' or use design_progres as fallback?
-                           // User specifically said gambar_kerja, so we use '-' if not found.
-                           const latest = design?.design_progres && design.design_progres.length > 0 
-                             ? design.design_progres[design.design_progres.length - 1] 
-                             : null;
-                           const submit = showEngineer ? null : latest?.tanggal_selesai;
+                           const submit = showEngineer 
+                             ? project.latest_drawing_submit 
+                             : design?.design_progres?.[design.design_progres.length - 1]?.tanggal_selesai;
 
                            if (!target || !submit) return <span className='text-muted-foreground italic text-[10px]'>-</span>;
 
@@ -826,6 +894,37 @@ export function ProjectsV2Table({
                            );
                         })()}
                       </TableCell>
+                      {showEngineer && (
+                        <TableCell>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button variant='ghost' size='sm' className='h-8 w-full justify-start font-normal text-xs px-2 truncate max-w-[120px]'>
+                                {project.note_engineer || (
+                                  <span className='text-muted-foreground italic text-[10px]'>Add note...</span>
+                                )}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className='w-80 p-4' align="start">
+                              <div className='space-y-3'>
+                                <div className='flex items-center justify-between'>
+                                  <h4 className='font-medium text-sm'>Engineer Note</h4>
+                                  <span className='text-[10px] text-muted-foreground'>Auto-saves on blur</span>
+                                </div>
+                                <textarea
+                                  className='w-full min-h-[100px] text-xs p-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-orange-500'
+                                  placeholder='Type your note here...'
+                                  defaultValue={project.note_engineer || ''}
+                                  onBlur={(e) => {
+                                    if (e.target.value !== (project.note_engineer || '')) {
+                                      handleUpdateNote(project.id, e.target.value);
+                                    }
+                                  }}
+                                />
+                              </div>
+                            </PopoverContent>
+                          </Popover>
+                        </TableCell>
+                      )}
                       {!showEngineer && (
                         <TableCell>
                           {project.list_furnitur ? (

@@ -4,11 +4,14 @@ export interface ProjectV2 {
     id: number;
     name: string;
     description: string | null;
+    note_engineer: string | null;
     spk_number: string | null;
     client_id: number;
     deadline: string | null;
     status: string;
     need_design: number;
+    drawing_progress?: number;
+    latest_drawing_submit?: string | null;
     progres_produksi?: number;
     client?: {
         id: number;
@@ -63,6 +66,13 @@ export interface ProjectV2 {
         status: string;
         created_at: string;
     }>;
+    order_produksi?: Array<{
+        id: number;
+        file: string | null;
+        target_selesai: string | null;
+        status: string;
+        created_at: string;
+    }>;
 }
 
 export interface TahapDesign {
@@ -93,6 +103,8 @@ interface GetProjectsV2Params {
     page?: number;
     search?: string;
     client_id?: string;
+    month?: string;
+    year?: string;
     sort_by?: string;
     sort_order?: 'asc' | 'desc';
 }
@@ -126,6 +138,13 @@ export const projectV2Service = {
     updatePic: async (projectId: number, studioId: number) => {
         const { data } = await apiClient.post(`/projects-v2/${projectId}/update-pic`, {
             studio_id: studioId
+        });
+        return data;
+    },
+
+    updateNote: async (projectId: number, note: string) => {
+        const { data } = await apiClient.post(`/projects-v2/${projectId}/update-note`, {
+            note_engineer: note
         });
         return data;
     },
@@ -210,6 +229,26 @@ export const projectV2Service = {
         formData.append('nomor_spk', nomor_spk);
         if (deadline) formData.append('deadline', deadline);
         const { data } = await apiClient.post(`/projects-v2/${projectId}/upload-spk`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        return data;
+    },
+
+    uploadOrderGambarKerja: async (projectId: number, file: File, target_selesai: string) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('target_selesai', target_selesai);
+        const { data } = await apiClient.post(`/projects-v2/${projectId}/upload-order-gambar-kerja`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        return data;
+    },
+
+    uploadOrderProduksi: async (projectId: number, file: File, target_selesai: string) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('target_selesai', target_selesai);
+        const { data } = await apiClient.post(`/projects-v2/${projectId}/upload-order-produksi`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
         return data;
@@ -308,7 +347,7 @@ export const projectV2Service = {
         return data;
     },
 
-    uploadDokubah: async (itemId: number, payload: { file?: File; tanggal_mulai?: string; tanggal_selesai?: string }) => {
+    uploadDokubah: async (itemId: number, payload: { file?: File | string; tanggal_mulai?: string; tanggal_selesai?: string }) => {
         const formData = new FormData();
         if (payload.file) formData.append('file', payload.file);
         if (payload.tanggal_mulai) formData.append('tanggal_mulai', payload.tanggal_mulai);
@@ -331,7 +370,14 @@ export const projectV2Service = {
         return data;
     },
 
-    updateBahanBaku: async (itemId: number, payload: { tanggal_menerima_dokubah?: string; ketersediaan_stok?: string; tanggal_keluar?: string; pic_id?: number }) => {
+    updateBahanBaku: async (itemId: number, payload: { 
+        tanggal_menerima_dokubah?: string; 
+        ketersediaan_stok?: string; 
+        tanggal_keluar?: string; 
+        pic_id?: number;
+        new_pic_name?: string;
+        new_pic_jabatan?: string;
+    }) => {
         const { data } = await apiClient.post(`/projects-v2-items/${itemId}/bahan-baku`, payload);
         return data;
     },

@@ -59,6 +59,21 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import { cn } from '@/lib/utils';
+import { Check, ChevronsUpDown, Plus, ClipboardList } from 'lucide-react';
 
 import {
   projectV2Service,
@@ -141,13 +156,13 @@ export default function PerencanaanDetailPage() {
   const [dokubahItem, setDokubahItem] = React.useState<ProjectItemV2 | null>(
     null
   );
-  const [dokubahFile, setDokubahFile] = React.useState<File | null>(null);
+  const [dokubahFile, setDokubahFile] = React.useState<File | string | null>(null);
   const [dokubahStart, setDokubahStart] = React.useState<string>('');
   const [dokubahEnd, setDokubahEnd] = React.useState<string>('');
 
   const uploadDokubahMutation = useMutation({
     mutationFn: (payload: {
-      file?: File;
+      file?: File | string;
       tanggal_mulai?: string;
       tanggal_selesai?: string;
     }) => projectV2Service.uploadDokubah(dokubahItem!.id, payload),
@@ -177,7 +192,7 @@ export default function PerencanaanDetailPage() {
     setDokubahItem(item);
     setDokubahStart(item.dokubah?.tanggal_mulai || '');
     setDokubahEnd(item.dokubah?.tanggal_selesai || '');
-    setDokubahFile(null);
+    setDokubahFile(item.dokubah?.file || null);
     setIsDokubahDialogOpen(true);
   };
 
@@ -188,13 +203,19 @@ export default function PerencanaanDetailPage() {
   const [stokKeluar, setStokKeluar] = React.useState<string>('');
   const [stokPicId, setStokPicId] = React.useState<string>('');
   const [stokStatus, setStokStatus] = React.useState<string>('');
+  const [stokPicOpen, setStokPicOpen] = React.useState(false);
+  const [isManualPic, setIsManualPic] = React.useState(false);
+  const [newPicName, setNewPicName] = React.useState('');
+  const [newPicJabatan, setNewPicJabatan] = React.useState('');
 
   const updateStokMutation = useMutation({
     mutationFn: (payload: {
+      ketersediaan_stok?: string;
       tanggal_menerima_dokubah?: string;
       tanggal_keluar?: string;
       pic_id?: number;
-      ketersediaan_stok?: string;
+      new_pic_name?: string;
+      new_pic_jabatan?: string;
     }) => projectV2Service.updateBahanBaku(stokItem!.id, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({
@@ -211,19 +232,24 @@ export default function PerencanaanDetailPage() {
   const handleStokUpdate = () => {
     if (!stokItem) return;
     updateStokMutation.mutate({
+      ketersediaan_stok: stokStatus || undefined,
       tanggal_menerima_dokubah: stokMenerima || undefined,
       tanggal_keluar: stokKeluar || undefined,
-      pic_id: stokPicId ? parseInt(stokPicId) : undefined,
-      ketersediaan_stok: stokStatus || undefined,
+      pic_id: isManualPic ? undefined : (stokPicId ? parseInt(stokPicId) : undefined),
+      new_pic_name: isManualPic ? newPicName : undefined,
+      new_pic_jabatan: isManualPic ? newPicJabatan : undefined,
     });
   };
 
   const openStokDialog = (item: ProjectItemV2) => {
     setStokItem(item);
+    setStokStatus(item.bahan_baku?.ketersediaan_stok || '');
     setStokMenerima(item.bahan_baku?.tanggal_menerima_dokubah || '');
     setStokKeluar(item.bahan_baku?.tanggal_keluar || '');
     setStokPicId(item.bahan_baku?.pic_id?.toString() || '');
-    setStokStatus(item.bahan_baku?.ketersediaan_stok || '');
+    setIsManualPic(false);
+    setNewPicName('');
+    setNewPicJabatan('');
     setIsStokDialogOpen(true);
   };
 
@@ -305,6 +331,37 @@ export default function PerencanaanDetailPage() {
     });
   };
 
+  // Order Produksi State
+  const [isOrderProduksiDialogOpen, setIsOrderProduksiDialogOpen] = React.useState(false);
+  const [orderProduksiFile, setOrderProduksiFile] = React.useState<File | null>(null);
+  const [orderProduksiTarget, setOrderProduksiTarget] = React.useState<string>('');
+
+  const uploadOrderProduksiMutation = useMutation({
+    mutationFn: (payload: { file: File; target_selesai: string }) =>
+      projectV2Service.uploadOrderProduksi(projectId, payload.file, payload.target_selesai),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects-v2', projectId] });
+      toast.success('Order Produksi submitted successfully');
+      setIsOrderProduksiDialogOpen(false);
+      setOrderProduksiFile(null);
+      setOrderProduksiTarget('');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to submit order');
+    },
+  });
+
+  const handleOrderProduksiUpload = () => {
+    if (!orderProduksiFile || !orderProduksiTarget) {
+      toast.error('Please select a file and target date');
+      return;
+    }
+    uploadOrderProduksiMutation.mutate({
+      file: orderProduksiFile,
+      target_selesai: orderProduksiTarget,
+    });
+  };
+
   const [editingDivisiItemId, setEditingDivisiItemId] = React.useState<
     number | null
   >(null);
@@ -352,7 +409,7 @@ export default function PerencanaanDetailPage() {
   // Summary Calculations
   const totalItems = items?.length || 0;
   const poDivisiCount = items?.filter(i => i.divisi_id).length || 0;
-  const gambarKerjaCount = items?.filter(i => i.gambar_kerja?.file || i.mdl_item?.link_gambar_kerja).length || 0;
+  const gambarKerjaCount = items?.filter(i => i.gambar_kerja?.file || i.mdl_item?.link_gambar_kerja || i.dokubah?.file).length || 0;
   const dokubahCount = items?.filter(i => i.dokubah?.file).length || 0;
   const stokTersediaCount = items?.filter(i => i.bahan_baku?.ketersediaan_stok === 'Tersedia').length || 0;
   const perintahProduksiCount = items?.filter(i => i.divisi_id && (i.gambar_kerja?.file || i.mdl_item?.link_gambar_kerja)).length || 0;
@@ -534,7 +591,7 @@ export default function PerencanaanDetailPage() {
         <Card className={`relative border shadow-sm transition-all duration-300 ${!!project.spk?.file ? 'border-purple-200 bg-white ring-1 ring-purple-100' : 'border-neutral-200 bg-white'}`}>
           {project.sph?.file && project.spk?.file && (
             <div className="absolute -top-1.5 -right-1.5 h-5 w-5 bg-emerald-500 rounded-full flex items-center justify-center shadow-sm z-10 animate-in zoom-in duration-300">
-              <CheckCircle2 className="h-3 w-3 text-white" />
+              <Check className="h-3 w-3 text-white" strokeWidth={3} />
             </div>
           )}
           <CardHeader className='pb-2 flex flex-row items-center justify-between gap-3'>
@@ -567,7 +624,7 @@ export default function PerencanaanDetailPage() {
         <Card className={`relative border shadow-sm transition-all duration-300 ${poDivisiCount === totalItems && totalItems > 0 ? 'border-emerald-200 bg-white ring-1 ring-emerald-100' : 'border-neutral-200 bg-white'}`}>
           {poDivisiCount === totalItems && totalItems > 0 && (
             <div className="absolute -top-1.5 -right-1.5 h-5 w-5 bg-emerald-500 rounded-full flex items-center justify-center shadow-sm z-10 animate-in zoom-in duration-300">
-              <CheckCircle2 className="h-3 w-3 text-white" />
+              <Check className="h-3 w-3 text-white" strokeWidth={3} />
             </div>
           )}
           <CardHeader className='pb-2 flex flex-row items-center justify-between gap-3'>
@@ -596,7 +653,7 @@ export default function PerencanaanDetailPage() {
         <Card className={`relative border shadow-sm transition-all duration-300 ${gambarKerjaCount === totalItems && totalItems > 0 ? 'border-orange-200 bg-white ring-1 ring-orange-100' : 'border-neutral-200 bg-white'}`}>
           {gambarKerjaCount === totalItems && totalItems > 0 && (
             <div className="absolute -top-1.5 -right-1.5 h-5 w-5 bg-emerald-500 rounded-full flex items-center justify-center shadow-sm z-10 animate-in zoom-in duration-300">
-              <CheckCircle2 className="h-3 w-3 text-white" />
+              <Check className="h-3 w-3 text-white" strokeWidth={3} />
             </div>
           )}
           <CardHeader className='pb-2 flex flex-row items-center justify-between gap-3'>
@@ -668,10 +725,15 @@ export default function PerencanaanDetailPage() {
         </Card>
 
         {/* 4. Dokubah */}
-        <Card className={`border shadow-sm transition-all duration-300 ${dokubahCount > 0 ? 'border-blue-200 bg-white ring-1 ring-blue-100' : 'border-neutral-200 bg-white'}`}>
+        <Card className={`relative border shadow-sm transition-all duration-300 ${dokubahCount === totalItems && totalItems > 0 ? 'border-emerald-200 bg-white ring-1 ring-emerald-100' : (dokubahCount > 0 ? 'border-blue-200 bg-white ring-1 ring-blue-100' : 'border-neutral-200 bg-white')}`}>
+          {dokubahCount === totalItems && totalItems > 0 && (
+            <div className="absolute -top-1.5 -right-1.5 h-5 w-5 bg-emerald-500 rounded-full flex items-center justify-center shadow-sm z-10 animate-in zoom-in duration-300">
+              <Check className="h-3 w-3 text-white" strokeWidth={3} />
+            </div>
+          )}
           <CardHeader className='pb-2 flex flex-row items-center justify-between gap-3'>
             <button className='flex items-center gap-3 flex-1 text-left' onClick={() => setIsDokubahCollapsed(!isDokubahCollapsed)}>
-              <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold ${dokubahCount > 0 ? 'bg-blue-100 text-blue-600' : 'bg-neutral-100 text-neutral-500'}`}>4</div>
+              <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold ${dokubahCount === totalItems && totalItems > 0 ? 'bg-emerald-100 text-emerald-600' : (dokubahCount > 0 ? 'bg-blue-100 text-blue-600' : 'bg-neutral-100 text-neutral-500')}`}>4</div>
               <div className='flex-1'>
                 <CardTitle className='text-sm text-neutral-800'>Dokubah</CardTitle>
                 <p className='text-[10px] text-muted-foreground uppercase tracking-wider'>Changes Document</p>
@@ -681,13 +743,26 @@ export default function PerencanaanDetailPage() {
           </CardHeader>
           {!isDokubahCollapsed && (
             <CardContent className='pt-0'>
-               <p className='text-[10px] font-bold text-neutral-700'>{dokubahCount} Items with Dokubah</p>
+               <div className='space-y-1.5'>
+                  <div className='h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden'>
+                    <div className='h-full bg-blue-500 transition-all duration-500' style={{ width: `${totalItems ? (dokubahCount / totalItems) * 100 : 0}%` }} />
+                  </div>
+                  <div className='flex justify-between items-center'>
+                    <p className='text-[10px] font-bold text-neutral-700'>{dokubahCount} Items with Dokubah</p>
+                    <p className='text-[10px] font-bold text-blue-600'>{Math.round(totalItems ? (dokubahCount / totalItems) * 100 : 0)}%</p>
+                  </div>
+               </div>
             </CardContent>
           )}
         </Card>
 
         {/* 5. Stok Material */}
-        <Card className={`border shadow-sm transition-all duration-300 ${stokTersediaCount === totalItems && totalItems > 0 ? 'border-emerald-200 bg-white ring-1 ring-emerald-100' : 'border-neutral-200 bg-white'}`}>
+        <Card className={`relative border shadow-sm transition-all duration-300 ${stokTersediaCount === totalItems && totalItems > 0 ? 'border-emerald-200 bg-white ring-1 ring-emerald-100' : 'border-neutral-200 bg-white'}`}>
+          {stokTersediaCount === totalItems && totalItems > 0 && (
+            <div className="absolute -top-1.5 -right-1.5 h-5 w-5 bg-emerald-500 rounded-full flex items-center justify-center shadow-sm z-10 animate-in zoom-in duration-300">
+              <Check className="h-3 w-3 text-white" strokeWidth={3} />
+            </div>
+          )}
           <CardHeader className='pb-2 flex flex-row items-center justify-between gap-3'>
             <button className='flex items-center gap-3 flex-1 text-left' onClick={() => setIsStokCollapsed(!isStokCollapsed)}>
               <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold ${stokTersediaCount > 0 ? 'bg-emerald-100 text-emerald-600' : 'bg-neutral-100 text-neutral-500'}`}>5</div>
@@ -704,17 +779,25 @@ export default function PerencanaanDetailPage() {
                   <div className='h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden'>
                     <div className='h-full bg-emerald-500 transition-all duration-500' style={{ width: `${totalItems ? (stokTersediaCount / totalItems) * 100 : 0}%` }} />
                   </div>
-                  <p className='text-[10px] font-bold text-neutral-700'>{stokTersediaCount} / {totalItems} Items Ready</p>
+                  <div className='flex justify-between items-center'>
+                    <p className='text-[10px] font-bold text-neutral-700'>{stokTersediaCount} / {totalItems} Items Ready</p>
+                    <p className='text-[10px] font-bold text-emerald-600'>{Math.round(totalItems ? (stokTersediaCount / totalItems) * 100 : 0)}%</p>
+                  </div>
                </div>
             </CardContent>
           )}
         </Card>
 
         {/* 6. Perintah Produksi */}
-        <Card className={`border shadow-sm transition-all duration-300 ${perintahProduksiCount === totalItems && totalItems > 0 ? 'border-blue-200 bg-white ring-1 ring-blue-100' : 'border-neutral-200 bg-white'}`}>
+        <Card className={`relative border shadow-sm transition-all duration-300 ${perintahProduksiCount === totalItems && totalItems > 0 ? 'border-blue-200 bg-white ring-1 ring-blue-100' : 'border-neutral-200 bg-white'}`}>
+          {project?.order_produksi && project.order_produksi.length > 0 && (
+            <div className="absolute -top-1.5 -right-1.5 h-5 w-5 bg-emerald-500 rounded-full flex items-center justify-center shadow-sm z-10 animate-in zoom-in duration-300">
+              <Check className="h-3 w-3 text-white" strokeWidth={3} />
+            </div>
+          )}
           <CardHeader className='pb-2 flex flex-row items-center justify-between gap-3'>
             <button className='flex items-center gap-3 flex-1 text-left' onClick={() => setIsProduksiCollapsed(!isProduksiCollapsed)}>
-              <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold ${perintahProduksiCount > 0 ? 'bg-blue-100 text-blue-600' : 'bg-neutral-100 text-neutral-500'}`}>6</div>
+              <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold ${perintahProduksiCount > 0 || (project?.order_produksi && project.order_produksi.length > 0) ? 'bg-blue-100 text-blue-600' : 'bg-neutral-100 text-neutral-500'}`}>6</div>
               <div className='flex-1'>
                 <CardTitle className='text-sm text-neutral-800'>Perintah Produksi</CardTitle>
                 <p className='text-[10px] text-muted-foreground uppercase tracking-wider'>Production Orders</p>
@@ -728,17 +811,44 @@ export default function PerencanaanDetailPage() {
                   <div className='h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden'>
                     <div className='h-full bg-blue-600 transition-all duration-500' style={{ width: `${totalItems ? (perintahProduksiCount / totalItems) * 100 : 0}%` }} />
                   </div>
-                  <p className='text-[10px] font-bold text-neutral-700'>{perintahProduksiCount} / {totalItems} Ready for Production</p>
+                  {project?.order_produksi && project.order_produksi.length > 0 && (
+                    <div className='flex items-center gap-2 mb-1 p-2 bg-blue-50 rounded-md border border-blue-100'>
+                      <FileText className='h-3.5 w-3.5 text-blue-600' />
+                      <a 
+                        href={`http://localhost:8000/storage/${project.order_produksi[project.order_produksi.length - 1].file}`}
+                        target='_blank'
+                        rel='noopener noreferrer'
+                        className='text-[10px] text-blue-700 hover:underline font-medium truncate'
+                      >
+                        Order_Produksi_{format(new Date(project.order_produksi[project.order_produksi.length - 1].created_at), 'ddMMyy')}.pdf
+                      </a>
+                    </div>
+                  )}
+
+                  <Button 
+                    variant='outline' 
+                    size='sm' 
+                    className='w-full h-7 text-[10px] text-blue-600 border-blue-200 hover:bg-blue-50 mt-1 gap-2'
+                    onClick={() => setIsOrderProduksiDialogOpen(true)}
+                  >
+                    <ClipboardList className='h-3.5 w-3.5' />
+                    Order Produksi
+                  </Button>
                </div>
             </CardContent>
           )}
         </Card>
 
         {/* 7. Barang Masuk */}
-        <Card className={`border shadow-sm transition-all duration-300 ${totalQtyMasuk >= totalQtyOrder && totalQtyOrder > 0 ? 'border-blue-200 bg-white ring-1 ring-blue-100' : 'border-neutral-200 bg-white'}`}>
+        <Card className={`relative border shadow-sm transition-all duration-300 ${totalQtyMasuk >= totalQtyOrder && totalQtyOrder > 0 ? 'border-emerald-200 bg-white ring-1 ring-emerald-100' : 'border-neutral-200 bg-white'}`}>
+          {totalQtyMasuk >= totalQtyOrder && totalQtyOrder > 0 && (
+            <div className="absolute -top-1.5 -right-1.5 h-5 w-5 bg-emerald-500 rounded-full flex items-center justify-center shadow-sm z-10 animate-in zoom-in duration-300">
+              <Check className="h-3 w-3 text-white" strokeWidth={3} />
+            </div>
+          )}
           <CardHeader className='pb-2 flex flex-row items-center justify-between gap-3'>
             <button className='flex items-center gap-3 flex-1 text-left' onClick={() => setIsBjCollapsed(!isBjCollapsed)}>
-              <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold ${totalQtyMasuk > 0 ? 'bg-blue-100 text-blue-600' : 'bg-neutral-100 text-neutral-500'}`}>7</div>
+              <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold ${totalQtyMasuk > 0 ? (totalQtyMasuk >= totalQtyOrder ? 'bg-emerald-100 text-emerald-600' : 'bg-blue-100 text-blue-600') : 'bg-neutral-100 text-neutral-500'}`}>7</div>
               <div className='flex-1'>
                 <CardTitle className='text-sm text-neutral-800'>Barang Masuk</CardTitle>
                 <p className='text-[10px] text-muted-foreground uppercase tracking-wider'>Finished Goods</p>
@@ -750,9 +860,12 @@ export default function PerencanaanDetailPage() {
             <CardContent className='pt-0'>
                <div className='space-y-1.5'>
                   <div className='h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden'>
-                    <div className='h-full bg-blue-600 transition-all duration-500' style={{ width: `${totalQtyOrder ? (totalQtyMasuk / totalQtyOrder) * 100 : 0}%` }} />
+                    <div className={`h-full transition-all duration-500 ${totalQtyMasuk >= totalQtyOrder ? 'bg-emerald-600' : 'bg-blue-600'}`} style={{ width: `${totalQtyOrder ? (totalQtyMasuk / totalQtyOrder) * 100 : 0}%` }} />
                   </div>
-                  <p className='text-[10px] font-bold text-neutral-700'>{totalQtyMasuk} / {totalQtyOrder} Total Quantity</p>
+                  <div className='flex justify-between items-center'>
+                    <p className='text-[10px] font-bold text-neutral-700'>{totalQtyMasuk} / {totalQtyOrder} Total Quantity</p>
+                    <p className={`text-[10px] font-bold ${totalQtyMasuk >= totalQtyOrder ? 'text-emerald-600' : 'text-blue-600'}`}>{Math.round(totalQtyOrder ? (totalQtyMasuk / totalQtyOrder) * 100 : 0)}%</p>
+                  </div>
                </div>
             </CardContent>
           )}
@@ -807,6 +920,7 @@ export default function PerencanaanDetailPage() {
                 <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>Drawing</TableHead>
                 <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>Dokubah</TableHead>
                 <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>Stock</TableHead>
+                <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>Produksi</TableHead>
                 <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>Masuk</TableHead>
                 <TableHead className='w-[100px] text-right text-[10px] uppercase font-bold text-neutral-500 pr-4'>Actions</TableHead>
               </TableRow>
@@ -815,7 +929,7 @@ export default function PerencanaanDetailPage() {
               {isLoadingItems ? (
                 <TableRow>
                   <TableCell
-                    colSpan={12}
+                    colSpan={13}
                     className='h-32 text-center text-muted-foreground'
                   >
                     <Loader2 className='h-6 w-6 animate-spin mx-auto' />
@@ -824,7 +938,7 @@ export default function PerencanaanDetailPage() {
               ) : items?.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={12}
+                    colSpan={13}
                     className='h-32 text-center text-muted-foreground'
                   >
                     No items recorded for this project.
@@ -936,12 +1050,14 @@ export default function PerencanaanDetailPage() {
                             asChild
                           >
                             <a
-                              href={`${(
-                                process.env.NEXT_PUBLIC_API_URL ||
-                                'http://localhost:8000'
-                              ).replace('/api', '')}/storage/${
-                                item.gambar_kerja.file
-                              }`}
+                              href={item.gambar_kerja.file.startsWith('http') || item.gambar_kerja.file.startsWith('www')
+                                ? item.gambar_kerja.file
+                                : `${(
+                                  process.env.NEXT_PUBLIC_API_URL ||
+                                  'http://localhost:8000'
+                                ).replace('/api', '')}/storage/${
+                                  item.gambar_kerja.file
+                                }`}
                               target='_blank'
                               rel='noopener noreferrer'
                             >
@@ -958,9 +1074,6 @@ export default function PerencanaanDetailPage() {
                     <TableCell>
                       {item.dokubah?.file ? (
                         <div className='flex items-center gap-1'>
-                          <div className='h-5 w-5 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shadow-sm border border-blue-100'>
-                            <CheckCircle2 className='h-3 w-3' />
-                          </div>
                           <Button
                             variant='ghost'
                             size='icon'
@@ -968,17 +1081,27 @@ export default function PerencanaanDetailPage() {
                             asChild
                           >
                             <a
-                              href={`${(
-                                process.env.NEXT_PUBLIC_API_URL ||
-                                'http://localhost:8000'
-                              ).replace('/api', '')}/storage/${
-                                item.dokubah.file
-                              }`}
+                              href={item.dokubah.file.startsWith('http') || item.dokubah.file.startsWith('www')
+                                ? item.dokubah.file
+                                : `${(
+                                  process.env.NEXT_PUBLIC_API_URL ||
+                                  'http://localhost:8000'
+                                ).replace('/api', '')}/storage/${
+                                  item.dokubah.file
+                                }`}
                               target='_blank'
                               rel='noopener noreferrer'
                             >
                               <Eye className='h-3.5 w-3.5' />
                             </a>
+                          </Button>
+                           <Button
+                            variant='ghost'
+                            size='icon'
+                            className='h-6 w-6 text-amber-600 hover:bg-amber-50'
+                            onClick={() => openDokubahUpload(item)}
+                          >
+                            <Pencil className='h-3.5 w-3.5' />
                           </Button>
                         </div>
                       ) : (
@@ -1018,6 +1141,17 @@ export default function PerencanaanDetailPage() {
                             Set Stok
                           </span>
                         )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className='flex flex-col gap-1 w-16'>
+                        <div className='h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden'>
+                          <div 
+                            className='h-full bg-blue-500 transition-all duration-500' 
+                            style={{ width: `${item.produksi?.persen || 0}%` }} 
+                          />
+                        </div>
+                        <span className='text-[10px] font-bold text-neutral-700'>{item.produksi?.persen || 0}%</span>
                       </div>
                     </TableCell>
                     <TableCell>
@@ -1146,11 +1280,13 @@ export default function PerencanaanDetailPage() {
           </AlertDialogHeader>
           <div className='grid gap-4 py-4'>
             <div className='space-y-2'>
-              <Label htmlFor='dokubah-file'>File (PDF/JPG/PNG/XLS)</Label>
+              <Label htmlFor='dokubah-file'>Link Google Drive / Dokumen</Label>
               <Input
                 id='dokubah-file'
-                type='file'
-                onChange={(e) => setDokubahFile(e.target.files?.[0] || null)}
+                type='text'
+                placeholder='Masukkan link google drive...'
+                value={typeof dokubahFile === 'string' ? dokubahFile : ''}
+                onChange={(e) => setDokubahFile(e.target.value)}
                 className='text-xs'
               />
             </div>
@@ -1212,16 +1348,27 @@ export default function PerencanaanDetailPage() {
           <div className='grid gap-4 py-4'>
             <div className='space-y-2'>
               <Label>Ketersediaan Stok</Label>
-              <Select value={stokStatus} onValueChange={setStokStatus}>
-                <SelectTrigger>
-                  <SelectValue placeholder='Pilih Status' />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value='Tersedia'>Tersedia</SelectItem>
-                  <SelectItem value='Belum Tersedia'>Belum Tersedia</SelectItem>
-                  <SelectItem value='Mutasi'>Mutasi</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className='flex p-1 bg-neutral-100 rounded-lg border border-neutral-200'>
+                {[
+                  { value: 'Belum Tersedia', label: 'Belum Tersedia', color: 'bg-red-500' },
+                  { value: 'Mutasi', label: 'Mutasi', color: 'bg-amber-500' },
+                  { value: 'Tersedia', label: 'Tersedia', color: 'bg-emerald-500' }
+                ].map((option) => (
+                  <button
+                    key={option.value}
+                    type='button'
+                    onClick={() => setStokStatus(option.value)}
+                    className={cn(
+                      'flex-1 py-1.5 text-[10px] font-bold rounded-md transition-all duration-200',
+                      stokStatus === option.value
+                        ? `${option.color} text-white shadow-sm`
+                        : 'text-neutral-500 hover:text-neutral-700 hover:bg-white/50'
+                    )}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
             </div>
             <div className='grid grid-cols-2 gap-4'>
               <div className='space-y-2'>
@@ -1244,19 +1391,89 @@ export default function PerencanaanDetailPage() {
               </div>
             </div>
             <div className='space-y-2'>
-              <Label>PIC</Label>
-              <Select value={stokPicId} onValueChange={setStokPicId}>
-                <SelectTrigger>
-                  <SelectValue placeholder='Pilih PIC' />
-                </SelectTrigger>
-                <SelectContent>
-                  {pics?.map((p) => (
-                    <SelectItem key={p.id} value={p.id.toString()}>
-                      {p.nama} ({p.jabatan})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className='flex items-center justify-between'>
+                <Label>PIC</Label>
+                <Button 
+                  variant='ghost' 
+                  size='sm' 
+                  className='h-6 text-[9px] text-blue-600 gap-1 px-1.5'
+                  onClick={() => {
+                    setIsManualPic(!isManualPic);
+                    setStokPicId('');
+                  }}
+                >
+                  {isManualPic ? (
+                    'Back to List'
+                  ) : (
+                    <>
+                      <Plus className='h-2.5 w-2.5' />
+                      Input Manual
+                    </>
+                  )}
+                </Button>
+              </div>
+              
+              {!isManualPic ? (
+                <Popover open={stokPicOpen} onOpenChange={setStokPicOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={stokPicOpen}
+                      className="w-full justify-between text-xs font-normal h-9"
+                    >
+                      {stokPicId
+                        ? pics?.find((p) => p.id.toString() === stokPicId)?.nama
+                        : "Pilih PIC..."}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0" align="start">
+                    <Command className="w-full">
+                      <CommandInput placeholder="Cari PIC..." className="h-8" />
+                      <CommandList>
+                        <CommandEmpty>PIC tidak ditemukan.</CommandEmpty>
+                        <CommandGroup>
+                          {pics?.map((p) => (
+                            <CommandItem
+                              key={p.id}
+                              value={p.nama}
+                              onSelect={() => {
+                                setStokPicId(p.id.toString());
+                                setStokPicOpen(false);
+                              }}
+                              className="text-xs"
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  stokPicId === p.id.toString() ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              {p.nama} ({p.jabatan})
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              ) : (
+                <div className='grid grid-cols-2 gap-2'>
+                  <Input 
+                    placeholder='Nama PIC...'
+                    value={newPicName}
+                    onChange={(e) => setNewPicName(e.target.value)}
+                    className='text-xs h-9'
+                  />
+                  <Input 
+                    placeholder='Jabatan...'
+                    value={newPicJabatan}
+                    onChange={(e) => setNewPicJabatan(e.target.value)}
+                    className='text-xs h-9'
+                  />
+                </div>
+              )}
             </div>
           </div>
           <AlertDialogFooter>
@@ -1435,6 +1652,57 @@ export default function PerencanaanDetailPage() {
               disabled={uploadOrderGkMutation.isPending || !orderGkFile || !orderGkTarget}
             >
               {uploadOrderGkMutation.isPending ? (
+                <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+              ) : (
+                <Upload className='mr-2 h-4 w-4' />
+              )}
+              Submit Order
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      {/* Order Produksi Dialog */}
+      <AlertDialog open={isOrderProduksiDialogOpen} onOpenChange={setIsOrderProduksiDialogOpen}>
+        <AlertDialogContent className='max-w-md'>
+          <AlertDialogHeader>
+            <AlertDialogTitle className='flex items-center gap-2'>
+              <ClipboardList className='h-5 w-5 text-blue-500' />
+              Order Produksi
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Upload file order produksi dan tentukan target penyelesaian untuk project ini.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className='grid gap-4 py-4'>
+            <div className='space-y-2'>
+              <Label>File Order / Lampiran</Label>
+              <Input
+                type='file'
+                onChange={(e) => setOrderProduksiFile(e.target.files?.[0] || null)}
+                className='text-xs'
+              />
+              <p className='text-[10px] text-muted-foreground'>Format: PDF, JPG, PNG, DOC, XLS (Max 10MB)</p>
+            </div>
+            <div className='space-y-2'>
+              <Label>Target Selesai</Label>
+              <Input
+                type='date'
+                value={orderProduksiTarget}
+                onChange={(e) => setOrderProduksiTarget(e.target.value)}
+                className='text-xs'
+              />
+            </div>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setIsOrderProduksiDialogOpen(false)}>
+              Cancel
+            </AlertDialogCancel>
+            <Button
+              className='bg-blue-600 hover:bg-blue-700'
+              onClick={handleOrderProduksiUpload}
+              disabled={uploadOrderProduksiMutation.isPending || !orderProduksiFile || !orderProduksiTarget}
+            >
+              {uploadOrderProduksiMutation.isPending ? (
                 <Loader2 className='mr-2 h-4 w-4 animate-spin' />
               ) : (
                 <Upload className='mr-2 h-4 w-4' />

@@ -234,6 +234,49 @@ export default function ProduksiDetailPage() {
             </div>
             <div className='space-y-1'>
               <Label className='text-[10px] text-muted-foreground uppercase'>
+                Target Produksi
+              </Label>
+              <div className='flex items-center gap-2'>
+                {project.order_produksi && project.order_produksi.length > 0 ? (
+                  <>
+                    <Button
+                      variant='ghost'
+                      size='icon'
+                      className='h-6 w-6 text-blue-600 hover:bg-blue-50'
+                      asChild
+                    >
+                      <a
+                        href={`${(
+                          process.env.NEXT_PUBLIC_API_URL ||
+                          'http://localhost:8000'
+                        ).replace('/api', '')}/storage/${
+                          project.order_produksi[project.order_produksi.length - 1]
+                            .file
+                        }`}
+                        target='_blank'
+                        rel='noopener noreferrer'
+                      >
+                        <Eye className='h-3.5 w-3.5' />
+                      </a>
+                    </Button>
+                    <p className='font-bold text-blue-600'>
+                      {format(
+                        new Date(
+                          project.order_produksi[
+                            project.order_produksi.length - 1
+                          ].target_selesai!
+                        ),
+                        'MMM d, yyyy'
+                      )}
+                    </p>
+                  </>
+                ) : (
+                  <p className='font-bold text-blue-600'>-</p>
+                )}
+              </div>
+            </div>
+            <div className='space-y-1'>
+              <Label className='text-[10px] text-muted-foreground uppercase'>
                 Persentase per SPK
               </Label>
               <div className='flex items-center gap-3'>

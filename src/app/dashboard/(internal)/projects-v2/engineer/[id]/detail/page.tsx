@@ -292,7 +292,7 @@ export default function EngineerDetailPage() {
     
     const totalItems = items?.length || 0;
     const gambarKerjaCount = items?.filter((item) => 
-        item.gambar_kerja?.file || (!item.custom && item.mdl_item?.link_gambar_kerja)
+        item.gambar_kerja?.file || item.mdl_item?.link_gambar_kerja
     ).length || 0;
 
     React.useEffect(() => {
@@ -653,15 +653,11 @@ export default function EngineerDetailPage() {
                                     <TableHead>Kode Barang</TableHead>
                                     <TableHead>Item Name</TableHead>
                                     <TableHead>Location / Floor</TableHead>
-                                    <TableHead className='text-center'>Qty</TableHead>
                                     <TableHead className='text-center'>Ukuran</TableHead>
                                     <TableHead className='text-center'>Volume</TableHead>
+                                    <TableHead className='text-center'>Qty</TableHead>
                                     <TableHead>PO Divisi</TableHead>
-                                    <TableHead>PIC</TableHead>
-                                    <TableHead>Nomor SPK</TableHead>
-                                    <TableHead>Desainer</TableHead>
-                                    <TableHead>Desain</TableHead>
-                                    <TableHead>Target</TableHead>
+                                    <TableHead className='text-center'>PIC</TableHead>
                                     <TableHead>Submit</TableHead>
                                     <TableHead>Tepat Waktu</TableHead>
                                     <TableHead>GK MDL</TableHead>
@@ -673,13 +669,13 @@ export default function EngineerDetailPage() {
                             <TableBody>
                                 {isLoadingItems ? (
                                     <TableRow>
-                                        <TableCell colSpan={19} className='h-32 text-center'>
+                                        <TableCell colSpan={18} className='h-32 text-center'>
                                             <Loader2 className='h-6 w-6 animate-spin mx-auto text-neutral-300' />
                                         </TableCell>
                                     </TableRow>
                                 ) : items?.length === 0 ? (
                                     <TableRow>
-                                        <TableCell colSpan={19} className='h-32 text-center text-muted-foreground italic'>
+                                        <TableCell colSpan={18} className='h-32 text-center text-muted-foreground italic'>
                                             No items added to this project yet.
                                         </TableCell>
                                     </TableRow>
@@ -711,16 +707,16 @@ export default function EngineerDetailPage() {
                                                     )}
                                                 </div>
                                             </TableCell>
-                                            <TableCell className='text-center'>
-                                                <Badge variant='outline' className='font-bold tabular-nums'>
-                                                    {item.jumlah} {item.satuan}
-                                                </Badge>
-                                            </TableCell>
                                             <TableCell className='text-center text-[10px] tabular-nums text-neutral-600'>
                                                 {item.panjang || 0}x{item.lebar || 0}x{item.tinggi || 0}
                                             </TableCell>
                                             <TableCell className='text-center text-[10px] tabular-nums text-neutral-600'>
                                                 {item.volume || 0}
+                                            </TableCell>
+                                            <TableCell className='text-center'>
+                                                <Badge variant='outline' className='font-bold tabular-nums'>
+                                                    {item.jumlah} {item.satuan}
+                                                </Badge>
                                             </TableCell>
                                             <TableCell>
                                                 {item.divisi ? (
@@ -787,49 +783,11 @@ export default function EngineerDetailPage() {
                                                 </Popover>
                                             </TableCell>
                                             <TableCell className='text-xs text-neutral-600'>
-                                                {project?.spk_number || project?.spk?.nomor_spk || '-'}
-                                            </TableCell>
-                                            <TableCell className='text-xs text-neutral-600'>
-                                                {project?.designs?.[0]?.studio?.name || '-'}
-                                            </TableCell>
-                                            <TableCell>
-                                                {project?.designs?.[0]?.design_progres && project.designs[0].design_progres.length > 0 ? (
-                                                    (() => {
-                                                        const latest = project.designs[0].design_progres[project.designs[0].design_progres.length - 1];
-                                                        return (
-                                                            <div className='flex items-center gap-2'>
-                                                                <Badge variant='outline' className='bg-blue-50 text-blue-700 border-blue-200 text-[10px]'>
-                                                                    {latest.tahap_design?.nama}
-                                                                </Badge>
-                                                                {latest.file && (
-                                                                    <Button variant='ghost' size='icon' className='h-6 w-6 text-blue-600' asChild>
-                                                                        <a 
-                                                                            href={`${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '')}/storage/${latest.file}`}
-                                                                            target='_blank'
-                                                                            rel='noopener noreferrer'
-                                                                        >
-                                                                            <Eye className='h-3.5 w-3.5' />
-                                                                        </a>
-                                                                    </Button>
-                                                                )}
-                                                            </div>
-                                                        );
-                                                    })()
-                                                ) : (
-                                                    <span className='text-[10px] text-muted-foreground italic'>-</span>
-                                                )}
-                                            </TableCell>
-                                            <TableCell className='text-xs text-neutral-600'>
-                                                {project?.order_gambar_kerja?.[0]?.target_selesai 
-                                                    ? format(new Date(project.order_gambar_kerja[0].target_selesai), 'MMM d, yyyy') 
-                                                    : '-'}
-                                            </TableCell>
-                                            <TableCell className='text-xs text-neutral-600'>
                                                 {item.gambar_kerja?.tanggal_selesai 
                                                     ? format(new Date(item.gambar_kerja.tanggal_selesai), 'MMM d, yyyy') 
                                                     : '-'}
                                             </TableCell>
-                                            <TableCell>
+                                            <TableCell className='text-center'>
                                                 {(() => {
                                                     const target = project?.order_gambar_kerja?.[0]?.target_selesai;
                                                     const submit = item.gambar_kerja?.tanggal_selesai;
