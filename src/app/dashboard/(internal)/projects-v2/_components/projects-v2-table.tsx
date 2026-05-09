@@ -22,6 +22,7 @@ import {
   ArrowUp,
   Truck,
   CalendarDays,
+  Eye,
 } from 'lucide-react';
 import { format, differenceInDays, startOfDay } from 'date-fns';
 
@@ -82,11 +83,13 @@ export function ProjectsV2Table({
   showPerencanaan = false,
   showProduksi = false,
   onlyShowDetail = false,
+  showEngineer = false,
 }: {
   showSPD?: boolean;
   showPerencanaan?: boolean;
   showProduksi?: boolean;
   onlyShowDetail?: boolean;
+  showEngineer?: boolean;
 }) {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -360,7 +363,7 @@ export function ProjectsV2Table({
             <TableRow>
               <TableHead className='w-[50px]'>#</TableHead>
               <TableHead>Project Name</TableHead>
-              <TableHead>Client</TableHead>
+              {!showEngineer && <TableHead>Client</TableHead>}
               <TableHead>Description</TableHead>
               {!showSPD && (
                 <>
@@ -389,6 +392,7 @@ export function ProjectsV2Table({
                       )}
                     </div>
                   </TableHead>
+                  <TableHead>SPH Number</TableHead>
                   <TableHead>SPK Number</TableHead>
                   <TableHead>Sisa Hari</TableHead>
                 </>
@@ -397,14 +401,17 @@ export function ProjectsV2Table({
               {!showSPD && <TableHead>Jadwal Pengiriman</TableHead>}
               {showSPD && (
                 <>
-                  <TableHead>SPD</TableHead>
-                  <TableHead>Pic</TableHead>
-                  <TableHead>Desain</TableHead>
-                  <TableHead>Approval Status</TableHead>
-                  <TableHead>Target Desain</TableHead>
-                  <TableHead>Submit</TableHead>
+                  {!showEngineer && <TableHead>SPD</TableHead>}
+                  {!showEngineer && <TableHead>Pic</TableHead>}
+                  {showEngineer ? <TableHead>Desainer</TableHead> : (!showEngineer && <TableHead>Desain</TableHead>)}
+                  {!showEngineer && <TableHead>Approval Status</TableHead>}
+                  {!showEngineer && <TableHead>Target Desain</TableHead>}
+                  {showEngineer && <TableHead>Desain</TableHead>}
+                  {showEngineer && <TableHead>Target</TableHead>}
+                  {!showEngineer && <TableHead>Submit</TableHead>}
+                  {showEngineer && <TableHead>Submit</TableHead>}
                   <TableHead>Tepat Waktu</TableHead>
-                  <TableHead>List Furnitur</TableHead>
+                  {!showEngineer && <TableHead>List Furnitur</TableHead>}
                 </>
               )}
               {showProduksi && <TableHead>Progres Produksi</TableHead>}
@@ -414,7 +421,7 @@ export function ProjectsV2Table({
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={15} className='h-32 text-center'>
+                <TableCell colSpan={showEngineer ? 14 : 16} className='h-32 text-center text-muted-foreground'>
                   <div className='flex items-center justify-center'>
                     <Loader2 className='h-6 w-6 animate-spin text-neutral-400' />
                   </div>
@@ -423,7 +430,7 @@ export function ProjectsV2Table({
             ) : projects.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={15}
+                  colSpan={showEngineer ? 14 : 16}
                   className='h-32 text-center text-muted-foreground'
                 >
                   No projects found.
@@ -436,7 +443,7 @@ export function ProjectsV2Table({
                     {(page - 1) * 10 + index + 1}
                   </TableCell>
                   <TableCell className='font-medium'>{project.name}</TableCell>
-                  <TableCell>{project.client?.name || '-'}</TableCell>
+                  {!showEngineer && <TableCell>{project.client?.name || '-'}</TableCell>}
                   <TableCell className='max-w-[200px] truncate'>
                     {project.description || (
                       <span className='text-muted-foreground italic'>None</span>
@@ -448,6 +455,9 @@ export function ProjectsV2Table({
                         {project.deadline
                           ? format(new Date(project.deadline), 'MMM d, yyyy')
                           : '-'}
+                      </TableCell>
+                      <TableCell>
+                        {project.sph?.nomor_sph || '-'}
                       </TableCell>
                       <TableCell>
                         {project.spk_number || project.spk?.nomor_spk || '-'}
@@ -569,173 +579,239 @@ export function ProjectsV2Table({
                   )}
                   {showSPD && (
                     <>
-                      <TableCell>
-                        {project.designs?.[0]?.spd_file ? (
-                          <div className='flex items-center gap-2'>
-                            <Badge
-                              variant='outline'
-                              className='bg-orange-50 text-orange-700 border-orange-200'
-                            >
-                              Uploaded
-                            </Badge>
-                            <Button
-                              variant='ghost'
-                              size='icon'
-                              className='h-7 w-7 text-orange-600'
-                              asChild
-                            >
-                              <a
-                                href={`${(
-                                  process.env.NEXT_PUBLIC_API_URL ||
-                                  'http://localhost:8000'
-                                ).replace('/api', '')}/storage/${
-                                  project.designs[0].spd_file
-                                }`}
-                                target='_blank'
-                                rel='noopener noreferrer'
+                      {!showEngineer && (
+                        <TableCell>
+                          {project.designs?.[0]?.spd_file ? (
+                            <div className='flex items-center gap-2'>
+                              <Badge
+                                variant='outline'
+                                className='bg-orange-50 text-orange-700 border-orange-200'
                               >
-                                <ArrowDown className='h-3 w-3' />
-                              </a>
-                            </Button>
-                          </div>
-                        ) : (
-                          <span className='text-muted-foreground italic text-[10px]'>
-                            Not Uploaded
-                          </span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {project.need_design === 0 ? (
-                          <span className='text-muted-foreground italic text-xs'>-</span>
-                        ) : project.designs?.[0]?.spd_file ? (
-                          <Popover>
-                            <PopoverTrigger asChild>
+                                Uploaded
+                              </Badge>
                               <Button
                                 variant='ghost'
-                                size='sm'
-                                className={cn(
-                                  'h-8 px-2 font-medium flex items-center gap-1.5',
-                                  project.designs?.[0]?.studio?.name
-                                    ? 'text-neutral-900'
-                                    : 'text-muted-foreground italic'
-                                )}
+                                size='icon'
+                                className='h-7 w-7 text-orange-600'
+                                asChild
                               >
-                                {project.designs?.[0]?.studio?.name ||
-                                  (project.designs?.[0]?.studio_id
-                                    ? `ID: ${project.designs[0].studio_id}`
-                                    : 'Select Pic')}
-                                <ChevronsUpDown className='h-3 w-3 opacity-50' />
+                                <a
+                                  href={`${(
+                                    process.env.NEXT_PUBLIC_API_URL ||
+                                    'http://localhost:8000'
+                                  ).replace('/api', '')}/storage/${
+                                    project.designs[0].spd_file
+                                  }`}
+                                  target='_blank'
+                                  rel='noopener noreferrer'
+                                >
+                                  <ArrowDown className='h-3 w-3' />
+                                </a>
                               </Button>
-                            </PopoverTrigger>
-                            <PopoverContent
-                              className='w-[200px] p-0'
-                              align='start'
-                            >
-                              <Command>
-                                <CommandInput placeholder='Search designer...' />
-                                <CommandList>
-                                  <CommandEmpty>No designer found.</CommandEmpty>
-                                  <CommandGroup>
-                                    {designers.map((designer) => (
-                                      <CommandItem
-                                        key={designer.id}
-                                        value={designer.name}
-                                        onSelect={() => {
-                                          handlePicChange(
-                                            project.id,
-                                            designer.id
-                                          );
-                                        }}
-                                      >
-                                        <Check
-                                          className={cn(
-                                            'mr-2 h-4 w-4',
-                                            project.designs?.[0]?.studio_id ===
+                            </div>
+                          ) : (
+                            <span className='text-muted-foreground italic text-[10px]'>
+                              Not Uploaded
+                            </span>
+                          )}
+                        </TableCell>
+                      )}
+                      {!showEngineer && (
+                        <TableCell>
+                          {project.need_design === 0 ? (
+                            <span className='text-muted-foreground italic text-xs'>-</span>
+                          ) : project.designs?.[0]?.spd_file ? (
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant='ghost'
+                                  size='sm'
+                                  className={cn(
+                                    'h-8 px-2 font-medium flex items-center gap-1.5',
+                                    project.designs?.[0]?.studio?.name
+                                      ? 'text-neutral-900'
+                                      : 'text-muted-foreground italic'
+                                  )}
+                                >
+                                  {project.designs?.[0]?.studio?.name ||
+                                    (project.designs?.[0]?.studio_id
+                                      ? `ID: ${project.designs[0].studio_id}`
+                                      : 'Select Pic')}
+                                  <ChevronsUpDown className='h-3 w-3 opacity-50' />
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent
+                                className='w-[200px] p-0'
+                                align='start'
+                              >
+                                <Command>
+                                  <CommandInput placeholder='Search designer...' />
+                                  <CommandList>
+                                    <CommandEmpty>No designer found.</CommandEmpty>
+                                    <CommandGroup>
+                                      {designers.map((designer) => (
+                                        <CommandItem
+                                          key={designer.id}
+                                          value={designer.name}
+                                          onSelect={() => {
+                                            handlePicChange(
+                                              project.id,
                                               designer.id
-                                              ? 'opacity-100'
-                                              : 'opacity-0'
-                                          )}
-                                        />
-                                        {designer.name}
-                                      </CommandItem>
-                                    ))}
-                                  </CommandGroup>
-                                </CommandList>
-                              </Command>
-                            </PopoverContent>
-                          </Popover>
-                        ) : (
-                          <div className='flex items-center gap-1.5 px-2 py-1 text-muted-foreground italic text-[10px] bg-neutral-50 rounded border border-dashed border-neutral-200 w-fit'>
-                            Menunggu SPD
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {project.designs?.[0]?.design_progres &&
-                        project.designs[0].design_progres.length > 0 ? (
-                          <Badge
-                            variant='outline'
-                            className='bg-blue-50 text-blue-700 border-blue-200'
-                          >
-                            {
-                              project.designs[0].design_progres[
-                                project.designs[0].design_progres.length - 1
-                              ].tahap_design?.nama
-                            }
-                          </Badge>
-                        ) : (
-                          <Badge
-                            variant='secondary'
-                            className='bg-neutral-100 text-neutral-500 border-none font-normal'
-                          >
-                            Belum
-                          </Badge>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {project.designs?.[0]?.acc_design?.status ? (
-                          <Badge
-                            variant='outline'
-                            className={cn(
-                              'font-bold',
-                              project.designs[0].acc_design.status === 'Approved'
-                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                : 'bg-amber-50 text-amber-700 border-amber-200'
+                                            );
+                                          }}
+                                        >
+                                          <Check
+                                            className={cn(
+                                              'mr-2 h-4 w-4',
+                                              project.designs?.[0]?.studio_id ===
+                                                designer.id
+                                                ? 'opacity-100'
+                                                : 'opacity-0'
+                                            )}
+                                          />
+                                          {designer.name}
+                                        </CommandItem>
+                                      ))}
+                                    </CommandGroup>
+                                  </CommandList>
+                                </Command>
+                              </PopoverContent>
+                            </Popover>
+                          ) : (
+                            <div className='flex items-center gap-1.5 px-2 py-1 text-muted-foreground italic text-[10px] bg-neutral-50 rounded border border-dashed border-neutral-200 w-fit'>
+                              Menunggu SPD
+                            </div>
+                          )}
+                        </TableCell>
+                      )}
+                      {showEngineer && (
+                        <TableCell className='text-xs'>
+                          {project.designs?.[0]?.studio?.name || '-'}
+                        </TableCell>
+                      )}
+                      {!showEngineer && (
+                        <TableCell>
+                          {project.designs?.[0]?.design_progres &&
+                          project.designs[0].design_progres.length > 0 ? (
+                            <Badge
+                              variant='outline'
+                              className='bg-blue-50 text-blue-700 border-blue-200'
+                            >
+                              {
+                                project.designs[0].design_progres[
+                                  project.designs[0].design_progres.length - 1
+                                ].tahap_design?.nama
+                              }
+                            </Badge>
+                          ) : (
+                            <Badge
+                              variant='secondary'
+                              className='bg-neutral-100 text-neutral-500 border-none font-normal'
+                            >
+                              Belum
+                            </Badge>
+                          )}
+                        </TableCell>
+                      )}
+                      {showEngineer && (
+                         <TableCell>
+                            {project.designs?.[0]?.design_progres && project.designs[0].design_progres.length > 0 ? (
+                                (() => {
+                                    const latest = project.designs[0].design_progres[project.designs[0].design_progres.length - 1];
+                                    return (
+                                        <div className='flex items-center gap-2'>
+                                            <Badge variant='outline' className='bg-blue-50 text-blue-700 border-blue-200 text-[10px]'>
+                                                {latest.tahap_design?.nama}
+                                            </Badge>
+                                            {latest.file && (
+                                                <Button variant='ghost' size='icon' className='h-6 w-6 text-blue-600' asChild>
+                                                    <a 
+                                                        href={`${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '')}/storage/${latest.file}`}
+                                                        target='_blank'
+                                                        rel='noopener noreferrer'
+                                                    >
+                                                        <Eye className='h-3.5 w-3.5' />
+                                                    </a>
+                                                </Button>
+                                            )}
+                                        </div>
+                                    );
+                                })()
+                            ) : (
+                                <span className='text-[10px] text-muted-foreground italic'>-</span>
                             )}
-                          >
-                            {project.designs[0].acc_design.status}
-                          </Badge>
-                        ) : (
-                          <span className='text-muted-foreground italic text-[10px]'>-</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {project.designs?.[0]?.target_selesai ? (
-                           <span className="text-xs">{format(new Date(project.designs[0].target_selesai), 'MMM d, yyyy')}</span>
-                        ) : (
-                           <span className='text-muted-foreground italic text-[10px]'>-</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {project.designs?.[0]?.design_progres && project.designs[0].design_progres.length > 0 ? (
-                           <span className="text-xs">
-                             {(() => {
-                               const latest = project.designs[0].design_progres[project.designs[0].design_progres.length - 1];
-                               return latest.tanggal_selesai ? format(new Date(latest.tanggal_selesai), 'MMM d, yyyy') : '-';
-                             })()}
-                           </span>
-                        ) : (
-                           <span className='text-muted-foreground italic text-[10px]'>-</span>
-                        )}
-                      </TableCell>
+                         </TableCell>
+                      )}
+                      {showEngineer && (
+                         <TableCell className='text-xs'>
+                            {project.order_gambar_kerja?.[0]?.target_selesai 
+                                ? format(new Date(project.order_gambar_kerja[0].target_selesai), 'MMM d, yyyy') 
+                                : '-'}
+                         </TableCell>
+                      )}
+                      {!showEngineer && (
+                        <TableCell>
+                          {project.designs?.[0]?.acc_design?.status ? (
+                            <Badge
+                              variant='outline'
+                              className={cn(
+                                'font-bold',
+                                project.designs[0].acc_design.status === 'Approved'
+                                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                  : 'bg-amber-50 text-amber-700 border-amber-200'
+                              )}
+                            >
+                              {project.designs[0].acc_design.status}
+                            </Badge>
+                          ) : (
+                            <span className='text-muted-foreground italic text-[10px]'>-</span>
+                          )}
+                        </TableCell>
+                      )}
+                      {!showEngineer && (
+                        <TableCell>
+                          {project.designs?.[0]?.target_selesai ? (
+                            <span className="text-xs">{format(new Date(project.designs[0].target_selesai), 'MMM d, yyyy')}</span>
+                          ) : (
+                            <span className='text-muted-foreground italic text-[10px]'>-</span>
+                          )}
+                        </TableCell>
+                      )}
+                      {!showEngineer && (
+                        <TableCell>
+                          {project.designs?.[0]?.design_progres && project.designs[0].design_progres.length > 0 ? (
+                            <span className="text-xs">
+                              {(() => {
+                                const latest = project.designs[0].design_progres[project.designs[0].design_progres.length - 1];
+                                return latest.tanggal_selesai ? format(new Date(latest.tanggal_selesai), 'MMM d, yyyy') : '-';
+                              })()}
+                            </span>
+                          ) : (
+                            <span className='text-muted-foreground italic text-[10px]'>-</span>
+                          )}
+                        </TableCell>
+                      )}
+                      {showEngineer && (
+                        <TableCell className='text-xs'>
+                           {/* Submit comes from gambar_kerja, which is item-level. 
+                               For the project table, we'll show '-' unless backend provides a summary. */}
+                           -
+                        </TableCell>
+                      )}
                       <TableCell>
                         {(() => {
                            const design = project.designs?.[0];
-                           const target = design?.target_selesai;
+                           const target = showEngineer 
+                               ? project.order_gambar_kerja?.[0]?.target_selesai 
+                               : design?.target_selesai;
+                           
+                           // For showEngineer, submit should come from gambar_kerja items.
+                           // Since it's not available here, we'll return '-' or use design_progres as fallback?
+                           // User specifically said gambar_kerja, so we use '-' if not found.
                            const latest = design?.design_progres && design.design_progres.length > 0 
                              ? design.design_progres[design.design_progres.length - 1] 
                              : null;
-                           const submit = latest?.tanggal_selesai;
+                           const submit = showEngineer ? null : latest?.tanggal_selesai;
 
                            if (!target || !submit) return <span className='text-muted-foreground italic text-[10px]'>-</span>;
 
@@ -750,20 +826,22 @@ export function ProjectsV2Table({
                            );
                         })()}
                       </TableCell>
-                      <TableCell>
-                        {project.list_furnitur ? (
-                          <div className='flex items-center justify-center h-7 w-7 rounded-full bg-emerald-50 text-emerald-600 mx-auto'>
-                            <Check className='h-4 w-4' />
-                          </div>
-                        ) : (
-                          <Badge
-                            variant='secondary'
-                            className='bg-neutral-100 text-neutral-500 border-none font-normal'
-                          >
-                            Belum
-                          </Badge>
-                        )}
-                      </TableCell>
+                      {!showEngineer && (
+                        <TableCell>
+                          {project.list_furnitur ? (
+                            <div className='flex items-center justify-center h-7 w-7 rounded-full bg-emerald-50 text-emerald-600 mx-auto'>
+                              <Check className='h-4 w-4' />
+                            </div>
+                          ) : (
+                            <Badge
+                              variant='secondary'
+                              className='bg-neutral-100 text-neutral-500 border-none font-normal'
+                            >
+                              Belum
+                            </Badge>
+                          )}
+                        </TableCell>
+                      )}
                     </>
                   )}
                   {showProduksi && (
@@ -795,7 +873,9 @@ export function ProjectsV2Table({
                             className='h-8 px-3 text-orange-600 border-orange-200 hover:bg-orange-50 hover:text-orange-700'
                             onClick={() =>
                               router.push(
-                                `/dashboard/projects-v2/perintah-kerja/${project.id}/detail`
+                                showEngineer 
+                                  ? `/dashboard/projects-v2/engineer/${project.id}/detail`
+                                  : `/dashboard/projects-v2/perintah-kerja/${project.id}/detail`
                               )
                             }
                           >

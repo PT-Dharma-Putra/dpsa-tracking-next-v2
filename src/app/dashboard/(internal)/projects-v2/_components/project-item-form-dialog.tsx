@@ -59,6 +59,7 @@ const itemSchema = z.object({
     tinggi: z.preprocess((val) => (val === "" || val === null ? null : Number(val)), z.number().nullable()),
     satuan: z.string().default("UNIT"),
     jumlah: z.preprocess((val) => (val === "" || val === null ? 1 : Number(val)), z.number().min(1, "Quantity must be at least 1")),
+    custom: z.boolean().default(false),
 })
 
 const formSchema = z.object({
@@ -93,6 +94,7 @@ export function ProjectItemFormDialog({ open, onOpenChange, projectId, item }: P
                 tinggi: null,
                 satuan: "UNIT",
                 jumlah: 1,
+                custom: false,
             }]
         },
     })
@@ -118,6 +120,7 @@ export function ProjectItemFormDialog({ open, onOpenChange, projectId, item }: P
                     tinggi: item.tinggi,
                     satuan: item.satuan || "UNIT",
                     jumlah: item.jumlah,
+                    custom: !!item.custom,
                 }])
             } else {
                 replace([{
@@ -132,6 +135,7 @@ export function ProjectItemFormDialog({ open, onOpenChange, projectId, item }: P
                     tinggi: null,
                     satuan: "UNIT",
                     jumlah: 1,
+                    custom: false,
                 }])
             }
         }
@@ -239,7 +243,7 @@ export function ProjectItemFormDialog({ open, onOpenChange, projectId, item }: P
                     <form onSubmit={form.handleSubmit(onSubmit as any)} className="flex flex-col gap-4 overflow-hidden">
                         <div className="overflow-x-auto pb-4">
                             <div className="min-w-[1200px] space-y-2">
-                                <div className="grid grid-cols-[1.2fr_0.5fr_0.9fr_0.4fr_0.4fr_0.4fr_0.5fr_0.6fr_0.4fr_1.1fr_40px] gap-0.5 px-1 text-xs font-medium text-muted-foreground uppercase">
+                                <div className="grid grid-cols-[1.2fr_0.5fr_0.9fr_0.4fr_0.4fr_0.4fr_0.5fr_0.6fr_0.4fr_1.1fr_0.6fr_40px] gap-0.5 px-1 text-xs font-medium text-muted-foreground uppercase">
                                     <div>Item Name</div>
                                     <div>Lantai</div>
                                     <div>Ruang</div>
@@ -250,12 +254,13 @@ export function ProjectItemFormDialog({ open, onOpenChange, projectId, item }: P
                                     <div>Satuan</div>
                                     <div className="text-center">Qty</div>
                                     <div>Keterangan</div>
+                                    <div>Tipe</div>
                                     <div></div>
                                 </div>
                                 
                                 <div className="space-y-2 max-h-[400px] overflow-y-auto px-1">
                                     {fields.map((field, index) => (
-                                        <div key={field.id} className="grid grid-cols-[1.2fr_0.5fr_0.9fr_0.4fr_0.4fr_0.4fr_0.5fr_0.6fr_0.4fr_1.1fr_40px] gap-0.5 items-start">
+                                        <div key={field.id} className="grid grid-cols-[1.2fr_0.5fr_0.9fr_0.4fr_0.4fr_0.4fr_0.5fr_0.6fr_0.4fr_1.1fr_0.6fr_40px] gap-0.5 items-start">
                                             <FormField
                                                 control={form.control as any}
                                                 name={`items.${index}.item`}
@@ -474,6 +479,26 @@ export function ProjectItemFormDialog({ open, onOpenChange, projectId, item }: P
                                                     </FormItem>
                                                 )}
                                             />
+                                            <FormField
+                                                control={form.control as any}
+                                                name={`items.${index}.custom`}
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <Select onValueChange={(val) => field.onChange(val === "1")} value={field.value ? "1" : "0"}>
+                                                            <FormControl>
+                                                                <SelectTrigger className="h-8 text-[10px] px-2">
+                                                                    <SelectValue />
+                                                                </SelectTrigger>
+                                                            </FormControl>
+                                                            <SelectContent>
+                                                                <SelectItem value="0" className="text-[10px]">Standar</SelectItem>
+                                                                <SelectItem value="1" className="text-[10px]">Custom</SelectItem>
+                                                            </SelectContent>
+                                                        </Select>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
                                             {!isEdit && fields.length > 1 ? (
                                                 <Button 
                                                     type="button" 
@@ -509,6 +534,7 @@ export function ProjectItemFormDialog({ open, onOpenChange, projectId, item }: P
                                     tinggi: null,
                                     satuan: "UNIT",
                                     jumlah: 1,
+                                    custom: false,
                                 })}
                             >
                                 <Plus className="mr-2 h-4 w-4" />

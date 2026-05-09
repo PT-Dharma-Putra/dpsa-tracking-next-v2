@@ -13,7 +13,7 @@ export default function EngineerPage() {
             </div>
 
             <div className="bg-white rounded-xl shadow-sm border border-neutral-200">
-                <ProjectsV2Table showSPD={true} onlyShowDetail={true} />
+                <ProjectsV2Table showSPD={true} onlyShowDetail={true} showEngineer={true} />
             </div>
         </div>
     )

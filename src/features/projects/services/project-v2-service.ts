@@ -53,8 +53,16 @@ export interface ProjectV2 {
         file: string | null;
         tanggal_mulai: string | null;
         tanggal_selesai: string | null;
+        updated_at: string;
     };
     jadwal_pengiriman?: JadwalPengiriman;
+    order_gambar_kerja?: Array<{
+        id: number;
+        file: string | null;
+        target_selesai: string | null;
+        status: string;
+        created_at: string;
+    }>;
 }
 
 export interface TahapDesign {
@@ -259,7 +267,7 @@ export const projectV2Service = {
         return data;
     },
 
-    uploadGambarKerja: async (itemId: number, payload: { file?: File; tanggal_mulai?: string; tanggal_selesai?: string }) => {
+    uploadGambarKerja: async (itemId: number, payload: { file?: File | string; tanggal_mulai?: string; tanggal_selesai?: string }) => {
         const formData = new FormData();
         if (payload.file) formData.append('file', payload.file);
         if (payload.tanggal_mulai) formData.append('tanggal_mulai', payload.tanggal_mulai);
@@ -307,6 +315,13 @@ export const projectV2Service = {
         if (payload.tanggal_selesai) formData.append('tanggal_selesai', payload.tanggal_selesai);
         const { data } = await apiClient.post(`/projects-v2-items/${itemId}/upload-dokubah`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        return data;
+    },
+
+    updateProjectItemPic: async (itemId: number, picId: number) => {
+        const { data } = await apiClient.put<ProjectItemV2>(`/projects-v2-items/${itemId}`, { 
+            pic_engineer_id: picId,
         });
         return data;
     },
@@ -445,6 +460,7 @@ export interface MDLItem {
     dimensi_tinggi: number | null;
     volume: number | null;
     kode_satuan_beli: string | null;
+    link_gambar_kerja: string | null;
 }
 
 export interface ProjectItemV2 {
@@ -454,6 +470,8 @@ export interface ProjectItemV2 {
     mdl_item?: MDLItem;
     lantai: string | null;
     ruang?: string;
+    lokasi?: string;
+    material_utama?: string;
     item: string;
     keterangan?: string;
     volume: number | null;
@@ -464,6 +482,8 @@ export interface ProjectItemV2 {
     harga: number | null;
     jumlah: number;
     divisi_id: number | null;
+    pic_engineer_id: number | null;
+    custom: boolean;
     created_at: string;
     updated_at: string;
     gambar_kerja?: {
@@ -486,6 +506,10 @@ export interface ProjectItemV2 {
     setrim_kembali?: SetrimKembali[];
     setting?: Setting[];
     divisi?: Divisi;
+    pic_engineer?: {
+        id: number;
+        name: string;
+    };
 }
 
 export interface BahanBaku {
