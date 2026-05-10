@@ -53,7 +53,7 @@ const formSchema = z.object({
     client_id: z.string().min(1, "Client is required"),
     description: z.string().optional(),
     deadline: z.date().optional().nullable(),
-    need_design: z.number().default(1),
+    need_design: z.number(),
 })
 
 type FormValues = z.infer<typeof formSchema>

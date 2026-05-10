@@ -548,7 +548,7 @@ export default function ProduksiDetailPage() {
                     onChange={(e) =>
                       setProduksiData({
                         ...produksiData,
-                        cold_press: Math.min(Math.max(parseInt(e.target.value) || 0, 0), produksiData.jumlah_order),
+                        cold_press: Math.min(Math.max(parseInt(e.target.value) || 0, 0), produksiData.jumlah_order ?? 0),
                       })
                     }
                     className={skippedFields.cold_press ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100' : ''}
@@ -576,7 +576,7 @@ export default function ProduksiDetailPage() {
                     onChange={(e) =>
                       setProduksiData({
                         ...produksiData,
-                        running_saw: Math.min(Math.max(parseInt(e.target.value) || 0, 0), produksiData.jumlah_order),
+                        running_saw: Math.min(Math.max(parseInt(e.target.value) || 0, 0), produksiData.jumlah_order ?? 0),
                       })
                     }
                     className={skippedFields.running_saw ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100' : ''}
@@ -604,7 +604,7 @@ export default function ProduksiDetailPage() {
                     onChange={(e) =>
                       setProduksiData({
                         ...produksiData,
-                        edging: Math.min(Math.max(parseInt(e.target.value) || 0, 0), produksiData.jumlah_order),
+                        edging: Math.min(Math.max(parseInt(e.target.value) || 0, 0), produksiData.jumlah_order ?? 0),
                       })
                     }
                     className={skippedFields.edging ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100' : ''}
@@ -632,7 +632,7 @@ export default function ProduksiDetailPage() {
                     onChange={(e) =>
                       setProduksiData({
                         ...produksiData,
-                        cnc: Math.min(Math.max(parseInt(e.target.value) || 0, 0), produksiData.jumlah_order),
+                        cnc: Math.min(Math.max(parseInt(e.target.value) || 0, 0), produksiData.jumlah_order ?? 0),
                       })
                     }
                     className={skippedFields.cnc ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100' : ''}
@@ -669,7 +669,7 @@ export default function ProduksiDetailPage() {
                     onChange={(e) =>
                       setProduksiData({
                         ...produksiData,
-                        tukang_kayu: Math.min(Math.max(parseInt(e.target.value) || 0, 0), produksiData.jumlah_order),
+                        tukang_kayu: Math.min(Math.max(parseInt(e.target.value) || 0, 0), produksiData.jumlah_order ?? 0),
                       })
                     }
                     className={skippedFields.tukang_kayu ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100' : ''}
@@ -697,7 +697,7 @@ export default function ProduksiDetailPage() {
                     onChange={(e) =>
                       setProduksiData({
                         ...produksiData,
-                        finishing: Math.min(Math.max(parseInt(e.target.value) || 0, 0), produksiData.jumlah_order),
+                        finishing: Math.min(Math.max(parseInt(e.target.value) || 0, 0), produksiData.jumlah_order ?? 0),
                       })
                     }
                     className={skippedFields.finishing ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100' : ''}
@@ -725,7 +725,7 @@ export default function ProduksiDetailPage() {
                     onChange={(e) =>
                       setProduksiData({
                         ...produksiData,
-                        rakit: Math.min(Math.max(parseInt(e.target.value) || 0, 0), produksiData.jumlah_order),
+                        rakit: Math.min(Math.max(parseInt(e.target.value) || 0, 0), produksiData.jumlah_order ?? 0),
                       })
                     }
                     className={skippedFields.rakit ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100' : ''}
