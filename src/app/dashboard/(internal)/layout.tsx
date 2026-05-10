@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/breadcrumb"
 import { useAuthStore } from "@/lib/auth-store"
 import { DashboardBreadcrumb } from "@/components/dashboard-breadcrumb"
+import { NotificationsPopover } from "@/components/notifications-popover"
 
 export default function DashboardLayout({
     children,
@@ -65,11 +66,14 @@ export default function DashboardLayout({
         <SidebarProvider>
             <AppSidebar />
             <SidebarInset>
-                <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 border-b border-neutral-200 bg-white px-4">
+                <header className="flex h-16 shrink-0 items-center justify-between transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 border-b border-neutral-200 bg-white px-4">
                     <div className="flex items-center gap-2">
                         <SidebarTrigger className="-ml-1" />
                         <Separator orientation="vertical" className="mr-2 h-4" />
                         <DashboardBreadcrumb />
+                    </div>
+                    <div className="flex items-center gap-4">
+                        <NotificationsPopover />
                     </div>
                 </header>
                 <div className="flex flex-1 flex-col gap-4 p-4 pt-0 bg-neutral-50/50">

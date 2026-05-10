@@ -4,10 +4,14 @@ export interface ProjectV2 {
     id: number;
     name: string;
     description: string | null;
+    note_engineer: string | null;
     spk_number: string | null;
     client_id: number;
     deadline: string | null;
     status: string;
+    need_design: number;
+    drawing_progress?: number;
+    latest_drawing_submit?: string | null;
     progres_produksi?: number;
     client?: {
         id: number;
@@ -20,23 +24,30 @@ export interface ProjectV2 {
         id: number;
         spd_file: string | null;
         tanggal: string | null;
+        target_selesai: string | null;
         acc_design?: {
             id: number;
             tanggal_kirim: string | null;
             tanggal_acc: string | null;
             status: string;
+            bukti_acc?: string | null;
+        };
+        studio_id: number | null;
+        studio?: {
+            id: number;
+            name: string;
         };
         design_progres?: DesignProgres[];
     }>;
     sph?: {
         id: number;
-        nomor_sph: string | null;
+        nomor_sph?: string;
         file: string | null;
         created_at: string;
     };
     spk?: {
         id: number;
-        nomor_spk: string | null;
+        nomor_spk?: string;
         file: string | null;
         created_at: string;
     };
@@ -45,8 +56,23 @@ export interface ProjectV2 {
         file: string | null;
         tanggal_mulai: string | null;
         tanggal_selesai: string | null;
+        updated_at: string;
     };
     jadwal_pengiriman?: JadwalPengiriman;
+    order_gambar_kerja?: Array<{
+        id: number;
+        file: string | null;
+        target_selesai: string | null;
+        status: string;
+        created_at: string;
+    }>;
+    order_produksi?: Array<{
+        id: number;
+        file: string | null;
+        target_selesai: string | null;
+        status: string;
+        created_at: string;
+    }>;
 }
 
 export interface TahapDesign {
@@ -58,7 +84,10 @@ export interface DesignProgres {
     id: number;
     design_id: number;
     tahap_design_id: number;
+    tanggal_mulai: string | null;
     tanggal_selesai: string | null;
+    file: string | null;
+    catatan: string | null;
     tahap_design?: TahapDesign;
 }
 
@@ -74,6 +103,8 @@ interface GetProjectsV2Params {
     page?: number;
     search?: string;
     client_id?: string;
+    month?: string;
+    year?: string;
     sort_by?: string;
     sort_order?: 'asc' | 'desc';
 }
@@ -89,18 +120,37 @@ export const projectV2Service = {
         return data;
     },
 
-    createProject: async (payload: { name: string; client_id: number; description?: string; deadline?: string }) => {
+    createProject: async (payload: { name: string; client_id: number; description?: string; deadline?: string; need_design?: number }) => {
         const { data } = await apiClient.post<ProjectV2>('/projects-v2', payload);
         return data;
     },
 
-    updateProject: async (id: number, payload: { name: string; client_id: number; description?: string; deadline?: string }) => {
+    updateProject: async (id: number, payload: { name: string; client_id: number; description?: string; deadline?: string; need_design?: number }) => {
         const { data } = await apiClient.put<ProjectV2>(`/projects-v2/${id}`, payload);
         return data;
     },
 
     deleteProject: async (id: number) => {
         const { data } = await apiClient.delete(`/projects-v2/${id}`);
+        return data;
+    },
+
+    updatePic: async (projectId: number, studioId: number) => {
+        const { data } = await apiClient.post(`/projects-v2/${projectId}/update-pic`, {
+            studio_id: studioId
+        });
+        return data;
+    },
+
+    updateNote: async (projectId: number, note: string) => {
+        const { data } = await apiClient.post(`/projects-v2/${projectId}/update-note`, {
+            note_engineer: note
+        });
+        return data;
+    },
+
+    getDesigners: async () => {
+        const { data } = await apiClient.get<Array<{ id: number, name: string }>>('/designers');
         return data;
     },
 
@@ -125,15 +175,25 @@ export const projectV2Service = {
         return data;
     },
 
-    getMDLItems: async (params?: { search?: string; page?: number; per_page?: number }) => {
+    getMDLItems: async (params?: { search?: string; kategori?: string; lokasi_ruangan?: string; min_price?: number; max_price?: number; page?: number; per_page?: number }) => {
         const { data } = await apiClient.get<any>('/mdl', { params });
         return data;
     },
 
-    uploadSPD: async (projectId: number, file: File, tanggal: string) => {
+    getMDLCategories: async () => {
+        const { data } = await apiClient.get<string[]>('/mdl/categories');
+        return data;
+    },
+
+    getMDLLocations: async () => {
+        const { data } = await apiClient.get<string[]>('/mdl/locations');
+        return data;
+    },
+
+    uploadSPD: async (projectId: number, file: File, target_selesai: string) => {
         const formData = new FormData();
         formData.append('file', file);
-        formData.append('tanggal', tanggal);
+        formData.append('target_selesai', target_selesai);
         const { data } = await apiClient.post(`/projects-v2/${projectId}/upload-spd`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
@@ -150,16 +210,45 @@ export const projectV2Service = {
         return data;
     },
 
-    updateAccDesign: async (projectId: number, payload: { tanggal_kirim?: string; tanggal_acc?: string; status: string }) => {
-        const { data } = await apiClient.post(`/projects-v2/${projectId}/update-acc-design`, payload);
+    updateAccDesign: async (projectId: number, payload: { tanggal_kirim?: string; tanggal_acc?: string; status: string; bukti_acc?: File | null }) => {
+        const formData = new FormData();
+        if (payload.tanggal_kirim) formData.append('tanggal_kirim', payload.tanggal_kirim);
+        if (payload.tanggal_acc) formData.append('tanggal_acc', payload.tanggal_acc);
+        formData.append('status', payload.status);
+        if (payload.bukti_acc) formData.append('bukti_acc', payload.bukti_acc);
+
+        const { data } = await apiClient.post(`/projects-v2/${projectId}/update-acc-design`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
         return data;
     },
 
-    uploadSPK: async (projectId: number, file: File, nomor_spk: string) => {
+    uploadSPK: async (projectId: number, file: File, nomor_spk: string, deadline?: string) => {
         const formData = new FormData();
         formData.append('file', file);
         formData.append('nomor_spk', nomor_spk);
+        if (deadline) formData.append('deadline', deadline);
         const { data } = await apiClient.post(`/projects-v2/${projectId}/upload-spk`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        return data;
+    },
+
+    uploadOrderGambarKerja: async (projectId: number, file: File, target_selesai: string) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('target_selesai', target_selesai);
+        const { data } = await apiClient.post(`/projects-v2/${projectId}/upload-order-gambar-kerja`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        return data;
+    },
+
+    uploadOrderProduksi: async (projectId: number, file: File, target_selesai: string) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('target_selesai', target_selesai);
+        const { data } = await apiClient.post(`/projects-v2/${projectId}/upload-order-produksi`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
         return data;
@@ -180,8 +269,23 @@ export const projectV2Service = {
         return data;
     },
 
-    updateDesignProgress: async (designId: number, payload: { tahap_design_id: number; tanggal_selesai?: string | null }) => {
-        const { data } = await apiClient.post<DesignProgres>(`/designs/${designId}/progress`, payload);
+    updateDesignProgress: async (designId: number, payload: { 
+        tahap_design_id: number; 
+        tanggal_mulai?: string | null;
+        tanggal_selesai?: string | null;
+        catatan?: string | null;
+        file?: File | null;
+    }) => {
+        const formData = new FormData();
+        formData.append('tahap_design_id', payload.tahap_design_id.toString());
+        if (payload.tanggal_mulai) formData.append('tanggal_mulai', payload.tanggal_mulai);
+        if (payload.tanggal_selesai) formData.append('tanggal_selesai', payload.tanggal_selesai);
+        if (payload.catatan) formData.append('catatan', payload.catatan);
+        if (payload.file) formData.append('file', payload.file);
+
+        const { data } = await apiClient.post<DesignProgres>(`/designs/${designId}/progress`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
         return data;
     },
 
@@ -202,7 +306,7 @@ export const projectV2Service = {
         return data;
     },
 
-    uploadGambarKerja: async (itemId: number, payload: { file?: File; tanggal_mulai?: string; tanggal_selesai?: string }) => {
+    uploadGambarKerja: async (itemId: number, payload: { file?: File | string; tanggal_mulai?: string; tanggal_selesai?: string }) => {
         const formData = new FormData();
         if (payload.file) formData.append('file', payload.file);
         if (payload.tanggal_mulai) formData.append('tanggal_mulai', payload.tanggal_mulai);
@@ -243,7 +347,7 @@ export const projectV2Service = {
         return data;
     },
 
-    uploadDokubah: async (itemId: number, payload: { file?: File; tanggal_mulai?: string; tanggal_selesai?: string }) => {
+    uploadDokubah: async (itemId: number, payload: { file?: File | string; tanggal_mulai?: string; tanggal_selesai?: string }) => {
         const formData = new FormData();
         if (payload.file) formData.append('file', payload.file);
         if (payload.tanggal_mulai) formData.append('tanggal_mulai', payload.tanggal_mulai);
@@ -254,12 +358,26 @@ export const projectV2Service = {
         return data;
     },
 
+    updateProjectItemPic: async (itemId: number, picId: number) => {
+        const { data } = await apiClient.put<ProjectItemV2>(`/projects-v2-items/${itemId}`, { 
+            pic_engineer_id: picId,
+        });
+        return data;
+    },
+
     getPics: async () => {
         const { data } = await apiClient.get<Pic[]>('/pics');
         return data;
     },
 
-    updateBahanBaku: async (itemId: number, payload: { tanggal_menerima_dokubah?: string; ketersediaan_stok?: string; tanggal_keluar?: string; pic_id?: number }) => {
+    updateBahanBaku: async (itemId: number, payload: { 
+        tanggal_menerima_dokubah?: string; 
+        ketersediaan_stok?: string; 
+        tanggal_keluar?: string; 
+        pic_id?: number;
+        new_pic_name?: string;
+        new_pic_jabatan?: string;
+    }) => {
         const { data } = await apiClient.post(`/projects-v2-items/${itemId}/bahan-baku`, payload);
         return data;
     },
@@ -388,16 +506,20 @@ export interface MDLItem {
     dimensi_tinggi: number | null;
     volume: number | null;
     kode_satuan_beli: string | null;
+    link_gambar_kerja: string | null;
 }
 
 export interface ProjectItemV2 {
     id: number;
     project_id: number;
     mdl_item_id: number | null;
+    mdl_item?: MDLItem;
     lantai: string | null;
-    ruang: string | null;
+    ruang?: string;
+    lokasi?: string;
+    material_utama?: string;
     item: string;
-    keterangan: string | null;
+    keterangan?: string;
     volume: number | null;
     panjang: number | null;
     lebar: number | null;
@@ -406,6 +528,8 @@ export interface ProjectItemV2 {
     harga: number | null;
     jumlah: number;
     divisi_id: number | null;
+    pic_engineer_id: number | null;
+    custom: boolean;
     created_at: string;
     updated_at: string;
     gambar_kerja?: {
@@ -428,6 +552,10 @@ export interface ProjectItemV2 {
     setrim_kembali?: SetrimKembali[];
     setting?: Setting[];
     divisi?: Divisi;
+    pic_engineer?: {
+        id: number;
+        name: string;
+    };
 }
 
 export interface BahanBaku {
@@ -469,6 +597,7 @@ export interface Produksi {
     quality_control: number;
     packing: number;
     persen: number;
+    skipped_fields?: string[];
 }
 
 export interface BarangJadiMasuk {

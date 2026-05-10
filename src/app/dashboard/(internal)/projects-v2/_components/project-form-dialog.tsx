@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation, useQuery, useInfiniteQuery, useQueryClient } from "@tanstack/react-query"
 import { CalendarIcon, Loader2, Check, ChevronsUpDown } from "lucide-react"
 import { format } from "date-fns"
+import { Label } from "@/components/ui/label"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -37,6 +38,10 @@ import {
     CommandItem,
     CommandList,
 } from "@/components/ui/command"
+import {
+    RadioGroup,
+    RadioGroupItem,
+} from "@/components/ui/radio-group"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 
@@ -48,6 +53,7 @@ const formSchema = z.object({
     client_id: z.string().min(1, "Client is required"),
     description: z.string().optional(),
     deadline: z.date().optional().nullable(),
+    need_design: z.number(),
 })
 
 type FormValues = z.infer<typeof formSchema>
@@ -115,6 +121,7 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
             client_id: "",
             description: "",
             deadline: null,
+            need_design: 1,
         },
     })
 
@@ -126,6 +133,7 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
                     client_id: project.client_id.toString(),
                     description: project.description || "",
                     deadline: project.deadline ? new Date(project.deadline) : null,
+                    need_design: project.need_design ?? 1,
                 })
             } else {
                 form.reset({
@@ -133,6 +141,7 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
                     client_id: "",
                     description: "",
                     deadline: null,
+                    need_design: 1,
                 })
             }
         }
@@ -145,6 +154,7 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
                 client_id: parseInt(values.client_id),
                 description: values.description,
                 deadline: values.deadline ? format(values.deadline, "yyyy-MM-dd") : undefined,
+                need_design: values.need_design,
             }
 
             if (isEdit) {
@@ -280,44 +290,28 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
                                 </FormItem>
                             )}
                         />
-
                         <FormField
                             control={form.control}
-                            name="deadline"
+                            name="need_design"
                             render={({ field }) => (
-                                <FormItem className="flex flex-col">
-                                    <FormLabel>Deadline (Optional)</FormLabel>
-                                    <Popover>
-                                        <PopoverTrigger asChild>
-                                            <FormControl>
-                                                <Button
-                                                    variant={"outline"}
-                                                    className={cn(
-                                                        "w-full pl-3 text-left font-normal",
-                                                        !field.value && "text-muted-foreground"
-                                                    )}
-                                                >
-                                                    {field.value ? (
-                                                        format(field.value, "PPP")
-                                                    ) : (
-                                                        <span>Pick a date</span>
-                                                    )}
-                                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                                </Button>
-                                            </FormControl>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0" align="start">
-                                            <Calendar
-                                                mode="single"
-                                                selected={field.value || undefined}
-                                                onSelect={field.onChange}
-                                                disabled={(date) =>
-                                                    date < new Date("1900-01-01")
-                                                }
-                                                initialFocus
-                                            />
-                                        </PopoverContent>
-                                    </Popover>
+                                <FormItem className="space-y-3">
+                                    <FormLabel>Perlu Desain?</FormLabel>
+                                    <FormControl>
+                                        <RadioGroup
+                                            onValueChange={(val) => field.onChange(parseInt(val))}
+                                            value={(field.value ?? 1).toString()}
+                                            className="flex gap-4"
+                                        >
+                                            <div className="flex items-center space-x-2">
+                                                <RadioGroupItem value="1" id="design-ya" />
+                                                <Label htmlFor="design-ya" className="font-normal cursor-pointer">Ya</Label>
+                                            </div>
+                                            <div className="flex items-center space-x-2">
+                                                <RadioGroupItem value="0" id="design-tidak" />
+                                                <Label htmlFor="design-tidak" className="font-normal cursor-pointer">Tidak</Label>
+                                            </div>
+                                        </RadioGroup>
+                                    </FormControl>
                                     <FormMessage />
                                 </FormItem>
                             )}
