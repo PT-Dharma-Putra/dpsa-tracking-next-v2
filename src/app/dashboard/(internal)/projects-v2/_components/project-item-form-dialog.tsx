@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { useForm, useFieldArray } from "react-hook-form"
+import { useForm, useFieldArray, useWatch } from "react-hook-form"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
@@ -33,6 +33,14 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Badge } from "@/components/ui/badge"
+import { Check, ChevronsUpDown, X } from "lucide-react"
 import { toast } from "sonner"
 import { projectV2Service, ProjectItemV2, MDLItem } from "@/features/projects/services/project-v2-service"
 import { cn } from "@/lib/utils"
@@ -51,6 +59,7 @@ const itemSchema = z.object({
     tinggi: z.preprocess((val) => (val === "" || val === null ? null : Number(val)), z.number().nullable()),
     satuan: z.string().default("UNIT"),
     jumlah: z.preprocess((val) => (val === "" || val === null ? 1 : Number(val)), z.number().min(1, "Quantity must be at least 1")),
+    custom: z.boolean().default(false),
 })
 
 const formSchema = z.object({
@@ -85,6 +94,7 @@ export function ProjectItemFormDialog({ open, onOpenChange, projectId, item }: P
                 tinggi: null,
                 satuan: "UNIT",
                 jumlah: 1,
+                custom: false,
             }]
         },
     })
@@ -110,6 +120,7 @@ export function ProjectItemFormDialog({ open, onOpenChange, projectId, item }: P
                     tinggi: item.tinggi,
                     satuan: item.satuan || "UNIT",
                     jumlah: item.jumlah,
+                    custom: !!item.custom,
                 }])
             } else {
                 replace([{
@@ -124,10 +135,47 @@ export function ProjectItemFormDialog({ open, onOpenChange, projectId, item }: P
                     tinggi: null,
                     satuan: "UNIT",
                     jumlah: 1,
+                    custom: false,
                 }])
             }
         }
     }, [open, item, replace])
+
+    const watchedItems = useWatch({
+        control: form.control,
+        name: "items"
+    });
+
+    React.useEffect(() => {
+        if (!watchedItems) return;
+
+        watchedItems.forEach((item, index) => {
+            const panjang = Number(item.panjang) || 0;
+            const lebar = Number(item.lebar) || 0;
+            const tinggi = Number(item.tinggi) || 0;
+            const qty = Number(item.jumlah) || 0;
+            const satuan = item.satuan;
+
+            let calculatedVolume = item.volume;
+
+            if (satuan === "M1") {
+                calculatedVolume = panjang;
+            } else if (satuan === "M2 (pxl)" || satuan === "M2_PXL") {
+                calculatedVolume = panjang * lebar;
+            } else if (satuan === "M2 (pxt)" || satuan === "M2_PXT") {
+                calculatedVolume = panjang * tinggi;
+            } else if (satuan === "UNIT" || satuan === "SET") {
+                calculatedVolume = qty;
+            }
+
+            if (calculatedVolume !== item.volume) {
+                form.setValue(`items.${index}.volume` as any, calculatedVolume, { 
+                    shouldDirty: true,
+                    shouldValidate: true
+                });
+            }
+        });
+    }, [watchedItems, form]);
 
     const [selectorOpen, setSelectorOpen] = React.useState(false)
     const [activeIndex, setActiveIndex] = React.useState<number | null>(null)
@@ -195,23 +243,24 @@ export function ProjectItemFormDialog({ open, onOpenChange, projectId, item }: P
                     <form onSubmit={form.handleSubmit(onSubmit as any)} className="flex flex-col gap-4 overflow-hidden">
                         <div className="overflow-x-auto pb-4">
                             <div className="min-w-[1200px] space-y-2">
-                                <div className="grid grid-cols-[1.2fr_0.5fr_0.9fr_1.1fr_0.4fr_0.4fr_0.4fr_0.5fr_0.6fr_0.4fr_40px] gap-0.5 px-1 text-xs font-medium text-muted-foreground uppercase">
+                                <div className="grid grid-cols-[1.2fr_0.5fr_0.9fr_0.4fr_0.4fr_0.4fr_0.5fr_0.6fr_0.4fr_1.1fr_0.6fr_40px] gap-0.5 px-1 text-xs font-medium text-muted-foreground uppercase">
                                     <div>Item Name</div>
                                     <div>Lantai</div>
                                     <div>Ruang</div>
-                                    <div>Keterangan</div>
                                     <div className="text-center">P</div>
                                     <div className="text-center">L</div>
                                     <div className="text-center">T</div>
                                     <div className="text-center">Vol</div>
                                     <div>Satuan</div>
                                     <div className="text-center">Qty</div>
+                                    <div>Keterangan</div>
+                                    <div>Tipe</div>
                                     <div></div>
                                 </div>
                                 
                                 <div className="space-y-2 max-h-[400px] overflow-y-auto px-1">
                                     {fields.map((field, index) => (
-                                        <div key={field.id} className="grid grid-cols-[1.2fr_0.5fr_0.9fr_1.1fr_0.4fr_0.4fr_0.4fr_0.5fr_0.6fr_0.4fr_40px] gap-0.5 items-start">
+                                        <div key={field.id} className="grid grid-cols-[1.2fr_0.5fr_0.9fr_0.4fr_0.4fr_0.4fr_0.5fr_0.6fr_0.4fr_1.1fr_0.6fr_40px] gap-0.5 items-start">
                                             <FormField
                                                 control={form.control as any}
                                                 name={`items.${index}.item`}
@@ -239,20 +288,82 @@ export function ProjectItemFormDialog({ open, onOpenChange, projectId, item }: P
                                                 name={`items.${index}.lantai`}
                                                 render={({ field }) => (
                                                     <FormItem>
-                                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                            <FormControl>
-                                                                <SelectTrigger className="h-8 text-xs">
-                                                                    <SelectValue placeholder="L" />
-                                                                </SelectTrigger>
-                                                            </FormControl>
-                                                            <SelectContent>
-                                                                {Array.from({ length: 10 }, (_, i) => (
-                                                                    <SelectItem key={i + 1} value={`Lantai ${i + 1}`} className="text-xs">
-                                                                        L{i + 1}
-                                                                    </SelectItem>
-                                                                ))}
-                                                            </SelectContent>
-                                                        </Select>
+                                                        <Popover>
+                                                            <PopoverTrigger asChild>
+                                                                <FormControl>
+                                                                    <Button
+                                                                        variant="outline"
+                                                                        role="combobox"
+                                                                        className={cn(
+                                                                            "h-8 w-full text-xs justify-between font-normal px-2 bg-white",
+                                                                            !field.value && "text-muted-foreground"
+                                                                        )}
+                                                                    >
+                                                                        <div className="flex gap-1 flex-wrap truncate max-w-[90%]">
+                                                                            {field.value ? (
+                                                                                field.value.split(", ").map((val: string) => (
+                                                                                    <Badge variant="secondary" key={val} className="text-[10px] h-5 px-1 font-normal">
+                                                                                        {val.replace("Lantai ", "L")}
+                                                                                    </Badge>
+                                                                                ))
+                                                                            ) : (
+                                                                                "L"
+                                                                            )}
+                                                                        </div>
+                                                                        <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
+                                                                    </Button>
+                                                                </FormControl>
+                                                            </PopoverTrigger>
+                                                            <PopoverContent className="w-[200px] p-2" align="start">
+                                                                <div className="space-y-2">
+                                                                    <div className="flex items-center justify-between pb-2 border-b">
+                                                                        <span className="text-xs font-semibold">Pilih Lantai</span>
+                                                                        <Button 
+                                                                            variant="ghost" 
+                                                                            size="sm" 
+                                                                            className="h-6 px-2 text-[10px]"
+                                                                            onClick={() => field.onChange("")}
+                                                                        >
+                                                                            Reset
+                                                                        </Button>
+                                                                    </div>
+                                                                    <div className="max-h-[200px] overflow-y-auto space-y-1 py-1">
+                                                                        {Array.from({ length: 10 }, (_, i) => {
+                                                                            const floorValue = `Lantai ${i + 1}`;
+                                                                            const isSelected = field.value?.split(", ").includes(floorValue);
+                                                                            return (
+                                                                                <div 
+                                                                                    key={floorValue} 
+                                                                                    className="flex items-center space-x-2 p-1 hover:bg-neutral-100 rounded-md cursor-pointer"
+                                                                                    onClick={() => {
+                                                                                        const currentValues = field.value ? field.value.split(", ") : [];
+                                                                                        let newValues;
+                                                                                        if (isSelected) {
+                                                                                            newValues = currentValues.filter((v: string) => v !== floorValue);
+                                                                                        } else {
+                                                                                            newValues = [...currentValues, floorValue].sort();
+                                                                                        }
+                                                                                        field.onChange(newValues.join(", "));
+                                                                                    }}
+                                                                                >
+                                                                                    <Checkbox 
+                                                                                        id={`floor-${index}-${i}`} 
+                                                                                        checked={isSelected}
+                                                                                        onCheckedChange={() => {}} // handled by div onClick
+                                                                                    />
+                                                                                    <label
+                                                                                        htmlFor={`floor-${index}-${i}`}
+                                                                                        className="text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
+                                                                                    >
+                                                                                        {floorValue}
+                                                                                    </label>
+                                                                                </div>
+                                                                            );
+                                                                        })}
+                                                                    </div>
+                                                                </div>
+                                                            </PopoverContent>
+                                                        </Popover>
                                                         <FormMessage />
                                                     </FormItem>
                                                 )}
@@ -275,23 +386,11 @@ export function ProjectItemFormDialog({ open, onOpenChange, projectId, item }: P
                                             />
                                             <FormField
                                                 control={form.control as any}
-                                                name={`items.${index}.keterangan`}
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormControl>
-                                                            <Input placeholder="Keterangan" className="h-8 text-xs" {...field} />
-                                                        </FormControl>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
-                                            <FormField
-                                                control={form.control as any}
                                                 name={`items.${index}.panjang`}
                                                 render={({ field }) => (
                                                     <FormItem>
                                                         <FormControl>
-                                                            <Input type="number" placeholder="P" className="h-8 text-xs text-center px-1" {...field} value={field.value === null || field.value === 0 ? '' : field.value} />
+                                                            <Input type="number" placeholder="P" className="h-8 text-xs text-center px-1" {...field} value={field.value ?? ''} />
                                                         </FormControl>
                                                         <FormMessage />
                                                     </FormItem>
@@ -303,7 +402,7 @@ export function ProjectItemFormDialog({ open, onOpenChange, projectId, item }: P
                                                 render={({ field }) => (
                                                     <FormItem>
                                                         <FormControl>
-                                                            <Input type="number" placeholder="L" className="h-8 text-xs text-center px-1" {...field} value={field.value === null || field.value === 0 ? '' : field.value} />
+                                                            <Input type="number" placeholder="L" className="h-8 text-xs text-center px-1" {...field} value={field.value ?? ''} />
                                                         </FormControl>
                                                         <FormMessage />
                                                     </FormItem>
@@ -315,7 +414,7 @@ export function ProjectItemFormDialog({ open, onOpenChange, projectId, item }: P
                                                 render={({ field }) => (
                                                     <FormItem>
                                                         <FormControl>
-                                                            <Input type="number" placeholder="T" className="h-8 text-xs text-center px-1" {...field} value={field.value === null || field.value === 0 ? '' : field.value} />
+                                                            <Input type="number" placeholder="T" className="h-8 text-xs text-center px-1" {...field} value={field.value ?? ''} />
                                                         </FormControl>
                                                         <FormMessage />
                                                     </FormItem>
@@ -327,7 +426,7 @@ export function ProjectItemFormDialog({ open, onOpenChange, projectId, item }: P
                                                 render={({ field }) => (
                                                     <FormItem>
                                                         <FormControl>
-                                                            <Input type="number" placeholder="Vol" className="h-8 text-xs text-center px-1" {...field} value={field.value === null || field.value === 0 ? '' : field.value} />
+                                                            <Input type="number" placeholder="Vol" className="h-8 text-xs text-center px-1" {...field} value={field.value ?? ''} />
                                                         </FormControl>
                                                         <FormMessage />
                                                     </FormItem>
@@ -338,15 +437,16 @@ export function ProjectItemFormDialog({ open, onOpenChange, projectId, item }: P
                                                 name={`items.${index}.satuan`}
                                                 render={({ field }) => (
                                                     <FormItem>
-                                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                        <Select onValueChange={field.onChange} value={field.value || "UNIT"}>
                                                             <FormControl>
-                                                                <SelectTrigger className="h-8 text-xs">
+                                                                 <SelectTrigger className="h-8 text-xs">
                                                                     <SelectValue placeholder="Unit" />
                                                                 </SelectTrigger>
                                                             </FormControl>
                                                             <SelectContent>
                                                                 <SelectItem value="M1" className="text-xs">M1</SelectItem>
-                                                                <SelectItem value="M2" className="text-xs">M2</SelectItem>
+                                                                <SelectItem value="M2 (pxl)" className="text-xs">M2 (pxl)</SelectItem>
+                                                                <SelectItem value="M2 (pxt)" className="text-xs">M2 (pxt)</SelectItem>
                                                                 <SelectItem value="UNIT" className="text-xs">UNIT</SelectItem>
                                                                 <SelectItem value="SET" className="text-xs">SET</SelectItem>
                                                             </SelectContent>
@@ -361,8 +461,40 @@ export function ProjectItemFormDialog({ open, onOpenChange, projectId, item }: P
                                                 render={({ field }) => (
                                                     <FormItem>
                                                         <FormControl>
-                                                            <Input type="number" placeholder="Qty" className="h-8 text-xs text-center px-1" {...field} value={field.value === null || field.value === 0 ? '' : field.value} />
+                                                            <Input type="number" placeholder="Qty" className="h-8 text-xs text-center px-1" {...field} value={field.value ?? ''} />
                                                         </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                            <FormField
+                                                control={form.control as any}
+                                                name={`items.${index}.keterangan`}
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormControl>
+                                                            <Input placeholder="Keterangan" className="h-8 text-xs" {...field} />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                            <FormField
+                                                control={form.control as any}
+                                                name={`items.${index}.custom`}
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <Select onValueChange={(val) => field.onChange(val === "1")} value={field.value ? "1" : "0"}>
+                                                            <FormControl>
+                                                                <SelectTrigger className="h-8 text-[10px] px-2">
+                                                                    <SelectValue />
+                                                                </SelectTrigger>
+                                                            </FormControl>
+                                                            <SelectContent>
+                                                                <SelectItem value="0" className="text-[10px]">Standar</SelectItem>
+                                                                <SelectItem value="1" className="text-[10px]">Custom</SelectItem>
+                                                            </SelectContent>
+                                                        </Select>
                                                         <FormMessage />
                                                     </FormItem>
                                                 )}
@@ -402,6 +534,7 @@ export function ProjectItemFormDialog({ open, onOpenChange, projectId, item }: P
                                     tinggi: null,
                                     satuan: "UNIT",
                                     jumlah: 1,
+                                    custom: false,
                                 })}
                             >
                                 <Plus className="mr-2 h-4 w-4" />
