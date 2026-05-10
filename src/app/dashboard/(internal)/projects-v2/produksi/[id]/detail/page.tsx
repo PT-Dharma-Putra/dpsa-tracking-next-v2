@@ -68,6 +68,11 @@ export default function ProduksiDetailPage() {
     null
   );
   const [produksiData, setProduksiData] = React.useState<Partial<Produksi>>({});
+  const [skippedFields, setSkippedFields] = React.useState<Record<string, boolean>>({});
+
+  const toggleSkipField = (field: string) => {
+    setSkippedFields((prev) => ({ ...prev, [field]: !prev[field] }));
+  };
 
   const updateProduksiMutation = useMutation({
     mutationFn: (payload: Partial<Produksi>) =>
@@ -87,7 +92,8 @@ export default function ProduksiDetailPage() {
 
   const handleProduksiUpdate = () => {
     if (!produksiItem) return;
-    updateProduksiMutation.mutate(produksiData);
+    const skippedList = Object.keys(skippedFields).filter((k) => skippedFields[k]);
+    updateProduksiMutation.mutate({ ...produksiData, skipped_fields: skippedList });
   };
 
   const openProduksiDialog = (item: ProjectItemV2) => {
@@ -108,33 +114,44 @@ export default function ProduksiDetailPage() {
         persen: 0,
       }
     );
+    if (produksiItem?.id !== item.id) {
+      const saved = item.produksi?.skipped_fields ?? [];
+      setSkippedFields(
+        saved.reduce<Record<string, boolean>>((acc, field) => {
+          acc[field] = true;
+          return acc;
+        }, {})
+      );
+    }
     setIsProduksiDialogOpen(true);
   };
 
   React.useEffect(() => {
     if (!isProduksiDialogOpen) return;
 
-    const fields = [
+    const allFields = [
       'cold_press',
       'running_saw',
       'edging',
       'cnc',
       'tukang_kayu',
-      'tukang_jok',
       'finishing',
       'rakit',
-      'quality_control',
-      'packing',
     ] as const;
 
-    const totalSum = fields.reduce((sum, field) => {
+    const activeFields = allFields.filter((f) => !skippedFields[f]);
+
+    const totalSum = activeFields.reduce((sum, field) => {
       return sum + Number(produksiData[field] || 0);
     }, 0);
 
     const order = Number(produksiData.jumlah_order) || 1;
 
-    // Hitung persen
-    const calculatedPersen = Number(((totalSum * 10) / order).toFixed(2));
+    // Hitung persen: field yang dilewati tidak ikut kalkulasi
+    const calculatedPersen =
+      activeFields.length === 0
+        ? 0
+        : Number(((totalSum * 100) / (activeFields.length * order)).toFixed(2));
 
     // Hindari re-render tidak perlu
     setProduksiData((prev) => {
@@ -152,12 +169,10 @@ export default function ProduksiDetailPage() {
     produksiData.edging,
     produksiData.cnc,
     produksiData.tukang_kayu,
-    produksiData.tukang_jok,
     produksiData.finishing,
     produksiData.rakit,
-    produksiData.quality_control,
-    produksiData.packing,
     produksiData.jumlah_order,
+    skippedFields,
   ]);
 
   if (isLoadingProject) {
@@ -512,65 +527,115 @@ export default function ProduksiDetailPage() {
               </h4>
               <div className='grid grid-cols-2 gap-4'>
                 <div className='space-y-2'>
-                  <Label>Cold Press</Label>
+                  <div className='flex items-center justify-between'>
+                    <Label>Cold Press</Label>
+                    <Button
+                      type='button'
+                      variant={skippedFields.cold_press ? 'default' : 'outline'}
+                      size='sm'
+                      className={`h-6 px-2 text-xs ${skippedFields.cold_press ? 'bg-neutral-500 hover:bg-neutral-600' : 'text-neutral-500'}`}
+                      onClick={() => toggleSkipField('cold_press')}
+                    >
+                      {skippedFields.cold_press ? 'Batalkan' : 'Lewati Proses'}
+                    </Button>
+                  </div>
                   <Input
                     type='number'
-                    value={
-                      produksiData.cold_press === 0
-                        ? ''
-                        : produksiData.cold_press || ''
-                    }
+                    min={0}
+                    max={produksiData.jumlah_order}
+                    disabled={skippedFields.cold_press}
+                    value={skippedFields.cold_press ? '-' : produksiData.cold_press === 0 ? '' : produksiData.cold_press || ''}
                     onChange={(e) =>
                       setProduksiData({
                         ...produksiData,
-                        cold_press: parseInt(e.target.value) || 0,
+                        cold_press: Math.min(Math.max(parseInt(e.target.value) || 0, 0), produksiData.jumlah_order),
                       })
                     }
+                    className={skippedFields.cold_press ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100' : ''}
                   />
                 </div>
                 <div className='space-y-2'>
-                  <Label>Running Saw</Label>
+                  <div className='flex items-center justify-between'>
+                    <Label>Running Saw</Label>
+                    <Button
+                      type='button'
+                      variant={skippedFields.running_saw ? 'default' : 'outline'}
+                      size='sm'
+                      className={`h-6 px-2 text-xs ${skippedFields.running_saw ? 'bg-neutral-500 hover:bg-neutral-600' : 'text-neutral-500'}`}
+                      onClick={() => toggleSkipField('running_saw')}
+                    >
+                      {skippedFields.running_saw ? 'Batalkan' : 'Lewati Proses'}
+                    </Button>
+                  </div>
                   <Input
                     type='number'
-                    value={
-                      produksiData.running_saw === 0
-                        ? ''
-                        : produksiData.running_saw || ''
-                    }
+                    min={0}
+                    max={produksiData.jumlah_order}
+                    disabled={skippedFields.running_saw}
+                    value={skippedFields.running_saw ? '-' : produksiData.running_saw === 0 ? '' : produksiData.running_saw || ''}
                     onChange={(e) =>
                       setProduksiData({
                         ...produksiData,
-                        running_saw: parseInt(e.target.value) || 0,
+                        running_saw: Math.min(Math.max(parseInt(e.target.value) || 0, 0), produksiData.jumlah_order),
                       })
                     }
+                    className={skippedFields.running_saw ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100' : ''}
                   />
                 </div>
                 <div className='space-y-2'>
-                  <Label>Edging</Label>
+                  <div className='flex items-center justify-between'>
+                    <Label>Edging</Label>
+                    <Button
+                      type='button'
+                      variant={skippedFields.edging ? 'default' : 'outline'}
+                      size='sm'
+                      className={`h-6 px-2 text-xs ${skippedFields.edging ? 'bg-neutral-500 hover:bg-neutral-600' : 'text-neutral-500'}`}
+                      onClick={() => toggleSkipField('edging')}
+                    >
+                      {skippedFields.edging ? 'Batalkan' : 'Lewati Proses'}
+                    </Button>
+                  </div>
                   <Input
                     type='number'
-                    value={
-                      produksiData.edging === 0 ? '' : produksiData.edging || ''
-                    }
+                    min={0}
+                    max={produksiData.jumlah_order}
+                    disabled={skippedFields.edging}
+                    value={skippedFields.edging ? '-' : produksiData.edging === 0 ? '' : produksiData.edging || ''}
                     onChange={(e) =>
                       setProduksiData({
                         ...produksiData,
-                        edging: parseInt(e.target.value) || 0,
+                        edging: Math.min(Math.max(parseInt(e.target.value) || 0, 0), produksiData.jumlah_order),
                       })
                     }
+                    className={skippedFields.edging ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100' : ''}
                   />
                 </div>
                 <div className='space-y-2'>
-                  <Label>CNC</Label>
+                  <div className='flex items-center justify-between'>
+                    <Label>CNC</Label>
+                    <Button
+                      type='button'
+                      variant={skippedFields.cnc ? 'default' : 'outline'}
+                      size='sm'
+                      className={`h-6 px-2 text-xs ${skippedFields.cnc ? 'bg-neutral-500 hover:bg-neutral-600' : 'text-neutral-500'}`}
+                      onClick={() => toggleSkipField('cnc')}
+                    >
+                      {skippedFields.cnc ? 'Batalkan' : 'Lewati Proses'}
+                    </Button>
+                  </div>
                   <Input
                     type='number'
-                    value={produksiData.cnc === 0 ? '' : produksiData.cnc || ''}
+                    min={0}
+                    max={produksiData.jumlah_order}
+                    disabled={skippedFields.cnc}
+                    value={skippedFields.cnc ? '-' : produksiData.cnc === 0 ? '' : produksiData.cnc || ''}
                     onChange={(e) =>
                       setProduksiData({
                         ...produksiData,
-                        cnc: parseInt(e.target.value) || 0,
+                        cnc: Math.min(Math.max(parseInt(e.target.value) || 0, 0), produksiData.jumlah_order),
                       })
                     }
+                    className={skippedFields.cnc ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100' : ''}
                   />
                 </div>
               </div>
@@ -583,103 +648,87 @@ export default function ProduksiDetailPage() {
               </h4>
               <div className='grid grid-cols-2 md:grid-cols-3 gap-4'>
                 <div className='space-y-2'>
-                  <Label>Tukang Kayu</Label>
+                  <div className='flex items-center justify-between'>
+                    <Label>Tukang Kayu</Label>
+                    <Button
+                      type='button'
+                      variant={skippedFields.tukang_kayu ? 'default' : 'outline'}
+                      size='sm'
+                      className={`h-6 px-2 text-xs ${skippedFields.tukang_kayu ? 'bg-neutral-500 hover:bg-neutral-600' : 'text-neutral-500'}`}
+                      onClick={() => toggleSkipField('tukang_kayu')}
+                    >
+                      {skippedFields.tukang_kayu ? 'Batalkan' : 'Lewati Proses'}
+                    </Button>
+                  </div>
                   <Input
                     type='number'
-                    value={
-                      produksiData.tukang_kayu === 0
-                        ? ''
-                        : produksiData.tukang_kayu || ''
-                    }
+                    min={0}
+                    max={produksiData.jumlah_order}
+                    disabled={skippedFields.tukang_kayu}
+                    value={skippedFields.tukang_kayu ? '-' : produksiData.tukang_kayu === 0 ? '' : produksiData.tukang_kayu || ''}
                     onChange={(e) =>
                       setProduksiData({
                         ...produksiData,
-                        tukang_kayu: parseInt(e.target.value) || 0,
+                        tukang_kayu: Math.min(Math.max(parseInt(e.target.value) || 0, 0), produksiData.jumlah_order),
                       })
                     }
+                    className={skippedFields.tukang_kayu ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100' : ''}
                   />
                 </div>
                 <div className='space-y-2'>
-                  <Label>Tukang Jok</Label>
+                  <div className='flex items-center justify-between'>
+                    <Label>Finishing</Label>
+                    <Button
+                      type='button'
+                      variant={skippedFields.finishing ? 'default' : 'outline'}
+                      size='sm'
+                      className={`h-6 px-2 text-xs ${skippedFields.finishing ? 'bg-neutral-500 hover:bg-neutral-600' : 'text-neutral-500'}`}
+                      onClick={() => toggleSkipField('finishing')}
+                    >
+                      {skippedFields.finishing ? 'Batalkan' : 'Lewati Proses'}
+                    </Button>
+                  </div>
                   <Input
                     type='number'
-                    value={
-                      produksiData.tukang_jok === 0
-                        ? ''
-                        : produksiData.tukang_jok || ''
-                    }
+                    min={0}
+                    max={produksiData.jumlah_order}
+                    disabled={skippedFields.finishing}
+                    value={skippedFields.finishing ? '-' : produksiData.finishing === 0 ? '' : produksiData.finishing || ''}
                     onChange={(e) =>
                       setProduksiData({
                         ...produksiData,
-                        tukang_jok: parseInt(e.target.value) || 0,
+                        finishing: Math.min(Math.max(parseInt(e.target.value) || 0, 0), produksiData.jumlah_order),
                       })
                     }
+                    className={skippedFields.finishing ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100' : ''}
                   />
                 </div>
                 <div className='space-y-2'>
-                  <Label>Finishing</Label>
+                  <div className='flex items-center justify-between'>
+                    <Label>Rakit</Label>
+                    <Button
+                      type='button'
+                      variant={skippedFields.rakit ? 'default' : 'outline'}
+                      size='sm'
+                      className={`h-6 px-2 text-xs ${skippedFields.rakit ? 'bg-neutral-500 hover:bg-neutral-600' : 'text-neutral-500'}`}
+                      onClick={() => toggleSkipField('rakit')}
+                    >
+                      {skippedFields.rakit ? 'Batalkan' : 'Lewati Proses'}
+                    </Button>
+                  </div>
                   <Input
                     type='number'
-                    value={
-                      produksiData.finishing === 0
-                        ? ''
-                        : produksiData.finishing || ''
-                    }
+                    min={0}
+                    max={produksiData.jumlah_order}
+                    disabled={skippedFields.rakit}
+                    value={skippedFields.rakit ? '-' : produksiData.rakit === 0 ? '' : produksiData.rakit || ''}
                     onChange={(e) =>
                       setProduksiData({
                         ...produksiData,
-                        finishing: parseInt(e.target.value) || 0,
+                        rakit: Math.min(Math.max(parseInt(e.target.value) || 0, 0), produksiData.jumlah_order),
                       })
                     }
-                  />
-                </div>
-                <div className='space-y-2'>
-                  <Label>Rakit</Label>
-                  <Input
-                    type='number'
-                    value={
-                      produksiData.rakit === 0 ? '' : produksiData.rakit || ''
-                    }
-                    onChange={(e) =>
-                      setProduksiData({
-                        ...produksiData,
-                        rakit: parseInt(e.target.value) || 0,
-                      })
-                    }
-                  />
-                </div>
-                <div className='space-y-2'>
-                  <Label>Quality Control</Label>
-                  <Input
-                    type='number'
-                    value={
-                      produksiData.quality_control === 0
-                        ? ''
-                        : produksiData.quality_control || ''
-                    }
-                    onChange={(e) =>
-                      setProduksiData({
-                        ...produksiData,
-                        quality_control: parseInt(e.target.value) || 0,
-                      })
-                    }
-                  />
-                </div>
-                <div className='space-y-2'>
-                  <Label>Packing</Label>
-                  <Input
-                    type='number'
-                    value={
-                      produksiData.packing === 0
-                        ? ''
-                        : produksiData.packing || ''
-                    }
-                    onChange={(e) =>
-                      setProduksiData({
-                        ...produksiData,
-                        packing: parseInt(e.target.value) || 0,
-                      })
-                    }
+                    className={skippedFields.rakit ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100' : ''}
                   />
                 </div>
               </div>

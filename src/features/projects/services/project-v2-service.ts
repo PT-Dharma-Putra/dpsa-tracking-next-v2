@@ -597,6 +597,7 @@ export interface Produksi {
     quality_control: number;
     packing: number;
     persen: number;
+    skipped_fields?: string[];
 }
 
 export interface BarangJadiMasuk {
