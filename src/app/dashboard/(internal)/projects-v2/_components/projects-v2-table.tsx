@@ -426,6 +426,7 @@ export function ProjectsV2Table({
               <TableHead className='w-[50px]'>#</TableHead>
               <TableHead>Project Name</TableHead>
               <TableHead>Nomor SPK</TableHead>
+              <TableHead>Prioritas</TableHead>
               {!showEngineer && <TableHead>Client</TableHead>}
               <TableHead>Description</TableHead>
               {!showSPD && (
@@ -509,6 +510,19 @@ export function ProjectsV2Table({
                    <TableCell className='font-medium'>{project.name}</TableCell>
                    <TableCell className='font-medium text-blue-600'>
                      {project.spk_number || project.spk?.nomor_spk || '-'}
+                   </TableCell>
+                   <TableCell>
+                     {project.prioritas === 'Urgent' ? (
+                       <Badge className='bg-red-100 text-red-700 border border-red-200 hover:bg-red-100 font-semibold text-[11px]'>
+                         Urgent
+                       </Badge>
+                     ) : project.prioritas === 'Normal' ? (
+                       <Badge variant='secondary' className='font-normal text-[11px]'>
+                         Normal
+                       </Badge>
+                     ) : (
+                       <span className='text-muted-foreground italic text-xs'>-</span>
+                     )}
                    </TableCell>
                   {!showEngineer && <TableCell>{project.client?.name || '-'}</TableCell>}
                   <TableCell className='max-w-[200px] truncate'>

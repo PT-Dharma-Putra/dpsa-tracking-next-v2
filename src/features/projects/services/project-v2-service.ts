@@ -5,6 +5,7 @@ export interface ProjectV2 {
     name: string;
     description: string | null;
     note_engineer: string | null;
+    prioritas: 'Normal' | 'Urgent' | null;
     spk_number: string | null;
     client_id: number;
     deadline: string | null;
@@ -223,11 +224,12 @@ export const projectV2Service = {
         return data;
     },
 
-    uploadSPK: async (projectId: number, file: File, nomor_spk: string, deadline?: string) => {
+    uploadSPK: async (projectId: number, file: File, nomor_spk: string, deadline?: string, prioritas?: string) => {
         const formData = new FormData();
         formData.append('file', file);
         formData.append('nomor_spk', nomor_spk);
         if (deadline) formData.append('deadline', deadline);
+        if (prioritas) formData.append('prioritas', prioritas);
         const { data } = await apiClient.post(`/projects-v2/${projectId}/upload-spk`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
         });

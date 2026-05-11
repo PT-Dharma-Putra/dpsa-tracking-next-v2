@@ -225,16 +225,18 @@ export default function ProjectItemsPage() {
   const [spkFile, setSpkFile] = React.useState<File | null>(null);
   const [spkNumber, setSpkNumber] = React.useState<string>('');
   const [spkDeadline, setSpkDeadline] = React.useState<string>('');
+  const [spkPrioritas, setSpkPrioritas] = React.useState<'Normal' | 'Urgent'>('Normal');
 
   const uploadSpkMutation = useMutation({
-    mutationFn: ({ file, number, deadline }: { file: File; number: string; deadline?: string }) =>
-      projectV2Service.uploadSPK(projectId, file, number, deadline),
+    mutationFn: ({ file, number, deadline, prioritas }: { file: File; number: string; deadline?: string; prioritas?: string }) =>
+      projectV2Service.uploadSPK(projectId, file, number, deadline, prioritas),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects-v2', projectId] });
       toast.success('SPK uploaded successfully');
       setSpdFile(null);
       setSpkNumber('');
       setSpkDeadline('');
+      setSpkPrioritas('Normal');
     },
     onError: () => {
       toast.error('Failed to upload SPK');
@@ -246,7 +248,7 @@ export default function ProjectItemsPage() {
       toast.error('Please provide both file and SPK number');
       return;
     }
-    uploadSpkMutation.mutate({ file: spkFile, number: spkNumber, deadline: spkDeadline });
+    uploadSpkMutation.mutate({ file: spkFile, number: spkNumber, deadline: spkDeadline, prioritas: spkPrioritas });
   };
 
   const [isSpdModalOpen, setIsSpdModalOpen] = React.useState(false);
@@ -1324,6 +1326,33 @@ export default function ProjectItemsPage() {
                 onChange={(e) => setSpkDeadline(e.target.value)}
                 className='h-9 text-xs border-purple-200'
               />
+            </div>
+            <div className='space-y-1.5'>
+              <Label className='text-xs font-medium text-purple-700'>Prioritas Pekerjaan</Label>
+              <div className='flex rounded-md border border-purple-200 overflow-hidden h-9'>
+                <button
+                  type='button'
+                  onClick={() => setSpkPrioritas('Normal')}
+                  className={`flex-1 text-xs font-semibold transition-colors ${
+                    spkPrioritas === 'Normal'
+                      ? 'bg-purple-600 text-white'
+                      : 'bg-white text-neutral-500 hover:bg-purple-50'
+                  }`}
+                >
+                  Normal
+                </button>
+                <button
+                  type='button'
+                  onClick={() => setSpkPrioritas('Urgent')}
+                  className={`flex-1 text-xs font-semibold border-l border-purple-200 transition-colors ${
+                    spkPrioritas === 'Urgent'
+                      ? 'bg-red-500 text-white'
+                      : 'bg-white text-neutral-500 hover:bg-red-50'
+                  }`}
+                >
+                  Urgent
+                </button>
+              </div>
             </div>
           </div>
           <DialogFooter>
