@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   Eye,
   BarChart3,
+  Upload,
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -44,8 +45,16 @@ import {
 } from '@/features/projects/services/project-v2-service';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { cn } from '@/lib/utils';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-export default function ProduksiDetailPage() {
+export default function QCDetailPage() {
   const params = useParams();
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -69,6 +78,45 @@ export default function ProduksiDetailPage() {
   );
   const [produksiData, setProduksiData] = React.useState<Partial<Produksi>>({});
   const [skippedFields, setSkippedFields] = React.useState<Record<string, boolean>>({});
+
+  // QC Cek State
+  const [isQcDialogOpen, setIsQcDialogOpen] = React.useState(false);
+  const [qcItem, setQcItem] = React.useState<ProjectItemV2 | null>(null);
+  const [qcData, setQcData] = React.useState<{ qty: number; status: string; file: File | null }>({
+    qty: 0,
+    status: 'Pending',
+    file: null,
+  });
+
+  const updateQcMutation = useMutation({
+    mutationFn: (payload: { qty: number; status: string; file: File | null }) =>
+      projectV2Service.updateQcCek(qcItem!.id, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['project-v2-items', projectId],
+      });
+      toast.success('QC Check updated');
+      setIsQcDialogOpen(false);
+    },
+    onError: () => {
+      toast.error('Failed to update QC Check');
+    },
+  });
+
+  const handleQcUpdate = () => {
+    if (!qcItem) return;
+    updateQcMutation.mutate(qcData);
+  };
+
+  const openQcDialog = (item: ProjectItemV2) => {
+    setQcItem(item);
+    setQcData({
+      qty: item.qc_cek?.qty || item.jumlah,
+      status: item.qc_cek?.status || 'Pass',
+      file: null,
+    });
+    setIsQcDialogOpen(true);
+  };
 
   const toggleSkipField = (field: string) => {
     setSkippedFields((prev) => ({ ...prev, [field]: !prev[field] }));
@@ -177,6 +225,18 @@ export default function ProduksiDetailPage() {
     skippedFields,
   ]);
 
+  const qcPassPercentage = React.useMemo(() => {
+    if (!items || items.length === 0) return 0;
+    const totalQty = items.reduce((sum, item) => sum + item.jumlah, 0);
+    const totalPassed = items.reduce((sum, item) => {
+      if (item.qc_cek?.status === 'Pass') {
+        return sum + (item.qc_cek.qty || 0);
+      }
+      return sum;
+    }, 0);
+    return totalQty > 0 ? (totalPassed / totalQty) * 100 : 0;
+  }, [items]);
+
   if (isLoadingProject) {
     return (
       <div className='flex h-[400px] items-center justify-center'>
@@ -200,9 +260,9 @@ export default function ProduksiDetailPage() {
           <ArrowLeft className='h-5 w-5' />
         </Button>
         <div>
-          <h1 className='text-2xl font-bold tracking-tight'>Produksi Detail</h1>
+          <h1 className='text-2xl font-bold tracking-tight'>Quality Control (QC) Detail</h1>
           <p className='text-sm text-muted-foreground'>
-            Produksi View - Project Items Management
+            QC View - Project Items Management
           </p>
         </div>
       </div>
@@ -237,16 +297,6 @@ export default function ProduksiDetailPage() {
               </Label>
               <p className='text-neutral-700'>
                 {project.spk_number || project.spk?.nomor_spk || '-'}
-              </p>
-            </div>
-            <div className='space-y-1'>
-              <Label className='text-[10px] text-muted-foreground uppercase'>
-                Deadline
-              </Label>
-              <p className='font-bold text-orange-600'>
-                {project.deadline
-                  ? format(new Date(project.deadline), 'MMM d, yyyy')
-                  : '-'}
               </p>
             </div>
             <div className='space-y-1'>
@@ -308,6 +358,22 @@ export default function ProduksiDetailPage() {
                 </span>
               </div>
             </div>
+            <div className='space-y-1'>
+              <Label className='text-[10px] text-muted-foreground uppercase'>
+                Persentase QC Pass
+              </Label>
+              <div className='flex items-center gap-3'>
+                <div className='flex-1 max-w-[100px]'>
+                  <Progress
+                    value={qcPassPercentage}
+                    className='h-2 bg-neutral-100 [&>div]:bg-emerald-500'
+                  />
+                </div>
+                <span className='text-sm font-bold text-emerald-600'>
+                  {qcPassPercentage.toFixed(2)}%
+                </span>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -338,6 +404,7 @@ export default function ProduksiDetailPage() {
                 <TableHead>PO Divisi</TableHead>
                 <TableHead>Stok Material</TableHead>
                 <TableHead>Persentase Produksi</TableHead>
+                <TableHead>QC Cek</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -506,6 +573,42 @@ export default function ProduksiDetailPage() {
                         />
                       </div>
                     </TableCell>
+                    <TableCell>
+                      <div 
+                        className='cursor-pointer hover:bg-neutral-100 p-2 rounded-lg transition-colors group flex items-center gap-2'
+                        onClick={() => openQcDialog(item)}
+                      >
+                        {item.qc_cek ? (
+                          <>
+                            <Badge variant="outline" className={cn(
+                              "font-bold",
+                              item.qc_cek.status === 'Pass' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 
+                              item.qc_cek.status === 'Repair' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                              'bg-red-50 text-red-700 border-red-200'
+                            )}>
+                              {item.qc_cek.status}
+                            </Badge>
+                            <span className="text-[10px] font-bold text-neutral-600">{item.qc_cek.qty} Unit</span>
+                            {item.qc_cek.file && (
+                              <Button variant="ghost" size="icon" className="h-6 w-6 text-blue-600" asChild onClick={(e) => e.stopPropagation()}>
+                                <a 
+                                  href={`${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '')}/storage/${item.qc_cek.file}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
+                                  <Eye className="h-3.5 w-3.5" />
+                                </a>
+                              </Button>
+                            )}
+                          </>
+                        ) : (
+                          <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 px-2">
+                            <Upload className="h-3 w-3" />
+                            Input QC
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
                   </TableRow>
                 ))
               )}
@@ -523,7 +626,7 @@ export default function ProduksiDetailPage() {
           <AlertDialogHeader>
             <AlertDialogTitle className='flex items-center gap-2'>
               <BarChart3 className='h-5 w-5 text-orange-500' />
-              Update Progress Produksi
+              Update Progress QC
             </AlertDialogTitle>
             <AlertDialogDescription>
               Input jumlah item yang telah selesai di setiap tahapan untuk:{' '}
@@ -824,6 +927,125 @@ export default function ProduksiDetailPage() {
                 <CheckCircle2 className='mr-2 h-4 w-4' />
               )}
               Update Progress
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* QC Cek Update Dialog */}
+      <AlertDialog
+        open={isQcDialogOpen}
+        onOpenChange={setIsQcDialogOpen}
+      >
+        <AlertDialogContent className='max-w-md'>
+          <AlertDialogHeader>
+            <AlertDialogTitle className='flex items-center gap-2'>
+              <ListChecks className='h-5 w-5 text-emerald-500' />
+              Input QC Check
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Input hasil pengecekan kualitas untuk: <strong>{qcItem?.item}</strong>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className='py-4 space-y-4'>
+            <div className='space-y-2'>
+              <Label>Jumlah Passed (Unit)</Label>
+              <Input
+                type='number'
+                min={0}
+                max={qcItem?.jumlah}
+                value={qcData.qty}
+                onChange={(e) =>
+                  setQcData({
+                    ...qcData,
+                    qty: Math.min(Math.max(parseInt(e.target.value) || 0, 0), qcItem?.jumlah || 0),
+                  })
+                }
+              />
+              <p className='text-[10px] text-muted-foreground italic'>* Maksimal sesuai Qty Order: {qcItem?.jumlah}</p>
+            </div>
+
+            <div className='space-y-3'>
+              <Label>Status QC</Label>
+              <div className='flex items-center gap-2 bg-neutral-100 p-1.5 rounded-xl w-fit'>
+                <Button
+                  type='button'
+                  variant={qcData.status === 'Repair' ? 'default' : 'ghost'}
+                  size='sm'
+                  className={cn(
+                    'h-9 px-6 text-xs font-bold transition-all rounded-lg',
+                    qcData.status === 'Repair' 
+                      ? 'bg-amber-500 text-white shadow-md hover:bg-amber-600' 
+                      : 'text-neutral-500 hover:bg-white hover:text-neutral-700'
+                  )}
+                  onClick={() => setQcData({ ...qcData, status: 'Repair' })}
+                >
+                  Repair
+                </Button>
+                <Button
+                  type='button'
+                  variant={qcData.status === 'Pass' ? 'default' : 'ghost'}
+                  size='sm'
+                  className={cn(
+                    'h-9 px-6 text-xs font-bold transition-all rounded-lg',
+                    qcData.status === 'Pass' 
+                      ? 'bg-emerald-500 text-white shadow-md hover:bg-emerald-600' 
+                      : 'text-neutral-500 hover:bg-white hover:text-neutral-700'
+                  )}
+                  onClick={() => setQcData({ ...qcData, status: 'Pass' })}
+                >
+                  Pass
+                </Button>
+                <Button
+                  type='button'
+                  variant={qcData.status === 'Defect' ? 'default' : 'ghost'}
+                  size='sm'
+                  className={cn(
+                    'h-9 px-6 text-xs font-bold transition-all rounded-lg',
+                    qcData.status === 'Defect' 
+                      ? 'bg-red-500 text-white shadow-md hover:bg-red-600' 
+                      : 'text-neutral-500 hover:bg-white hover:text-neutral-700'
+                  )}
+                  onClick={() => setQcData({ ...qcData, status: 'Defect' })}
+                >
+                  Defect
+                </Button>
+              </div>
+            </div>
+
+            <div className='space-y-2'>
+              <Label>Upload Berkas/Foto QC</Label>
+              <Input
+                type='file'
+                onChange={(e) =>
+                  setQcData({
+                    ...qcData,
+                    file: e.target.files?.[0] || null,
+                  })
+                }
+              />
+              {qcItem?.qc_cek?.file && (
+                <p className='text-[10px] text-blue-600'>
+                  File saat ini: <a href={`${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '')}/storage/${qcItem.qc_cek.file}`} target="_blank" rel="noreferrer" className="underline">Lihat File</a>
+                </p>
+              )}
+            </div>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setIsQcDialogOpen(false)}>
+              Cancel
+            </AlertDialogCancel>
+            <Button
+              className='bg-emerald-600 hover:bg-emerald-700'
+              onClick={handleQcUpdate}
+              disabled={updateQcMutation.isPending}
+            >
+              {updateQcMutation.isPending ? (
+                <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+              ) : (
+                <CheckCircle2 className='mr-2 h-4 w-4' />
+              )}
+              Simpan QC
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>

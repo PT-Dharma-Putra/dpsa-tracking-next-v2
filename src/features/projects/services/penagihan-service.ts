@@ -1,0 +1,98 @@
+import { axiosInstance as apiClient } from '@/lib/axios';
+
+export interface Termin {
+    id: number;
+    nama: string;
+}
+
+export interface Penagihan {
+    id: number;
+    project_id: number;
+    termin_id: number;
+    persentase: number;
+    tanggal_kirim: string | null;
+    jatuh_tempo: string | null;
+    status: 'Belum Bayar' | 'Sebagian Dibayar' | 'Lunas';
+    tanggal_dibayar: string | null;
+    file: string | null;
+    termin?: Termin;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface CreatePenagihanPayload {
+    project_id: number;
+    termin_id: number;
+    persentase: number;
+    tanggal_kirim?: string;
+    jatuh_tempo?: string;
+    status: 'Belum Bayar' | 'Sebagian Dibayar' | 'Lunas';
+    tanggal_dibayar?: string;
+    file?: File;
+}
+
+export const penagihanService = {
+    // Termin CRUD
+    getTermin: async (): Promise<Termin[]> => {
+        const { data } = await apiClient.get<Termin[]>('/termin');
+        return data;
+    },
+
+    createTermin: async (nama: string): Promise<Termin> => {
+        const { data } = await apiClient.post<Termin>('/termin', { nama });
+        return data;
+    },
+
+    updateTermin: async (id: number, nama: string): Promise<Termin> => {
+        const { data } = await apiClient.put<Termin>(`/termin/${id}`, { nama });
+        return data;
+    },
+
+    deleteTermin: async (id: number): Promise<void> => {
+        await apiClient.delete(`/termin/${id}`);
+    },
+
+    // Penagihan CRUD
+    getPenagihanByProject: async (projectId: number): Promise<Penagihan[]> => {
+        const { data } = await apiClient.get<Penagihan[]>(`/projects-v2/${projectId}/penagihan`);
+        return data;
+    },
+
+    createPenagihan: async (payload: CreatePenagihanPayload): Promise<Penagihan> => {
+        const formData = new FormData();
+        formData.append('project_id', payload.project_id.toString());
+        formData.append('termin_id', payload.termin_id.toString());
+        formData.append('persentase', payload.persentase.toString());
+        formData.append('status', payload.status);
+        if (payload.tanggal_kirim) formData.append('tanggal_kirim', payload.tanggal_kirim);
+        if (payload.jatuh_tempo) formData.append('jatuh_tempo', payload.jatuh_tempo);
+        if (payload.tanggal_dibayar) formData.append('tanggal_dibayar', payload.tanggal_dibayar);
+        if (payload.file) formData.append('file', payload.file);
+
+        const { data } = await apiClient.post<Penagihan>('/penagihan', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        return data;
+    },
+
+    updatePenagihan: async (id: number, payload: Partial<CreatePenagihanPayload>): Promise<Penagihan> => {
+        const formData = new FormData();
+        if (payload.termin_id !== undefined) formData.append('termin_id', payload.termin_id.toString());
+        if (payload.persentase !== undefined) formData.append('persentase', payload.persentase.toString());
+        if (payload.status) formData.append('status', payload.status);
+        if (payload.tanggal_kirim) formData.append('tanggal_kirim', payload.tanggal_kirim);
+        if (payload.jatuh_tempo) formData.append('jatuh_tempo', payload.jatuh_tempo);
+        if (payload.tanggal_dibayar) formData.append('tanggal_dibayar', payload.tanggal_dibayar);
+        if (payload.file) formData.append('file', payload.file);
+        formData.append('_method', 'PUT');
+
+        const { data } = await apiClient.post<Penagihan>(`/penagihan/${id}`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        return data;
+    },
+
+    deletePenagihan: async (id: number): Promise<void> => {
+        await apiClient.delete(`/penagihan/${id}`);
+    },
+};

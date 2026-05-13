@@ -26,6 +26,8 @@ import {
   MoreHorizontal,
   FileDown,
   Truck,
+  BarChart3,
+  History,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import Link from 'next/link';
@@ -80,6 +82,7 @@ import {
   ProjectItemV2,
 } from '@/features/projects/services/project-v2-service';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 
 export default function PerencanaanDetailPage() {
   const params = useParams();
@@ -153,9 +156,6 @@ export default function PerencanaanDetailPage() {
 
   // Dokubah State
   const [isDokubahDialogOpen, setIsDokubahDialogOpen] = React.useState(false);
-  const [dokubahItem, setDokubahItem] = React.useState<ProjectItemV2 | null>(
-    null
-  );
   const [dokubahFile, setDokubahFile] = React.useState<File | string | null>(null);
   const [dokubahStart, setDokubahStart] = React.useState<string>('');
   const [dokubahEnd, setDokubahEnd] = React.useState<string>('');
@@ -165,10 +165,10 @@ export default function PerencanaanDetailPage() {
       file?: File | string;
       tanggal_mulai?: string;
       tanggal_selesai?: string;
-    }) => projectV2Service.uploadDokubah(dokubahItem!.id, payload),
+    }) => projectV2Service.uploadDokubah(projectId, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['project-v2-items', projectId],
+        queryKey: ['projects-v2', projectId],
       });
       toast.success('Dokubah updated');
       setIsDokubahDialogOpen(false);
@@ -180,7 +180,6 @@ export default function PerencanaanDetailPage() {
   });
 
   const handleDokubahUpload = () => {
-    if (!dokubahItem) return;
     uploadDokubahMutation.mutate({
       file: dokubahFile || undefined,
       tanggal_mulai: dokubahStart || undefined,
@@ -188,11 +187,10 @@ export default function PerencanaanDetailPage() {
     });
   };
 
-  const openDokubahUpload = (item: ProjectItemV2) => {
-    setDokubahItem(item);
-    setDokubahStart(item.dokubah?.tanggal_mulai || '');
-    setDokubahEnd(item.dokubah?.tanggal_selesai || '');
-    setDokubahFile(item.dokubah?.file || null);
+  const openDokubahUpload = () => {
+    setDokubahStart(project?.dokubah?.tanggal_mulai || '');
+    setDokubahEnd(project?.dokubah?.tanggal_selesai || '');
+    setDokubahFile(project?.dokubah?.file || null);
     setIsDokubahDialogOpen(true);
   };
 
@@ -303,6 +301,56 @@ export default function PerencanaanDetailPage() {
     setIsBjDialogOpen(true);
   };
 
+  // Barang Jadi Terpacking State
+  const [isPackingDialogOpen, setIsPackingDialogOpen] = React.useState(false);
+  const [packingItem, setPackingItem] = React.useState<ProjectItemV2 | null>(null);
+  const [packingTanggal, setPackingTanggal] = React.useState<string>(
+    format(new Date(), 'yyyy-MM-dd')
+  );
+  const [packingJumlah, setPackingJumlah] = React.useState<number>(0);
+
+  const updatePackingMutation = useMutation({
+    mutationFn: (payload: { tanggal: string; jumlah: number }) =>
+      projectV2Service.updateBarangJadiTerpacking(packingItem!.id, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['project-v2-items', projectId],
+      });
+      toast.success('Packing recorded');
+      setIsPackingDialogOpen(false);
+      setPackingJumlah(0);
+    },
+    onError: () => {
+      toast.error('Failed to record Packing');
+    },
+  });
+
+  const handlePackingUpdate = () => {
+    if (!packingItem) return;
+
+    const currentTotal =
+      packingItem.barang_jadi_terpacking?.reduce((sum, p) => sum + p.jumlah, 0) || 0;
+    if (currentTotal + packingJumlah > packingItem.jumlah) {
+      toast.error(
+        `Total packing (${
+          currentTotal + packingJumlah
+        }) tidak boleh melebihi jumlah order (${packingItem.jumlah})`
+      );
+      return;
+    }
+
+    updatePackingMutation.mutate({
+      tanggal: packingTanggal,
+      jumlah: packingJumlah,
+    });
+  };
+
+  const openPackingDialog = (item: ProjectItemV2) => {
+    setPackingItem(item);
+    setPackingJumlah(0);
+    setIsPackingDialogOpen(true);
+  };
+
   // Order Gambar Kerja State
   const [isOrderGkDialogOpen, setIsOrderGkDialogOpen] = React.useState(false);
   const [orderGkFile, setOrderGkFile] = React.useState<File | null>(null);
@@ -390,6 +438,91 @@ export default function PerencanaanDetailPage() {
   const [isProduksiCollapsed, setIsProduksiCollapsed] = React.useState(true);
   const [isShipCollapsed, setIsShipCollapsed] = React.useState(true);
 
+  // View Produksi State
+  const [isProduksiViewOpen, setIsProduksiViewOpen] = React.useState(false);
+  const [produksiViewItem, setProduksiViewItem] = React.useState<ProjectItemV2 | null>(null);
+
+  // Edit Dimensi State
+  const [isDimDialogOpen, setIsDimDialogOpen] = React.useState(false);
+  const [dimItem, setDimItem] = React.useState<ProjectItemV2 | null>(null);
+  const [dimData, setDimData] = React.useState({
+    volume: 0,
+    panjang: 0,
+    lebar: 0,
+    tinggi: 0,
+    satuan: '',
+    jumlah: 0,
+  });
+
+  // Auto-calculate Volume based on Satuan
+  React.useEffect(() => {
+    const { satuan, panjang, lebar, tinggi, jumlah } = dimData;
+    let newVolume = dimData.volume;
+
+    if (satuan === 'M1') {
+      newVolume = jumlah;
+    } else if (satuan === 'M2 (pxl)') {
+      newVolume = panjang * lebar;
+    } else if (satuan === 'M2 (pxt)') {
+      newVolume = panjang * tinggi;
+    } else if (satuan === 'UNIT' || satuan === 'SET') {
+      newVolume = jumlah;
+    }
+
+    if (newVolume !== dimData.volume) {
+      setDimData((prev) => ({ ...prev, volume: newVolume }));
+    }
+  }, [dimData.satuan, dimData.panjang, dimData.lebar, dimData.tinggi, dimData.jumlah]);
+
+  // History State
+  const [isHistoryOpen, setIsHistoryOpen] = React.useState(false);
+  const [historyItem, setHistoryItem] = React.useState<ProjectItemV2 | null>(null);
+  const { data: itemHistory, isLoading: isLoadingHistory } = useQuery({
+    queryKey: ['item-history', historyItem?.id],
+    queryFn: () => projectV2Service.getItemHistory(historyItem!.id),
+    enabled: !!historyItem,
+  });
+
+  const updateDimMutation = useMutation({
+    mutationFn: (payload: any) => projectV2Service.updateProjectItem(dimItem!.id, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['project-v2-items', projectId] });
+      toast.success('Dimensions updated successfully');
+      setIsDimDialogOpen(false);
+    },
+    onError: () => {
+      toast.error('Failed to update dimensions');
+    },
+  });
+
+  const handleDimUpdate = () => {
+    if (!dimItem) return;
+    updateDimMutation.mutate(dimData);
+  };
+
+  const openDimDialog = (item: ProjectItemV2) => {
+    setDimItem(item);
+    setDimData({
+      volume: item.volume || 0,
+      panjang: item.panjang || 0,
+      lebar: item.lebar || 0,
+      tinggi: item.tinggi || 0,
+      satuan: item.satuan || '',
+      jumlah: item.jumlah,
+    });
+    setIsDimDialogOpen(true);
+  };
+
+  const openHistory = (item: ProjectItemV2) => {
+    setHistoryItem(item);
+    setIsHistoryOpen(true);
+  };
+
+  const openProduksiView = (item: ProjectItemV2) => {
+    setProduksiViewItem(item);
+    setIsProduksiViewOpen(true);
+  };
+
   if (isLoadingProject) {
     return (
       <div className='flex h-[400px] items-center justify-center'>
@@ -409,13 +542,14 @@ export default function PerencanaanDetailPage() {
   // Summary Calculations
   const totalItems = items?.length || 0;
   const poDivisiCount = items?.filter(i => i.divisi_id).length || 0;
-  const gambarKerjaCount = items?.filter(i => i.gambar_kerja?.file || i.mdl_item?.link_gambar_kerja || i.dokubah?.file).length || 0;
-  const dokubahCount = items?.filter(i => i.dokubah?.file).length || 0;
+  const gambarKerjaCount = items?.filter(i => i.gambar_kerja?.file || i.mdl_item?.link_gambar_kerja).length || 0;
+  const dokubahCount = project.dokubah?.file ? 1 : 0;
   const stokTersediaCount = items?.filter(i => i.bahan_baku?.ketersediaan_stok === 'Tersedia').length || 0;
   const perintahProduksiCount = items?.filter(i => i.divisi_id && (i.gambar_kerja?.file || i.mdl_item?.link_gambar_kerja)).length || 0;
   
   const totalQtyOrder = items?.reduce((sum, i) => sum + i.jumlah, 0) || 0;
   const totalQtyMasuk = items?.reduce((sum, i) => sum + (i.barang_jadi_masuk?.reduce((s, bj) => s + bj.jumlah, 0) || 0), 0) || 0;
+  const totalQtyPacking = items?.reduce((sum, i) => sum + (i.barang_jadi_terpacking?.reduce((s, p) => s + p.jumlah, 0) || 0), 0) || 0;
   const orderGk = project?.order_gambar_kerja?.[0];
 
   const flowSteps = [
@@ -725,15 +859,15 @@ export default function PerencanaanDetailPage() {
         </Card>
 
         {/* 4. Dokubah */}
-        <Card className={`relative border shadow-sm transition-all duration-300 ${dokubahCount === totalItems && totalItems > 0 ? 'border-emerald-200 bg-white ring-1 ring-emerald-100' : (dokubahCount > 0 ? 'border-blue-200 bg-white ring-1 ring-blue-100' : 'border-neutral-200 bg-white')}`}>
-          {dokubahCount === totalItems && totalItems > 0 && (
+        <Card className={`relative border shadow-sm transition-all duration-300 ${project.dokubah?.file ? 'border-emerald-200 bg-white ring-1 ring-emerald-100' : 'border-neutral-200 bg-white'}`}>
+          {project.dokubah?.file && (
             <div className="absolute -top-1.5 -right-1.5 h-5 w-5 bg-emerald-500 rounded-full flex items-center justify-center shadow-sm z-10 animate-in zoom-in duration-300">
               <Check className="h-3 w-3 text-white" strokeWidth={3} />
             </div>
           )}
           <CardHeader className='pb-2 flex flex-row items-center justify-between gap-3'>
             <button className='flex items-center gap-3 flex-1 text-left' onClick={() => setIsDokubahCollapsed(!isDokubahCollapsed)}>
-              <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold ${dokubahCount === totalItems && totalItems > 0 ? 'bg-emerald-100 text-emerald-600' : (dokubahCount > 0 ? 'bg-blue-100 text-blue-600' : 'bg-neutral-100 text-neutral-500')}`}>4</div>
+              <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold ${project.dokubah?.file ? 'bg-emerald-100 text-emerald-600' : 'bg-neutral-100 text-neutral-500'}`}>4</div>
               <div className='flex-1'>
                 <CardTitle className='text-sm text-neutral-800'>Dokubah</CardTitle>
                 <p className='text-[10px] text-muted-foreground uppercase tracking-wider'>Changes Document</p>
@@ -745,12 +879,41 @@ export default function PerencanaanDetailPage() {
             <CardContent className='pt-0'>
                <div className='space-y-1.5'>
                   <div className='h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden'>
-                    <div className='h-full bg-blue-500 transition-all duration-500' style={{ width: `${totalItems ? (dokubahCount / totalItems) * 100 : 0}%` }} />
+                    <div className='h-full bg-blue-500 transition-all duration-500' style={{ width: `${project.dokubah?.file ? 100 : 0}%` }} />
                   </div>
-                  <div className='flex justify-between items-center'>
-                    <p className='text-[10px] font-bold text-neutral-700'>{dokubahCount} Items with Dokubah</p>
-                    <p className='text-[10px] font-bold text-blue-600'>{Math.round(totalItems ? (dokubahCount / totalItems) * 100 : 0)}%</p>
-                  </div>
+                  
+                  {project.dokubah?.file && (
+                    <div className='p-2 rounded bg-blue-50 border border-blue-100 flex items-center justify-between mt-2'>
+                      <div className='flex items-center gap-2 overflow-hidden text-left'>
+                        <div className='h-6 w-6 rounded bg-white border border-blue-100 flex items-center justify-center text-blue-600 shrink-0'>
+                          <FileText className='h-3 w-3' />
+                        </div>
+                        <div className='flex flex-col min-w-0'>
+                          <span className='text-[9px] font-bold text-blue-900 leading-none'>Dokubah File</span>
+                          <span className='text-[8px] text-blue-600 truncate'>{project.dokubah.file.split('/').pop()}</span>
+                        </div>
+                      </div>
+                      <Button variant='ghost' size='icon' className='h-7 w-7 text-blue-600 hover:bg-blue-100 bg-white border border-blue-100 shadow-sm' asChild>
+                        <a 
+                          href={project.dokubah.file.startsWith('http') ? project.dokubah.file : `${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '')}/storage/${project.dokubah.file}`} 
+                          target='_blank' 
+                          rel='noopener noreferrer'
+                        >
+                          <Eye className='h-3.5 w-3.5' />
+                        </a>
+                      </Button>
+                    </div>
+                  )}
+
+                  <Button 
+                    variant='outline' 
+                    size='sm' 
+                    className='h-7 w-full text-[10px] border-blue-200 text-blue-600 hover:bg-blue-50 gap-1.5 bg-blue-50/30 font-bold mt-2'
+                    onClick={openDokubahUpload}
+                  >
+                    <Upload className='h-3 w-3' />
+                    Upload Dokubah
+                  </Button>
                </div>
             </CardContent>
           )}
@@ -839,33 +1002,47 @@ export default function PerencanaanDetailPage() {
           )}
         </Card>
 
-        {/* 7. Barang Masuk */}
-        <Card className={`relative border shadow-sm transition-all duration-300 ${totalQtyMasuk >= totalQtyOrder && totalQtyOrder > 0 ? 'border-emerald-200 bg-white ring-1 ring-emerald-100' : 'border-neutral-200 bg-white'}`}>
-          {totalQtyMasuk >= totalQtyOrder && totalQtyOrder > 0 && (
+        {/* 7. Gudang Barang Jadi */}
+        <Card className={`relative border shadow-sm transition-all duration-300 ${totalQtyMasuk >= totalQtyOrder && totalQtyPacking >= totalQtyOrder && totalQtyOrder > 0 ? 'border-emerald-200 bg-white ring-1 ring-emerald-100' : 'border-neutral-200 bg-white'}`}>
+          {totalQtyMasuk >= totalQtyOrder && totalQtyPacking >= totalQtyOrder && totalQtyOrder > 0 && (
             <div className="absolute -top-1.5 -right-1.5 h-5 w-5 bg-emerald-500 rounded-full flex items-center justify-center shadow-sm z-10 animate-in zoom-in duration-300">
               <Check className="h-3 w-3 text-white" strokeWidth={3} />
             </div>
           )}
           <CardHeader className='pb-2 flex flex-row items-center justify-between gap-3'>
             <button className='flex items-center gap-3 flex-1 text-left' onClick={() => setIsBjCollapsed(!isBjCollapsed)}>
-              <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold ${totalQtyMasuk > 0 ? (totalQtyMasuk >= totalQtyOrder ? 'bg-emerald-100 text-emerald-600' : 'bg-blue-100 text-blue-600') : 'bg-neutral-100 text-neutral-500'}`}>7</div>
+              <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold ${totalQtyMasuk > 0 ? (totalQtyMasuk >= totalQtyOrder && totalQtyPacking >= totalQtyOrder ? 'bg-emerald-100 text-emerald-600' : 'bg-blue-100 text-blue-600') : 'bg-neutral-100 text-neutral-500'}`}>7</div>
               <div className='flex-1'>
-                <CardTitle className='text-sm text-neutral-800'>Barang Masuk</CardTitle>
-                <p className='text-[10px] text-muted-foreground uppercase tracking-wider'>Finished Goods</p>
+                <CardTitle className='text-sm text-neutral-800'>Gudang Barang Jadi</CardTitle>
+                <p className='text-[10px] text-muted-foreground uppercase tracking-wider'>Finished Goods & Packing</p>
               </div>
               <ChevronDown className={`h-4 w-4 text-neutral-400 transition-transform duration-200 ${isBjCollapsed ? '-rotate-90' : ''}`} />
             </button>
           </CardHeader>
           {!isBjCollapsed && (
-            <CardContent className='pt-0'>
+            <CardContent className='pt-0 space-y-4'>
+               {/* Barang Masuk Progress */}
                <div className='space-y-1.5'>
+                  <div className='flex justify-between items-center'>
+                    <p className='text-[10px] font-bold text-neutral-500 uppercase tracking-wider'>Barang Masuk</p>
+                    <p className={`text-[10px] font-bold ${totalQtyMasuk >= totalQtyOrder ? 'text-emerald-600' : 'text-blue-600'}`}>{Math.round(totalQtyOrder ? (totalQtyMasuk / totalQtyOrder) * 100 : 0)}%</p>
+                  </div>
                   <div className='h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden'>
                     <div className={`h-full transition-all duration-500 ${totalQtyMasuk >= totalQtyOrder ? 'bg-emerald-600' : 'bg-blue-600'}`} style={{ width: `${totalQtyOrder ? (totalQtyMasuk / totalQtyOrder) * 100 : 0}%` }} />
                   </div>
+                  <p className='text-[10px] font-medium text-neutral-600'>{totalQtyMasuk} / {totalQtyOrder} Items</p>
+               </div>
+
+               {/* Packing Progress */}
+               <div className='space-y-1.5 pt-2 border-t border-neutral-50'>
                   <div className='flex justify-between items-center'>
-                    <p className='text-[10px] font-bold text-neutral-700'>{totalQtyMasuk} / {totalQtyOrder} Total Quantity</p>
-                    <p className={`text-[10px] font-bold ${totalQtyMasuk >= totalQtyOrder ? 'text-emerald-600' : 'text-blue-600'}`}>{Math.round(totalQtyOrder ? (totalQtyMasuk / totalQtyOrder) * 100 : 0)}%</p>
+                    <p className='text-[10px] font-bold text-neutral-500 uppercase tracking-wider'>Barang Terpacking</p>
+                    <p className={`text-[10px] font-bold ${totalQtyPacking >= totalQtyOrder ? 'text-emerald-600' : 'text-orange-600'}`}>{Math.round(totalQtyOrder ? (totalQtyPacking / totalQtyOrder) * 100 : 0)}%</p>
                   </div>
+                  <div className='h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden'>
+                    <div className={`h-full transition-all duration-500 ${totalQtyPacking >= totalQtyOrder ? 'bg-emerald-600' : 'bg-orange-600'}`} style={{ width: `${totalQtyOrder ? (totalQtyPacking / totalQtyOrder) * 100 : 0}%` }} />
+                  </div>
+                  <p className='text-[10px] font-medium text-neutral-600'>{totalQtyPacking} / {totalQtyOrder} Items</p>
                </div>
             </CardContent>
           )}
@@ -918,10 +1095,10 @@ export default function PerencanaanDetailPage() {
                 <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>PO Divisi</TableHead>
                 <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>Gk MDL</TableHead>
                 <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>Drawing</TableHead>
-                <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>Dokubah</TableHead>
                 <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>Stock</TableHead>
                 <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>Produksi</TableHead>
                 <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>Masuk</TableHead>
+                <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>Packing</TableHead>
                 <TableHead className='w-[100px] text-right text-[10px] uppercase font-bold text-neutral-500 pr-4'>Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -965,18 +1142,41 @@ export default function PerencanaanDetailPage() {
                         {item.keterangan && <span className='text-[9px] text-muted-foreground truncate max-w-[150px]'>{item.keterangan}</span>}
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <div className='flex flex-col gap-0.5'>
-                        <span className='text-xs font-bold text-blue-600'>{item.volume || '-'}</span>
-                        <span className='text-[9px] text-muted-foreground'>
-                          {item.panjang || '-'}x{item.lebar || '-'}x{item.tinggi || '-'} {item.satuan}
+                    <TableCell className={cn(item.history_fields?.some(f => ['volume', 'panjang', 'lebar', 'tinggi', 'satuan'].includes(f)) ? 'bg-amber-100/80 border-x border-amber-200/50 shadow-[inset_0_0_0_1px_rgba(251,191,36,0.05)]' : '')}>
+                      <div className='flex flex-col gap-0.5 group relative'>
+                        <div className='flex items-center gap-1.5'>
+                          <span className='font-bold text-blue-600 text-xs'>
+                            {item.volume || '-'}
+                          </span>
+                          <div className='flex items-center opacity-0 group-hover:opacity-100 transition-opacity'>
+                             <Button 
+                                variant='ghost' 
+                                size='icon' 
+                                className='h-5 w-5 text-neutral-400 hover:text-blue-600'
+                                onClick={() => openDimDialog(item)}
+                              >
+                                <Pencil className='h-3 w-3' />
+                             </Button>
+                             <Button 
+                                variant='ghost' 
+                                size='icon' 
+                                className='h-5 w-5 text-neutral-400 hover:text-amber-600'
+                                onClick={() => openHistory(item)}
+                              >
+                                <History className='h-3 w-3' />
+                             </Button>
+                          </div>
+                        </div>
+                        <span className='text-[10px] text-muted-foreground'>
+                          {item.panjang || '-'}x{item.lebar || '-'}x
+                          {item.tinggi || '-'} {item.satuan}
                         </span>
                       </div>
                     </TableCell>
-                    <TableCell className='font-bold text-sm text-neutral-800'>{item.jumlah}</TableCell>
-                    <TableCell>
-                      {item.divisi && editingDivisiItemId !== item.id ? (
-                        <div className='flex items-center gap-2'>
+                    <TableCell className={cn(item.history_fields?.includes('jumlah') ? 'bg-amber-100/80 border-x border-amber-200/50' : '') + ' font-bold text-sm text-neutral-800'}>{item.jumlah}</TableCell>
+                    <TableCell className={cn(item.history_fields?.includes('divisi_id') ? 'bg-amber-100/80 border-x border-amber-200/50' : '')}>
+                      <div className='flex items-center gap-2 group/divisi relative'>
+                        {item.divisi && editingDivisiItemId !== item.id ? (
                           <Badge
                             variant='outline'
                             className='bg-emerald-50 text-emerald-700 border-emerald-100 font-bold text-[9px] px-1.5 h-5 cursor-pointer hover:bg-emerald-100 transition-colors'
@@ -984,41 +1184,39 @@ export default function PerencanaanDetailPage() {
                           >
                             {item.divisi.nama}
                           </Badge>
-                        </div>
-                      ) : (
-                        <div className='flex items-center gap-1'>
-                          <Select
-                            defaultValue={item.divisi_id?.toString()}
-                            onValueChange={(val) =>
-                              updateItemDivisiMutation.mutate({
-                                itemId: item.id,
-                                divisiId: parseInt(val),
-                              })
-                            }
-                          >
-                            <SelectTrigger className='h-6 text-[9px] w-[80px] bg-white border-neutral-200'>
-                              <SelectValue placeholder='Pilih' />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {divisions?.map((d) => (
-                                <SelectItem key={d.id} value={d.id.toString()} className='text-[10px]'>
-                                  {d.nama}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          {editingDivisiItemId === item.id && (
-                            <Button
-                              variant='ghost'
-                              size='icon'
-                              className='h-5 w-5 text-neutral-400'
-                              onClick={() => setEditingDivisiItemId(null)}
+                        ) : (
+                          <div className='flex items-center gap-1'>
+                            <Select
+                              defaultValue={item.divisi_id?.toString()}
+                              onValueChange={(val) =>
+                                updateItemDivisiMutation.mutate({
+                                  itemId: item.id,
+                                  divisiId: parseInt(val),
+                                })
+                              }
                             >
-                              <Trash2 className='h-3 w-3' />
-                            </Button>
-                          )}
-                        </div>
-                      )}
+                              <SelectTrigger className='h-6 text-[9px] w-[80px] bg-white border-neutral-200'>
+                                <SelectValue placeholder='Pilih' />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {divisions?.map((d) => (
+                                  <SelectItem key={d.id} value={d.id.toString()} className='text-[10px]'>
+                                    {d.nama}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
+                        <Button 
+                          variant='ghost' 
+                          size='icon' 
+                          className='h-5 w-5 text-neutral-400 hover:text-amber-600 opacity-0 group-hover/divisi:opacity-100 transition-opacity'
+                          onClick={() => openHistory(item)}
+                        >
+                          <History className='h-3 w-3' />
+                        </Button>
+                      </div>
                     </TableCell>
                     <TableCell>
                       {item.mdl_item?.link_gambar_kerja ? (
@@ -1071,51 +1269,7 @@ export default function PerencanaanDetailPage() {
                         </div>
                       )}
                     </TableCell>
-                    <TableCell>
-                      {item.dokubah?.file ? (
-                        <div className='flex items-center gap-1'>
-                          <Button
-                            variant='ghost'
-                            size='icon'
-                            className='h-6 w-6 text-blue-600 hover:bg-blue-50'
-                            asChild
-                          >
-                            <a
-                              href={item.dokubah.file.startsWith('http') || item.dokubah.file.startsWith('www')
-                                ? item.dokubah.file
-                                : `${(
-                                  process.env.NEXT_PUBLIC_API_URL ||
-                                  'http://localhost:8000'
-                                ).replace('/api', '')}/storage/${
-                                  item.dokubah.file
-                                }`}
-                              target='_blank'
-                              rel='noopener noreferrer'
-                            >
-                              <Eye className='h-3.5 w-3.5' />
-                            </a>
-                          </Button>
-                           <Button
-                            variant='ghost'
-                            size='icon'
-                            className='h-6 w-6 text-amber-600 hover:bg-amber-50'
-                            onClick={() => openDokubahUpload(item)}
-                          >
-                            <Pencil className='h-3.5 w-3.5' />
-                          </Button>
-                        </div>
-                      ) : (
-                        <Button
-                          variant='outline'
-                          size='sm'
-                          className='h-6 text-[9px] border-blue-200 text-blue-600 hover:bg-blue-50 px-1.5'
-                          onClick={() => openDokubahUpload(item)}
-                        >
-                          <Upload className='h-2.5 w-2.5 mr-1' />
-                          Doc
-                        </Button>
-                      )}
-                    </TableCell>
+
 
                     <TableCell>
                       <div
@@ -1144,7 +1298,10 @@ export default function PerencanaanDetailPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className='flex flex-col gap-1 w-16'>
+                      <div 
+                        className='flex flex-col gap-1 w-16 cursor-pointer hover:opacity-80 transition-opacity'
+                        onClick={() => openProduksiView(item)}
+                      >
                         <div className='h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden'>
                           <div 
                             className='h-full bg-blue-500 transition-all duration-500' 
@@ -1170,6 +1327,27 @@ export default function PerencanaanDetailPage() {
                           </Badge>
                         ) : (
                           <span className='text-[9px] text-muted-foreground italic hover:text-blue-600 transition-colors'>
+                            Record
+                          </span>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div
+                        className='cursor-pointer p-1 rounded transition-colors flex flex-col gap-0.5'
+                        onClick={() => openPackingDialog(item)}
+                      >
+                        {item.barang_jadi_terpacking &&
+                        item.barang_jadi_terpacking.length > 0 ? (
+                          <Badge className='bg-orange-600 text-white border-none font-bold text-[10px] h-5 px-1.5 shadow-sm'>
+                            {item.barang_jadi_terpacking.reduce(
+                              (sum, p) => sum + Number(p.jumlah),
+                              0
+                            )}{' '}
+                            / {item.jumlah}
+                          </Badge>
+                        ) : (
+                          <span className='text-[9px] text-muted-foreground italic hover:text-orange-600 transition-colors'>
                             Record
                           </span>
                         )}
@@ -1275,7 +1453,7 @@ export default function PerencanaanDetailPage() {
               Upload Dokubah
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Upload dokubah untuk item: <strong>{dokubahItem?.item}</strong>
+              Upload changes document for this project.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className='grid gap-4 py-4'>
@@ -1610,6 +1788,124 @@ export default function PerencanaanDetailPage() {
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Barang Jadi Terpacking Dialog */}
+      <AlertDialog
+        open={isPackingDialogOpen}
+        onOpenChange={setIsPackingDialogOpen}
+      >
+        <AlertDialogContent className='max-w-md'>
+          <AlertDialogHeader>
+            <AlertDialogTitle className='flex items-center gap-2'>
+              <Package className='h-5 w-5 text-orange-500' />
+              Record Packing
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Catat jumlah barang yang sudah dipacking untuk item:{' '}
+              <strong>{packingItem?.item}</strong>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className='grid gap-4 py-4'>
+            {packingItem &&
+              packingItem.barang_jadi_terpacking &&
+              packingItem.barang_jadi_terpacking.length > 0 && (
+                <div className='p-3 bg-orange-50 rounded-lg border border-orange-100'>
+                  <Label className='text-[10px] uppercase text-orange-700 font-bold mb-2 block'>
+                    Riwayat Packing Sebelumnya
+                  </Label>
+                  <div className='space-y-2'>
+                    {packingItem.barang_jadi_terpacking.map((record, i) => (
+                      <div
+                        key={i}
+                        className='flex justify-between text-xs border-b border-orange-100 last:border-0 pb-1 last:pb-0'
+                      >
+                        <span className='text-orange-600'>
+                          {format(new Date(record.tanggal), 'dd MMM yyyy')}
+                        </span>
+                        <span className='font-bold text-orange-600'>
+                          +{record.jumlah}
+                        </span>
+                      </div>
+                    ))}
+                    <div className='flex justify-between text-xs pt-1 font-bold border-t border-orange-200'>
+                      <span>Total Saat Ini</span>
+                      <span className='text-orange-900'>
+                        {packingItem.barang_jadi_terpacking.reduce(
+                          (sum, r) => sum + r.jumlah,
+                          0
+                        )}{' '}
+                        / {packingItem.jumlah}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            <div className='space-y-2'>
+              <Label>Tanggal Packing</Label>
+              <Input
+                type='date'
+                value={packingTanggal}
+                onChange={(e) => setPackingTanggal(e.target.value)}
+                className='text-xs'
+              />
+            </div>
+            <div className='space-y-2'>
+              <Label>Jumlah Packing Baru</Label>
+              <div className='flex items-center gap-4'>
+                <Input
+                  type='number'
+                  value={packingJumlah === 0 ? '' : packingJumlah}
+                  onChange={(e) => setPackingJumlah(parseInt(e.target.value) || 0)}
+                  className='font-bold border-orange-200 focus-visible:ring-orange-500'
+                  max={
+                    packingItem
+                      ? packingItem.jumlah -
+                        (packingItem.barang_jadi_terpacking?.reduce(
+                          (sum, p) => sum + p.jumlah,
+                          0
+                        ) || 0)
+                      : undefined
+                  }
+                />
+                <span className='text-sm text-muted-foreground whitespace-nowrap'>
+                  Sisa:{' '}
+                  {(packingItem?.jumlah || 0) -
+                    (packingItem?.barang_jadi_terpacking?.reduce(
+                      (sum, p) => sum + p.jumlah,
+                      0
+                    ) || 0)}
+                </span>
+              </div>
+            </div>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setIsPackingDialogOpen(false)}>
+              Cancel
+            </AlertDialogCancel>
+            <Button
+              className='bg-orange-600 hover:bg-orange-700 text-white'
+              onClick={handlePackingUpdate}
+              disabled={
+                updatePackingMutation.isPending ||
+                packingJumlah < 1 ||
+                packingJumlah >
+                  (packingItem?.jumlah || 0) -
+                    (packingItem?.barang_jadi_terpacking?.reduce(
+                      (sum, p) => sum + p.jumlah,
+                      0
+                    ) || 0)
+              }
+            >
+              {updatePackingMutation.isPending ? (
+                <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+              ) : (
+                <CheckCircle2 className='mr-2 h-4 w-4' />
+              )}
+              Record Packing
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Order Gambar Kerja Dialog */}
       <AlertDialog open={isOrderGkDialogOpen} onOpenChange={setIsOrderGkDialogOpen}>
         <AlertDialogContent className='max-w-md'>
@@ -1709,6 +2005,262 @@ export default function PerencanaanDetailPage() {
               )}
               Submit Order
             </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* View Produksi Progress Dialog (PPIC View-Only) */}
+      <AlertDialog open={isProduksiViewOpen} onOpenChange={setIsProduksiViewOpen}>
+        <AlertDialogContent className='max-w-2xl'>
+          <AlertDialogHeader>
+            <AlertDialogTitle className='flex items-center gap-2'>
+              <BarChart3 className='h-5 w-5 text-orange-500' />
+              Detail Progress Produksi
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Melihat progress produksi untuk item: <strong>{produksiViewItem?.item}</strong>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          
+          <div className='py-4 space-y-6'>
+            {/* Summary Progress */}
+            <div className='flex flex-col items-center gap-2 p-4 bg-orange-50 rounded-xl border border-orange-100'>
+              <span className='text-xs font-bold text-orange-800 uppercase tracking-wider'>Total Progress</span>
+              <div className='flex items-baseline gap-1'>
+                <span className='text-4xl font-black text-orange-600'>{Math.round(produksiViewItem?.produksi?.persen || 0)}</span>
+                <span className='text-xl font-bold text-orange-400'>%</span>
+              </div>
+              <Progress value={produksiViewItem?.produksi?.persen || 0} className='h-2 bg-orange-200/50 w-full max-w-md' />
+            </div>
+
+            <div className='grid grid-cols-2 gap-x-8 gap-y-6'>
+              {/* Mesin Section */}
+              <div className='space-y-3'>
+                <h4 className='font-bold text-xs text-neutral-400 uppercase tracking-widest border-b pb-2 flex items-center gap-2'>
+                  <Activity className='h-3 w-3' />
+                  Tahapan Mesin
+                </h4>
+                <div className='space-y-3'>
+                  {[
+                    { label: 'Cold Press', value: produksiViewItem?.produksi?.cold_press, key: 'cold_press' },
+                    { label: 'Running Saw', value: produksiViewItem?.produksi?.running_saw, key: 'running_saw' },
+                    { label: 'Edging', value: produksiViewItem?.produksi?.edging, key: 'edging' },
+                    { label: 'CNC', value: produksiViewItem?.produksi?.cnc, key: 'cnc' },
+                  ].map((field) => {
+                    const isSkipped = produksiViewItem?.produksi?.skipped_fields?.includes(field.key);
+                    return (
+                      <div key={field.key} className='flex items-center justify-between'>
+                        <span className='text-xs text-neutral-600'>{field.label}</span>
+                        <div className='flex items-center gap-2'>
+                          {isSkipped ? (
+                            <Badge variant='secondary' className='text-[9px] bg-neutral-100 text-neutral-400 border-none'>SKIPPED</Badge>
+                          ) : (
+                            <span className='text-sm font-bold text-neutral-900'>{field.value || 0} <span className='text-[10px] text-neutral-400 font-normal'>/ {produksiViewItem?.jumlah}</span></span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Manual Section */}
+              <div className='space-y-3'>
+                <h4 className='font-bold text-xs text-neutral-400 uppercase tracking-widest border-b pb-2 flex items-center gap-2'>
+                  <User className='h-3 w-3' />
+                  Tahapan Manual
+                </h4>
+                <div className='space-y-3'>
+                  {[
+                    { label: 'Tukang Kayu', value: produksiViewItem?.produksi?.tukang_kayu, key: 'tukang_kayu' },
+                    { label: 'Tukang Jok', value: produksiViewItem?.produksi?.tukang_jok, key: 'tukang_jok' },
+                    { label: 'Rakit', value: produksiViewItem?.produksi?.rakit, key: 'rakit' },
+                    { label: 'Finishing', value: produksiViewItem?.produksi?.finishing, key: 'finishing' },
+                  ].map((field) => {
+                    const isSkipped = produksiViewItem?.produksi?.skipped_fields?.includes(field.key);
+                    return (
+                      <div key={field.key} className='flex items-center justify-between'>
+                        <span className='text-xs text-neutral-600'>{field.label}</span>
+                        <div className='flex items-center gap-2'>
+                          {isSkipped ? (
+                            <Badge variant='secondary' className='text-[9px] bg-neutral-100 text-neutral-400 border-none'>SKIPPED</Badge>
+                          ) : (
+                            <span className='text-sm font-bold text-neutral-900'>{field.value || 0} <span className='text-[10px] text-neutral-400 font-normal'>/ {produksiViewItem?.jumlah}</span></span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <AlertDialogFooter className='border-t pt-4'>
+            <AlertDialogCancel className='bg-neutral-100 hover:bg-neutral-200 border-none'>Tutup</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Edit Dimensi Dialog */}
+      <AlertDialog open={isDimDialogOpen} onOpenChange={setIsDimDialogOpen}>
+        <AlertDialogContent className='max-w-md'>
+          <AlertDialogHeader>
+            <AlertDialogTitle className='flex items-center gap-2'>
+              <Pencil className='h-5 w-5 text-blue-500' />
+              Edit Volume & Dimensi
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Update dimensi untuk item: <strong>{dimItem?.item}</strong>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className='grid gap-4 py-4'>
+            <div className='grid grid-cols-4 gap-3'>
+              <div className='space-y-2'>
+                <Label>Panjang</Label>
+                <Input
+                  type='number'
+                  value={dimData.panjang}
+                  onChange={(e) => setDimData({ ...dimData, panjang: parseFloat(e.target.value) || 0 })}
+                  className='text-xs'
+                />
+              </div>
+              <div className='space-y-2'>
+                <Label>Lebar</Label>
+                <Input
+                  type='number'
+                  value={dimData.lebar}
+                  onChange={(e) => setDimData({ ...dimData, lebar: parseFloat(e.target.value) || 0 })}
+                  className='text-xs'
+                />
+              </div>
+              <div className='space-y-2'>
+                <Label>Tinggi</Label>
+                <Input
+                  type='number'
+                  value={dimData.tinggi}
+                  onChange={(e) => setDimData({ ...dimData, tinggi: parseFloat(e.target.value) || 0 })}
+                  className='text-xs'
+                />
+              </div>
+              <div className='space-y-2'>
+                <Label>Satuan</Label>
+                <Select
+                  value={dimData.satuan}
+                  onValueChange={(val) => setDimData({ ...dimData, satuan: val })}
+                >
+                  <SelectTrigger className='h-8 text-xs'>
+                    <SelectValue placeholder='Pilih Satuan' />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {['M1', 'M2 (pxl)', 'M2 (pxt)', 'UNIT', 'SET'].map((u) => (
+                      <SelectItem key={u} value={u} className='text-xs'>
+                        {u}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className='grid grid-cols-2 gap-4 pt-2 border-t border-neutral-100'>
+              <div className='space-y-2'>
+                <Label>Volume (m3)</Label>
+                <Input
+                  type='number'
+                  step='0.01'
+                  value={dimData.volume}
+                  onChange={(e) => setDimData({ ...dimData, volume: parseFloat(e.target.value) || 0 })}
+                  className='text-xs bg-neutral-50 font-bold text-blue-600'
+                />
+              </div>
+              <div className='space-y-2'>
+                <Label>Jumlah (Qty)</Label>
+                <Input
+                  type='number'
+                  value={dimData.jumlah}
+                  onChange={(e) => setDimData({ ...dimData, jumlah: parseInt(e.target.value) || 0 })}
+                  className='text-xs font-bold'
+                />
+              </div>
+            </div>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setIsDimDialogOpen(false)}>Cancel</AlertDialogCancel>
+            <Button
+              className='bg-blue-600 hover:bg-blue-700'
+              onClick={handleDimUpdate}
+              disabled={updateDimMutation.isPending}
+            >
+              {updateDimMutation.isPending ? (
+                <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+              ) : (
+                <Check className='mr-2 h-4 w-4' />
+              )}
+              Simpan Perubahan
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* History Dialog */}
+      <AlertDialog open={isHistoryOpen} onOpenChange={setIsHistoryOpen}>
+        <AlertDialogContent className='max-w-lg'>
+          <AlertDialogHeader>
+            <AlertDialogTitle className='flex items-center gap-2'>
+              <History className='h-5 w-5 text-amber-500' />
+              History Perubahan
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Riwayat perubahan volume & dimensi untuk: <strong>{historyItem?.item}</strong>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className='py-4 max-h-[400px] overflow-y-auto custom-scrollbar'>
+            {isLoadingHistory ? (
+              <div className='flex justify-center py-8'>
+                <Loader2 className='h-6 w-6 animate-spin text-neutral-300' />
+              </div>
+            ) : itemHistory?.length === 0 ? (
+              <p className='text-center py-8 text-xs text-muted-foreground italic'>Belum ada riwayat perubahan.</p>
+            ) : (
+              <div className='space-y-4'>
+                {itemHistory?.map((h: any) => (
+                  <div key={h.id} className='flex gap-4 items-start p-3 rounded-lg bg-neutral-50 border border-neutral-100'>
+                    <div className='h-8 w-8 rounded-full bg-white border border-neutral-200 flex items-center justify-center shrink-0'>
+                      <User className='h-4 w-4 text-neutral-400' />
+                    </div>
+                    <div className='flex-1 space-y-1'>
+                      <div className='flex justify-between items-start'>
+                        <span className='text-xs font-bold text-neutral-900'>{h.user?.name}</span>
+                        <span className='text-[10px] text-muted-foreground'>{format(new Date(h.created_at), 'dd MMM yyyy HH:mm')}</span>
+                      </div>
+                      <p className='text-[11px] text-neutral-600'>
+                        Mengubah{' '}
+                        <span className='font-bold uppercase'>
+                          {h.field === 'divisi_id' ? 'Divisi' : 
+                           h.field === 'jumlah' ? 'Jumlah (Qty)' : 
+                           h.field}
+                        </span>{' '}
+                        dari{' '}
+                        <span className='line-through text-red-500'>
+                          {h.field === 'divisi_id' 
+                            ? (divisions?.find((d: any) => d.id.toString() === h.old_value?.toString())?.nama || h.old_value || '-')
+                            : (h.old_value || '-')}
+                        </span>{' '}
+                        menjadi{' '}
+                        <span className='font-bold text-emerald-600'>
+                          {h.field === 'divisi_id' 
+                            ? (divisions?.find((d: any) => d.id.toString() === h.new_value?.toString())?.nama || h.new_value)
+                            : h.new_value}
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setIsHistoryOpen(false)}>Tutup</AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

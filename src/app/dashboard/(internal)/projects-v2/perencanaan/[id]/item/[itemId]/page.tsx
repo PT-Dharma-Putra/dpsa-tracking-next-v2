@@ -104,15 +104,15 @@ export default function ItemDetailPage() {
     })
 
     const { data: stages } = useQuery({
-        queryKey: ["tahap-pengiriman"],
-        queryFn: () => projectV2Service.getTahapPengiriman(),
+        queryKey: ["tahap-pengiriman", projectId],
+        queryFn: () => projectV2Service.getTahapPengiriman(projectId),
     })
 
     // Mutations
     const addTahapMutation = useMutation({
-        mutationFn: (nama: string) => projectV2Service.createTahapPengiriman(nama),
+        mutationFn: (nama: string) => projectV2Service.createTahapPengiriman(nama, projectId),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["tahap-pengiriman"] })
+            queryClient.invalidateQueries({ queryKey: ["tahap-pengiriman", projectId] })
             toast.success("Tahap pengiriman added")
             setNewTahapNama("")
             setIsTahapDialogOpen(false)
@@ -163,21 +163,6 @@ export default function ItemDetailPage() {
         }
     })
 
-    const updateTahapMutation = useMutation({
-        mutationFn: ({ id, nama }: { id: number; nama: string }) => projectV2Service.updateTahapPengiriman(id, nama),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["tahap-pengiriman"] })
-            toast.success("Tahap pengiriman updated")
-        }
-    })
-
-    const deleteTahapMutation = useMutation({
-        mutationFn: (id: number) => projectV2Service.deleteTahapPengiriman(id),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["tahap-pengiriman"] })
-            toast.success("Tahap pengiriman deleted")
-        }
-    })
 
     const updateKeluarMutation = useMutation({
         mutationFn: ({ id, payload }: { id: number; payload: any }) => projectV2Service.updateBarangJadiKeluar(id, payload),
@@ -264,6 +249,11 @@ export default function ItemDetailPage() {
 
     if (!item) return <div className="p-8 text-center text-muted-foreground">Item not found.</div>
 
+    const totalMasuk = item.barang_jadi_masuk?.reduce((sum: number, bj: BarangJadiMasuk) => sum + Number(bj.jumlah || 0), 0) || 0
+    const totalKeluar = item.barang_jadi_keluar?.reduce((sum: number, bj: BarangJadiKeluar) => sum + Number(bj.jumlah || 0), 0) || 0
+    const totalSetting = item.setting?.reduce((sum: number, s: Setting) => sum + Number(s.jumlah || 0), 0) || 0
+    const belumTersetting = totalKeluar - totalSetting
+
     return (
         <div className="flex flex-col gap-6 p-6">
             <div className="flex items-center justify-between">
@@ -289,10 +279,7 @@ export default function ItemDetailPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-blue-600">
-                            {item.barang_jadi_masuk?.reduce(
-                                (sum: number, bj: BarangJadiMasuk) => sum + Number(bj.jumlah || 0),
-                                0
-                            ) || 0} / {Number(item.jumlah || 0)}
+                            {totalMasuk} / {Number(item.jumlah || 0)}
                         </div>
                         <p className="text-[10px] text-muted-foreground">Status dari Gudang</p>
                     </CardContent>
@@ -303,11 +290,20 @@ export default function ItemDetailPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-orange-600">
-                            {item.barang_jadi_keluar?.reduce(
-                                (sum: number, bj: BarangJadiKeluar) => sum + Number(bj.jumlah || 0), 0
-                            ) || 0}
+                            {totalKeluar}
                         </div>
                         <p className="text-[10px] text-muted-foreground">Total Barang Keluar</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-xs font-bold uppercase text-neutral-500">Barang Keluar Belum Tersetting</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold text-red-600">
+                            {belumTersetting}
+                        </div>
+                        <p className="text-[10px] text-muted-foreground">Selisih Keluar & Setting</p>
                     </CardContent>
                 </Card>
                 <Card>
@@ -316,20 +312,9 @@ export default function ItemDetailPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-emerald-600">
-                            {item.setting?.reduce((sum: number, s: Setting) => sum + Number(s.jumlah || 0), 0) || 0}
+                            {totalSetting}
                         </div>
                         <p className="text-[10px] text-muted-foreground">Barang Ter-setting</p>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-xs font-bold uppercase text-neutral-500">Sisa Stok Gudang</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-neutral-900">
-                            {(item.barang_jadi_masuk?.reduce((sum: number, bj: BarangJadiMasuk) => sum + bj.jumlah, 0) || 0) - (item.barang_jadi_keluar?.reduce((sum: number, bj: BarangJadiKeluar) => sum + bj.jumlah, 0) || 0)}
-                        </div>
-                        <p className="text-[10px] text-muted-foreground">Barang Tersedia</p>
                     </CardContent>
                 </Card>
             </div>
@@ -371,29 +356,7 @@ export default function ItemDetailPage() {
                                     return (
                                         <TableRow key={stage.id}>
                                             <TableCell className="font-bold">
-                                                <div className="flex items-center gap-2 group">
-                                                    {stage.nama}
-                                                    <DropdownMenu>
-                                                        <DropdownMenuTrigger asChild>
-                                                            <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100">
-                                                                <MoreHorizontal className="h-3 w-3" />
-                                                            </Button>
-                                                        </DropdownMenuTrigger>
-                                                        <DropdownMenuContent>
-                                                            <DropdownMenuItem onClick={() => {
-                                                                const newNama = prompt("Edit Nama Tahap:", stage.nama);
-                                                                if (newNama) updateTahapMutation.mutate({ id: stage.id, nama: newNama });
-                                                            }}>
-                                                                <Pencil className="mr-2 h-3 w-3" /> Edit
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuItem className="text-red-600" onClick={() => {
-                                                                if (confirm("Hapus tahap ini?")) deleteTahapMutation.mutate(stage.id);
-                                                            }}>
-                                                                <Trash2 className="mr-2 h-3 w-3" /> Hapus
-                                                            </DropdownMenuItem>
-                                                        </DropdownMenuContent>
-                                                    </DropdownMenu>
-                                                </div>
+                                                {stage.nama}
                                             </TableCell>
                                             <TableCell>
                                                 {keluar?.map((k: BarangJadiKeluar, i: number) => (
@@ -571,7 +534,7 @@ export default function ItemDetailPage() {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
-
+            
             {/* Barang Jadi Keluar Dialog */}
             <AlertDialog open={isKeluarDialogOpen} onOpenChange={setIsKeluarDialogOpen}>
                 <AlertDialogContent>

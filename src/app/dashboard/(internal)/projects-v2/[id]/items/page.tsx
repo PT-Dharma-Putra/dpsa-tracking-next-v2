@@ -139,17 +139,19 @@ export default function ProjectItemsPage() {
   };
 
   const [spdFile, setSpdFile] = React.useState<File | null>(null);
+  const [spdPendukungFiles, setSpdPendukungFiles] = React.useState<(File | null)[]>([]);
   const [targetSelesaiDate, setTargetSelesaiDate] = React.useState<string>(
     format(new Date(), 'yyyy-MM-dd')
   );
 
   const uploadSpdMutation = useMutation({
-    mutationFn: ({ file, date }: { file: File; date: string }) =>
-      projectV2Service.uploadSPD(projectId, file, date),
+    mutationFn: ({ file, date, pendukung }: { file: File; date: string; pendukung?: File[] }) =>
+      projectV2Service.uploadSPD(projectId, file, date, pendukung),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects-v2', projectId] });
       toast.success('SPD uploaded successfully');
       setSpdFile(null);
+      setSpdPendukungFiles([]);
     },
     onError: () => {
       toast.error('Failed to upload SPD');
@@ -161,7 +163,11 @@ export default function ProjectItemsPage() {
       toast.error('Please select a file');
       return;
     }
-    uploadSpdMutation.mutate({ file: spdFile, date: targetSelesaiDate });
+    uploadSpdMutation.mutate({ 
+      file: spdFile, 
+      date: targetSelesaiDate,
+      pendukung: spdPendukungFiles.filter((f): f is File => f !== null)
+    });
   };
 
   const [sphFile, setSphFile] = React.useState<File | null>(null);
@@ -522,43 +528,81 @@ export default function ProjectItemsPage() {
             {!isSpdCollapsed && (
               <CardContent>
                 {existingSpd?.spd_file ? (
-                  <div className='p-3 rounded-xl bg-orange-50/80 border border-orange-100 flex items-center justify-between shadow-sm'>
-                    <div className='flex items-center gap-3'>
-                      <div className='h-8 w-8 rounded-lg bg-white shadow-sm border border-orange-100 flex items-center justify-center text-orange-600'>
-                        <FileText className='h-4 w-4' />
+                  <>
+                    <div className='p-3 rounded-xl bg-orange-50/80 border border-orange-100 flex items-center justify-between shadow-sm'>
+                      <div className='flex items-center gap-3'>
+                        <div className='h-8 w-8 rounded-lg bg-white shadow-sm border border-orange-100 flex items-center justify-center text-orange-600'>
+                          <FileText className='h-4 w-4' />
+                        </div>
+                        <div>
+                          <p className='text-xs font-bold text-orange-900'>
+                            SPD Document
+                          </p>
+                          <p className='text-[10px] text-orange-600/80'>
+                            {format(
+                              new Date(
+                                existingSpd.target_selesai || existingSpd.tanggal || existingSpd.created_at
+                              ),
+                              'MMM d, yyyy'
+                            )}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className='text-xs font-bold text-orange-900'>
-                          SPD Document
-                        </p>
-                        <p className='text-[10px] text-orange-600/80'>
-                          {format(
-                            new Date(
-                              existingSpd.target_selesai || existingSpd.tanggal || existingSpd.created_at
-                            ),
-                            'MMM d, yyyy'
-                          )}
-                        </p>
-                      </div>
-                    </div>
-                    <Button
-                      variant='ghost'
-                      size='icon'
-                      className='h-8 w-8 text-orange-600 hover:bg-orange-200 bg-white shadow-sm border border-orange-100'
-                      asChild
-                    >
-                      <a
-                        href={`${(
-                          process.env.NEXT_PUBLIC_API_URL ||
-                          'http://localhost:8000'
-                        ).replace('/api', '')}/storage/${existingSpd.spd_file}`}
-                        target='_blank'
-                        rel='noopener noreferrer'
+                      <Button
+                        variant='ghost'
+                        size='icon'
+                        className='h-8 w-8 text-orange-600 hover:bg-orange-200 bg-white shadow-sm border border-orange-100'
+                        asChild
                       >
-                        <FileDown className='h-4 w-4' />
-                      </a>
-                    </Button>
-                  </div>
+                        <a
+                          href={`${(
+                            process.env.NEXT_PUBLIC_API_URL ||
+                            'http://localhost:8000'
+                          ).replace('/api', '')}/storage/${existingSpd.spd_file}`}
+                          target='_blank'
+                          rel='noopener noreferrer'
+                        >
+                          <FileDown className='h-4 w-4' />
+                        </a>
+                      </Button>
+                    </div>
+                    {project.file_pendukung_spd && project.file_pendukung_spd.length > 0 && (
+                      <div className='mt-3 pt-3 border-t border-orange-100 space-y-2'>
+                        <p className='text-[10px] font-bold text-orange-700 uppercase tracking-wider'>
+                          File Pendukung
+                        </p>
+                        <div className='grid grid-cols-1 gap-2'>
+                          {project.file_pendukung_spd.map((fp, i) => (
+                            <div key={fp.id} className='flex items-center justify-between p-2 rounded-lg bg-white border border-orange-50 shadow-sm'>
+                              <div className='flex items-center gap-2 overflow-hidden'>
+                                <FileText className='h-3 w-3 text-orange-400 shrink-0' />
+                                <span className='text-[10px] text-orange-800 truncate'>
+                                  File Pendukung {i + 1}
+                                </span>
+                              </div>
+                              <Button
+                                variant='ghost'
+                                size='icon'
+                                className='h-6 w-6 text-orange-600 hover:bg-orange-50'
+                                asChild
+                              >
+                                <a
+                                  href={`${(
+                                    process.env.NEXT_PUBLIC_API_URL ||
+                                    'http://localhost:8000'
+                                  ).replace('/api', '')}/storage/${fp.file}`}
+                                  target='_blank'
+                                  rel='noopener noreferrer'
+                                >
+                                  <FileDown className='h-3 w-3' />
+                                </a>
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
                 ) : (
                   <p className='text-xs text-muted-foreground italic'>
                     Belum ada file SPD.
@@ -1125,6 +1169,62 @@ export default function ProjectItemsPage() {
                 onChange={(e) => setTargetSelesaiDate(e.target.value)}
                 className='h-9 text-xs'
               />
+            </div>
+            <div className='space-y-3 pt-2'>
+              <div className='flex items-center justify-between'>
+                <Label className='text-xs font-medium'>
+                  File Pendukung
+                </Label>
+                <Button
+                  type='button'
+                  variant='outline'
+                  size='sm'
+                  className='h-7 text-[10px] bg-orange-50 text-orange-600 border-orange-200 hover:bg-orange-100'
+                  onClick={() => setSpdPendukungFiles([...spdPendukungFiles, null])}
+                >
+                  <Plus className='h-3 w-3 mr-1' />
+                  Tambah
+                </Button>
+              </div>
+              
+              <div className='space-y-2 max-h-[200px] overflow-y-auto pr-1 custom-scrollbar'>
+                {spdPendukungFiles.map((file, index) => (
+                  <div key={index} className='flex gap-2 items-center'>
+                    <div className='relative flex-1'>
+                      <Input
+                        type='file'
+                        accept='.pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx'
+                        onChange={(e) => {
+                          const newFiles = [...spdPendukungFiles];
+                          newFiles[index] = e.target.files?.[0] || null;
+                          setSpdPendukungFiles(newFiles);
+                        }}
+                        className='h-9 text-[10px] pr-8'
+                      />
+                      {spdPendukungFiles[index] && (
+                        <CheckCircle2 className='h-3 w-3 text-emerald-500 absolute right-2.5 top-3' />
+                      )}
+                    </div>
+                    <Button
+                      type='button'
+                      variant='ghost'
+                      size='icon'
+                      className='h-8 w-8 text-neutral-400 hover:text-red-600 hover:bg-red-50 shrink-0'
+                      onClick={() => {
+                        const newFiles = spdPendukungFiles.filter((_, i) => i !== index);
+                        setSpdPendukungFiles(newFiles);
+                      }}
+                    >
+                      <Trash2 className='h-3.5 w-3.5' />
+                    </Button>
+                  </div>
+                ))}
+                {spdPendukungFiles.length === 0 && (
+                  <p className='text-[10px] text-muted-foreground italic text-center py-4 bg-neutral-50 rounded-lg border border-dashed'>
+                    Belum ada file pendukung
+                  </p>
+                )}
+              </div>
             </div>
           </div>
           <DialogFooter>

@@ -74,6 +74,44 @@ export interface ProjectV2 {
         status: string;
         created_at: string;
     }>;
+    penagihans?: Array<{
+        id: number;
+        persentase: number;
+        status: string;
+    }>;
+    file_pendukung_spd?: Array<{
+        id: number;
+        file: string;
+    }>;
+    progres_kerja?: ProgresKerja;
+    dokubah?: {
+        id: number;
+        tanggal_mulai: string | null;
+        tanggal_selesai: string | null;
+        file: string | null;
+    };
+}
+
+export interface ProgresKerja {
+    id: number;
+    project_id: number;
+    po_divisi: number;
+    tanggal_update_po_divisi: string | null;
+    gambar_kerja: number;
+    tanggal_update_gambar_kerja: string | null;
+    dokubah: number;
+    tanggal_update_dokubah: string | null;
+    stok_material: number;
+    tanggal_update_stok_material: string | null;
+    produksi: number;
+    tanggal_update_produksi: string | null;
+    gudang_barang_jadi: number;
+    tanggal_update_gudang_barang_jadi: string | null;
+    pengiriman: number;
+    tanggal_update_pengiriman: string | null;
+    total: number;
+    created_at: string;
+    updated_at: string;
 }
 
 export interface TahapDesign {
@@ -175,6 +213,11 @@ export const projectV2Service = {
         const { data } = await apiClient.delete(`/projects-v2-items/${id}`);
         return data;
     },
+    
+    getItemHistory: async (id: number) => {
+        const { data } = await apiClient.get<any[]>(`/projects-v2-items/${id}/history`);
+        return data;
+    },
 
     getMDLItems: async (params?: { search?: string; kategori?: string; lokasi_ruangan?: string; min_price?: number; max_price?: number; page?: number; per_page?: number }) => {
         const { data } = await apiClient.get<any>('/mdl', { params });
@@ -191,10 +234,15 @@ export const projectV2Service = {
         return data;
     },
 
-    uploadSPD: async (projectId: number, file: File, target_selesai: string) => {
+    uploadSPD: async (projectId: number, file: File, target_selesai: string, filePendukung?: File[]) => {
         const formData = new FormData();
         formData.append('file', file);
         formData.append('target_selesai', target_selesai);
+        if (filePendukung && filePendukung.length > 0) {
+            filePendukung.forEach((f) => {
+                formData.append('file_pendukung[]', f);
+            });
+        }
         const { data } = await apiClient.post(`/projects-v2/${projectId}/upload-spd`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
@@ -349,12 +397,12 @@ export const projectV2Service = {
         return data;
     },
 
-    uploadDokubah: async (itemId: number, payload: { file?: File | string; tanggal_mulai?: string; tanggal_selesai?: string }) => {
+    uploadDokubah: async (projectId: number, payload: { file?: File | string; tanggal_mulai?: string; tanggal_selesai?: string }) => {
         const formData = new FormData();
         if (payload.file) formData.append('file', payload.file);
         if (payload.tanggal_mulai) formData.append('tanggal_mulai', payload.tanggal_mulai);
         if (payload.tanggal_selesai) formData.append('tanggal_selesai', payload.tanggal_selesai);
-        const { data } = await apiClient.post(`/projects-v2-items/${itemId}/upload-dokubah`, formData, {
+        const { data } = await apiClient.post(`/projects-v2/${projectId}/upload-dokubah`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
         return data;
@@ -394,13 +442,32 @@ export const projectV2Service = {
         return data;
     },
 
-    // Shipment Methods
-    getTahapPengiriman: async () => {
-        const { data } = await apiClient.get('/tahap-pengiriman');
+    updateBarangJadiTerpacking: async (itemId: number, payload: { tanggal: string; jumlah: number }) => {
+        const { data } = await apiClient.post(`/projects-v2-items/${itemId}/barang-jadi-terpacking`, payload);
         return data;
     },
-    createTahapPengiriman: async (nama: string) => {
-        const { data } = await apiClient.post('/tahap-pengiriman', { nama });
+
+    updateQcCek: async (itemId: number, payload: { qty: number; status: string; file?: File | null }) => {
+        const formData = new FormData();
+        formData.append('qty', payload.qty.toString());
+        formData.append('status', payload.status);
+        if (payload.file) formData.append('file', payload.file);
+
+        const { data } = await apiClient.post(`/projects-v2-items/${itemId}/qc-cek`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        return data;
+    },
+
+    // Shipment Methods
+    getTahapPengiriman: async (projectId?: number) => {
+        const { data } = await apiClient.get('/tahap-pengiriman', {
+            params: { project_id: projectId }
+        });
+        return data;
+    },
+    createTahapPengiriman: async (nama: string, projectId: number) => {
+        const { data } = await apiClient.post('/tahap-pengiriman', { nama, project_id: projectId });
         return data;
     },
     updateTahapPengiriman: async (id: number, nama: string) => {
@@ -540,15 +607,10 @@ export interface ProjectItemV2 {
         tanggal_selesai: string | null;
         file: string | null;
     };
-    dokubah?: {
-        id: number;
-        tanggal_mulai: string | null;
-        tanggal_selesai: string | null;
-        file: string | null;
-    };
     bahan_baku?: BahanBaku;
     produksi?: Produksi;
     barang_jadi_masuk?: BarangJadiMasuk[];
+    barang_jadi_terpacking?: BarangJadiTerpacking[];
     barang_jadi_keluar?: BarangJadiKeluar[];
     surat_jalan?: SuratJalan[];
     setrim_kembali?: SetrimKembali[];
@@ -558,6 +620,19 @@ export interface ProjectItemV2 {
         id: number;
         name: string;
     };
+    history_count?: number;
+    history_fields?: string[];
+    qc_cek?: QcCek;
+}
+
+export interface QcCek {
+    id: number;
+    project_item_id: number;
+    qty: number;
+    status: string;
+    file: string | null;
+    created_at: string;
+    updated_at: string;
 }
 
 export interface BahanBaku {
@@ -603,6 +678,15 @@ export interface Produksi {
 }
 
 export interface BarangJadiMasuk {
+    id: number;
+    project_item_id: number;
+    tanggal: string;
+    jumlah: number;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface BarangJadiTerpacking {
     id: number;
     project_item_id: number;
     tanggal: string;

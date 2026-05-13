@@ -494,43 +494,81 @@ export default function DesignerDetailPage() {
                     {!isSpdCollapsed && (
                         <CardContent>
                             {existingSpd?.spd_file ? (
-                                <div className='p-3 rounded-xl bg-orange-50/80 border border-orange-100 flex items-center justify-between shadow-sm'>
-                                    <div className='flex items-center gap-3'>
-                                        <div className='h-8 w-8 rounded-lg bg-white shadow-sm border border-orange-100 flex items-center justify-center text-orange-600'>
-                                            <FileText className='h-4 w-4' />
+                                <>
+                                    <div className='p-3 rounded-xl bg-orange-50/80 border border-orange-100 flex items-center justify-between shadow-sm'>
+                                        <div className='flex items-center gap-3'>
+                                            <div className='h-8 w-8 rounded-lg bg-white shadow-sm border border-orange-100 flex items-center justify-center text-orange-600'>
+                                                <FileText className='h-4 w-4' />
+                                            </div>
+                                            <div>
+                                                <p className='text-xs font-bold text-orange-900'>
+                                                    SPD Document
+                                                </p>
+                                                <p className='text-[10px] text-orange-600/80'>
+                                                    {format(
+                                                        new Date(
+                                                            existingSpd.tanggal || existingSpd.created_at
+                                                        ),
+                                                        'MMM d, yyyy'
+                                                    )}
+                                                </p>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <p className='text-xs font-bold text-orange-900'>
-                                                SPD Document
-                                            </p>
-                                            <p className='text-[10px] text-orange-600/80'>
-                                                {format(
-                                                    new Date(
-                                                        existingSpd.tanggal || existingSpd.created_at
-                                                    ),
-                                                    'MMM d, yyyy'
-                                                )}
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <Button
-                                        variant='ghost'
-                                        size='icon'
-                                        className='h-8 w-8 text-orange-600 hover:bg-orange-200 bg-white shadow-sm border border-orange-100'
-                                        asChild
-                                    >
-                                        <a
-                                            href={`${(
-                                                process.env.NEXT_PUBLIC_API_URL ||
-                                                'http://localhost:8000'
-                                            ).replace('/api', '')}/storage/${existingSpd.spd_file}`}
-                                            target='_blank'
-                                            rel='noopener noreferrer'
+                                        <Button
+                                            variant='ghost'
+                                            size='icon'
+                                            className='h-8 w-8 text-orange-600 hover:bg-orange-200 bg-white shadow-sm border border-orange-100'
+                                            asChild
                                         >
-                                            <FileDown className='h-4 w-4' />
-                                        </a>
-                                    </Button>
-                                </div>
+                                            <a
+                                                href={`${(
+                                                    process.env.NEXT_PUBLIC_API_URL ||
+                                                    'http://localhost:8000'
+                                                ).replace('/api', '')}/storage/${existingSpd.spd_file}`}
+                                                target='_blank'
+                                                rel='noopener noreferrer'
+                                            >
+                                                <FileDown className='h-4 w-4' />
+                                            </a>
+                                        </Button>
+                                    </div>
+                                    {project.file_pendukung_spd && project.file_pendukung_spd.length > 0 && (
+                                        <div className='mt-3 pt-3 border-t border-orange-100 space-y-2'>
+                                            <p className='text-[10px] font-bold text-orange-700 uppercase tracking-wider'>
+                                                File Pendukung
+                                            </p>
+                                            <div className='grid grid-cols-1 gap-2'>
+                                                {project.file_pendukung_spd.map((fp, i) => (
+                                                    <div key={fp.id} className='flex items-center justify-between p-2 rounded-lg bg-white border border-orange-50 shadow-sm'>
+                                                        <div className='flex items-center gap-2 overflow-hidden'>
+                                                            <FileText className='h-3 w-3 text-orange-400 shrink-0' />
+                                                            <span className='text-[10px] text-orange-800 truncate'>
+                                                                File Pendukung {i + 1}
+                                                            </span>
+                                                        </div>
+                                                        <Button
+                                                            variant='ghost'
+                                                            size='icon'
+                                                            className='h-6 w-6 text-orange-600 hover:bg-orange-50'
+                                                            asChild
+                                                        >
+                                                            <a
+                                                                href={`${(
+                                                                    process.env.NEXT_PUBLIC_API_URL ||
+                                                                    'http://localhost:8000'
+                                                                ).replace('/api', '')}/storage/${fp.file}`}
+                                                                target='_blank'
+                                                                rel='noopener noreferrer'
+                                                            >
+                                                                <FileDown className='h-3 w-3' />
+                                                            </a>
+                                                        </Button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </>
                             ) : (
                                 <p className='text-xs text-muted-foreground italic'>
                                     Belum ada file SPD.

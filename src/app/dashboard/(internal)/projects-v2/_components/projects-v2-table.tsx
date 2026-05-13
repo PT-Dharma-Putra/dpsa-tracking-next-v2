@@ -91,12 +91,18 @@ export function ProjectsV2Table({
   showProduksi = false,
   onlyShowDetail = false,
   showEngineer = false,
+  showPiutang = false,
+  showQC = false,
+  showAllDashboard = false,
 }: {
   showSPD?: boolean;
   showPerencanaan?: boolean;
   showProduksi?: boolean;
   onlyShowDetail?: boolean;
   showEngineer?: boolean;
+  showPiutang?: boolean;
+  showQC?: boolean;
+  showAllDashboard?: boolean;
 }) {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -408,7 +414,7 @@ export function ProjectsV2Table({
             </SelectContent>
           </Select>
         </div>
-        {!onlyShowDetail && (
+        {!onlyShowDetail && !showAllDashboard && (
           <Button
             onClick={handleCreate}
             className='bg-orange-600 hover:bg-orange-700'
@@ -424,12 +430,52 @@ export function ProjectsV2Table({
           <TableHeader className='bg-neutral-50'>
             <TableRow>
               <TableHead className='w-[50px]'>#</TableHead>
-              <TableHead>Project Name</TableHead>
-              <TableHead>Nomor SPK</TableHead>
-              <TableHead>Prioritas</TableHead>
-              {!showEngineer && <TableHead>Client</TableHead>}
-              <TableHead>Description</TableHead>
-              {!showSPD && (
+              {showAllDashboard ? (
+                <>
+                  <TableHead>Client</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Nomor SPK</TableHead>
+                  <TableHead>Nomor SPH</TableHead>
+                  <TableHead>Prioritas</TableHead>
+                  <TableHead
+                    className='cursor-pointer hover:bg-neutral-100 transition-colors group'
+                    onClick={() => {
+                      if (sortBy === 'deadline') {
+                        setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                      } else {
+                        setSortBy('deadline');
+                        setSortOrder('asc');
+                      }
+                      setPage(1);
+                    }}
+                  >
+                    <div className='flex items-center gap-1'>
+                      Deadline
+                      {sortBy === 'deadline' ? (
+                        sortOrder === 'asc' ? (
+                          <ArrowUp className='h-3 w-3' />
+                        ) : (
+                          <ArrowDown className='h-3 w-3' />
+                        )
+                      ) : (
+                        <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
+                      )}
+                    </div>
+                  </TableHead>
+                  <TableHead>Sisa Hari</TableHead>
+                </>
+              ) : (
+                <>
+                  <TableHead>Project Name</TableHead>
+                  <TableHead>Nomor SPK</TableHead>
+                  <TableHead>Prioritas</TableHead>
+                  {showPiutang && <TableHead>Progres Produksi</TableHead>}
+                  {showPiutang && <TableHead>Total Penagihan</TableHead>}
+                  {!showEngineer && <TableHead>Client</TableHead>}
+                  {!showProduksi && <TableHead>Description</TableHead>}
+                </>
+              )}
+              {!showAllDashboard && !showSPD && (
                 <>
                   <TableHead
                     className='cursor-pointer hover:bg-neutral-100 transition-colors group'
@@ -458,12 +504,20 @@ export function ProjectsV2Table({
                   </TableHead>
                   <TableHead>SPH Number</TableHead>
 
-                  <TableHead>Sisa Hari</TableHead>
+                  {!showProduksi && <TableHead>Sisa Hari</TableHead>}
                 </>
               )}
-              <TableHead>Pakai Desain</TableHead>
-              {!showSPD && <TableHead>Jadwal Pengiriman</TableHead>}
-              {showSPD && (
+              {!showAllDashboard && !showProduksi && <TableHead>Pakai Desain</TableHead>}
+              {!showAllDashboard && !showSPD && <TableHead>Jadwal Pengiriman</TableHead>}
+              
+              {showAllDashboard && (
+                <>
+                  <TableHead>Jadwal Pengiriman</TableHead>
+                  <TableHead>Persentase Kerja</TableHead>
+                  <TableHead>Progres Terakhir</TableHead>
+                </>
+              )}
+              {!showAllDashboard && showSPD && (
                 <>
                   {!showEngineer && <TableHead>SPD</TableHead>}
                   {!showEngineer && <TableHead>Pic</TableHead>}
@@ -479,6 +533,13 @@ export function ProjectsV2Table({
                   {!showEngineer && <TableHead>List Furnitur</TableHead>}
                 </>
               )}
+              {showProduksi && (
+                <>
+                  <TableHead>Order Produksi</TableHead>
+                  <TableHead>Target Selesai</TableHead>
+                  <TableHead>Sisa Hari</TableHead>
+                </>
+              )}
               {showProduksi && <TableHead>Progres Produksi</TableHead>}
               <TableHead className='w-[100px] text-right'>Actions</TableHead>
             </TableRow>
@@ -486,7 +547,7 @@ export function ProjectsV2Table({
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={showEngineer ? 15 : 16} className='h-32 text-center text-muted-foreground'>
+                <TableCell colSpan={showProduksi ? 13 : (showEngineer ? 15 : 16)} className='h-32 text-center text-muted-foreground'>
                   <div className='flex items-center justify-center'>
                     <Loader2 className='h-6 w-6 animate-spin text-neutral-400' />
                   </div>
@@ -495,7 +556,7 @@ export function ProjectsV2Table({
             ) : projects.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={showEngineer ? 15 : 16}
+                  colSpan={showProduksi ? 13 : (showEngineer ? 15 : 16)}
                   className='h-32 text-center text-muted-foreground'
                 >
                   No projects found.
@@ -507,30 +568,204 @@ export function ProjectsV2Table({
                   <TableCell className='font-medium text-muted-foreground'>
                     {(page - 1) * 10 + index + 1}
                   </TableCell>
-                   <TableCell className='font-medium'>{project.name}</TableCell>
-                   <TableCell className='font-medium text-blue-600'>
-                     {project.spk_number || project.spk?.nomor_spk || '-'}
-                   </TableCell>
-                   <TableCell>
-                     {project.prioritas === 'Urgent' ? (
-                       <Badge className='bg-red-100 text-red-700 border border-red-200 hover:bg-red-100 font-semibold text-[11px]'>
-                         Urgent
+                   {showAllDashboard ? (
+                     <>
+                        <TableCell>{project.client?.name || '-'}</TableCell>
+                        <TableCell className='max-w-[200px] truncate'>
+                          {project.description || (
+                            <span className='text-muted-foreground italic text-xs'>None</span>
+                          )}
+                        </TableCell>
+                        <TableCell className='font-medium text-blue-600'>
+                          {project.spk_number || project.spk?.nomor_spk || '-'}
+                        </TableCell>
+                        <TableCell>
+                          {project.sph?.nomor_sph || '-'}
+                        </TableCell>
+                        <TableCell>
+                          {project.prioritas === 'Urgent' ? (
+                            <Badge className='bg-red-100 text-red-700 border border-red-200 hover:bg-red-100 font-semibold text-[11px]'>
+                              Urgent
+                            </Badge>
+                          ) : project.prioritas === 'Normal' ? (
+                            <Badge variant='secondary' className='font-normal text-[11px]'>
+                              Normal
+                            </Badge>
+                          ) : (
+                            <span className='text-muted-foreground italic text-xs'>-</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {project.deadline
+                            ? format(new Date(project.deadline), 'MMM d, yyyy')
+                            : '-'}
+                        </TableCell>
+                        <TableCell>
+                          {project.deadline ? (
+                            (() => {
+                              const diff = differenceInDays(
+                                startOfDay(new Date(project.deadline)),
+                                startOfDay(new Date())
+                              );
+                              return (
+                                <div className='flex items-center gap-1.5'>
+                                  <Badge
+                                    variant='outline'
+                                    className={cn(
+                                      'font-bold',
+                                      diff < 0
+                                        ? 'bg-red-50 text-red-700 border-red-200'
+                                        : diff <= 3
+                                        ? 'bg-orange-50 text-orange-700 border-orange-200'
+                                        : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                    )}
+                                  >
+                                    {diff < 0
+                                      ? `Lewat ${Math.abs(diff)} Hari`
+                                      : `${diff} Hari`}
+                                  </Badge>
+                                </div>
+                              );
+                            })()
+                          ) : (
+                            <span className='text-muted-foreground italic text-xs'>
+                              -
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {project.jadwal_pengiriman ? (
+                            <div className='flex items-center gap-1.5 text-xs font-medium text-neutral-900'>
+                              <Truck className='h-3 w-3 text-orange-500' />
+                              {format(
+                                new Date(
+                                  project.jadwal_pengiriman.tanggal_pengiriman
+                                    ?.tanggal || ''
+                                ),
+                                'MMM d, yyyy'
+                              )}
+                            </div>
+                          ) : (
+                            <span className='text-muted-foreground italic text-xs'>-</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {project.progres_kerja ? (
+                            <span className='text-sm font-black text-blue-600 tabular-nums'>
+                              {Math.round(project.progres_kerja.total)}%
+                            </span>
+                          ) : (
+                            <span className='text-muted-foreground italic text-xs'>-</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {(() => {
+                            if (!project.progres_kerja) return <span className='text-muted-foreground italic text-xs'>-</span>;
+                            
+                            const stages = [
+                              { name: 'PO Divisi', date: project.progres_kerja.tanggal_update_po_divisi, color: 'blue' },
+                              { name: 'Gambar Kerja', date: project.progres_kerja.tanggal_update_gambar_kerja, color: 'orange' },
+                              { name: 'Dokubah', date: project.progres_kerja.tanggal_update_dokubah, color: 'purple' },
+                              { name: 'Stok Material', date: project.progres_kerja.tanggal_update_stok_material, color: 'emerald' },
+                              { name: 'Produksi', date: project.progres_kerja.tanggal_update_produksi, color: 'cyan' },
+                              { name: 'Gudang', date: project.progres_kerja.tanggal_update_gudang_barang_jadi, color: 'indigo' },
+                              { name: 'Pengiriman', date: project.progres_kerja.tanggal_update_pengiriman, color: 'rose' },
+                            ];
+
+                            const latest = stages
+                              .filter(s => s.date)
+                              .sort((a, b) => new Date(b.date!).getTime() - new Date(a.date!).getTime())[0];
+
+                            if (!latest) return <span className='text-muted-foreground italic text-xs'>-</span>;
+
+                            const getColor = (color: string) => {
+                              switch (color) {
+                                case 'blue': return 'bg-blue-50 text-blue-700 border-blue-200';
+                                case 'orange': return 'bg-orange-50 text-orange-700 border-orange-200';
+                                case 'purple': return 'bg-purple-50 text-purple-700 border-purple-200';
+                                case 'emerald': return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+                                case 'cyan': return 'bg-cyan-50 text-cyan-700 border-cyan-200';
+                                case 'indigo': return 'bg-indigo-50 text-indigo-700 border-indigo-200';
+                                case 'rose': return 'bg-rose-50 text-rose-700 border-rose-200';
+                                default: return 'bg-neutral-50 text-neutral-700 border-neutral-200';
+                              }
+                            };
+
+                            return (
+                              <div className='flex flex-col gap-0.5'>
+                                <Badge variant='outline' className={cn("text-[9px] font-bold py-0 h-4 w-fit", getColor(latest.color))}>
+                                  {latest.name}
+                                </Badge>
+                                <span className='text-[8px] text-muted-foreground whitespace-nowrap'>
+                                  {format(new Date(latest.date!), 'MMM d, HH:mm')}
+                                </span>
+                              </div>
+                            );
+                          })()}
+                        </TableCell>
+                     </>
+                   ) : (
+                     <>
+                        <TableCell className='font-medium'>{project.name}</TableCell>
+                        <TableCell className='font-medium text-blue-600'>
+                          {project.spk_number || project.spk?.nomor_spk || '-'}
+                        </TableCell>
+                        <TableCell>
+                          {project.prioritas === 'Urgent' ? (
+                            <Badge className='bg-red-100 text-red-700 border border-red-200 hover:bg-red-100 font-semibold text-[11px]'>
+                              Urgent
+                            </Badge>
+                          ) : project.prioritas === 'Normal' ? (
+                            <Badge variant='secondary' className='font-normal text-[11px]'>
+                              Normal
+                            </Badge>
+                          ) : (
+                            <span className='text-muted-foreground italic text-xs'>-</span>
+                          )}
+                        </TableCell>
+                     </>
+                   )}
+                   {showPiutang && (
+                     <TableCell>
+                       <div className='flex items-center gap-2'>
+                         <div className='flex-1 min-w-[60px]'>
+                           <div className='h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden'>
+                             <div
+                               className='h-full bg-emerald-500 rounded-full transition-all duration-500'
+                               style={{
+                                 width: `${project.progres_produksi || 0}%`,
+                               }}
+                             />
+                           </div>
+                         </div>
+                         <span className='text-xs font-bold text-neutral-700'>
+                           {Math.round(project.progres_produksi || 0)}%
+                         </span>
+                       </div>
+                     </TableCell>
+                   )}
+                   {showAllDashboard && (
+                     <></>
+                   )}
+                   {!showAllDashboard && showPiutang && (
+                     <TableCell>
+                       <Badge 
+                         variant="outline" 
+                         className="bg-amber-50 text-amber-700 border-amber-200 font-bold"
+                       >
+                         {project.penagihans?.reduce((sum, p) => sum + Number(p.persentase || 0), 0)}%
                        </Badge>
-                     ) : project.prioritas === 'Normal' ? (
-                       <Badge variant='secondary' className='font-normal text-[11px]'>
-                         Normal
-                       </Badge>
-                     ) : (
-                       <span className='text-muted-foreground italic text-xs'>-</span>
-                     )}
-                   </TableCell>
-                  {!showEngineer && <TableCell>{project.client?.name || '-'}</TableCell>}
-                  <TableCell className='max-w-[200px] truncate'>
-                    {project.description || (
-                      <span className='text-muted-foreground italic'>None</span>
-                    )}
-                  </TableCell>
-                  {!showSPD && (
+                     </TableCell>
+                   )}
+                  {!showAllDashboard && !showEngineer && <TableCell>{project.client?.name || '-'}</TableCell>}
+                  {!showAllDashboard && !showProduksi && (
+                    <TableCell className='max-w-[200px] truncate'>
+                      {project.description || (
+                        <span className='text-muted-foreground italic'>None</span>
+                      )}
+                    </TableCell>
+                  )}
+                  {!showAllDashboard && !showSPD && (
                     <>
                       <TableCell>
                         {project.deadline
@@ -541,45 +776,49 @@ export function ProjectsV2Table({
                         {project.sph?.nomor_sph || '-'}
                       </TableCell>
 
-                      <TableCell>
-                        {project.deadline ? (
-                          (() => {
-                            const diff = differenceInDays(
-                              startOfDay(new Date(project.deadline)),
-                              startOfDay(new Date())
-                            );
-                            return (
-                              <div className='flex items-center gap-1.5'>
-                                <Badge
-                                  variant='outline'
-                                  className={cn(
-                                    'font-bold',
-                                    diff < 0
-                                      ? 'bg-red-50 text-red-700 border-red-200'
-                                      : diff <= 3
-                                      ? 'bg-orange-50 text-orange-700 border-orange-200'
-                                      : 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                  )}
-                                >
-                                  {diff < 0
-                                    ? `Lewat ${Math.abs(diff)} Hari`
-                                    : `${diff} Hari`}
-                                </Badge>
-                              </div>
-                            );
-                          })()
-                        ) : (
-                          <span className='text-muted-foreground italic text-xs'>
-                            -
-                          </span>
-                        )}
-                      </TableCell>
+                      {!showProduksi && (
+                        <TableCell>
+                          {project.deadline ? (
+                            (() => {
+                              const diff = differenceInDays(
+                                startOfDay(new Date(project.deadline)),
+                                startOfDay(new Date())
+                              );
+                              return (
+                                <div className='flex items-center gap-1.5'>
+                                  <Badge
+                                    variant='outline'
+                                    className={cn(
+                                      'font-bold',
+                                      diff < 0
+                                        ? 'bg-red-50 text-red-700 border-red-200'
+                                        : diff <= 3
+                                        ? 'bg-orange-50 text-orange-700 border-orange-200'
+                                        : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                    )}
+                                  >
+                                    {diff < 0
+                                      ? `Lewat ${Math.abs(diff)} Hari`
+                                      : `${diff} Hari`}
+                                  </Badge>
+                                </div>
+                              );
+                            })()
+                          ) : (
+                            <span className='text-muted-foreground italic text-xs'>
+                              -
+                            </span>
+                          )}
+                        </TableCell>
+                      )}
                     </>
                   )}
-                  <TableCell>
-                    {project.need_design ? 'Ya' : 'Tidak'}
-                  </TableCell>
-                  {!showSPD && (
+                  {!showAllDashboard && !showProduksi && (
+                    <TableCell>
+                      {project.need_design ? 'Ya' : 'Tidak'}
+                    </TableCell>
+                  )}
+                  {!showAllDashboard && !showSPD && (
                     <TableCell>
                       {project.jadwal_pengiriman ? (
                         <div
@@ -656,7 +895,7 @@ export function ProjectsV2Table({
                       )}
                     </TableCell>
                   )}
-                  {showSPD && (
+                  {!showAllDashboard && showSPD && (
                     <>
                       {!showEngineer && (
                         <TableCell>
@@ -958,6 +1197,86 @@ export function ProjectsV2Table({
                     </>
                   )}
                   {showProduksi && (
+                    <>
+                      <TableCell>
+                        {project.order_produksi?.[0]?.file ? (
+                          <div className='flex items-center gap-2'>
+                            <Badge
+                              variant='outline'
+                              className='bg-emerald-50 text-emerald-700 border-emerald-200'
+                            >
+                              Uploaded
+                            </Badge>
+                            <Button
+                              variant='ghost'
+                              size='icon'
+                              className='h-7 w-7 text-emerald-600'
+                              asChild
+                            >
+                              <a
+                                href={`${(
+                                  process.env.NEXT_PUBLIC_API_URL ||
+                                  'http://localhost:8000'
+                                ).replace('/api', '')}/storage/${
+                                  project.order_produksi[0].file
+                                }`}
+                                target='_blank'
+                                rel='noopener noreferrer'
+                              >
+                                <ArrowDown className='h-3 w-3' />
+                              </a>
+                            </Button>
+                          </div>
+                        ) : (
+                          <span className='text-muted-foreground italic text-[10px]'>
+                            Not Uploaded
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell className='text-xs'>
+                        {project.order_produksi?.[0]?.target_selesai
+                          ? format(
+                              new Date(project.order_produksi[0].target_selesai),
+                              'MMM d, yyyy'
+                            )
+                          : '-'}
+                      </TableCell>
+                      <TableCell>
+                        {project.order_produksi?.[0]?.target_selesai ? (
+                          (() => {
+                            const diff = differenceInDays(
+                              startOfDay(new Date(project.order_produksi[0].target_selesai)),
+                              startOfDay(new Date())
+                            );
+                            return (
+                              <div className='flex items-center gap-1.5'>
+                                <Badge
+                                  variant='outline'
+                                  className={cn(
+                                    'font-bold',
+                                    diff < 0
+                                      ? 'bg-red-50 text-red-700 border-red-200'
+                                      : diff <= 3
+                                      ? 'bg-orange-50 text-orange-700 border-orange-200'
+                                      : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                  )}
+                                >
+                                  {diff < 0
+                                    ? `Lewat ${Math.abs(diff)} Hari`
+                                    : `${diff} Hari`}
+                                </Badge>
+                              </div>
+                            );
+                          })()
+                        ) : (
+                          <span className='text-muted-foreground italic text-xs'>
+                            -
+                          </span>
+                        )}
+                      </TableCell>
+                    </>
+                  )}
+                  {showProduksi && (
                     <TableCell>
                       <div className='flex items-center gap-2'>
                         <div className='flex-1 min-w-[60px]'>
@@ -976,132 +1295,189 @@ export function ProjectsV2Table({
                       </div>
                     </TableCell>
                   )}
-                  <TableCell className='text-right'>
-                    {onlyShowDetail ? (
-                      <div className='flex justify-end'>
-                        {showSPD && (
-                          <Button
-                            variant='outline'
-                            size='sm'
-                            className='h-8 px-3 text-orange-600 border-orange-200 hover:bg-orange-50 hover:text-orange-700'
-                            onClick={() =>
-                              router.push(
-                                showEngineer 
-                                  ? `/dashboard/projects-v2/engineer/${project.id}/detail`
-                                  : `/dashboard/projects-v2/perintah-kerja/${project.id}/detail`
-                              )
-                            }
-                          >
-                            Detail
-                          </Button>
-                        )}
-                        {showPerencanaan && (
-                          <Button
-                            variant='outline'
-                            size='sm'
-                            className='h-8 px-3 text-blue-600 border-blue-200 hover:bg-blue-50 hover:text-blue-700'
-                            onClick={() =>
-                              router.push(
-                                `/dashboard/projects-v2/perencanaan/${project.id}/detail`
-                              )
-                            }
-                          >
-                            Detail
-                          </Button>
-                        )}
-                        {showProduksi && (
-                          <Button
-                            variant='outline'
-                            size='sm'
-                            className='h-8 px-3 text-emerald-600 border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700'
-                            onClick={() =>
-                              router.push(
-                                `/dashboard/projects-v2/produksi/${project.id}/detail`
-                              )
-                            }
-                          >
-                            Detail
-                          </Button>
-                        )}
-                      </div>
-                    ) : (
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant='ghost' className='h-8 w-8 p-0'>
-                            <span className='sr-only'>Open menu</span>
-                            <MoreHorizontal className='h-4 w-4' />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align='end'>
-                          <DropdownMenuItem
-                            onClick={() =>
-                              router.push(
-                                `/dashboard/projects-v2/${project.id}/items`
-                              )
-                            }
-                          >
-                            <Plus className='mr-2 h-4 w-4' />
-                            Item
-                          </DropdownMenuItem>
+                  {showAllDashboard ? (
+                    <TableCell className='text-right'>
+                      <Button
+                        variant='outline'
+                        size='sm'
+                        className='h-8 px-3 text-blue-600 border-blue-200 hover:bg-blue-50 hover:text-blue-700'
+                        onClick={() =>
+                          router.push(
+                            `/dashboard/projects-v2/monitoring/${project.id}/detail`
+                          )
+                        }
+                      >
+                        Detail
+                      </Button>
+                    </TableCell>
+                  ) : (
+                    <TableCell className='text-right'>
+                      {onlyShowDetail ? (
+                        <div className='flex justify-end'>
                           {showSPD && (
-                            <DropdownMenuItem
+                            <Button
+                              variant='outline'
+                              size='sm'
+                              className='h-8 px-3 text-orange-600 border-orange-200 hover:bg-orange-50 hover:text-orange-700'
                               onClick={() =>
                                 router.push(
-                                  `/dashboard/projects-v2/perintah-kerja/${project.id}/detail`
+                                  showEngineer 
+                                    ? `/dashboard/projects-v2/engineer/${project.id}/detail`
+                                    : `/dashboard/projects-v2/perintah-kerja/${project.id}/detail`
                                 )
                               }
                             >
-                              <Plus className='mr-2 h-4 w-4' />
                               Detail
-                            </DropdownMenuItem>
+                            </Button>
                           )}
                           {showPerencanaan && (
-                            <DropdownMenuItem
+                            <Button
+                              variant='outline'
+                              size='sm'
+                              className='h-8 px-3 text-blue-600 border-blue-200 hover:bg-blue-50 hover:text-blue-700'
                               onClick={() =>
                                 router.push(
                                   `/dashboard/projects-v2/perencanaan/${project.id}/detail`
                                 )
                               }
                             >
-                              <Plus className='mr-2 h-4 w-4' />
                               Detail
-                            </DropdownMenuItem>
+                            </Button>
                           )}
                           {showProduksi && (
-                            <DropdownMenuItem
+                            <Button
+                              variant='outline'
+                              size='sm'
+                              className='h-8 px-3 text-emerald-600 border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700'
                               onClick={() =>
                                 router.push(
                                   `/dashboard/projects-v2/produksi/${project.id}/detail`
                                 )
                               }
                             >
-                              <Plus className='mr-2 h-4 w-4' />
                               Detail
-                            </DropdownMenuItem>
+                            </Button>
                           )}
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => handleEdit(project)}>
-                            <Pencil className='mr-2 h-4 w-4' />
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handleScheduleClick(project)}
-                          >
-                            <Truck className='mr-2 h-4 w-4' />
-                            Jadwalkan Pengiriman
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            className='text-red-600 focus:text-red-600'
-                            onClick={() => handleDeleteClick(project)}
-                          >
-                            <Trash2 className='mr-2 h-4 w-4' />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    )}
-                  </TableCell>
+                          {showQC && (
+                            <Button
+                              variant='outline'
+                              size='sm'
+                              className='h-8 px-3 text-orange-600 border-orange-200 hover:bg-orange-50 hover:text-orange-700'
+                              onClick={() =>
+                                router.push(
+                                  `/dashboard/projects-v2/qc/${project.id}/detail`
+                                )
+                              }
+                            >
+                              Detail
+                            </Button>
+                          )}
+                          {showPiutang && (
+                            <Button
+                              variant='outline'
+                              size='sm'
+                              className='h-8 px-3 text-blue-600 border-blue-200 hover:bg-blue-50 hover:text-blue-700'
+                              onClick={() =>
+                                router.push(
+                                  `/dashboard/projects-v2/piutang/${project.id}/detail`
+                                )
+                              }
+                            >
+                              Detail
+                            </Button>
+                          )}
+                        </div>
+                      ) : (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant='ghost' className='h-8 w-8 p-0'>
+                              <span className='sr-only'>Open menu</span>
+                              <MoreHorizontal className='h-4 w-4' />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align='end'>
+                            <DropdownMenuItem
+                              onClick={() =>
+                                router.push(
+                                  `/dashboard/projects-v2/${project.id}/items`
+                                )
+                              }
+                            >
+                              <Plus className='mr-2 h-4 w-4' />
+                              Item
+                            </DropdownMenuItem>
+                            {showSPD && (
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  router.push(
+                                    `/dashboard/projects-v2/perintah-kerja/${project.id}/detail`
+                                  )
+                                }
+                              >
+                                <Plus className='mr-2 h-4 w-4' />
+                                Detail
+                              </DropdownMenuItem>
+                            )}
+                            {showPerencanaan && (
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  router.push(
+                                    `/dashboard/projects-v2/perencanaan/${project.id}/detail`
+                                  )
+                                }
+                              >
+                                <Plus className='mr-2 h-4 w-4' />
+                                Detail
+                              </DropdownMenuItem>
+                            )}
+                            {showQC && (
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  router.push(
+                                    `/dashboard/projects-v2/qc/${project.id}/detail`
+                                  )
+                                }
+                              >
+                                <Plus className='mr-2 h-4 w-4' />
+                                Detail
+                              </DropdownMenuItem>
+                            )}
+                            {showProduksi && (
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  router.push(
+                                    `/dashboard/projects-v2/produksi/${project.id}/detail`
+                                  )
+                                }
+                              >
+                                <Plus className='mr-2 h-4 w-4' />
+                                Detail
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => handleEdit(project)}>
+                              <Pencil className='mr-2 h-4 w-4' />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleScheduleClick(project)}
+                            >
+                              <Truck className='mr-2 h-4 w-4' />
+                              Jadwalkan Pengiriman
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className='text-red-600 focus:text-red-600'
+                              onClick={() => handleDeleteClick(project)}
+                            >
+                              <Trash2 className='mr-2 h-4 w-4' />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
+                    </TableCell>
+                  )}
                 </TableRow>
               ))
             )}

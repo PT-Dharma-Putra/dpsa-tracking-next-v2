@@ -116,6 +116,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             title: 'Project V2 | PPIC',
             url: '/dashboard/projects-v2/perencanaan',
           },
+          {
+            title: 'Project V2 | QC',
+            url: '/dashboard/projects-v2/qc',
+          },
         ],
       },
       {
@@ -181,7 +185,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
       <SidebarContent>
         {/* Main Group */}
-        <SidebarGroup>
+        {/* <SidebarGroup>
           <SidebarGroupLabel>Platform</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -225,7 +229,27 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
-        </SidebarGroup>
+        </SidebarGroup> */}
+
+        <SidebarGroup>
+            <SidebarGroupLabel>Platform</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    tooltip='Dashboard V2'
+                    isActive={isActive('/dashboard/all')}
+                  >
+                    <Link href='/dashboard/all'>
+                      <Users />
+                      <span>Dashboard</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
 
         {isAdmin && (
           <SidebarGroup>
@@ -282,6 +306,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             </SidebarGroupContent>
           </SidebarGroup>
         )}
+
+        
 
         {/* add sidebar collapse  */}
         {data.navMain.map((item) => (
