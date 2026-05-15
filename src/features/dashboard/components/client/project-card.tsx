@@ -4,6 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { formatDistanceToNow } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
 
 interface Project {
     id: number;
@@ -12,6 +14,7 @@ interface Project {
     progress: number;
     thumbnail?: string | null;
     description?: string | null;
+    last_updated_at?: string;
 }
 
 export function ClientProjectCard({ project }: { project: Project }) {
@@ -59,7 +62,11 @@ export function ClientProjectCard({ project }: { project: Project }) {
                 <div className="flex items-center gap-4 text-xs text-neutral-400">
                     <div className="flex items-center gap-1">
                         <Clock className="h-3.5 w-3.5" />
-                        <span>Last updated 2h ago</span>
+                        <span>
+                            Last updated {project.last_updated_at 
+                                ? formatDistanceToNow(new Date(project.last_updated_at), { addSuffix: true, locale: idLocale }) 
+                                : 'recently'}
+                        </span>
                     </div>
                 </div>
             </CardContent>

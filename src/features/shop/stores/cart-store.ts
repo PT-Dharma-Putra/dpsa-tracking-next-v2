@@ -5,6 +5,9 @@ import { MDLItem } from '@/features/mdl/types';
 
 export interface CartItem extends MDLItem {
     quantity: number;
+    lantai?: string;
+    ruang?: string;
+    keterangan?: string;
 }
 
 interface CartState {
@@ -12,6 +15,7 @@ interface CartState {
     addToCart: (item: MDLItem, quantity?: number) => void;
     removeFromCart: (id: number) => void;
     updateQuantity: (id: number, quantity: number) => void;
+    updateItem: (id: number, data: Partial<CartItem>) => void;
     clearCart: () => void;
     getTotalItems: () => number;
     getTotalPrice: () => number;
@@ -30,7 +34,15 @@ export const useCartStore = create<CartState>()(
                         ),
                     };
                 }
-                return { items: [...state.items, { ...item, quantity }] };
+                return { 
+                    items: [...state.items, { 
+                        ...item, 
+                        quantity,
+                        lantai: '',
+                        ruang: item.lokasi_ruangan || '',
+                        keterangan: item.spesifikasi_dan_material || ''
+                    }] 
+                };
             }),
             removeFromCart: (id) => set((state) => ({
                 items: state.items.filter((i) => i.id !== id),
@@ -38,6 +50,11 @@ export const useCartStore = create<CartState>()(
             updateQuantity: (id, quantity) => set((state) => ({
                 items: state.items.map((i) =>
                     i.id === id ? { ...i, quantity: Math.max(1, quantity) } : i
+                ),
+            })),
+            updateItem: (id, data) => set((state) => ({
+                items: state.items.map((i) =>
+                    i.id === id ? { ...i, ...data } : i
                 ),
             })),
             clearCart: () => set({ items: [] }),

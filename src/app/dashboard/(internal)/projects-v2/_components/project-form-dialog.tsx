@@ -49,7 +49,7 @@ import { projectV2Service, ProjectV2 } from "@/features/projects/services/projec
 import { ClientService } from "@/features/clients/services/client-service"
 
 const formSchema = z.object({
-    name: z.string().min(1, "Project Name is required"),
+    name: z.string().optional(),
     client_id: z.string().min(1, "Client is required"),
     description: z.string().optional(),
     deadline: z.date().optional().nullable(),
@@ -149,8 +149,9 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
 
     const mutation = useMutation({
         mutationFn: async (values: FormValues) => {
+            const selectedClient = clients.find(c => c.id.toString() === values.client_id)
             const payload = {
-                name: values.name,
+                name: values.name || selectedClient?.name || "Proyek Baru",
                 client_id: parseInt(values.client_id),
                 description: values.description,
                 deadline: values.deadline ? format(values.deadline, "yyyy-MM-dd") : undefined,
@@ -189,19 +190,22 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
                 </DialogHeader>
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                        <FormField
-                            control={form.control}
-                            name="name"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Project Name</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="Enter project name" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+                        {/* Project Name removed as per user request */}
+                        <div className="hidden">
+                            <FormField
+                                control={form.control}
+                                name="name"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Project Name</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="Enter project name" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
 
                         <FormField
                             control={form.control}

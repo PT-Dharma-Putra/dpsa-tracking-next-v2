@@ -53,7 +53,7 @@ export default function StaffLoginPage() {
                             {/* Form Section */}
                             {/* Tambahan padding horizontal (px-4 md:px-12) agar form tidak terlalu lebar ke samping */}
                             <div className="border-t border-neutral-100 pt-6 px-4 md:px-12">
-                                <UserAuthForm onSuccessRedirect="/dashboard" />
+                                <UserAuthForm onSuccessRedirect="/dashboard/all" />
                             </div>
 
                             {/* Footer */}
