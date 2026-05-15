@@ -466,12 +466,11 @@ export function ProjectsV2Table({
                 </>
               ) : (
                 <>
-                  <TableHead>Project Name</TableHead>
+                  {!showEngineer && <TableHead>Client</TableHead>}
                   <TableHead>Nomor SPK</TableHead>
                   <TableHead>Prioritas</TableHead>
                   {showPiutang && <TableHead>Progres Produksi</TableHead>}
                   {showPiutang && <TableHead>Total Penagihan</TableHead>}
-                  {!showEngineer && <TableHead>Client</TableHead>}
                   {!showProduksi && <TableHead>Description</TableHead>}
                 </>
               )}
@@ -706,7 +705,7 @@ export function ProjectsV2Table({
                      </>
                    ) : (
                      <>
-                        <TableCell className='font-medium'>{project.name}</TableCell>
+                        {!showAllDashboard && !showEngineer && <TableCell className="font-semibold">{project.client?.name || '-'}</TableCell>}
                         <TableCell className='font-medium text-blue-600'>
                           {project.spk_number || project.spk?.nomor_spk || '-'}
                         </TableCell>
@@ -731,7 +730,7 @@ export function ProjectsV2Table({
                          <div className='flex-1 min-w-[60px]'>
                            <div className='h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden'>
                              <div
-                               className='h-full bg-emerald-500 rounded-full transition-all duration-500'
+                               className='h-full bg-blue-600 rounded-full transition-all duration-500'
                                style={{
                                  width: `${project.progres_produksi || 0}%`,
                                }}
@@ -757,7 +756,7 @@ export function ProjectsV2Table({
                        </Badge>
                      </TableCell>
                    )}
-                  {!showAllDashboard && !showEngineer && <TableCell>{project.client?.name || '-'}</TableCell>}
+
                   {!showAllDashboard && !showProduksi && (
                     <TableCell className='max-w-[200px] truncate'>
                       {project.description || (
@@ -1282,7 +1281,7 @@ export function ProjectsV2Table({
                         <div className='flex-1 min-w-[60px]'>
                           <div className='h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden'>
                             <div
-                              className='h-full bg-emerald-500 rounded-full transition-all duration-500'
+                              className='h-full bg-blue-600 rounded-full transition-all duration-500'
                               style={{
                                 width: `${project.progres_produksi || 0}%`,
                               }}

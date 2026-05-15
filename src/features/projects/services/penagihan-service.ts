@@ -14,6 +14,7 @@ export interface Penagihan {
     jatuh_tempo: string | null;
     status: 'Belum Bayar' | 'Sebagian Dibayar' | 'Lunas';
     tanggal_dibayar: string | null;
+    nominal_dibayar: number | string | null;
     file: string | null;
     termin?: Termin;
     created_at: string;
@@ -28,6 +29,7 @@ export interface CreatePenagihanPayload {
     jatuh_tempo?: string;
     status: 'Belum Bayar' | 'Sebagian Dibayar' | 'Lunas';
     tanggal_dibayar?: string;
+    nominal_dibayar?: number;
     file?: File;
 }
 
@@ -67,6 +69,7 @@ export const penagihanService = {
         if (payload.tanggal_kirim) formData.append('tanggal_kirim', payload.tanggal_kirim);
         if (payload.jatuh_tempo) formData.append('jatuh_tempo', payload.jatuh_tempo);
         if (payload.tanggal_dibayar) formData.append('tanggal_dibayar', payload.tanggal_dibayar);
+        if (payload.nominal_dibayar !== undefined) formData.append('nominal_dibayar', payload.nominal_dibayar.toString());
         if (payload.file) formData.append('file', payload.file);
 
         const { data } = await apiClient.post<Penagihan>('/penagihan', formData, {
@@ -83,6 +86,7 @@ export const penagihanService = {
         if (payload.tanggal_kirim) formData.append('tanggal_kirim', payload.tanggal_kirim);
         if (payload.jatuh_tempo) formData.append('jatuh_tempo', payload.jatuh_tempo);
         if (payload.tanggal_dibayar) formData.append('tanggal_dibayar', payload.tanggal_dibayar);
+        if (payload.nominal_dibayar !== undefined) formData.append('nominal_dibayar', payload.nominal_dibayar.toString());
         if (payload.file) formData.append('file', payload.file);
         formData.append('_method', 'PUT');
 

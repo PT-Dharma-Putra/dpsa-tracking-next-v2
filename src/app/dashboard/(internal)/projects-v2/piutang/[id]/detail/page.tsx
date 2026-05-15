@@ -79,6 +79,7 @@ const emptyForm: Omit<CreatePenagihanPayload, 'project_id'> = {
     jatuh_tempo: '',
     status: 'Belum Bayar',
     tanggal_dibayar: '',
+    nominal_dibayar: 0,
     file: undefined,
 };
 
@@ -198,6 +199,7 @@ export default function PiutangDetailPage() {
             jatuh_tempo: p.jatuh_tempo || '',
             status: p.status,
             tanggal_dibayar: p.tanggal_dibayar || '',
+            nominal_dibayar: Number(p.nominal_dibayar) || 0,
             file: undefined,
         });
         setFileInput(null);
@@ -225,6 +227,7 @@ export default function PiutangDetailPage() {
             tanggal_kirim: form.tanggal_kirim || undefined,
             jatuh_tempo: form.jatuh_tempo || undefined,
             tanggal_dibayar: form.tanggal_dibayar || undefined,
+            nominal_dibayar: form.status === 'Sebagian Dibayar' ? form.nominal_dibayar : undefined,
             file: fileInput || undefined,
         };
 
@@ -375,6 +378,11 @@ export default function PiutangDetailPage() {
                                             <Badge variant='outline' className={statusBadgeClass(item.status)}>
                                                 {item.status}
                                             </Badge>
+                                            {item.status === 'Sebagian Dibayar' && item.nominal_dibayar && (
+                                                <div className="text-[10px] text-neutral-500 mt-1">
+                                                    Rp {Number(item.nominal_dibayar).toLocaleString('id-ID')}
+                                                </div>
+                                            )}
                                         </TableCell>
                                         <TableCell className='text-sm'>
                                             {item.tanggal_dibayar ? format(new Date(item.tanggal_dibayar), 'dd MMM yyyy') : '-'}
@@ -516,6 +524,19 @@ export default function PiutangDetailPage() {
                                 </TabsList>
                             </Tabs>
                         </div>
+
+                        {/* Nominal Dibayar (Conditional) */}
+                        {form.status === 'Sebagian Dibayar' && (
+                            <div className='space-y-2 animate-in fade-in slide-in-from-top-1 duration-200'>
+                                <Label>Nominal Dibayar (Rp) <span className='text-red-500'>*</span></Label>
+                                <Input
+                                    type='number'
+                                    placeholder='Masukkan nominal yang sudah dibayar'
+                                    value={form.nominal_dibayar}
+                                    onChange={(e) => setForm((prev) => ({ ...prev, nominal_dibayar: parseFloat(e.target.value) || 0 }))}
+                                />
+                            </div>
+                        )}
 
                         {/* Tanggal Dibayar */}
                         <div className='space-y-2'>

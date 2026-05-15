@@ -85,64 +85,52 @@ export function OverviewTab({ projectId }: OverviewTabProps) {
                         <TableHeader>
                             <TableRow>
                                 <TableHead className="w-[30%]">Item Name</TableHead>
-                                <TableHead className="w-[20%]">Design Phase</TableHead>
-                                <TableHead className="w-[20%]">Production</TableHead>
-                                <TableHead className="w-[20%]">Installation</TableHead>
+                                <TableHead className="w-[60%]">Persentase Kerja</TableHead>
                                 <TableHead className="text-right">Status</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {matrix?.map((item: any) => (
-                                <TableRow key={item.id}>
-                                    <TableCell className="font-medium text-neutral-900">
-                                        {item.name}
-                                        {item.design.needed && <Badge variant="outline" className="ml-2 text-[10px]">Customize</Badge>}
-                                    </TableCell>
+                            {matrix?.map((item: any) => {
+                                // Calculate combined progress
+                                // If design is not needed or finished, show production progress
+                                const designProgress = item.design?.progress || 0;
+                                const productionProgress = item.production?.progress || 0;
+                                
+                                // Simple logic: if design is finished or not needed, show production. 
+                                // Otherwise show design.
+                                const workProgress = (!item.design.needed || designProgress === 100) 
+                                    ? Math.max(designProgress, productionProgress) 
+                                    : designProgress;
+                                
+                                return (
+                                    <TableRow key={item.id}>
+                                        <TableCell className="font-medium text-neutral-900">
+                                            {item.name}
+                                            {item.design.needed && <Badge variant="outline" className="ml-2 text-[10px]">Customize</Badge>}
+                                        </TableCell>
 
-                                    {/* Design Column */}
-                                    <TableCell>
-                                        <div className="space-y-1">
-                                            <div className="flex justify-between text-xs">
-                                                <span className={item.design.needed ? "text-neutral-700" : "text-neutral-300"}>
-                                                    {item.design.needed ? item.design.status.replace('_', ' ') : "N/A"}
-                                                </span>
-                                                <span className="text-neutral-500">{item.design.progress}%</span>
+                                        <TableCell>
+                                            <div className="space-y-1">
+                                                <div className="flex justify-between text-xs">
+                                                    <span className="text-neutral-700">
+                                                        {workProgress === 100 ? "Selesai" : (designProgress < 100 && item.design.needed ? "Design Phase" : "Production")}
+                                                    </span>
+                                                    <span className="text-neutral-500">{workProgress}%</span>
+                                                </div>
+                                                <Progress value={workProgress} className="h-2 bg-neutral-100" indicatorClassName="bg-blue-600" />
                                             </div>
-                                            <Progress value={item.design.progress} className="h-1.5 bg-neutral-100" indicatorClassName="bg-blue-600" />
-                                        </div>
-                                    </TableCell>
+                                        </TableCell>
 
-                                    {/* Production Column (Future) */}
-                                    <TableCell>
-                                        <div className="space-y-1 opacity-50">
-                                            <div className="flex justify-between text-xs text-neutral-400">
-                                                <span>Pending</span>
-                                                <span>0%</span>
-                                            </div>
-                                            <Progress value={0} className="h-1.5" />
-                                        </div>
-                                    </TableCell>
-
-                                    {/* Install Column (Future) */}
-                                    <TableCell>
-                                        <div className="space-y-1 opacity-50">
-                                            <div className="flex justify-between text-xs text-neutral-400">
-                                                <span>Pending</span>
-                                                <span>0%</span>
-                                            </div>
-                                            <Progress value={0} className="h-1.5" />
-                                        </div>
-                                    </TableCell>
-
-                                    <TableCell className="text-right">
-                                        {item.design.progress === 100 ? (
-                                            <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-none">Ready</Badge>
-                                        ) : (
-                                            <Badge variant="outline" className="text-neutral-500">In Progress</Badge>
-                                        )}
-                                    </TableCell>
-                                </TableRow>
-                            ))}
+                                        <TableCell className="text-right">
+                                            {item.design.progress === 100 ? (
+                                                <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-none">Ready</Badge>
+                                            ) : (
+                                                <Badge variant="outline" className="text-neutral-500">In Progress</Badge>
+                                            )}
+                                        </TableCell>
+                                    </TableRow>
+                                );
+                            })}
                         </TableBody>
                     </Table>
                 </CardContent>

@@ -3,7 +3,7 @@
 import { use, useState, useRef } from "react"
 import Link from "next/link"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { ArrowLeft, Download, CheckCircle, AlertCircle, MessageSquare, PlusCircle, FileText, Eye, Upload, CalendarIcon, Lock, X } from "lucide-react"
+import { ArrowLeft, Download, CheckCircle, AlertCircle, MessageSquare, PlusCircle, FileText, Eye, Upload, CalendarIcon, Lock, X, History, Clock } from "lucide-react"
 import { ProjectService } from "@/features/projects/services/project-service"
 import { DesignService, Design } from "@/features/projects/services/design-service"
 import { DocumentService } from "@/features/projects/services/document-service"
@@ -21,6 +21,7 @@ import { SPKViewerDialog } from "@/features/projects/components/spk/spk-viewer-d
 import { Separator } from "@/components/ui/separator"
 import { toast } from "sonner"
 import { MessageService } from "@/features/projects/services/message-service"
+import { format } from "date-fns"
 
 export default function ClientProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
@@ -319,12 +320,8 @@ function DocumentsTabContent({ projectId }: { projectId: string }) {
             if (file) {
                 // Return promise chain: Upload -> Approve
                 await DocumentService.uploadSignedSPH(projectId, file);
-                return DocumentService.approveSPH(projectId);
-            } else {
-                // should not happen given button logic but fallback
-                toast.error("Please upload signed SPH");
-                throw new Error("No file uploaded");
             }
+            return DocumentService.approveSPH(projectId);
         },
         onSuccess: () => {
             toast.success("SPH Signed & Approved!");
@@ -415,11 +412,9 @@ function DocumentsTabContent({ projectId }: { projectId: string }) {
                 <CardHeader>
                     <CardTitle className="flex justify-between">
                         <span>Quotation (SPH)</span>
-                        {sph?.status === 'approved' && <Badge className="bg-green-600">Approved</Badge>}
-                        {sph?.status === 'pending' && <Badge variant="outline" className="text-orange-600 border-orange-200">Waiting Approval</Badge>}
-                        {sph?.status === 'rejected' && <Badge className="bg-red-600">Revision Requested</Badge>}
-                        {sph?.status === 'revisied' && <Badge variant="outline" className="text-orange-600 border-orange-200">Revisied</Badge>}
-                        {sph?.status === 'draft' && <Badge variant="outline" className="text-neutral-400">Draft</Badge>}
+                        {sph?.sph_status === 'approved' && <Badge className="bg-emerald-600">Approved</Badge>}
+                        {sph?.sph_status === 'pending' && <Badge variant="outline" className="text-blue-600 border-blue-200">Pending</Badge>}
+                        {sph?.sph_status === 'revision' && <Badge className="bg-red-600">Revision</Badge>}
                     </CardTitle>
                     <CardDescription>Review and approve the commercial quotation.</CardDescription>
                 </CardHeader>
@@ -432,7 +427,7 @@ function DocumentsTabContent({ projectId }: { projectId: string }) {
                                 </div>
                                 <div>
                                     <p className="font-medium text-neutral-900">{sph.sph_number}</p>
-                                    <p className="text-xs text-neutral-500">Amount: Rp {sph.total_amount?.toLocaleString()}</p>
+                                    <p className="text-xs text-neutral-500">Amount: Rp {sph.amount ? Number(sph.amount).toLocaleString('id-ID') : '0'}</p>
                                 </div>
                             </div>
                             <div className="flex gap-2">
@@ -445,7 +440,7 @@ function DocumentsTabContent({ projectId }: { projectId: string }) {
                                             onClick={() => setIsViewerOpen(true)}
                                         >
                                             <Eye className="h-4 w-4 mr-2" />
-                                            {sph?.status === 'sent' || sph?.status === 'revisied' ? 'View & Aprove' : 'View'}
+                                            {sph?.sph_status !== 'approved' ? 'View & Approve' : 'View'}
                                         </Button>
 
                                         <SPHViewerDialog
@@ -453,7 +448,7 @@ function DocumentsTabContent({ projectId }: { projectId: string }) {
                                             onOpenChange={setIsViewerOpen}
                                             url={sph.file_url}
                                             sphNumber={sph.sph_number}
-                                            status={sph.status}
+                                            status={sph.sph_status}
                                             onApprove={(file) => approveSPHMutation.mutate(file)}
                                             onReject={(reason) => rejectSPHMutation.mutate(reason)}
                                             isApproving={approveSPHMutation.isPending}
@@ -467,6 +462,57 @@ function DocumentsTabContent({ projectId }: { projectId: string }) {
                     ) : (
                         <div className="text-center py-6 border-dashed border-2 rounded-lg text-neutral-400 text-sm">
                             SPH not yet generated.
+                        </div>
+                    )}
+
+                    {/* SPH History Section */}
+                    {sph?.sph_history && sph.sph_history.length > 1 && (
+                        <div className="mt-8 pt-8 border-t border-neutral-100">
+                            <h4 className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                <History className="h-3 w-3" />
+                                Revision History
+                            </h4>
+                            <div className="space-y-4">
+                                {sph.sph_history.slice(1).map((hist: any, idx: number) => (
+                                    <div key={idx} className="group relative pl-6 border-l-2 border-neutral-100 hover:border-orange-200 transition-colors">
+                                        <div className="absolute -left-[9px] top-0 h-4 w-4 rounded-full bg-white border-2 border-neutral-100 group-hover:border-orange-200 transition-colors flex items-center justify-center">
+                                            <div className="h-1.5 w-1.5 rounded-full bg-neutral-300 group-hover:bg-orange-400" />
+                                        </div>
+                                        <div className="bg-neutral-50/50 rounded-xl p-4 border border-neutral-100 group-hover:bg-white group-hover:shadow-sm transition-all">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="h-8 w-8 bg-white rounded-lg border border-neutral-100 flex items-center justify-center text-neutral-400">
+                                                        <FileText className="h-4 w-4" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-xs font-bold text-neutral-800">{hist.nomor_sph}</p>
+                                                        <div className="flex items-center gap-2 mt-0.5">
+                                                            <Clock className="h-3 w-3 text-neutral-400" />
+                                                            <p className="text-[10px] text-neutral-500">
+                                                                {format(new Date(hist.created_at), 'MMM d, yyyy HH:mm')}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <Button size="sm" variant="ghost" className="h-8 text-[10px] text-blue-600 hover:bg-blue-50" asChild>
+                                                    <a href={hist.file_url} target="_blank" rel="noopener noreferrer">
+                                                        <Download className="h-3 w-3 mr-1.5" />
+                                                        View PDF
+                                                    </a>
+                                                </Button>
+                                            </div>
+                                            {hist.note_revision && (
+                                                <div className="mt-3 p-3 bg-red-50/50 rounded-lg border border-red-100/50">
+                                                    <p className="text-[10px] font-bold text-red-800 uppercase tracking-tight mb-1">Feedback from Client:</p>
+                                                    <p className="text-xs text-red-700 italic leading-relaxed">
+                                                        "{hist.note_revision}"
+                                                    </p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     )}
                 </CardContent>

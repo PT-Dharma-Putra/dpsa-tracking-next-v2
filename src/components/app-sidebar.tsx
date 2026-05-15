@@ -288,6 +288,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         {isAdmin && (
           <SidebarGroup>
             <SidebarGroupLabel>Master Data</SidebarGroupLabel>
+
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
@@ -299,6 +300,22 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     <Link href='/dashboard/master-data/divisi'>
                       <Users />
                       <span>Divisi</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    tooltip='User Management'
+                    isActive={isActive('/dashboard/master-data/clients')}
+                  >
+                    <Link href='/dashboard/master-data/clients'>  
+                      <Users />
+                      <span>Client</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

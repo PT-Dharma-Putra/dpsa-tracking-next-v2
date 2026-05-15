@@ -301,6 +301,7 @@ export default function ProduksiDetailPage() {
                   <Progress
                     value={project.progres_produksi || 0}
                     className='h-2 bg-neutral-100'
+                    indicatorClassName='bg-blue-600'
                   />
                 </div>
                 <span className='text-sm font-bold text-neutral-900'>
@@ -503,6 +504,7 @@ export default function ProduksiDetailPage() {
                         <Progress
                           value={item.produksi?.persen || 0}
                           className='h-1.5 bg-neutral-100'
+                          indicatorClassName='bg-blue-600'
                         />
                       </div>
                     </TableCell>

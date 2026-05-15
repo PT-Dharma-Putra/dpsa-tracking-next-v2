@@ -3,7 +3,16 @@
 import { ReactNode, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Building2, LogOut, LayoutDashboard, Settings, FileText, ShoppingBag, ShoppingCart, CreditCard } from "lucide-react";
+import { Building2, LogOut, LayoutDashboard, Settings, FileText, ShoppingBag, ShoppingCart, CreditCard, User } from "lucide-react";
+import { usePathname } from "next/navigation";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ClientNotifications } from "@/features/dashboard/components/client/client-notifications";
@@ -12,6 +21,7 @@ import { useCartStore } from "@/features/shop/stores/cart-store";
 
 export default function CustomerLayout({ children }: { children: ReactNode }) {
     const router = useRouter()
+    const pathname = usePathname()
     const { token, hydrated, user, logout } = useAuthStore()
     const [isChecking, setIsChecking] = useState(true)
 
@@ -60,19 +70,19 @@ export default function CustomerLayout({ children }: { children: ReactNode }) {
 
                     {/* Navigation (Desktop) */}
                     <nav className="hidden md:flex items-center gap-1 rounded-full bg-neutral-100/50 p-1 border border-neutral-200/50">
-                        <NavLink href="/dashboard/external" active={false}>
+                        <NavLink href="/dashboard/external" active={pathname === "/dashboard/external"}>
                             <LayoutDashboard className="h-4 w-4 mr-2" />
                             Dashboard
                         </NavLink>
-                        <NavLink href="/dashboard/external/projects" active={false}>
+                        <NavLink href="/dashboard/external/projects" active={pathname.startsWith("/dashboard/external/projects")}>
                             <FileText className="h-4 w-4 mr-2" />
                             My Projects
                         </NavLink>
-                        <NavLink href="/dashboard/external/mdl" active={false}>
+                        <NavLink href="/dashboard/external/mdl" active={pathname.startsWith("/dashboard/external/mdl")}>
                             <ShoppingBag className="h-4 w-4 mr-2" />
                             Catalog
                         </NavLink>
-                        <NavLink href="/dashboard/external/finance" active={false}>
+                        <NavLink href="/dashboard/external/finance" active={pathname.startsWith("/dashboard/external/finance")}>
                             <CreditCard className="h-4 w-4 mr-2" />
                             Finance
                         </NavLink>
@@ -90,15 +100,39 @@ export default function CustomerLayout({ children }: { children: ReactNode }) {
                             <p className="text-sm font-bold text-neutral-900 leading-none">{user?.name || 'Client'}</p>
                             <p className="text-xs text-neutral-500 mt-1">{user?.email || 'Executive Portal'}</p>
                         </div>
-                        <Avatar className="h-10 w-10 border-2 border-orange-100 shadow-sm cursor-pointer hover:ring-2 hover:ring-orange-500 transition-all">
-                            <AvatarImage src="https://github.com/shadcn.png" />
-                            <AvatarFallback className="bg-orange-50 text-orange-600 font-bold">
-                                {user?.name?.substring(0, 2).toUpperCase() || 'CL'}
-                            </AvatarFallback>
-                        </Avatar>
-                        <Button variant="ghost" size="icon" onClick={handleLogout} className="text-neutral-400 hover:text-red-500 hover:bg-red-50 ml-1">
-                            <LogOut className="h-5 w-5" />
-                        </Button>
+
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Avatar className="h-10 w-10 border-2 border-orange-100 shadow-sm cursor-pointer hover:ring-2 hover:ring-orange-500 transition-all ml-2">
+                                    <AvatarImage src="" />
+                                    <AvatarFallback className="bg-orange-50 text-orange-600 font-bold">
+                                        {user?.name?.substring(0, 2).toUpperCase() || 'CL'}
+                                    </AvatarFallback>
+                                </Avatar>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-56 mt-2 rounded-xl shadow-xl border-neutral-100">
+                                <DropdownMenuLabel className="font-normal">
+                                    <div className="flex flex-col space-y-1">
+                                        <p className="text-sm font-bold leading-none">{user?.name}</p>
+                                        <p className="text-xs leading-none text-muted-foreground">{user?.email}</p>
+                                    </div>
+                                </DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => router.push("/dashboard/external/profile")} className="cursor-pointer py-2.5">
+                                    <User className="mr-2 h-4 w-4 text-orange-600" />
+                                    <span>Profile & Keamanan</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => router.push("/dashboard/external/settings")} className="cursor-pointer py-2.5">
+                                    <Settings className="mr-2 h-4 w-4 text-neutral-400" />
+                                    <span>Pengaturan Akun</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={handleLogout} className="cursor-pointer py-2.5 text-red-600 focus:text-red-600 focus:bg-red-50">
+                                    <LogOut className="mr-2 h-4 w-4" />
+                                    <span>Keluar</span>
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                     </div>
                 </div>
             </header>

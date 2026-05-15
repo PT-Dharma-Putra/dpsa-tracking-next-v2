@@ -40,12 +40,15 @@ export interface ProjectV2 {
         };
         design_progres?: DesignProgres[];
     }>;
-    sph?: {
+    sphs?: Array<{
         id: number;
         nomor_sph?: string;
+        nominal?: string;
         file: string | null;
+        status: string;
+        note_revision: string | null;
         created_at: string;
-    };
+    }>;
     spk?: {
         id: number;
         nomor_spk?: string;
@@ -249,13 +252,24 @@ export const projectV2Service = {
         return data;
     },
 
-    uploadSPH: async (projectId: number, file: File, nomor_sph: string) => {
+    uploadSPH: async (projectId: number | string, file: File, nomor_sph: string, nominal?: number | string) => {
         const formData = new FormData();
         formData.append('file', file);
         formData.append('nomor_sph', nomor_sph);
+        if (nominal) formData.append('nominal', nominal.toString());
         const { data } = await apiClient.post(`/projects-v2/${projectId}/upload-sph`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
+        return data;
+    },
+
+    approveSPH: async (projectId: number | string) => {
+        const { data } = await apiClient.post(`/projects-v2/${projectId}/approve-sph`);
+        return data;
+    },
+
+    rejectSPH: async (projectId: number | string, reason: string) => {
+        const { data } = await apiClient.post(`/projects-v2/${projectId}/reject-sph`, { reason });
         return data;
     },
 

@@ -22,6 +22,8 @@ import {
   ChevronDown,
   Info,
   ImageIcon,
+  AlertCircle,
+  CheckCircle,
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -77,6 +79,27 @@ import {
 import { ProjectItemFormDialog } from '../../_components/project-item-form-dialog';
 import { CatalogModal } from '../../_components/catalog-modal';
 import { Badge } from '@/components/ui/badge';
+
+const formatRupiah = (value: string | number) => {
+  if (!value) return '';
+  const numberString = value.toString().replace(/[^,\d]/g, '');
+  const split = numberString.split(',');
+  const sisa = split[0].length % 3;
+  let rupiah = split[0].substr(0, sisa);
+  const ribuan = split[0].substr(sisa).match(/\d{3}/gi);
+
+  if (ribuan) {
+    const separator = sisa ? '.' : '';
+    rupiah += separator + ribuan.join('.');
+  }
+
+  rupiah = split[1] !== undefined ? rupiah + ',' + split[1] : rupiah;
+  return 'Rp ' + rupiah;
+};
+
+const parseRawNumber = (value: string) => {
+  return value.replace(/[^0-9]/g, '');
+};
 
 export default function ProjectItemsPage() {
   const params = useParams();
@@ -172,15 +195,17 @@ export default function ProjectItemsPage() {
 
   const [sphFile, setSphFile] = React.useState<File | null>(null);
   const [sphNumber, setSphNumber] = React.useState<string>('');
+  const [sphNominal, setSphNominal] = React.useState<string>('');
 
   const uploadSphMutation = useMutation({
-    mutationFn: ({ file, number }: { file: File; number: string }) =>
-      projectV2Service.uploadSPH(projectId, file, number),
+    mutationFn: ({ file, number, nominal }: { file: File; number: string; nominal?: string }) =>
+      projectV2Service.uploadSPH(projectId, file, number, nominal),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects-v2', projectId] });
       toast.success('SPH uploaded successfully');
       setSphFile(null);
       setSphNumber('');
+      setSphNominal('');
     },
     onError: () => {
       toast.error('Failed to upload SPH');
@@ -192,7 +217,7 @@ export default function ProjectItemsPage() {
       toast.error('Please provide both file and SPH number');
       return;
     }
-    uploadSphMutation.mutate({ file: sphFile, number: sphNumber });
+    uploadSphMutation.mutate({ file: sphFile, number: sphNumber, nominal: sphNominal });
   };
 
   const [accSentDate, setAccSentDate] = React.useState<string>(
@@ -266,9 +291,11 @@ export default function ProjectItemsPage() {
   const [isAccCollapsed, setIsAccCollapsed] = React.useState(true);
   const [isSphCollapsed, setIsSphCollapsed] = React.useState(true);
   const [isSpkCollapsed, setIsSpkCollapsed] = React.useState(true);
+  const [isNeedDesignModalOpen, setIsNeedDesignModalOpen] = React.useState(false);
+  const [needDesignValue, setNeedDesignValue] = React.useState<number>(project?.need_design ?? 1);
 
   const existingSpd = project?.designs?.[0];
-  const existingSph = project?.sph;
+  const existingSph = project?.sphs?.[0];
   const existingAcc = existingSpd?.acc_design;
   const existingSpk = project?.spk;
 
@@ -279,7 +306,26 @@ export default function ProjectItemsPage() {
       if (existingAcc.tanggal_acc) setAccDoneDate(existingAcc.tanggal_acc);
       setAccStatus(existingAcc.status);
     }
-  }, [existingAcc]);
+    if (project) {
+      setNeedDesignValue(project.need_design);
+    }
+  }, [existingAcc, project]);
+
+  const updateNeedDesignMutation = useMutation({
+    mutationFn: (value: number) => projectV2Service.updateProject(projectId, {
+      name: project.name,
+      client_id: project.client_id,
+      need_design: value
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects-v2', projectId] });
+      toast.success('Project updated successfully');
+      setIsNeedDesignModalOpen(false);
+    },
+    onError: () => {
+      toast.error('Failed to update project');
+    },
+  });
 
   if (isLoadingProject) {
     return (
@@ -301,9 +347,9 @@ export default function ProjectItemsPage() {
     {
       id: 1,
       title: 'Upload SPD',
-      description: project.need_design === 0 ? 'Not Required' : 'Surat Permintaan Desain',
-      isCompleted: !!existingSpd?.spd_file,
-      isActive: project.need_design !== 0,
+      description: project.need_design === 0 ? 'Tanpa Design' : 'Surat Permintaan Desain',
+      isCompleted: project.need_design === 0 || !!existingSpd?.spd_file,
+      isActive: true,
       icon: FileText,
       color: 'text-orange-600',
       bgColor: 'bg-orange-500',
@@ -313,9 +359,9 @@ export default function ProjectItemsPage() {
     {
       id: 2,
       title: 'ACC Design',
-      description: project.need_design === 0 ? 'Not Required' : 'Approval Desain',
-      isCompleted: existingAcc?.status === 'Approved',
-      isActive: project.need_design !== 0 && !!existingSpd?.spd_file,
+      description: project.need_design === 0 ? 'Tanpa Design' : 'Approval Desain',
+      isCompleted: project.need_design === 0 || existingAcc?.status === 'Approved',
+      isActive: project.need_design === 0 || !!existingSpd?.spd_file,
       icon: CheckCircle2,
       color: 'text-emerald-600',
       bgColor: 'bg-emerald-500',
@@ -325,7 +371,7 @@ export default function ProjectItemsPage() {
     {
       id: 3,
       title: 'Upload SPH',
-      description: 'Surat Penawaran Harga',
+      description: project.need_design === 0 ? 'Tanpa Design' : 'Surat Penawaran Harga',
       isCompleted: !!existingSph?.file,
       isActive: project.need_design === 0 || existingAcc?.status === 'Approved',
       icon: FileText,
@@ -398,17 +444,24 @@ export default function ProjectItemsPage() {
                   {format(new Date(project.deadline), 'MMM d, yyyy')}
                 </span>
               )}
-              {project.need_design ? (
-                <span className='flex items-center gap-1 text-xs text-emerald-600'>
-                  <Info className='h-3 w-3 text-emerald-500' />
-                  Perlu Desain
-                </span>
-              ) : (
-                <span className='flex items-center gap-1 text-xs text-neutral-600'>
-                  <Info className='h-3 w-3 text-neutral-400' />
-                  Tidak Perlu Desain
-                </span>
-              )}
+              <button 
+                onClick={() => setIsNeedDesignModalOpen(true)}
+                className="group flex items-center gap-1 text-xs hover:bg-neutral-100 px-1.5 py-0.5 rounded-md transition-colors"
+              >
+                {project.need_design ? (
+                  <span className='flex items-center gap-1 text-emerald-600 font-medium'>
+                    <Info className='h-3 w-3 text-emerald-500' />
+                    Perlu Desain
+                    <Pencil className="h-2.5 w-2.5 ml-1 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </span>
+                ) : (
+                  <span className='flex items-center gap-1 text-neutral-600 font-medium'>
+                    <Info className='h-3 w-3 text-neutral-400' />
+                    Tidak Perlu Desain
+                    <Pencil className="h-2.5 w-2.5 ml-1 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </span>
+                )}
+              </button>
             </div>
           </div>
         </div>
@@ -505,7 +558,7 @@ export default function ProjectItemsPage() {
                     Upload SPD
                   </CardTitle>
                   <p className='text-[10px] text-muted-foreground uppercase tracking-wider'>
-                    Surat Permintaan Desain
+                    'Surat Permintaan Desain'
                   </p>
                 </div>
                 <ChevronDown
@@ -605,7 +658,7 @@ export default function ProjectItemsPage() {
                   </>
                 ) : (
                   <p className='text-xs text-muted-foreground italic'>
-                    Belum ada file SPD.
+                    {project.need_design === 0 ? 'Tanpa Desain' : 'Belum ada file SPD.'}
                   </p>
                 )}
               </CardContent>
@@ -641,7 +694,7 @@ export default function ProjectItemsPage() {
                     ACC Design
                   </CardTitle>
                   <p className='text-[10px] text-muted-foreground uppercase tracking-wider'>
-                    Approval Status
+                    'Approval Status'
                   </p>
                 </div>
                 <ChevronDown
@@ -712,7 +765,7 @@ export default function ProjectItemsPage() {
                   </div>
                 ) : (
                   <p className='text-xs text-muted-foreground italic'>
-                    Belum ada data ACC.
+                    {project.need_design === 0 ? 'Tanpa Desain' : 'Belum ada data ACC.'}
                   </p>
                 )}
 
@@ -782,7 +835,7 @@ export default function ProjectItemsPage() {
                     Upload SPH
                   </CardTitle>
                   <p className='text-[10px] text-muted-foreground uppercase tracking-wider'>
-                    Surat Penawaran
+                    'Surat Penawaran'
                   </p>
                 </div>
                 <ChevronDown
@@ -830,9 +883,20 @@ export default function ProjectItemsPage() {
                         <FileText className='h-4 w-4' />
                       </div>
                       <div className='overflow-hidden'>
-                        <p className='text-xs font-bold text-blue-900 line-clamp-1'>
-                          {existingSph.nomor_sph}
-                        </p>
+                        <div className="flex items-center gap-2">
+                          <p className='text-xs font-bold text-blue-900 line-clamp-1'>
+                            {existingSph.nomor_sph}
+                          </p>
+                          {existingSph.status && (
+                            <Badge variant="outline" className={`text-[9px] h-4 px-1.5 uppercase tracking-wider ${
+                              existingSph.status === 'approved' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                              existingSph.status === 'revision' ? 'bg-red-50 text-red-700 border-red-200' :
+                              'bg-blue-50 text-blue-700 border-blue-200'
+                            }`}>
+                              {existingSph.status}
+                            </Badge>
+                          )}
+                        </div>
                         <p className='text-[10px] text-blue-600/80'>
                           {format(
                             new Date(existingSph.created_at),
@@ -841,28 +905,93 @@ export default function ProjectItemsPage() {
                         </p>
                       </div>
                     </div>
-                    <Button
-                      variant='ghost'
-                      size='icon'
-                      className='h-8 w-8 text-blue-600 hover:bg-blue-200 bg-white shadow-sm border border-blue-100 shrink-0'
-                      asChild
-                    >
-                      <a
-                        href={`${(
-                          process.env.NEXT_PUBLIC_API_URL ||
-                          'http://localhost:8000'
-                        ).replace('/api', '')}/storage/${existingSph.file}`}
-                        target='_blank'
-                        rel='noopener noreferrer'
+                    <div className="flex flex-col gap-1 items-end">
+                      <Button
+                        variant='ghost'
+                        size='icon'
+                        className='h-8 w-8 text-blue-600 hover:bg-blue-200 bg-white shadow-sm border border-blue-100 shrink-0'
+                        asChild
                       >
-                        <FileDown className='h-4 w-4' />
-                      </a>
-                    </Button>
+                        <a
+                          href={`${(
+                            process.env.NEXT_PUBLIC_API_URL ||
+                            'http://localhost:8000'
+                          ).replace('/api', '')}/storage/${existingSph.file}`}
+                          target='_blank'
+                          rel='noopener noreferrer'
+                        >
+                          <FileDown className='h-4 w-4' />
+                        </a>
+                      </Button>
+                    </div>
                   </div>
                 ) : (
                   <p className='text-xs text-muted-foreground italic'>
-                    Belum ada file SPH.
+                    {project.need_design === 0 ? 'Tanpa Desain' : 'Belum ada file SPH.'}
                   </p>
+                )}
+
+                {existingSph?.status === 'revision' && existingSph.note_revision && (
+                  <div className="p-3 rounded-xl bg-red-50 border border-red-100 space-y-1.5">
+                    <p className="text-[10px] font-bold text-red-800 uppercase tracking-tight flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      Revision Requested
+                    </p>
+                    <p className="text-[11px] text-red-700 italic bg-white/50 p-2 rounded border border-red-50">
+                      "{existingSph.note_revision}"
+                    </p>
+                    <Button 
+                      size="sm"
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white text-[10px] h-8 mt-2 shadow-sm"
+                      onClick={() => setIsSphModalOpen(true)}
+                    >
+                      <Upload className="h-3 w-3 mr-1.5" />
+                      Upload SPH Baru (Revisi)
+                    </Button>
+                  </div>
+                )}
+
+                {/* SPH History */}
+                {project?.sphs && project.sphs.length > 1 && (
+                  <div className="mt-4 pt-4 border-t border-neutral-100">
+                    <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider mb-2">History SPH</p>
+                    <div className="space-y-2">
+                      {project.sphs.slice(1).map((sph: any, idx: number) => (
+                        <div key={idx} className="flex items-center justify-between p-2 rounded-lg bg-neutral-50 border border-neutral-100 group">
+                          <div className="flex items-center gap-2 overflow-hidden">
+                            <FileText className="h-3 w-3 text-neutral-400 shrink-0" />
+                            <div className="min-w-0">
+                              <p className="text-[10px] font-medium text-neutral-700 truncate">{sph.nomor_sph}</p>
+                              <p className="text-[9px] text-neutral-400">
+                                {format(new Date(sph.created_at), 'dd/MM/yyyy HH:mm')}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Badge variant="outline" className={`text-[8px] h-3.5 px-1 uppercase tracking-tight ${
+                              sph.status === 'approved' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                              sph.status === 'revision' ? 'bg-red-50 text-red-600 border-red-100' :
+                              'bg-blue-50 text-blue-600 border-blue-100'
+                            }`}>
+                              {sph.status}
+                            </Badge>
+                            <Button size="icon" variant="ghost" className="h-6 w-6 text-blue-600 hover:bg-blue-100" asChild>
+                              <a 
+                                href={`${(
+                                  process.env.NEXT_PUBLIC_API_URL ||
+                                  'http://localhost:8000'
+                                ).replace('/api', '')}/storage/${sph.file}`} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                              >
+                                <FileDown className="h-3 w-3" />
+                              </a>
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 )}
               </CardContent>
             )}
@@ -1338,7 +1467,31 @@ export default function ProjectItemsPage() {
               Upload SPH
             </DialogTitle>
           </DialogHeader>
+
           <div className='flex flex-col gap-3 py-2'>
+
+
+            <div className='space-y-1.5'>
+              <Label className='text-xs font-medium'>Nomor SPH</Label>
+              <Input
+                placeholder='Nomor SPH'
+                value={sphNumber}
+                onChange={(e) => setSphNumber(e.target.value)}
+                className='h-9 text-xs'
+              />
+            </div>
+
+            <div className='space-y-1.5'>
+              <Label className='text-xs font-medium'>Nominal</Label>
+              <Input
+                type="text"
+                placeholder='Rp 0'
+                value={formatRupiah(sphNominal)}
+                onChange={(e) => setSphNominal(parseRawNumber(e.target.value))}
+                className='h-9 text-xs font-mono'
+              />
+            </div>
+
             <div className='space-y-1.5'>
               <Label className='text-xs font-medium'>
                 File (PDF/JPG/PNG/DOC)
@@ -1347,15 +1500,6 @@ export default function ProjectItemsPage() {
                 type='file'
                 accept='.pdf,.jpg,.jpeg,.png,.doc,.docx'
                 onChange={(e) => setSphFile(e.target.files?.[0] || null)}
-                className='h-9 text-xs'
-              />
-            </div>
-            <div className='space-y-1.5'>
-              <Label className='text-xs font-medium'>Nomor SPH</Label>
-              <Input
-                placeholder='Nomor SPH'
-                value={sphNumber}
-                onChange={(e) => setSphNumber(e.target.value)}
                 className='h-9 text-xs'
               />
             </div>
@@ -1478,6 +1622,60 @@ export default function ProjectItemsPage() {
                 <Upload className='h-4 w-4 mr-1' />
               )}
               Upload
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal Need Design Toggle */}
+      <Dialog open={isNeedDesignModalOpen} onOpenChange={setIsNeedDesignModalOpen}>
+        <DialogContent className='max-w-sm'>
+          <DialogHeader>
+            <DialogTitle className='flex items-center gap-2 text-neutral-800'>
+              <Info className='h-5 w-5 text-orange-500' />
+              Setting Kebutuhan Desain
+            </DialogTitle>
+          </DialogHeader>
+          <div className='flex flex-col gap-4 py-4'>
+            <p className="text-sm text-muted-foreground">
+              Tentukan apakah project ini membutuhkan proses desain dari studio atau tidak.
+            </p>
+            <div className='space-y-1.5'>
+              <Label className='text-xs font-medium'>Kebutuhan Desain</Label>
+              <Select 
+                value={needDesignValue.toString()} 
+                onValueChange={(v) => setNeedDesignValue(parseInt(v))}
+              >
+                <SelectTrigger className="h-10">
+                  <SelectValue placeholder="Pilih status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">Perlu Desain (Wajib Upload SPD & ACC)</SelectItem>
+                  <SelectItem value="0">Tidak Perlu Desain (Langsung SPH)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant='outline'
+              size='sm'
+              onClick={() => setIsNeedDesignModalOpen(false)}
+            >
+              Batal
+            </Button>
+            <Button
+              size='sm'
+              className='bg-orange-600 hover:bg-orange-700'
+              onClick={() => updateNeedDesignMutation.mutate(needDesignValue)}
+              disabled={updateNeedDesignMutation.isPending || needDesignValue === project.need_design}
+            >
+              {updateNeedDesignMutation.isPending ? (
+                <Loader2 className='h-4 w-4 animate-spin' />
+              ) : (
+                <CheckCircle2 className='h-4 w-4 mr-1' />
+              )}
+              Simpan Perubahan
             </Button>
           </DialogFooter>
         </DialogContent>

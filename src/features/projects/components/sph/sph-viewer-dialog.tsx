@@ -52,7 +52,7 @@ export function SPHViewerDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-5xl h-[90vh] flex flex-col p-0 gap-0">
+            <DialogContent className="min-w-[calc(100vw-2rem)] h-[calc(100vh-2rem)] flex flex-col p-0 gap-0">
                 <DialogHeader className="p-4 border-b bg-neutral-50/50 shrink-0">
                     <div className="flex items-center justify-between">
                         <div>
@@ -83,45 +83,22 @@ export function SPHViewerDialog({
                     </div>
 
                     {/* Sidebar / Overlay for Actions */}
-                    {(status === 'pending' || status === 'sent' || status === 'revisied') && (
+                    {status && status !== 'approved' && (
                         <div className="w-full md:w-[320px] bg-white border-l p-6 flex flex-col gap-6 shrink-0 overflow-y-auto">
                             {!isRejectMode ? (
                                 <>
                                     <div className="space-y-4">
                                         <h3 className="font-semibold text-lg text-neutral-900">Approve Quotation</h3>
-                                        <div className="bg-orange-50 p-4 rounded-lg border border-orange-100 text-sm text-orange-800">
-                                            Please download the quotation, sign/stamp it, and upload the signed copy here.
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <Label htmlFor="signed-sph">Upload Signed SPH</Label>
-                                            <Input
-                                                id="signed-sph"
-                                                type="file"
-                                                accept=".pdf,.jpg,.jpeg,.png"
-                                                onChange={handleFileChange}
-                                            />
-                                            {file && <p className="text-xs text-green-600">Selected: {file.name}</p>}
-                                        </div>
-
-                                        <Button
-                                            onClick={() => onApprove(file)}
-                                            disabled={isApproving || !file}
-                                            className="w-full bg-green-600 hover:bg-green-700 text-white"
-                                        >
-                                            {isApproving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CheckCircle className="h-4 w-4 mr-2" />}
-                                            Upload & Approve
-                                        </Button>
                                     </div>
 
-                                    <div className="relative">
-                                        <div className="absolute inset-0 flex items-center">
-                                            <span className="w-full border-t" />
-                                        </div>
-                                        <div className="relative flex justify-center text-xs uppercase">
-                                            <span className="bg-white px-2 text-neutral-500">Or</span>
-                                        </div>
-                                    </div>
+                                    <Button
+                                        onClick={() => onApprove(null)}
+                                        disabled={isApproving}
+                                        className="w-full bg-green-600 hover:bg-green-700 text-white mt-2"
+                                    >
+                                        {isApproving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CheckCircle className="h-4 w-4 mr-2" />}
+                                        Approve
+                                    </Button>
 
                                     <Button variant="outline" onClick={() => setIsRejectMode(true)} className="w-full text-red-600 border-red-200 hover:bg-red-50">
                                         Request Revision
