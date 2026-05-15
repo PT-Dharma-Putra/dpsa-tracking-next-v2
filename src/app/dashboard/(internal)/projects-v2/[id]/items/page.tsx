@@ -350,11 +350,14 @@ export default function ProjectItemsPage() {
   }, [existingAcc, project]);
 
   const updateNeedDesignMutation = useMutation({
-    mutationFn: (value: number) => projectV2Service.updateProject(projectId, {
-      name: project.name,
-      client_id: project.client_id,
-      need_design: value
-    }),
+    mutationFn: (value: number) => {
+      if (!project) throw new Error('Project not found');
+      return projectV2Service.updateProject(projectId, {
+        name: project.name,
+        client_id: project.client_id,
+        need_design: value
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects-v2', projectId] });
       toast.success('Project updated successfully');

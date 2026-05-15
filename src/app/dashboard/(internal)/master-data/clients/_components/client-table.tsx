@@ -138,7 +138,7 @@ export function ClientTable() {
                                 </TableCell>
                             </TableRow>
                         ) : (
-                            filtered.map((client, index) => (
+                            filtered.map((client: Client, index: number) => (
                                 <TableRow key={client.id} className="hover:bg-neutral-50/50 transition-colors">
                                     <TableCell className="font-medium text-muted-foreground">{index + 1}</TableCell>
                                     <TableCell>

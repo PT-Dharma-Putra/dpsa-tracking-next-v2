@@ -49,6 +49,15 @@ export interface ProjectV2 {
         note_revision: string | null;
         created_at: string;
     }>;
+    sph?: {
+        id: number;
+        nomor_sph?: string;
+        nominal?: string;
+        file: string | null;
+        status: string;
+        note_revision: string | null;
+        created_at: string;
+    };
     spk?: {
         id: number;
         nomor_spk?: string;
