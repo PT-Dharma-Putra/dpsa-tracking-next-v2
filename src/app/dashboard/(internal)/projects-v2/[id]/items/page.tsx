@@ -212,6 +212,17 @@ export default function ProjectItemsPage() {
     },
   });
 
+  const approveSphMutation = useMutation({
+    mutationFn: () => projectV2Service.approveSPH(projectId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects-v2', projectId] });
+      toast.success('SPH Approved');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to approve SPH');
+    },
+  });
+
   const handleSphUpload = () => {
     if (!sphFile || !sphNumber) {
       toast.error('Please provide both file and SPH number');
@@ -280,6 +291,33 @@ export default function ProjectItemsPage() {
       return;
     }
     uploadSpkMutation.mutate({ file: spkFile, number: spkNumber, deadline: spkDeadline, prioritas: spkPrioritas });
+  };
+
+  const [signedSpkFile, setSignedSpkFile] = React.useState<File | null>(null);
+  const [signedSpkDeadline, setSignedSpkDeadline] = React.useState<string>('');
+  const [isSignedSpkModalOpen, setIsSignedSpkModalOpen] = React.useState(false);
+
+  const approveSpkMutation = useMutation({
+    mutationFn: ({ file, deadline }: { file: File; deadline?: string }) => 
+      projectV2Service.approveSPK(projectId, file, deadline),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects-v2', projectId] });
+      toast.success('Signed SPK uploaded successfully');
+      setSignedSpkFile(null);
+      setSignedSpkDeadline('');
+      setIsSignedSpkModalOpen(false);
+    },
+    onError: () => {
+      toast.error('Failed to upload Signed SPK');
+    },
+  });
+
+  const handleSignedSpkUpload = () => {
+    if (!signedSpkFile) {
+      toast.error('Please provide a file');
+      return;
+    }
+    approveSpkMutation.mutate({ file: signedSpkFile, deadline: signedSpkDeadline });
   };
 
   const [isSpdModalOpen, setIsSpdModalOpen] = React.useState(false);
@@ -384,7 +422,7 @@ export default function ProjectItemsPage() {
       id: 4,
       title: 'Upload SPK',
       description: 'Surat Perintah Kerja',
-      isCompleted: !!existingSpk?.file,
+      isCompleted: !!existingSpk?.file || !!existingSpk?.spk_signed_file,
       isActive: !!existingSph?.file,
       icon: ClipboardCheck,
       color: 'text-purple-600',
@@ -924,6 +962,23 @@ export default function ProjectItemsPage() {
                         </a>
                       </Button>
                     </div>
+                    {existingSph.status !== 'approved' && (
+                      <div className="flex gap-2 mt-2">
+                        <Button 
+                          size="sm" 
+                          className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] h-8 shadow-sm"
+                          onClick={() => approveSphMutation.mutate()}
+                          disabled={approveSphMutation.isPending}
+                        >
+                          {approveSphMutation.isPending ? (
+                            <Loader2 className="h-3 w-3 animate-spin mr-1.5" />
+                          ) : (
+                            <CheckCircle className="h-3 w-3 mr-1.5" />
+                          )}
+                          Approve SPH
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <p className='text-xs text-muted-foreground italic'>
@@ -1043,46 +1098,103 @@ export default function ProjectItemsPage() {
                 onClick={() => setIsSpkModalOpen(true)}
               >
                 <Upload className='h-3 w-3 mr-1' />
-                {existingSpk?.file ? 'Ganti' : 'Upload'}
+                {existingSpk?.file || existingSpk?.spk_signed_file ? 'Ganti' : 'Upload'}
               </Button>
             </CardHeader>
             {!isSpkCollapsed && (
               <CardContent>
-                {existingSpk?.file ? (
-                  <div className='p-3 rounded-xl bg-purple-50/80 border border-purple-100 flex items-center justify-between shadow-sm'>
-                    <div className='flex items-center gap-3'>
-                      <div className='h-8 w-8 rounded-lg bg-white shadow-sm border border-purple-100 flex items-center justify-center text-purple-600'>
-                        <FileText className='h-4 w-4' />
+                {existingSpk?.file || existingSpk?.spk_signed_file ? (
+                  <div className='space-y-3'>
+                    <div className='p-3 rounded-xl bg-purple-50/80 border border-purple-100 flex items-center justify-between shadow-sm'>
+                      <div className='flex items-center gap-3'>
+                        <div className='h-8 w-8 rounded-lg bg-white shadow-sm border border-purple-100 flex items-center justify-center text-purple-600'>
+                          <FileText className='h-4 w-4' />
+                        </div>
+                        <div className='overflow-hidden'>
+                          <p className='text-xs font-bold text-purple-900 line-clamp-1'>
+                            {existingSpk.nomor_spk}
+                          </p>
+                          <p className='text-[10px] text-purple-600/80'>
+                            {format(
+                              new Date(existingSpk.created_at),
+                              'MMM d, yyyy'
+                            )}
+                          </p>
+                        </div>
                       </div>
-                      <div className='overflow-hidden'>
-                        <p className='text-xs font-bold text-purple-900 line-clamp-1'>
-                          {existingSpk.nomor_spk}
-                        </p>
-                        <p className='text-[10px] text-purple-600/80'>
-                          {format(
-                            new Date(existingSpk.created_at),
-                            'MMM d, yyyy'
-                          )}
-                        </p>
-                      </div>
-                    </div>
-                    <Button
-                      variant='ghost'
-                      size='icon'
-                      className='h-8 w-8 text-purple-600 hover:bg-purple-200 bg-white shadow-sm border border-purple-100 shrink-0'
-                      asChild
-                    >
-                      <a
-                        href={`${(
-                          process.env.NEXT_PUBLIC_API_URL ||
-                          'http://localhost:8000'
-                        ).replace('/api', '')}/storage/${existingSpk.file}`}
-                        target='_blank'
-                        rel='noopener noreferrer'
+                      <Button
+                        variant='ghost'
+                        size='icon'
+                        className='h-8 w-8 text-purple-600 hover:bg-purple-200 bg-white shadow-sm border border-purple-100 shrink-0'
+                        asChild
                       >
-                        <FileDown className='h-4 w-4' />
-                      </a>
-                    </Button>
+                        <a
+                          href={`${(
+                            process.env.NEXT_PUBLIC_API_URL ||
+                            'http://localhost:8000'
+                          ).replace('/api', '')}/storage/${existingSpk.spk_signed_file || existingSpk.file}`}
+                          target='_blank'
+                          rel='noopener noreferrer'
+                        >
+                          <FileDown className='h-4 w-4' />
+                        </a>
+                      </Button>
+                    </div>
+
+                    {/* Signed SPK Section */}
+                    {existingSpk?.spk_signed_file ? (
+                      <div className='p-3 rounded-xl bg-emerald-50/80 border border-emerald-100 flex items-center justify-between shadow-sm'>
+                        <div className='flex items-center gap-3'>
+                          <div className='h-8 w-8 rounded-lg bg-white shadow-sm border border-emerald-100 flex items-center justify-center text-emerald-600'>
+                            <CheckCircle2 className='h-4 w-4' />
+                          </div>
+                          <div className='overflow-hidden'>
+                            <p className='text-xs font-bold text-emerald-900 line-clamp-1'>
+                              SPK Bertanda Tangan
+                            </p>
+                            <p className='text-[10px] text-emerald-600/80 italic font-medium'>
+                              {existingSpk.spk_status === 'approved' ? 'Terverifikasi' : 'Sudah diunggah'}
+                            </p>
+                          </div>
+                        </div>
+                        <div className='flex gap-2'>
+                          <Button
+                            variant='ghost'
+                            size='icon'
+                            className='h-8 w-8 text-emerald-600 hover:bg-emerald-200 bg-white shadow-sm border border-emerald-100 shrink-0'
+                            asChild
+                          >
+                            <a
+                              href={`${(
+                                process.env.NEXT_PUBLIC_API_URL ||
+                                'http://localhost:8000'
+                              ).replace('/api', '')}/storage/${existingSpk.spk_signed_file}`}
+                              target='_blank'
+                              rel='noopener noreferrer'
+                            >
+                              <FileDown className='h-4 w-4' />
+                            </a>
+                          </Button>
+                          <Button
+                            variant='ghost'
+                            size='icon'
+                            className='h-8 w-8 text-neutral-400 hover:bg-neutral-100 bg-white shadow-sm border border-neutral-100 shrink-0'
+                            onClick={() => setIsSignedSpkModalOpen(true)}
+                          >
+                            <Upload className='h-3 w-3' />
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <Button
+                        variant='outline'
+                        className='w-full text-xs h-9 border-dashed border-emerald-300 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-400'
+                        onClick={() => setIsSignedSpkModalOpen(true)}
+                      >
+                        <Upload className='h-3 w-3 mr-2' />
+                        Upload SPK bertanda tangan
+                      </Button>
+                    )}
                   </div>
                 ) : (
                   <p className='text-xs text-muted-foreground italic'>
@@ -1622,6 +1734,67 @@ export default function ProjectItemsPage() {
                 <Upload className='h-4 w-4 mr-1' />
               )}
               Upload
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal Upload Signed SPK */}
+      <Dialog
+        open={isSignedSpkModalOpen}
+        onOpenChange={setIsSignedSpkModalOpen}
+      >
+        <DialogContent className='max-w-sm'>
+          <DialogHeader>
+            <DialogTitle className='flex items-center gap-2 text-emerald-700'>
+              <CheckCircle2 className='h-5 w-5' />
+              Upload SPK Bertanda Tangan
+            </DialogTitle>
+          </DialogHeader>
+          <div className='flex flex-col gap-4 py-4'>
+            <div className='space-y-1.5'>
+              <Label className='text-xs font-medium text-emerald-700'>Deadline Penyelesaian</Label>
+              <Input
+                type='date'
+                value={signedSpkDeadline}
+                onChange={(e) => setSignedSpkDeadline(e.target.value)}
+                className='h-9 text-xs border-emerald-200'
+              />
+            </div>
+            <div className='space-y-1.5'>
+              <Label className='text-xs font-medium text-emerald-700'>File SPK Bertanda Tangan</Label>
+              <div className='flex flex-col gap-2'>
+                <Input
+                  type='file'
+                  onChange={(e) => setSignedSpkFile(e.target.files?.[0] || null)}
+                  className='h-9 text-xs border-emerald-200 file:text-[10px] file:bg-emerald-50 file:text-emerald-700 file:border-emerald-100 hover:file:bg-emerald-100'
+                />
+                <p className='text-[10px] text-muted-foreground italic'>
+                  Format: PDF, JPG, PNG. Maks 10MB.
+                </p>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant='outline'
+              size='sm'
+              onClick={() => setIsSignedSpkModalOpen(false)}
+            >
+              Batal
+            </Button>
+            <Button
+              size='sm'
+              className='bg-emerald-600 hover:bg-emerald-700'
+              onClick={handleSignedSpkUpload}
+              disabled={!signedSpkFile || approveSpkMutation.isPending}
+            >
+              {approveSpkMutation.isPending ? (
+                <Loader2 className='h-4 w-4 animate-spin' />
+              ) : (
+                <Upload className='h-4 w-4 mr-1' />
+              )}
+              Upload & Approve
             </Button>
           </DialogFooter>
         </DialogContent>

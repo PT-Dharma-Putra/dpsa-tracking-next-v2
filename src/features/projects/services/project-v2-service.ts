@@ -53,6 +53,8 @@ export interface ProjectV2 {
         id: number;
         nomor_spk?: string;
         file: string | null;
+        spk_signed_file: string | null;
+        spk_status: string | null;
         created_at: string;
     };
     list_furnitur?: {
@@ -293,6 +295,16 @@ export const projectV2Service = {
         if (deadline) formData.append('deadline', deadline);
         if (prioritas) formData.append('prioritas', prioritas);
         const { data } = await apiClient.post(`/projects-v2/${projectId}/upload-spk`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        return data;
+    },
+
+    approveSPK: async (projectId: number, file: File, deadline?: string) => {
+        const formData = new FormData();
+        formData.append('spk_signed_file', file);
+        if (deadline) formData.append('deadline', deadline);
+        const { data } = await apiClient.post(`/projects-v2/${projectId}/approve-spk`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
         return data;

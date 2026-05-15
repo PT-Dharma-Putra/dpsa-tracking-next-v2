@@ -75,58 +75,63 @@ export default function ProjectMonitoringDetailPage() {
   if (!project) return null;
 
   const progres = project.progres_kerja;
+  const totalQtyOrder = items.reduce((sum, i) => sum + i.jumlah, 0) || 0;
+  const totalQtyKeluar = items.reduce((sum, i) => sum + (i.barang_jadi_keluar?.reduce((s, bjk) => s + bjk.jumlah, 0) || 0), 0) || 0;
 
-  const progressStages = [
-    { 
-      label: 'PO Divisi', 
-      percent: progres?.po_divisi || 0, 
-      date: progres?.tanggal_update_po_divisi, 
-      icon: ClipboardList, 
-      color: 'blue' 
-    },
-    { 
-      label: 'Gambar Kerja', 
-      percent: progres?.gambar_kerja || 0, 
-      date: progres?.tanggal_update_gambar_kerja, 
-      icon: FileText, 
-      color: 'orange' 
-    },
-    { 
-      label: 'Dokubah', 
-      percent: progres?.dokubah || 0, 
-      date: progres?.tanggal_update_dokubah, 
-      icon: Settings, 
-      color: 'purple' 
-    },
-    { 
-      label: 'Stok Material', 
-      percent: progres?.stok_material || 0, 
-      date: progres?.tanggal_update_stok_material, 
-      icon: Box, 
-      color: 'emerald' 
-    },
-    { 
-      label: 'Produksi', 
-      percent: progres?.produksi || 0, 
-      date: progres?.tanggal_update_produksi, 
-      icon: TrendingUp, 
-      color: 'cyan' 
-    },
-    { 
-      label: 'Gudang Barang Jadi', 
-      percent: progres?.gudang_barang_jadi || 0, 
-      date: progres?.tanggal_update_gudang_barang_jadi, 
-      icon: Package, 
-      color: 'indigo' 
-    },
-    { 
-      label: 'Pengiriman', 
-      percent: progres?.pengiriman || 0, 
-      date: progres?.tanggal_update_pengiriman, 
-      icon: Truck, 
-      color: 'rose' 
-    }
-  ];
+    const percentKeluar = totalQtyOrder > 0 ? (totalQtyKeluar / totalQtyOrder) * 100 : 0;
+  
+    const progressStages = [
+      { 
+        label: 'PO Divisi', 
+        percent: progres?.po_divisi || 0, 
+        date: progres?.tanggal_update_po_divisi, 
+        icon: ClipboardList, 
+        color: 'blue' 
+      },
+      { 
+        label: 'Gambar Kerja', 
+        percent: progres?.gambar_kerja || 0, 
+        date: progres?.tanggal_update_gambar_kerja, 
+        icon: FileText, 
+        color: 'orange' 
+      },
+      { 
+        label: 'Dokubah', 
+        percent: progres?.dokubah || 0, 
+        date: progres?.tanggal_update_dokubah, 
+        icon: Settings, 
+        color: 'purple' 
+      },
+      { 
+        label: 'Stok Material', 
+        percent: progres?.stok_material || 0, 
+        date: progres?.tanggal_update_stok_material, 
+        icon: Box, 
+        color: 'emerald' 
+      },
+      { 
+        label: 'Produksi', 
+        percent: progres?.produksi || 0, 
+        date: progres?.tanggal_update_produksi, 
+        icon: TrendingUp, 
+        color: 'cyan' 
+      },
+      { 
+        label: 'Gudang Barang Jadi', 
+        percent: progres?.gudang_barang_jadi || 0, 
+        date: progres?.tanggal_update_gudang_barang_jadi, 
+        icon: Package, 
+        color: 'indigo' 
+      },
+      { 
+        label: 'Pengiriman', 
+        percent: percentKeluar, 
+        date: progres?.tanggal_update_pengiriman, 
+        icon: Truck, 
+        color: 'rose',
+        nominal: `${totalQtyKeluar} / ${totalQtyOrder}`
+      }
+    ];
 
   const getColorClass = (color: string) => {
     switch (color) {
@@ -246,6 +251,9 @@ export default function ProjectMonitoringDetailPage() {
                 </div>
                 <div className="mt-4">
                   <h3 className="text-xs font-bold text-neutral-700 truncate">{stage.label}</h3>
+                  {stage.nominal && (
+                    <p className="text-[10px] font-black text-rose-600 mt-0.5">{stage.nominal} Items</p>
+                  )}
                   <div className="mt-2 h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden">
                     <div 
                       className={cn("h-full transition-all duration-700", getColorClass(stage.color))} 

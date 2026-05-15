@@ -437,6 +437,9 @@ export default function PerencanaanDetailPage() {
   const [isBjCollapsed, setIsBjCollapsed] = React.useState(true);
   const [isProduksiCollapsed, setIsProduksiCollapsed] = React.useState(true);
   const [isShipCollapsed, setIsShipCollapsed] = React.useState(true);
+  const [isKeluarCollapsed, setIsKeluarCollapsed] = React.useState(true);
+  const [isBelumSettingCollapsed, setIsBelumSettingCollapsed] = React.useState(true);
+  const [isSettingCollapsed, setIsSettingCollapsed] = React.useState(true);
 
   // View Produksi State
   const [isProduksiViewOpen, setIsProduksiViewOpen] = React.useState(false);
@@ -550,6 +553,9 @@ export default function PerencanaanDetailPage() {
   const totalQtyOrder = items?.reduce((sum, i) => sum + i.jumlah, 0) || 0;
   const totalQtyMasuk = items?.reduce((sum, i) => sum + (i.barang_jadi_masuk?.reduce((s, bj) => s + bj.jumlah, 0) || 0), 0) || 0;
   const totalQtyPacking = items?.reduce((sum, i) => sum + (i.barang_jadi_terpacking?.reduce((s, p) => s + p.jumlah, 0) || 0), 0) || 0;
+  const totalQtyKeluar = items?.reduce((sum, i) => sum + (i.barang_jadi_keluar?.reduce((s, bjk) => s + bjk.jumlah, 0) || 0), 0) || 0;
+  const totalQtySetting = items?.reduce((sum, i) => sum + (i.setting?.reduce((s, st) => s + st.jumlah, 0) || 0), 0) || 0;
+  const totalQtyBelumSetting = totalQtyKeluar - totalQtySetting;
   const orderGk = project?.order_gambar_kerja?.[0];
 
   const flowSteps = [
@@ -1068,6 +1074,99 @@ export default function PerencanaanDetailPage() {
                     View Schedule
                   </Link>
                </Button>
+            </CardContent>
+          )}
+        </Card>
+
+        {/* 9. Barang Terkirim */}
+        <Card className={`relative border shadow-sm transition-all duration-300 ${totalQtyKeluar >= totalQtyOrder && totalQtyOrder > 0 ? 'border-emerald-200 bg-white ring-1 ring-emerald-100' : 'border-neutral-200 bg-white'}`}>
+          {totalQtyKeluar >= totalQtyOrder && totalQtyOrder > 0 && (
+            <div className="absolute -top-1.5 -right-1.5 h-5 w-5 bg-emerald-500 rounded-full flex items-center justify-center shadow-sm z-10 animate-in zoom-in duration-300">
+              <Check className="h-3 w-3 text-white" strokeWidth={3} />
+            </div>
+          )}
+          <CardHeader className='pb-2 flex flex-row items-center justify-between gap-3'>
+            <button className='flex items-center gap-3 flex-1 text-left' onClick={() => setIsKeluarCollapsed(!isKeluarCollapsed)}>
+              <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold ${totalQtyKeluar > 0 ? (totalQtyKeluar >= totalQtyOrder ? 'bg-emerald-100 text-emerald-600' : 'bg-blue-100 text-blue-600') : 'bg-neutral-100 text-neutral-500'}`}>9</div>
+              <div className='flex-1'>
+                <CardTitle className='text-sm text-neutral-800'>Barang Terkirim</CardTitle>
+                <p className='text-[10px] text-muted-foreground uppercase tracking-wider'>Delivered Items</p>
+              </div>
+              <ChevronDown className={`h-4 w-4 text-neutral-400 transition-transform duration-200 ${isKeluarCollapsed ? '-rotate-90' : ''}`} />
+            </button>
+          </CardHeader>
+          {!isKeluarCollapsed && (
+            <CardContent className='pt-0'>
+               <div className='space-y-1.5'>
+                  <div className='flex justify-between items-center'>
+                    <p className='text-[10px] font-bold text-neutral-500 uppercase tracking-wider'>Terkirim</p>
+                    <p className={`text-[10px] font-bold ${totalQtyKeluar >= totalQtyOrder ? 'text-emerald-600' : 'text-blue-600'}`}>{Math.round(totalQtyOrder ? (totalQtyKeluar / totalQtyOrder) * 100 : 0)}%</p>
+                  </div>
+                  <div className='h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden'>
+                    <div className={`h-full transition-all duration-500 ${totalQtyKeluar >= totalQtyOrder ? 'bg-emerald-600' : 'bg-blue-600'}`} style={{ width: `${totalQtyOrder ? (totalQtyKeluar / totalQtyOrder) * 100 : 0}%` }} />
+                  </div>
+                  <p className='text-[10px] font-medium text-neutral-600'>{totalQtyKeluar} / {totalQtyOrder} Items</p>
+               </div>
+            </CardContent>
+          )}
+        </Card>
+
+        {/* 10. Barang Terkirim Belum Tersetting */}
+        <Card className={`relative border shadow-sm transition-all duration-300 ${totalQtyBelumSetting > 0 ? 'border-amber-200 bg-white ring-1 ring-amber-100' : 'border-neutral-200 bg-white'}`}>
+          <CardHeader className='pb-2 flex flex-row items-center justify-between gap-3'>
+            <button className='flex items-center gap-3 flex-1 text-left' onClick={() => setIsBelumSettingCollapsed(!isBelumSettingCollapsed)}>
+              <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold ${totalQtyBelumSetting > 0 ? 'bg-amber-100 text-amber-600' : 'bg-neutral-100 text-neutral-500'}`}>10</div>
+              <div className='flex-1'>
+                <CardTitle className='text-sm text-neutral-800'>Belum Tersetting</CardTitle>
+                <p className='text-[10px] text-muted-foreground uppercase tracking-wider'>Pending Installation</p>
+              </div>
+              <ChevronDown className={`h-4 w-4 text-neutral-400 transition-transform duration-200 ${isBelumSettingCollapsed ? '-rotate-90' : ''}`} />
+            </button>
+          </CardHeader>
+          {!isBelumSettingCollapsed && (
+            <CardContent className='pt-0'>
+               <div className='space-y-1.5'>
+                  <div className='flex justify-between items-center'>
+                    <p className='text-[10px] font-bold text-neutral-500 uppercase tracking-wider'>Outstanding</p>
+                    <p className='text-[10px] font-bold text-amber-600'>{totalQtyBelumSetting} Items</p>
+                  </div>
+                  <div className='h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden'>
+                    <div className='h-full bg-amber-500 transition-all duration-500' style={{ width: `${totalQtyKeluar ? (totalQtyBelumSetting / totalQtyKeluar) * 100 : 0}%` }} />
+                  </div>
+               </div>
+            </CardContent>
+          )}
+        </Card>
+
+        {/* 11. Barang Sudah Tersetting */}
+        <Card className={`relative border shadow-sm transition-all duration-300 ${totalQtySetting >= totalQtyOrder && totalQtyOrder > 0 ? 'border-emerald-200 bg-white ring-1 ring-emerald-100' : 'border-neutral-200 bg-white'}`}>
+          {totalQtySetting >= totalQtyOrder && totalQtyOrder > 0 && (
+            <div className="absolute -top-1.5 -right-1.5 h-5 w-5 bg-emerald-500 rounded-full flex items-center justify-center shadow-sm z-10 animate-in zoom-in duration-300">
+              <Check className="h-3 w-3 text-white" strokeWidth={3} />
+            </div>
+          )}
+          <CardHeader className='pb-2 flex flex-row items-center justify-between gap-3'>
+            <button className='flex items-center gap-3 flex-1 text-left' onClick={() => setIsSettingCollapsed(!isSettingCollapsed)}>
+              <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold ${totalQtySetting > 0 ? (totalQtySetting >= totalQtyOrder ? 'bg-emerald-100 text-emerald-600' : 'bg-blue-100 text-blue-600') : 'bg-neutral-100 text-neutral-500'}`}>11</div>
+              <div className='flex-1'>
+                <CardTitle className='text-sm text-neutral-800'>Barang Tersetting</CardTitle>
+                <p className='text-[10px] text-muted-foreground uppercase tracking-wider'>Installed Items</p>
+              </div>
+              <ChevronDown className={`h-4 w-4 text-neutral-400 transition-transform duration-200 ${isSettingCollapsed ? '-rotate-90' : ''}`} />
+            </button>
+          </CardHeader>
+          {!isSettingCollapsed && (
+            <CardContent className='pt-0'>
+               <div className='space-y-1.5'>
+                  <div className='flex justify-between items-center'>
+                    <p className='text-[10px] font-bold text-neutral-500 uppercase tracking-wider'>Tersetting</p>
+                    <p className={`text-[10px] font-bold ${totalQtySetting >= totalQtyOrder ? 'text-emerald-600' : 'text-blue-600'}`}>{Math.round(totalQtyOrder ? (totalQtySetting / totalQtyOrder) * 100 : 0)}%</p>
+                  </div>
+                  <div className='h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden'>
+                    <div className={`h-full transition-all duration-500 ${totalQtySetting >= totalQtyOrder ? 'bg-emerald-600' : 'bg-blue-600'}`} style={{ width: `${totalQtyOrder ? (totalQtySetting / totalQtyOrder) * 100 : 0}%` }} />
+                  </div>
+                  <p className='text-[10px] font-medium text-neutral-600'>{totalQtySetting} / {totalQtyOrder} Items</p>
+               </div>
             </CardContent>
           )}
         </Card>

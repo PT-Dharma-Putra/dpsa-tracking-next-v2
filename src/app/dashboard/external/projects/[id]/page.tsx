@@ -523,9 +523,6 @@ function DocumentsTabContent({ projectId }: { projectId: string }) {
                 <CardHeader>
                     <CardTitle className="flex justify-between">
                         <span>Contract (SPK)</span>
-                        {spk?.spk_status === 'approved' && <Badge className="bg-green-600"><CheckCircle className="h-3 w-3 mr-1" /> Approved</Badge>}
-                        {spk?.spk_status === 'pending' && <Badge variant="outline" className="text-orange-600 border-orange-200">Waiting Approval</Badge>}
-                        {!spk?.spk_status && spk?.spk_number && <Badge variant="outline" className="text-neutral-400">Draft</Badge>}
                     </CardTitle>
                     <CardDescription>Signed work agreement.</CardDescription>
                 </CardHeader>
@@ -593,6 +590,66 @@ function DocumentsTabContent({ projectId }: { projectId: string }) {
                                     </a>
                                 </div>
                             )}
+
+                            {/* SPK History Section */}
+                            {spk?.spk_history && spk.spk_history.length > 0 && (
+                                <div className="mt-8 pt-8 border-t border-neutral-100">
+                                    <h4 className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                        <History className="h-3 w-3" />
+                                        SPK History
+                                    </h4>
+                                    <div className="space-y-4">
+                                        {spk.spk_history.map((hist: any, idx: number) => (
+                                            <div key={idx} className="group relative pl-6 border-l-2 border-neutral-100 hover:border-blue-200 transition-colors">
+                                                <div className="absolute -left-[9px] top-0 h-4 w-4 rounded-full bg-white border-2 border-neutral-100 group-hover:border-blue-200 transition-colors flex items-center justify-center">
+                                                    <div className={`h-1.5 w-1.5 rounded-full ${hist.spk_status === 'approved' ? 'bg-green-500' : 'bg-neutral-300'}`} />
+                                                </div>
+                                                <div className="bg-neutral-50/50 rounded-xl p-4 border border-neutral-100 group-hover:bg-white group-hover:shadow-sm transition-all">
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className={`h-8 w-8 rounded-lg border border-neutral-100 flex items-center justify-center ${hist.spk_status === 'approved' ? 'bg-green-50 text-green-600' : 'bg-white text-neutral-400'}`}>
+                                                                <FileText className="h-4 w-4" />
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-xs font-bold text-neutral-800">{hist.nomor_spk}</p>
+                                                                <div className="flex items-center gap-2 mt-0.5">
+                                                                    <Clock className="h-3 w-3 text-neutral-400" />
+                                                                    <p className="text-[10px] text-neutral-500">
+                                                                        {format(new Date(hist.created_at), 'MMM d, yyyy HH:mm')}
+                                                                    </p>
+                                                                    <Badge variant="outline" className={`text-[9px] h-4 px-1.5 capitalize ${
+                                                                        hist.spk_status === 'approved' ? 'border-green-200 text-green-600' : 'border-blue-200 text-blue-600'
+                                                                    }`}>
+                                                                        {hist.spk_status || 'Draft'}
+                                                                    </Badge>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex gap-2">
+                                                            {hist.file_url && (
+                                                                <Button size="sm" variant="ghost" className="h-8 text-[10px] text-blue-600 hover:bg-blue-50" asChild>
+                                                                    <a href={hist.file_url} target="_blank" rel="noopener noreferrer">
+                                                                        <Eye className="h-3 w-3 mr-1.5" />
+                                                                        View Draft
+                                                                    </a>
+                                                                </Button>
+                                                            )}
+                                                            {hist.spk_signed_file_url && (
+                                                                <Button size="sm" variant="ghost" className="h-8 text-[10px] text-green-600 hover:bg-green-50" asChild>
+                                                                    <a href={hist.spk_signed_file_url} target="_blank" rel="noopener noreferrer">
+                                                                        <Download className="h-3 w-3 mr-1.5" />
+                                                                        Signed PDF
+                                                                    </a>
+                                                                </Button>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </>
                     ) : (
                         <div className="text-center py-6 border-dashed border-2 rounded-lg text-neutral-400 text-sm">
@@ -603,7 +660,7 @@ function DocumentsTabContent({ projectId }: { projectId: string }) {
             </Card>
 
             {/* 3. Client SPK Upload Section — hidden after SPK is approved */}
-            {spk?.spk_status !== 'approved' && (
+            {spk?.spk_status !== 'approved' && !spk?.spk_signed_file_url && (
             <Card className={`relative transition-all duration-300 ${!isSPHApproved ? 'opacity-60 pointer-events-none' : 'border-blue-200 shadow-sm'}`}>
                 {!isSPHApproved && (
                     <div className="absolute inset-0 z-10 bg-white/50 backdrop-blur-[1px] rounded-lg flex flex-col items-center justify-center gap-2">

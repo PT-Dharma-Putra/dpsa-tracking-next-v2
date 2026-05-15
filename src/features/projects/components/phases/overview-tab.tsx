@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Loader2, Calendar, DollarSign, LayoutDashboard, AlertCircle, CheckCircle2 } from "lucide-react"
+import { format } from "date-fns"
+import { id as idLocale } from "date-fns/locale"
 
 interface OverviewTabProps {
     projectId: number
@@ -58,7 +60,7 @@ export function OverviewTab({ projectId }: OverviewTabProps) {
                     title="Overall Progress"
                     value={`${stats.overall_progress ?? 0}%`}
                     icon={<LayoutDashboard className="h-4 w-4 text-blue-500" />}
-                    desc="Weighted based on Design"
+                    desc={`The last progres: ${stats.last_progress_label || 'Draft'}`}
                 />
                 <StatsCard
                     title="Estimated Value"
@@ -70,7 +72,9 @@ export function OverviewTab({ projectId }: OverviewTabProps) {
                     title="Deadline"
                     value={stats.deadline_days !== null ? `${stats.deadline_days} Days Left` : "Pending SPK"}
                     icon={<Calendar className="h-4 w-4 text-orange-500" />}
-                    desc={stats.deadline_days !== null ? "Based on Schedule" : "No Deadline Set"}
+                    desc={stats.deadline_days !== null && project.deadline 
+                        ? `Based on Schedule: ${format(new Date(project.deadline), 'd MMMM yyyy', { locale: idLocale })}` 
+                        : "No Deadline Set"}
                 />
             </div>
 

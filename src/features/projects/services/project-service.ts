@@ -42,6 +42,10 @@ export interface CreateProjectPayload {
     dimensi_panjang?: string | number | null;
     dimensi_lebar?: string | number | null;
     dimensi_tinggi?: string | number | null;
+    mdl_item_id?: number | null;
+    lantai?: string | null;
+    ruang?: string | null;
+    keterangan?: string | null;
   }[];
 }
 
