@@ -13,6 +13,7 @@ export interface Project {
   updated_at: string;
   start_date?: string;
   due_date?: string;
+  deadline?: string;
   spk_number?: string;
   // Addendum fields
   parent_project_id?: number | null;
@@ -42,6 +43,10 @@ export interface CreateProjectPayload {
     dimensi_panjang?: string | number | null;
     dimensi_lebar?: string | number | null;
     dimensi_tinggi?: string | number | null;
+    mdl_item_id?: number | null;
+    lantai?: string | null;
+    ruang?: string | null;
+    keterangan?: string | null;
   }[];
 }
 

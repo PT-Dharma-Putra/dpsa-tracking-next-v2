@@ -40,6 +40,8 @@ import { Loader2, MoreHorizontal, Pencil, Trash2, Plus, Search, ChevronLeft, Che
 import { adminService } from "@/features/admin/api/admin-service"
 import { User } from "@/features/auth/types"
 import { projectV2Service } from "@/features/projects/services/project-v2-service"
+import { ClientService } from "@/features/clients/services/client-service"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { format } from "date-fns"
 import { useState, useEffect } from "react"
 import { toast } from "sonner"
@@ -61,8 +63,10 @@ export function UserListTable() {
         password_confirmation: '',
         role_id: '',
         divisi_id: '',
+        client_id: '',
         account_status: 'approved'
     })
+    const [dialogTab, setDialogTab] = useState("internal")
 
     // Reset page when search changes
     useEffect(() => {
@@ -86,6 +90,13 @@ export function UserListTable() {
         queryKey: ['admin-divisions'],
         queryFn: projectV2Service.getDivisions,
     })
+
+    const { data: clientsResponse } = useQuery({
+        queryKey: ['admin-clients-all'],
+        queryFn: () => ClientService.getClients(),
+        enabled: dialogTab === "external"
+    })
+    const clients = Array.isArray(clientsResponse?.data) ? clientsResponse.data : []
 
     const createMutation = useMutation({
         mutationFn: (data: any) => adminService.createUser(data),
@@ -132,8 +143,10 @@ export function UserListTable() {
             password_confirmation: '',
             role_id: '',
             divisi_id: '',
+            client_id: '',
             account_status: 'approved'
         })
+        setDialogTab("internal")
         setIsDialogOpen(true)
     }
 
@@ -146,14 +159,25 @@ export function UserListTable() {
             password_confirmation: '',
             role_id: user.role_id?.toString() || '',
             divisi_id: user.divisi_id?.toString() || '',
+            client_id: user.client_id?.toString() || '',
             account_status: user.account_status || 'approved'
         })
+        setDialogTab(user.client_id ? "external" : "internal")
         setIsDialogOpen(true)
     }
 
     const closeDialog = () => {
         setIsDialogOpen(false)
         setSelectedUser(null)
+    }
+
+    const handleTabChange = (value: string) => {
+        setDialogTab(value)
+        if (value === "internal") {
+            setFormData(prev => ({ ...prev, client_id: '' }))
+        } else {
+            setFormData(prev => ({ ...prev, role_id: '', divisi_id: '' }))
+        }
     }
 
     const handleSubmit = () => {
@@ -314,97 +338,133 @@ export function UserListTable() {
                     <AlertDialogHeader>
                         <AlertDialogTitle>{selectedUser ? 'Edit User' : 'Add New User'}</AlertDialogTitle>
                     </AlertDialogHeader>
-                    <div className="grid gap-4 py-4">
-                        <div className="grid gap-2">
-                            <Label htmlFor="name">Full Name</Label>
-                            <Input 
-                                id="name" 
-                                value={formData.name} 
-                                onChange={e => setFormData({...formData, name: e.target.value})}
-                            />
-                        </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="email">Email Address</Label>
-                            <Input 
-                                id="email" 
-                                type="email"
-                                value={formData.email} 
-                                onChange={e => setFormData({...formData, email: e.target.value})}
-                            />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
+                    
+                    <Tabs value={dialogTab} onValueChange={handleTabChange} className="w-full">
+                        <TabsList className="grid w-full grid-cols-2 mb-4">
+                            <TabsTrigger value="internal">Internal Staff</TabsTrigger>
+                            <TabsTrigger value="external">External Client</TabsTrigger>
+                        </TabsList>
+
+                        <div className="grid gap-4 py-2 max-h-[60vh] overflow-y-auto px-1">
                             <div className="grid gap-2">
-                                <Label htmlFor="password">Password</Label>
+                                <Label htmlFor="name">Full Name</Label>
                                 <Input 
-                                    id="password" 
-                                    type="password"
-                                    placeholder={selectedUser ? "Leave blank to keep same" : ""}
-                                    value={formData.password} 
-                                    onChange={e => setFormData({...formData, password: e.target.value})}
+                                    id="name" 
+                                    value={formData.name} 
+                                    onChange={e => setFormData({...formData, name: e.target.value})}
+                                    placeholder="e.g. John Doe"
                                 />
                             </div>
                             <div className="grid gap-2">
-                                <Label htmlFor="password_confirmation">Confirm</Label>
+                                <Label htmlFor="email">Email Address</Label>
                                 <Input 
-                                    id="password_confirmation" 
-                                    type="password"
-                                    value={formData.password_confirmation} 
-                                    onChange={e => setFormData({...formData, password_confirmation: e.target.value})}
+                                    id="email" 
+                                    type="email"
+                                    value={formData.email} 
+                                    onChange={e => setFormData({...formData, email: e.target.value})}
+                                    placeholder="john@example.com"
                                 />
                             </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="password">Password</Label>
+                                    <Input 
+                                        id="password" 
+                                        type="password"
+                                        placeholder={selectedUser ? "Keep same" : "****"}
+                                        value={formData.password} 
+                                        onChange={e => setFormData({...formData, password: e.target.value})}
+                                    />
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="password_confirmation">Confirm</Label>
+                                    <Input 
+                                        id="password_confirmation" 
+                                        type="password"
+                                        value={formData.password_confirmation} 
+                                        onChange={e => setFormData({...formData, password_confirmation: e.target.value})}
+                                    />
+                                </div>
+                            </div>
+
+                            <TabsContent value="internal" className="mt-0 space-y-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="grid gap-2">
+                                        <Label>Role</Label>
+                                        <Select 
+                                            value={formData.role_id} 
+                                            onValueChange={val => setFormData({...formData, role_id: val})}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select Role" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {roles?.map((role: any) => (
+                                                    <SelectItem key={role.id} value={role.id.toString()}>{role.name}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label>Division</Label>
+                                        <Select 
+                                            value={formData.divisi_id} 
+                                            onValueChange={val => setFormData({...formData, divisi_id: val})}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select Divisi" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="none">None</SelectItem>
+                                                {divisions?.map((div: any) => (
+                                                    <SelectItem key={div.id} value={div.id.toString()}>{div.nama}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </div>
+                            </TabsContent>
+
+                            <TabsContent value="external" className="mt-0 space-y-4">
+                                <div className="grid gap-2">
+                                    <Label>Associated Client</Label>
+                                    <Select 
+                                        value={formData.client_id} 
+                                        onValueChange={val => setFormData({...formData, client_id: val})}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select Client" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {clients?.map((client: any) => (
+                                                <SelectItem key={client.id} value={client.id.toString()}>{client.name}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <p className="text-[10px] text-muted-foreground italic">
+                                        External users will be assigned the 'Client' role automatically.
+                                    </p>
+                                </div>
+                            </TabsContent>
+
                             <div className="grid gap-2">
-                                <Label>Role</Label>
+                                <Label>Account Status</Label>
                                 <Select 
-                                    value={formData.role_id} 
-                                    onValueChange={val => setFormData({...formData, role_id: val})}
+                                    value={formData.account_status} 
+                                    onValueChange={val => setFormData({...formData, account_status: val})}
                                 >
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Select Role" />
+                                        <SelectValue placeholder="Status" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {roles?.map((role: any) => (
-                                            <SelectItem key={role.id} value={role.id.toString()}>{role.name}</SelectItem>
-                                        ))}
+                                        <SelectItem value="approved">Approved</SelectItem>
+                                        <SelectItem value="pending">Pending</SelectItem>
+                                        <SelectItem value="rejected">Rejected</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div className="grid gap-2">
-                                <Label>Division</Label>
-                                <Select 
-                                    value={formData.divisi_id} 
-                                    onValueChange={val => setFormData({...formData, divisi_id: val})}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select Divisi" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="none">None</SelectItem>
-                                        {divisions?.map((div: any) => (
-                                            <SelectItem key={div.id} value={div.id.toString()}>{div.nama}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
                         </div>
-                        <div className="grid gap-2">
-                            <Label>Account Status</Label>
-                            <Select 
-                                value={formData.account_status} 
-                                onValueChange={val => setFormData({...formData, account_status: val})}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Status" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="approved">Approved</SelectItem>
-                                    <SelectItem value="pending">Pending</SelectItem>
-                                    <SelectItem value="rejected">Rejected</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </div>
+                    </Tabs>
                     <AlertDialogFooter>
                         <AlertDialogCancel onClick={closeDialog}>Cancel</AlertDialogCancel>
                         <Button 

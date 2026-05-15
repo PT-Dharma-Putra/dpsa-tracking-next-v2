@@ -8,6 +8,7 @@ export interface ClientProject {
     description: string;
     thumbnail: string | null;
     total_items: number;
+    last_updated_at?: string;
     created_at: string;
 }
 
