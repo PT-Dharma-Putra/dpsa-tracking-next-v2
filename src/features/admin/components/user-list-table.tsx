@@ -46,6 +46,21 @@ import { format } from "date-fns"
 import { useState, useEffect } from "react"
 import { toast } from "sonner"
 import { useDebounce } from "@/hooks/use-debounce"
+import { Check, ChevronsUpDown } from "lucide-react"
+import { cn } from "@/lib/utils"
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover"
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+} from "@/components/ui/command"
 
 export function UserListTable() {
     const queryClient = useQueryClient()
@@ -67,6 +82,7 @@ export function UserListTable() {
         account_status: 'approved'
     })
     const [dialogTab, setDialogTab] = useState("internal")
+    const [isClientPopoverOpen, setIsClientPopoverOpen] = useState(false)
 
     // Reset page when search changes
     useEffect(() => {
@@ -93,7 +109,7 @@ export function UserListTable() {
 
     const { data: clientsResponse } = useQuery({
         queryKey: ['admin-clients-all'],
-        queryFn: () => ClientService.getClients(),
+        queryFn: () => ClientService.getClients({ per_page: -1 }),
         enabled: dialogTab === "external"
     })
     const clients = Array.isArray(clientsResponse?.data) ? clientsResponse.data : []
@@ -428,19 +444,49 @@ export function UserListTable() {
                             <TabsContent value="external" className="mt-0 space-y-4">
                                 <div className="grid gap-2">
                                     <Label>Associated Client</Label>
-                                    <Select 
-                                        value={formData.client_id} 
-                                        onValueChange={val => setFormData({...formData, client_id: val})}
-                                    >
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select Client" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {clients?.map((client: any) => (
-                                                <SelectItem key={client.id} value={client.id.toString()}>{client.name}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                    <Popover open={isClientPopoverOpen} onOpenChange={setIsClientPopoverOpen}>
+                                        <PopoverTrigger asChild>
+                                            <Button
+                                                variant="outline"
+                                                role="combobox"
+                                                aria-expanded={isClientPopoverOpen}
+                                                className="w-full justify-between font-normal"
+                                            >
+                                                {formData.client_id
+                                                    ? clients.find((client: any) => client.id.toString() === formData.client_id)?.name
+                                                    : "Select Client..."}
+                                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                                            <Command>
+                                                <CommandInput placeholder="Search client..." />
+                                                <CommandList>
+                                                    <CommandEmpty>No client found.</CommandEmpty>
+                                                    <CommandGroup>
+                                                        {clients.map((client: any) => (
+                                                            <CommandItem
+                                                                key={client.id}
+                                                                value={client.name}
+                                                                onSelect={() => {
+                                                                    setFormData({ ...formData, client_id: client.id.toString() })
+                                                                    setIsClientPopoverOpen(false)
+                                                                }}
+                                                            >
+                                                                <Check
+                                                                    className={cn(
+                                                                        "mr-2 h-4 w-4",
+                                                                        formData.client_id === client.id.toString() ? "opacity-100" : "opacity-0"
+                                                                    )}
+                                                                />
+                                                                {client.name}
+                                                            </CommandItem>
+                                                        ))}
+                                                    </CommandGroup>
+                                                </CommandList>
+                                            </Command>
+                                        </PopoverContent>
+                                    </Popover>
                                     <p className="text-[10px] text-muted-foreground italic">
                                         External users will be assigned the 'Client' role automatically.
                                     </p>
