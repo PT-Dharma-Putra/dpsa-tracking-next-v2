@@ -841,8 +841,6 @@ export default function EngineerDetailPage() {
                                                             </a>
                                                         </Button>
                                                     </div>
-                                                ) : !item.custom ? (
-                                                    <span className='text-[10px] text-muted-foreground italic font-medium'>Pakai GK MDL</span>
                                                 ) : (
                                                     <Button 
                                                         variant='ghost' 
