@@ -247,6 +247,19 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
+
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    tooltip='MDL Catalog'
+                    isActive={isActive('/dashboard/mdl')}
+                  >
+                    <Link href='/dashboard/mdl'>
+                      <Files />
+                      <span>Master Data List</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>

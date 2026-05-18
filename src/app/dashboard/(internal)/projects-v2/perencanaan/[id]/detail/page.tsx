@@ -486,6 +486,10 @@ export default function PerencanaanDetailPage() {
     enabled: !!historyItem,
   });
 
+  const filteredHistory = React.useMemo(() => {
+    return itemHistory?.filter((h: any) => h.old_value !== null && h.old_value !== undefined && h.old_value !== 'null') || [];
+  }, [itemHistory]);
+
   const updateDimMutation = useMutation({
     mutationFn: (payload: any) => projectV2Service.updateProjectItem(dimItem!.id, payload),
     onSuccess: () => {
@@ -726,34 +730,38 @@ export default function PerencanaanDetailPage() {
       </div>
 
       {/* Summary Cards Grid */}
-      <div className='grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-8 gap-4 w-full'>
+      <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-4 w-full'>
         {/* 1. SPH & SPK */}
-        <Card className={`relative border shadow-sm transition-all duration-300 ${!!project.spk?.file ? 'border-purple-200 bg-white ring-1 ring-purple-100' : 'border-neutral-200 bg-white'}`}>
+        <Card className={`relative border shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md ${!!project.spk?.file ? 'border-purple-200 bg-white ring-1 ring-purple-100' : 'border-neutral-200 bg-white'}`}>
           {project.sph?.file && project.spk?.file && (
             <div className="absolute -top-1.5 -right-1.5 h-5 w-5 bg-emerald-500 rounded-full flex items-center justify-center shadow-sm z-10 animate-in zoom-in duration-300">
               <Check className="h-3 w-3 text-white" strokeWidth={3} />
             </div>
           )}
-          <CardHeader className='pb-2 flex flex-row items-center justify-between gap-3'>
-            <button className='flex items-center gap-3 flex-1 text-left' onClick={() => setIsSphCollapsed(!isSphCollapsed)}>
-              <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold ${!!project.spk?.file ? 'bg-purple-100 text-purple-600' : 'bg-neutral-100 text-neutral-500'}`}>1</div>
-              <div className='flex-1'>
-                <CardTitle className='text-sm text-neutral-800'>SPH & SPK</CardTitle>
-                <p className='text-[10px] text-muted-foreground uppercase tracking-wider'>Documents</p>
+          <CardHeader className='pb-2 flex flex-row items-center justify-between gap-3 min-w-0'>
+            <button className='flex items-center gap-3 flex-1 text-left min-w-0' onClick={() => setIsSphCollapsed(!isSphCollapsed)}>
+              <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold shrink-0 ${!!project.spk?.file ? 'bg-purple-100 text-purple-600' : 'bg-neutral-100 text-neutral-500'}`}>1</div>
+              <div className='flex-1 min-w-0'>
+                <CardTitle className='text-sm text-neutral-800 font-bold truncate'>SPH & SPK</CardTitle>
+                <p className='text-[10px] text-muted-foreground uppercase tracking-wider font-semibold truncate'>Documents</p>
               </div>
-              <ChevronDown className={`h-4 w-4 text-neutral-400 transition-transform duration-200 ${isSphCollapsed ? '-rotate-90' : ''}`} />
+              <ChevronDown className={`h-4 w-4 text-neutral-400 shrink-0 transition-transform duration-200 ${isSphCollapsed ? '-rotate-90' : ''}`} />
             </button>
           </CardHeader>
           {!isSphCollapsed && (
-            <CardContent className='pt-0 space-y-2'>
-               <div className='flex flex-col gap-1.5'>
-                  <div className='flex items-center justify-between text-[10px]'>
-                    <span className='text-muted-foreground'>Nomor SPH:</span>
-                    <span className={`font-bold ${project.sph?.nomor_sph ? 'text-emerald-600' : 'text-red-500'}`}>{project.sph?.nomor_sph ? project.sph?.nomor_sph : '-'}</span>
+            <CardContent className='pt-0 space-y-2.5'>
+               <div className='grid grid-cols-2 gap-2 border-t border-neutral-100 pt-2.5'>
+                  <div className='flex flex-col gap-0.5 min-w-0'>
+                    <span className='text-[9px] text-neutral-400 font-bold uppercase tracking-wider'>Nomor SPH</span>
+                    <span className={`text-[10px] font-extrabold truncate ${project.sph?.nomor_sph ? 'text-emerald-600' : 'text-red-500'}`} title={project.sph?.nomor_sph || undefined}>
+                      {project.sph?.nomor_sph || '-'}
+                    </span>
                   </div>
-                  <div className='flex items-center justify-between text-[10px]'>
-                    <span className='text-muted-foreground'>Nomor SPK:</span>
-                    <span className={`font-bold ${project.spk?.nomor_spk ? 'text-emerald-600' : 'text-red-500'}`}>{project.spk?.nomor_spk ? project.spk?.nomor_spk : '-'}</span>
+                  <div className='flex flex-col gap-0.5 min-w-0'>
+                    <span className='text-[9px] text-neutral-400 font-bold uppercase tracking-wider'>Nomor SPK</span>
+                    <span className={`text-[10px] font-extrabold truncate ${project.spk?.nomor_spk ? 'text-emerald-600' : 'text-red-500'}`} title={project.spk?.nomor_spk || undefined}>
+                      {project.spk?.nomor_spk || '-'}
+                    </span>
                   </div>
                </div>
             </CardContent>
@@ -761,25 +769,25 @@ export default function PerencanaanDetailPage() {
         </Card>
 
         {/* 2. PO Divisi */}
-        <Card className={`relative border shadow-sm transition-all duration-300 ${poDivisiCount === totalItems && totalItems > 0 ? 'border-emerald-200 bg-white ring-1 ring-emerald-100' : 'border-neutral-200 bg-white'}`}>
+        <Card className={`relative border shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md ${poDivisiCount === totalItems && totalItems > 0 ? 'border-emerald-200 bg-white ring-1 ring-emerald-100' : 'border-neutral-200 bg-white'}`}>
           {poDivisiCount === totalItems && totalItems > 0 && (
             <div className="absolute -top-1.5 -right-1.5 h-5 w-5 bg-emerald-500 rounded-full flex items-center justify-center shadow-sm z-10 animate-in zoom-in duration-300">
               <Check className="h-3 w-3 text-white" strokeWidth={3} />
             </div>
           )}
-          <CardHeader className='pb-2 flex flex-row items-center justify-between gap-3'>
-            <button className='flex items-center gap-3 flex-1 text-left' onClick={() => setIsDivisiCollapsed(!isDivisiCollapsed)}>
-              <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold ${poDivisiCount > 0 ? 'bg-emerald-100 text-emerald-600' : 'bg-neutral-100 text-neutral-500'}`}>2</div>
-              <div className='flex-1'>
-                <CardTitle className='text-sm text-neutral-800'>PO Divisi</CardTitle>
-                <p className='text-[10px] text-muted-foreground uppercase tracking-wider'>Production Team</p>
+          <CardHeader className='pb-2 flex flex-row items-center justify-between gap-3 min-w-0'>
+            <button className='flex items-center gap-3 flex-1 text-left min-w-0' onClick={() => setIsDivisiCollapsed(!isDivisiCollapsed)}>
+              <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold shrink-0 ${poDivisiCount > 0 ? 'bg-emerald-100 text-emerald-600' : 'bg-neutral-100 text-neutral-500'}`}>2</div>
+              <div className='flex-1 min-w-0'>
+                <CardTitle className='text-sm text-neutral-800 font-bold truncate'>PO Divisi</CardTitle>
+                <p className='text-[10px] text-muted-foreground uppercase tracking-wider font-semibold truncate'>Production Team</p>
               </div>
-              <ChevronDown className={`h-4 w-4 text-neutral-400 transition-transform duration-200 ${isDivisiCollapsed ? '-rotate-90' : ''}`} />
+              <ChevronDown className={`h-4 w-4 text-neutral-400 shrink-0 transition-transform duration-200 ${isDivisiCollapsed ? '-rotate-90' : ''}`} />
             </button>
           </CardHeader>
           {!isDivisiCollapsed && (
             <CardContent className='pt-0'>
-               <div className='space-y-1.5'>
+               <div className='space-y-2 border-t border-neutral-100 pt-2.5'>
                   <div className='h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden'>
                     <div className='h-full bg-emerald-500 transition-all duration-500' style={{ width: `${totalItems ? (poDivisiCount / totalItems) * 100 : 0}%` }} />
                   </div>
@@ -790,30 +798,32 @@ export default function PerencanaanDetailPage() {
         </Card>
 
         {/* 3. Order Gambar Kerja */}
-        <Card className={`relative border shadow-sm transition-all duration-300 ${gambarKerjaCount === totalItems && totalItems > 0 ? 'border-orange-200 bg-white ring-1 ring-orange-100' : 'border-neutral-200 bg-white'}`}>
+        <Card className={`relative border shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md ${gambarKerjaCount === totalItems && totalItems > 0 ? 'border-orange-200 bg-white ring-1 ring-orange-100' : 'border-neutral-200 bg-white'}`}>
           {gambarKerjaCount === totalItems && totalItems > 0 && (
             <div className="absolute -top-1.5 -right-1.5 h-5 w-5 bg-emerald-500 rounded-full flex items-center justify-center shadow-sm z-10 animate-in zoom-in duration-300">
               <Check className="h-3 w-3 text-white" strokeWidth={3} />
             </div>
           )}
-          <CardHeader className='pb-2 flex flex-row items-center justify-between gap-3'>
-            <button className='flex items-center gap-3 flex-1 text-left' onClick={() => setIsGkCollapsed(!isGkCollapsed)}>
-              <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold ${gambarKerjaCount > 0 ? 'bg-orange-100 text-orange-600' : 'bg-neutral-100 text-neutral-500'}`}>3</div>
-              <div className='flex-1'>
-                <CardTitle className='text-sm text-neutral-800'>Gambar Kerja</CardTitle>
-                <p className='text-[10px] text-muted-foreground uppercase tracking-wider'>Technical Drawing</p>
+          <CardHeader className='pb-2 flex flex-row items-center justify-between gap-3 min-w-0'>
+            <button className='flex items-center gap-3 flex-1 text-left min-w-0' onClick={() => setIsGkCollapsed(!isGkCollapsed)}>
+              <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold shrink-0 ${gambarKerjaCount > 0 ? 'bg-orange-100 text-orange-600' : 'bg-neutral-100 text-neutral-500'}`}>3</div>
+              <div className='flex-1 min-w-0'>
+                <CardTitle className='text-sm text-neutral-800 font-bold truncate'>Gambar Kerja</CardTitle>
+                <p className='text-[10px] text-muted-foreground uppercase tracking-wider font-semibold truncate'>Technical Drawing</p>
               </div>
-              <ChevronDown className={`h-4 w-4 text-neutral-400 transition-transform duration-200 ${isGkCollapsed ? '-rotate-90' : ''}`} />
+              <ChevronDown className={`h-4 w-4 text-neutral-400 shrink-0 transition-transform duration-200 ${isGkCollapsed ? '-rotate-90' : ''}`} />
             </button>
           </CardHeader>
           {!isGkCollapsed && (
             <CardContent className='pt-0'>
-                  <div className='h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden'>
-                    <div className='h-full bg-orange-500 transition-all duration-500' style={{ width: `${totalItems ? (gambarKerjaCount / totalItems) * 100 : 0}%` }} />
-                  </div>
-                  <div className='flex justify-between items-center mt-1'>
-                    <p className='text-[10px] font-bold text-neutral-700'>{gambarKerjaCount} / {totalItems} Drawings Uploaded</p>
-                    <p className='text-[10px] font-bold text-orange-600'>{Math.round(totalItems ? (gambarKerjaCount / totalItems) * 100 : 0)}%</p>
+                  <div className='space-y-2 border-t border-neutral-100 pt-2.5'>
+                    <div className='h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden'>
+                      <div className='h-full bg-orange-500 transition-all duration-500' style={{ width: `${totalItems ? (gambarKerjaCount / totalItems) * 100 : 0}%` }} />
+                    </div>
+                    <div className='flex justify-between items-center mt-1'>
+                      <p className='text-[10px] font-bold text-neutral-700'>{gambarKerjaCount} / {totalItems} Drawings Uploaded</p>
+                      <p className='text-[10px] font-bold text-orange-600'>{Math.round(totalItems ? (gambarKerjaCount / totalItems) * 100 : 0)}%</p>
+                    </div>
                   </div>
                   
                   <div className='pt-2 space-y-2 border-t border-neutral-100 mt-2'>
@@ -832,17 +842,17 @@ export default function PerencanaanDetailPage() {
                     )}
                     
                     {orderGk?.file && (
-                      <div className='p-2 rounded bg-orange-50 border border-orange-100 flex items-center justify-between mb-2'>
-                        <div className='flex items-center gap-2 overflow-hidden text-left'>
+                      <div className='p-2 rounded bg-orange-50/80 border border-orange-100 flex items-center justify-between gap-1 min-w-0'>
+                        <div className='flex items-center gap-2 overflow-hidden text-left min-w-0 flex-1 mr-1'>
                           <div className='h-6 w-6 rounded bg-white border border-orange-100 flex items-center justify-center text-orange-600 shrink-0'>
                             <FileText className='h-3 w-3' />
                           </div>
-                          <div className='flex flex-col min-w-0'>
-                            <span className='text-[9px] font-bold text-orange-900 leading-none'>Order Drawing</span>
-                            <span className='text-[8px] text-orange-600 truncate'>{orderGk.file.split('/').pop()}</span>
+                          <div className='flex flex-col min-w-0 flex-1'>
+                            <span className='text-[9px] font-bold text-orange-900 leading-none truncate'>Order Drawing</span>
+                            <span className='text-[8px] text-orange-600/80 truncate' title={orderGk.file.split('/').pop()}>{orderGk.file.split('/').pop()}</span>
                           </div>
                         </div>
-                        <Button variant='ghost' size='icon' className='h-7 w-7 text-orange-600 hover:bg-orange-100 bg-white border border-orange-100 shadow-sm' asChild>
+                        <Button variant='ghost' size='icon' className='h-7 w-7 text-orange-600 hover:bg-orange-100 bg-white border border-orange-100 shadow-sm shrink-0' asChild>
                           <a href={`${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '')}/storage/${orderGk.file}`} target='_blank' rel='noopener noreferrer'>
                             <FileDown className='h-3.5 w-3.5' />
                           </a>
@@ -865,41 +875,41 @@ export default function PerencanaanDetailPage() {
         </Card>
 
         {/* 4. Dokubah */}
-        <Card className={`relative border shadow-sm transition-all duration-300 ${project.dokubah?.file ? 'border-emerald-200 bg-white ring-1 ring-emerald-100' : 'border-neutral-200 bg-white'}`}>
+        <Card className={`relative border shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md ${project.dokubah?.file ? 'border-emerald-200 bg-white ring-1 ring-emerald-100' : 'border-neutral-200 bg-white'}`}>
           {project.dokubah?.file && (
             <div className="absolute -top-1.5 -right-1.5 h-5 w-5 bg-emerald-500 rounded-full flex items-center justify-center shadow-sm z-10 animate-in zoom-in duration-300">
               <Check className="h-3 w-3 text-white" strokeWidth={3} />
             </div>
           )}
-          <CardHeader className='pb-2 flex flex-row items-center justify-between gap-3'>
-            <button className='flex items-center gap-3 flex-1 text-left' onClick={() => setIsDokubahCollapsed(!isDokubahCollapsed)}>
-              <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold ${project.dokubah?.file ? 'bg-emerald-100 text-emerald-600' : 'bg-neutral-100 text-neutral-500'}`}>4</div>
-              <div className='flex-1'>
-                <CardTitle className='text-sm text-neutral-800'>Dokubah</CardTitle>
-                <p className='text-[10px] text-muted-foreground uppercase tracking-wider'>Changes Document</p>
+          <CardHeader className='pb-2 flex flex-row items-center justify-between gap-3 min-w-0'>
+            <button className='flex items-center gap-3 flex-1 text-left min-w-0' onClick={() => setIsDokubahCollapsed(!isDokubahCollapsed)}>
+              <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold shrink-0 ${project.dokubah?.file ? 'bg-emerald-100 text-emerald-600' : 'bg-neutral-100 text-neutral-500'}`}>4</div>
+              <div className='flex-1 min-w-0'>
+                <CardTitle className='text-sm text-neutral-800 font-bold truncate'>Dokubah</CardTitle>
+                <p className='text-[10px] text-muted-foreground uppercase tracking-wider font-semibold truncate'>Changes Document</p>
               </div>
-              <ChevronDown className={`h-4 w-4 text-neutral-400 transition-transform duration-200 ${isDokubahCollapsed ? '-rotate-90' : ''}`} />
+              <ChevronDown className={`h-4 w-4 text-neutral-400 shrink-0 transition-transform duration-200 ${isDokubahCollapsed ? '-rotate-90' : ''}`} />
             </button>
           </CardHeader>
           {!isDokubahCollapsed && (
             <CardContent className='pt-0'>
-               <div className='space-y-1.5'>
+               <div className='space-y-2 border-t border-neutral-100 pt-2.5'>
                   <div className='h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden'>
                     <div className='h-full bg-blue-500 transition-all duration-500' style={{ width: `${project.dokubah?.file ? 100 : 0}%` }} />
                   </div>
                   
                   {project.dokubah?.file && (
-                    <div className='p-2 rounded bg-blue-50 border border-blue-100 flex items-center justify-between mt-2'>
-                      <div className='flex items-center gap-2 overflow-hidden text-left'>
+                    <div className='p-2 rounded bg-blue-50 border border-blue-100 flex items-center justify-between gap-1 min-w-0 mt-2'>
+                      <div className='flex items-center gap-2 overflow-hidden text-left min-w-0 flex-1 mr-1'>
                         <div className='h-6 w-6 rounded bg-white border border-blue-100 flex items-center justify-center text-blue-600 shrink-0'>
                           <FileText className='h-3 w-3' />
                         </div>
-                        <div className='flex flex-col min-w-0'>
-                          <span className='text-[9px] font-bold text-blue-900 leading-none'>Dokubah File</span>
-                          <span className='text-[8px] text-blue-600 truncate'>{project.dokubah.file.split('/').pop()}</span>
+                        <div className='flex flex-col min-w-0 flex-1'>
+                          <span className='text-[9px] font-bold text-blue-900 leading-none truncate'>Dokubah File</span>
+                          <span className='text-[8px] text-blue-600/85 truncate' title={project.dokubah.file.split('/').pop()}>{project.dokubah.file.split('/').pop()}</span>
                         </div>
                       </div>
-                      <Button variant='ghost' size='icon' className='h-7 w-7 text-blue-600 hover:bg-blue-100 bg-white border border-blue-100 shadow-sm' asChild>
+                      <Button variant='ghost' size='icon' className='h-7 w-7 text-blue-600 hover:bg-blue-100 bg-white border border-blue-100 shadow-sm shrink-0' asChild>
                         <a 
                           href={project.dokubah.file.startsWith('http') ? project.dokubah.file : `${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '')}/storage/${project.dokubah.file}`} 
                           target='_blank' 
@@ -926,25 +936,25 @@ export default function PerencanaanDetailPage() {
         </Card>
 
         {/* 5. Stok Material */}
-        <Card className={`relative border shadow-sm transition-all duration-300 ${stokTersediaCount === totalItems && totalItems > 0 ? 'border-emerald-200 bg-white ring-1 ring-emerald-100' : 'border-neutral-200 bg-white'}`}>
+        <Card className={`relative border shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md ${stokTersediaCount === totalItems && totalItems > 0 ? 'border-emerald-200 bg-white ring-1 ring-emerald-100' : 'border-neutral-200 bg-white'}`}>
           {stokTersediaCount === totalItems && totalItems > 0 && (
             <div className="absolute -top-1.5 -right-1.5 h-5 w-5 bg-emerald-500 rounded-full flex items-center justify-center shadow-sm z-10 animate-in zoom-in duration-300">
               <Check className="h-3 w-3 text-white" strokeWidth={3} />
             </div>
           )}
-          <CardHeader className='pb-2 flex flex-row items-center justify-between gap-3'>
-            <button className='flex items-center gap-3 flex-1 text-left' onClick={() => setIsStokCollapsed(!isStokCollapsed)}>
-              <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold ${stokTersediaCount > 0 ? 'bg-emerald-100 text-emerald-600' : 'bg-neutral-100 text-neutral-500'}`}>5</div>
-              <div className='flex-1'>
-                <CardTitle className='text-sm text-neutral-800'>Stok Material</CardTitle>
-                <p className='text-[10px] text-muted-foreground uppercase tracking-wider'>Availability</p>
+          <CardHeader className='pb-2 flex flex-row items-center justify-between gap-3 min-w-0'>
+            <button className='flex items-center gap-3 flex-1 text-left min-w-0' onClick={() => setIsStokCollapsed(!isStokCollapsed)}>
+              <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold shrink-0 ${stokTersediaCount > 0 ? 'bg-emerald-100 text-emerald-600' : 'bg-neutral-100 text-neutral-500'}`}>5</div>
+              <div className='flex-1 min-w-0'>
+                <CardTitle className='text-sm text-neutral-800 font-bold truncate'>Stok Material</CardTitle>
+                <p className='text-[10px] text-muted-foreground uppercase tracking-wider font-semibold truncate'>Availability</p>
               </div>
-              <ChevronDown className={`h-4 w-4 text-neutral-400 transition-transform duration-200 ${isStokCollapsed ? '-rotate-90' : ''}`} />
+              <ChevronDown className={`h-4 w-4 text-neutral-400 shrink-0 transition-transform duration-200 ${isStokCollapsed ? '-rotate-90' : ''}`} />
             </button>
           </CardHeader>
           {!isStokCollapsed && (
             <CardContent className='pt-0'>
-               <div className='space-y-1.5'>
+               <div className='space-y-2 border-t border-neutral-100 pt-2.5'>
                   <div className='h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden'>
                     <div className='h-full bg-emerald-500 transition-all duration-500' style={{ width: `${totalItems ? (stokTersediaCount / totalItems) * 100 : 0}%` }} />
                   </div>
@@ -958,36 +968,37 @@ export default function PerencanaanDetailPage() {
         </Card>
 
         {/* 6. Perintah Produksi */}
-        <Card className={`relative border shadow-sm transition-all duration-300 ${perintahProduksiCount === totalItems && totalItems > 0 ? 'border-blue-200 bg-white ring-1 ring-blue-100' : 'border-neutral-200 bg-white'}`}>
+        <Card className={`relative border shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md ${perintahProduksiCount === totalItems && totalItems > 0 ? 'border-blue-200 bg-white ring-1 ring-blue-100' : 'border-neutral-200 bg-white'}`}>
           {project?.order_produksi && project.order_produksi.length > 0 && (
             <div className="absolute -top-1.5 -right-1.5 h-5 w-5 bg-emerald-500 rounded-full flex items-center justify-center shadow-sm z-10 animate-in zoom-in duration-300">
               <Check className="h-3 w-3 text-white" strokeWidth={3} />
             </div>
           )}
-          <CardHeader className='pb-2 flex flex-row items-center justify-between gap-3'>
-            <button className='flex items-center gap-3 flex-1 text-left' onClick={() => setIsProduksiCollapsed(!isProduksiCollapsed)}>
-              <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold ${perintahProduksiCount > 0 || (project?.order_produksi && project.order_produksi.length > 0) ? 'bg-blue-100 text-blue-600' : 'bg-neutral-100 text-neutral-500'}`}>6</div>
-              <div className='flex-1'>
-                <CardTitle className='text-sm text-neutral-800'>Perintah Produksi</CardTitle>
-                <p className='text-[10px] text-muted-foreground uppercase tracking-wider'>Production Orders</p>
+          <CardHeader className='pb-2 flex flex-row items-center justify-between gap-3 min-w-0'>
+            <button className='flex items-center gap-3 flex-1 text-left min-w-0' onClick={() => setIsProduksiCollapsed(!isProduksiCollapsed)}>
+              <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold shrink-0 ${perintahProduksiCount > 0 || (project?.order_produksi && project.order_produksi.length > 0) ? 'bg-blue-100 text-blue-600' : 'bg-neutral-100 text-neutral-500'}`}>6</div>
+              <div className='flex-1 min-w-0'>
+                <CardTitle className='text-sm text-neutral-800 font-bold truncate'>Perintah Produksi</CardTitle>
+                <p className='text-[10px] text-muted-foreground uppercase tracking-wider font-semibold truncate'>Production Orders</p>
               </div>
-              <ChevronDown className={`h-4 w-4 text-neutral-400 transition-transform duration-200 ${isProduksiCollapsed ? '-rotate-90' : ''}`} />
+              <ChevronDown className={`h-4 w-4 text-neutral-400 shrink-0 transition-transform duration-200 ${isProduksiCollapsed ? '-rotate-90' : ''}`} />
             </button>
           </CardHeader>
           {!isProduksiCollapsed && (
             <CardContent className='pt-0'>
-               <div className='space-y-1.5'>
+               <div className='space-y-2 border-t border-neutral-100 pt-2.5'>
                   <div className='h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden'>
                     <div className='h-full bg-blue-600 transition-all duration-500' style={{ width: `${totalItems ? (perintahProduksiCount / totalItems) * 100 : 0}%` }} />
                   </div>
                   {project?.order_produksi && project.order_produksi.length > 0 && (
-                    <div className='flex items-center gap-2 mb-1 p-2 bg-blue-50 rounded-md border border-blue-100'>
-                      <FileText className='h-3.5 w-3.5 text-blue-600' />
+                    <div className='flex items-center gap-2 mb-1 p-2 bg-blue-50/80 rounded-md border border-blue-100 min-w-0'>
+                      <FileText className='h-3.5 w-3.5 text-blue-600 shrink-0' />
                       <a 
                         href={`http://localhost:8000/storage/${project.order_produksi[project.order_produksi.length - 1].file}`}
                         target='_blank'
                         rel='noopener noreferrer'
-                        className='text-[10px] text-blue-700 hover:underline font-medium truncate'
+                        className='text-[10px] text-blue-700 hover:underline font-medium truncate flex-1 min-w-0'
+                        title={`Order_Produksi_${format(new Date(project.order_produksi[project.order_produksi.length - 1].created_at), 'ddMMyy')}.pdf`}
                       >
                         Order_Produksi_{format(new Date(project.order_produksi[project.order_produksi.length - 1].created_at), 'ddMMyy')}.pdf
                       </a>
@@ -997,7 +1008,7 @@ export default function PerencanaanDetailPage() {
                   <Button 
                     variant='outline' 
                     size='sm' 
-                    className='w-full h-7 text-[10px] text-blue-600 border-blue-200 hover:bg-blue-50 mt-1 gap-2'
+                    className='w-full h-7 text-[10px] text-blue-600 border-blue-200 hover:bg-blue-50 mt-1 gap-2 font-bold'
                     onClick={() => setIsOrderProduksiDialogOpen(true)}
                   >
                     <ClipboardList className='h-3.5 w-3.5' />
@@ -1009,26 +1020,26 @@ export default function PerencanaanDetailPage() {
         </Card>
 
         {/* 7. Gudang Barang Jadi */}
-        <Card className={`relative border shadow-sm transition-all duration-300 ${totalQtyMasuk >= totalQtyOrder && totalQtyPacking >= totalQtyOrder && totalQtyOrder > 0 ? 'border-emerald-200 bg-white ring-1 ring-emerald-100' : 'border-neutral-200 bg-white'}`}>
+        <Card className={`relative border shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md ${totalQtyMasuk >= totalQtyOrder && totalQtyPacking >= totalQtyOrder && totalQtyOrder > 0 ? 'border-emerald-200 bg-white ring-1 ring-emerald-100' : 'border-neutral-200 bg-white'}`}>
           {totalQtyMasuk >= totalQtyOrder && totalQtyPacking >= totalQtyOrder && totalQtyOrder > 0 && (
             <div className="absolute -top-1.5 -right-1.5 h-5 w-5 bg-emerald-500 rounded-full flex items-center justify-center shadow-sm z-10 animate-in zoom-in duration-300">
               <Check className="h-3 w-3 text-white" strokeWidth={3} />
             </div>
           )}
-          <CardHeader className='pb-2 flex flex-row items-center justify-between gap-3'>
-            <button className='flex items-center gap-3 flex-1 text-left' onClick={() => setIsBjCollapsed(!isBjCollapsed)}>
-              <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold ${totalQtyMasuk > 0 ? (totalQtyMasuk >= totalQtyOrder && totalQtyPacking >= totalQtyOrder ? 'bg-emerald-100 text-emerald-600' : 'bg-blue-100 text-blue-600') : 'bg-neutral-100 text-neutral-500'}`}>7</div>
-              <div className='flex-1'>
-                <CardTitle className='text-sm text-neutral-800'>Gudang Barang Jadi</CardTitle>
-                <p className='text-[10px] text-muted-foreground uppercase tracking-wider'>Finished Goods & Packing</p>
+          <CardHeader className='pb-2 flex flex-row items-center justify-between gap-3 min-w-0'>
+            <button className='flex items-center gap-3 flex-1 text-left min-w-0' onClick={() => setIsBjCollapsed(!isBjCollapsed)}>
+              <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold shrink-0 ${totalQtyMasuk > 0 ? (totalQtyMasuk >= totalQtyOrder && totalQtyPacking >= totalQtyOrder ? 'bg-emerald-100 text-emerald-600' : 'bg-blue-100 text-blue-600') : 'bg-neutral-100 text-neutral-500'}`}>7</div>
+              <div className='flex-1 min-w-0'>
+                <CardTitle className='text-sm text-neutral-800 font-bold truncate'>Gudang Barang Jadi</CardTitle>
+                <p className='text-[10px] text-muted-foreground uppercase tracking-wider font-semibold truncate'>Finished Goods & Packing</p>
               </div>
-              <ChevronDown className={`h-4 w-4 text-neutral-400 transition-transform duration-200 ${isBjCollapsed ? '-rotate-90' : ''}`} />
+              <ChevronDown className={`h-4 w-4 text-neutral-400 shrink-0 transition-transform duration-200 ${isBjCollapsed ? '-rotate-90' : ''}`} />
             </button>
           </CardHeader>
           {!isBjCollapsed && (
             <CardContent className='pt-0 space-y-4'>
                {/* Barang Masuk Progress */}
-               <div className='space-y-1.5'>
+               <div className='space-y-1.5 border-t border-neutral-100 pt-2.5'>
                   <div className='flex justify-between items-center'>
                     <p className='text-[10px] font-bold text-neutral-500 uppercase tracking-wider'>Barang Masuk</p>
                     <p className={`text-[10px] font-bold ${totalQtyMasuk >= totalQtyOrder ? 'text-emerald-600' : 'text-blue-600'}`}>{Math.round(totalQtyOrder ? (totalQtyMasuk / totalQtyOrder) * 100 : 0)}%</p>
@@ -1036,11 +1047,11 @@ export default function PerencanaanDetailPage() {
                   <div className='h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden'>
                     <div className={`h-full transition-all duration-500 ${totalQtyMasuk >= totalQtyOrder ? 'bg-emerald-600' : 'bg-blue-600'}`} style={{ width: `${totalQtyOrder ? (totalQtyMasuk / totalQtyOrder) * 100 : 0}%` }} />
                   </div>
-                  <p className='text-[10px] font-medium text-neutral-600'>{totalQtyMasuk} / {totalQtyOrder} Items</p>
+                  <p className='text-[10px] font-bold text-neutral-600'>{totalQtyMasuk} / {totalQtyOrder} Items</p>
                </div>
 
                {/* Packing Progress */}
-               <div className='space-y-1.5 pt-2 border-t border-neutral-50'>
+               <div className='space-y-1.5 pt-2 border-t border-neutral-100'>
                   <div className='flex justify-between items-center'>
                     <p className='text-[10px] font-bold text-neutral-500 uppercase tracking-wider'>Barang Terpacking</p>
                     <p className={`text-[10px] font-bold ${totalQtyPacking >= totalQtyOrder ? 'text-emerald-600' : 'text-orange-600'}`}>{Math.round(totalQtyOrder ? (totalQtyPacking / totalQtyOrder) * 100 : 0)}%</p>
@@ -1048,56 +1059,58 @@ export default function PerencanaanDetailPage() {
                   <div className='h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden'>
                     <div className={`h-full transition-all duration-500 ${totalQtyPacking >= totalQtyOrder ? 'bg-emerald-600' : 'bg-orange-600'}`} style={{ width: `${totalQtyOrder ? (totalQtyPacking / totalQtyOrder) * 100 : 0}%` }} />
                   </div>
-                  <p className='text-[10px] font-medium text-neutral-600'>{totalQtyPacking} / {totalQtyOrder} Items</p>
+                  <p className='text-[10px] font-bold text-neutral-600'>{totalQtyPacking} / {totalQtyOrder} Items</p>
                </div>
             </CardContent>
           )}
         </Card>
 
         {/* 8. Pengiriman */}
-        <Card className='border border-neutral-200 shadow-sm bg-white'>
-          <CardHeader className='pb-2 flex flex-row items-center justify-between gap-3'>
-            <button className='flex items-center gap-3 flex-1 text-left' onClick={() => setIsShipCollapsed(!isShipCollapsed)}>
-              <div className='h-8 w-8 rounded-full flex items-center justify-center font-bold bg-neutral-100 text-neutral-500'>8</div>
-              <div className='flex-1'>
-                <CardTitle className='text-sm text-neutral-800'>Pengiriman</CardTitle>
-                <p className='text-[10px] text-muted-foreground uppercase tracking-wider'>Logistics</p>
+        <Card className='border border-neutral-200/60 shadow-sm bg-white transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md'>
+          <CardHeader className='pb-2 flex flex-row items-center justify-between gap-3 min-w-0'>
+            <button className='flex items-center gap-3 flex-1 text-left min-w-0' onClick={() => setIsShipCollapsed(!isShipCollapsed)}>
+              <div className='h-8 w-8 rounded-full flex items-center justify-center font-bold bg-neutral-100 text-neutral-500 shrink-0'>8</div>
+              <div className='flex-1 min-w-0'>
+                <CardTitle className='text-sm text-neutral-800 font-bold truncate'>Pengiriman</CardTitle>
+                <p className='text-[10px] text-muted-foreground uppercase tracking-wider font-semibold truncate'>Logistics</p>
               </div>
-              <ChevronDown className={`h-4 w-4 text-neutral-400 transition-transform duration-200 ${isShipCollapsed ? '-rotate-90' : ''}`} />
+              <ChevronDown className={`h-4 w-4 text-neutral-400 shrink-0 transition-transform duration-200 ${isShipCollapsed ? '-rotate-90' : ''}`} />
             </button>
           </CardHeader>
           {!isShipCollapsed && (
             <CardContent className='pt-0'>
-               <Button variant='ghost' size='sm' className='h-7 w-full text-[10px] bg-neutral-50 hover:bg-neutral-100 flex items-center justify-center gap-1.5' asChild>
-                  <Link href={`/dashboard/projects-v2/jadwal-pengiriman?project_id=${projectId}`}>
-                    <Truck className='h-3 w-3' />
-                    View Schedule
-                  </Link>
-               </Button>
+               <div className='border-t border-neutral-100 pt-2.5'>
+                 <Button variant='ghost' size='sm' className='h-7 w-full text-[10px] bg-neutral-50 hover:bg-neutral-100 flex items-center justify-center gap-1.5 font-bold border border-neutral-200' asChild>
+                    <Link href={`/dashboard/projects-v2/jadwal-pengiriman?project_id=${projectId}`}>
+                      <Truck className='h-3 w-3 text-neutral-500' />
+                      View Schedule
+                    </Link>
+                 </Button>
+               </div>
             </CardContent>
           )}
         </Card>
 
         {/* 9. Barang Terkirim */}
-        <Card className={`relative border shadow-sm transition-all duration-300 ${totalQtyKeluar >= totalQtyOrder && totalQtyOrder > 0 ? 'border-emerald-200 bg-white ring-1 ring-emerald-100' : 'border-neutral-200 bg-white'}`}>
+        <Card className={`relative border shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md ${totalQtyKeluar >= totalQtyOrder && totalQtyOrder > 0 ? 'border-emerald-200 bg-white ring-1 ring-emerald-100' : 'border-neutral-200 bg-white'}`}>
           {totalQtyKeluar >= totalQtyOrder && totalQtyOrder > 0 && (
             <div className="absolute -top-1.5 -right-1.5 h-5 w-5 bg-emerald-500 rounded-full flex items-center justify-center shadow-sm z-10 animate-in zoom-in duration-300">
               <Check className="h-3 w-3 text-white" strokeWidth={3} />
             </div>
           )}
-          <CardHeader className='pb-2 flex flex-row items-center justify-between gap-3'>
-            <button className='flex items-center gap-3 flex-1 text-left' onClick={() => setIsKeluarCollapsed(!isKeluarCollapsed)}>
-              <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold ${totalQtyKeluar > 0 ? (totalQtyKeluar >= totalQtyOrder ? 'bg-emerald-100 text-emerald-600' : 'bg-blue-100 text-blue-600') : 'bg-neutral-100 text-neutral-500'}`}>9</div>
-              <div className='flex-1'>
-                <CardTitle className='text-sm text-neutral-800'>Barang Terkirim</CardTitle>
-                <p className='text-[10px] text-muted-foreground uppercase tracking-wider'>Delivered Items</p>
+          <CardHeader className='pb-2 flex flex-row items-center justify-between gap-3 min-w-0'>
+            <button className='flex items-center gap-3 flex-1 text-left min-w-0' onClick={() => setIsKeluarCollapsed(!isKeluarCollapsed)}>
+              <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold shrink-0 ${totalQtyKeluar > 0 ? (totalQtyKeluar >= totalQtyOrder ? 'bg-emerald-100 text-emerald-600' : 'bg-blue-100 text-blue-600') : 'bg-neutral-100 text-neutral-500'}`}>9</div>
+              <div className='flex-1 min-w-0'>
+                <CardTitle className='text-sm text-neutral-800 font-bold truncate'>Barang Terkirim</CardTitle>
+                <p className='text-[10px] text-muted-foreground uppercase tracking-wider font-semibold truncate'>Delivered Items</p>
               </div>
-              <ChevronDown className={`h-4 w-4 text-neutral-400 transition-transform duration-200 ${isKeluarCollapsed ? '-rotate-90' : ''}`} />
+              <ChevronDown className={`h-4 w-4 text-neutral-400 shrink-0 transition-transform duration-200 ${isKeluarCollapsed ? '-rotate-90' : ''}`} />
             </button>
           </CardHeader>
           {!isKeluarCollapsed && (
             <CardContent className='pt-0'>
-               <div className='space-y-1.5'>
+               <div className='space-y-2 border-t border-neutral-100 pt-2.5'>
                   <div className='flex justify-between items-center'>
                     <p className='text-[10px] font-bold text-neutral-500 uppercase tracking-wider'>Terkirim</p>
                     <p className={`text-[10px] font-bold ${totalQtyKeluar >= totalQtyOrder ? 'text-emerald-600' : 'text-blue-600'}`}>{Math.round(totalQtyOrder ? (totalQtyKeluar / totalQtyOrder) * 100 : 0)}%</p>
@@ -1105,27 +1118,27 @@ export default function PerencanaanDetailPage() {
                   <div className='h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden'>
                     <div className={`h-full transition-all duration-500 ${totalQtyKeluar >= totalQtyOrder ? 'bg-emerald-600' : 'bg-blue-600'}`} style={{ width: `${totalQtyOrder ? (totalQtyKeluar / totalQtyOrder) * 100 : 0}%` }} />
                   </div>
-                  <p className='text-[10px] font-medium text-neutral-600'>{totalQtyKeluar} / {totalQtyOrder} Items</p>
+                  <p className='text-[10px] font-bold text-neutral-600'>{totalQtyKeluar} / {totalQtyOrder} Items</p>
                </div>
             </CardContent>
           )}
         </Card>
 
         {/* 10. Barang Terkirim Belum Tersetting */}
-        <Card className={`relative border shadow-sm transition-all duration-300 ${totalQtyBelumSetting > 0 ? 'border-amber-200 bg-white ring-1 ring-amber-100' : 'border-neutral-200 bg-white'}`}>
-          <CardHeader className='pb-2 flex flex-row items-center justify-between gap-3'>
-            <button className='flex items-center gap-3 flex-1 text-left' onClick={() => setIsBelumSettingCollapsed(!isBelumSettingCollapsed)}>
-              <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold ${totalQtyBelumSetting > 0 ? 'bg-amber-100 text-amber-600' : 'bg-neutral-100 text-neutral-500'}`}>10</div>
-              <div className='flex-1'>
-                <CardTitle className='text-sm text-neutral-800'>Belum Tersetting</CardTitle>
-                <p className='text-[10px] text-muted-foreground uppercase tracking-wider'>Pending Installation</p>
+        <Card className={`relative border shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md ${totalQtyBelumSetting > 0 ? 'border-amber-200 bg-white ring-1 ring-amber-100' : 'border-neutral-200 bg-white'}`}>
+          <CardHeader className='pb-2 flex flex-row items-center justify-between gap-3 min-w-0'>
+            <button className='flex items-center gap-3 flex-1 text-left min-w-0' onClick={() => setIsBelumSettingCollapsed(!isBelumSettingCollapsed)}>
+              <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold shrink-0 ${totalQtyBelumSetting > 0 ? 'bg-amber-100 text-amber-600' : 'bg-neutral-100 text-neutral-500'}`}>10</div>
+              <div className='flex-1 min-w-0'>
+                <CardTitle className='text-sm text-neutral-800 font-bold truncate'>Belum Tersetting</CardTitle>
+                <p className='text-[10px] text-muted-foreground uppercase tracking-wider font-semibold truncate'>Pending Installation</p>
               </div>
-              <ChevronDown className={`h-4 w-4 text-neutral-400 transition-transform duration-200 ${isBelumSettingCollapsed ? '-rotate-90' : ''}`} />
+              <ChevronDown className={`h-4 w-4 text-neutral-400 shrink-0 transition-transform duration-200 ${isBelumSettingCollapsed ? '-rotate-90' : ''}`} />
             </button>
           </CardHeader>
           {!isBelumSettingCollapsed && (
             <CardContent className='pt-0'>
-               <div className='space-y-1.5'>
+               <div className='space-y-2 border-t border-neutral-100 pt-2.5'>
                   <div className='flex justify-between items-center'>
                     <p className='text-[10px] font-bold text-neutral-500 uppercase tracking-wider'>Outstanding</p>
                     <p className='text-[10px] font-bold text-amber-600'>{totalQtyBelumSetting} Items</p>
@@ -1139,25 +1152,25 @@ export default function PerencanaanDetailPage() {
         </Card>
 
         {/* 11. Barang Sudah Tersetting */}
-        <Card className={`relative border shadow-sm transition-all duration-300 ${totalQtySetting >= totalQtyOrder && totalQtyOrder > 0 ? 'border-emerald-200 bg-white ring-1 ring-emerald-100' : 'border-neutral-200 bg-white'}`}>
+        <Card className={`relative border shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md ${totalQtySetting >= totalQtyOrder && totalQtyOrder > 0 ? 'border-emerald-200 bg-white ring-1 ring-emerald-100' : 'border-neutral-200 bg-white'}`}>
           {totalQtySetting >= totalQtyOrder && totalQtyOrder > 0 && (
             <div className="absolute -top-1.5 -right-1.5 h-5 w-5 bg-emerald-500 rounded-full flex items-center justify-center shadow-sm z-10 animate-in zoom-in duration-300">
               <Check className="h-3 w-3 text-white" strokeWidth={3} />
             </div>
           )}
-          <CardHeader className='pb-2 flex flex-row items-center justify-between gap-3'>
-            <button className='flex items-center gap-3 flex-1 text-left' onClick={() => setIsSettingCollapsed(!isSettingCollapsed)}>
-              <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold ${totalQtySetting > 0 ? (totalQtySetting >= totalQtyOrder ? 'bg-emerald-100 text-emerald-600' : 'bg-blue-100 text-blue-600') : 'bg-neutral-100 text-neutral-500'}`}>11</div>
-              <div className='flex-1'>
-                <CardTitle className='text-sm text-neutral-800'>Barang Tersetting</CardTitle>
-                <p className='text-[10px] text-muted-foreground uppercase tracking-wider'>Installed Items</p>
+          <CardHeader className='pb-2 flex flex-row items-center justify-between gap-3 min-w-0'>
+            <button className='flex items-center gap-3 flex-1 text-left min-w-0' onClick={() => setIsSettingCollapsed(!isSettingCollapsed)}>
+              <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold shrink-0 ${totalQtySetting > 0 ? (totalQtySetting >= totalQtyOrder ? 'bg-emerald-100 text-emerald-600' : 'bg-blue-100 text-blue-600') : 'bg-neutral-100 text-neutral-500'}`}>11</div>
+              <div className='flex-1 min-w-0'>
+                <CardTitle className='text-sm text-neutral-800 font-bold truncate'>Barang Tersetting</CardTitle>
+                <p className='text-[10px] text-muted-foreground uppercase tracking-wider font-semibold truncate'>Installed Items</p>
               </div>
-              <ChevronDown className={`h-4 w-4 text-neutral-400 transition-transform duration-200 ${isSettingCollapsed ? '-rotate-90' : ''}`} />
+              <ChevronDown className={`h-4 w-4 text-neutral-400 shrink-0 transition-transform duration-200 ${isSettingCollapsed ? '-rotate-90' : ''}`} />
             </button>
           </CardHeader>
           {!isSettingCollapsed && (
             <CardContent className='pt-0'>
-               <div className='space-y-1.5'>
+               <div className='space-y-2 border-t border-neutral-100 pt-2.5'>
                   <div className='flex justify-between items-center'>
                     <p className='text-[10px] font-bold text-neutral-500 uppercase tracking-wider'>Tersetting</p>
                     <p className={`text-[10px] font-bold ${totalQtySetting >= totalQtyOrder ? 'text-emerald-600' : 'text-blue-600'}`}>{Math.round(totalQtyOrder ? (totalQtySetting / totalQtyOrder) * 100 : 0)}%</p>
@@ -1165,7 +1178,7 @@ export default function PerencanaanDetailPage() {
                   <div className='h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden'>
                     <div className={`h-full transition-all duration-500 ${totalQtySetting >= totalQtyOrder ? 'bg-emerald-600' : 'bg-blue-600'}`} style={{ width: `${totalQtyOrder ? (totalQtySetting / totalQtyOrder) * 100 : 0}%` }} />
                   </div>
-                  <p className='text-[10px] font-medium text-neutral-600'>{totalQtySetting} / {totalQtyOrder} Items</p>
+                  <p className='text-[10px] font-bold text-neutral-600'>{totalQtySetting} / {totalQtyOrder} Items</p>
                </div>
             </CardContent>
           )}
@@ -2318,11 +2331,11 @@ export default function PerencanaanDetailPage() {
               <div className='flex justify-center py-8'>
                 <Loader2 className='h-6 w-6 animate-spin text-neutral-300' />
               </div>
-            ) : itemHistory?.length === 0 ? (
+            ) : filteredHistory.length === 0 ? (
               <p className='text-center py-8 text-xs text-muted-foreground italic'>Belum ada riwayat perubahan.</p>
             ) : (
               <div className='space-y-4'>
-                {itemHistory?.map((h: any) => (
+                {filteredHistory.map((h: any) => (
                   <div key={h.id} className='flex gap-4 items-start p-3 rounded-lg bg-neutral-50 border border-neutral-100'>
                     <div className='h-8 w-8 rounded-full bg-white border border-neutral-200 flex items-center justify-center shrink-0'>
                       <User className='h-4 w-4 text-neutral-400' />
