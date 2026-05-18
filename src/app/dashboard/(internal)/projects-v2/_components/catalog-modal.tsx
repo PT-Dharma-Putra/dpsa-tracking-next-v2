@@ -181,6 +181,9 @@ export function CatalogModal({ isOpen, onClose, projectId }: CatalogModalProps) 
               {bulkSubmitMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Check className="w-4 h-4 mr-2" />}
               Save to Project
             </Button>
+            <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700 shrink-0 h-10 w-10">
+              <X className="w-5 h-5" />
+            </Button>
           </div>
         </div>
 

@@ -580,30 +580,30 @@ export default function ProjectItemsPage() {
                 : 'border-neutral-200 bg-neutral-50/80 opacity-60 grayscale-[0.5]'
             }`}
           >
-            <CardHeader className='pb-3 flex flex-row items-center justify-between gap-3'>
-            <button
-              className='flex items-center gap-3 flex-1 text-left'
-              onClick={() => setIsSpdCollapsed((v) => !v)}
-            >
-              <div
-                className={`h-8 w-8 rounded-full flex items-center justify-center font-bold ${
-                  flowSteps[0].isActive
-                    ? 'bg-orange-100 text-orange-600'
-                    : 'bg-neutral-200 text-neutral-500'
-                }`}
+            <CardHeader className='pb-3 flex flex-row items-center justify-between gap-2 min-w-0'>
+              <button
+                className='flex items-center gap-2 flex-1 text-left min-w-0'
+                onClick={() => setIsSpdCollapsed((v) => !v)}
               >
-                1
-              </div>
-                <div className='flex-1'>
-                  <CardTitle className='text-base text-neutral-800'>
+                <div
+                  className={`h-8 w-8 rounded-full flex items-center justify-center font-bold shrink-0 ${
+                    flowSteps[0].isActive
+                      ? 'bg-orange-100 text-orange-600'
+                      : 'bg-neutral-200 text-neutral-500'
+                  }`}
+                >
+                  1
+                </div>
+                <div className='flex-1 min-w-0'>
+                  <CardTitle className='text-sm sm:text-base text-neutral-800 truncate' title="Upload SPD">
                     Upload SPD
                   </CardTitle>
-                  <p className='text-[10px] text-muted-foreground uppercase tracking-wider'>
+                  <p className='text-[9px] sm:text-[10px] text-muted-foreground uppercase tracking-wider truncate' title="Surat Permintaan Desain">
                     'Surat Permintaan Desain'
                   </p>
                 </div>
                 <ChevronDown
-                  className={`h-4 w-4 text-neutral-400 transition-transform duration-200 mr-1 ${
+                  className={`h-4 w-4 text-neutral-400 transition-transform duration-200 mr-1 shrink-0 ${
                     isSpdCollapsed ? '-rotate-90' : ''
                   }`}
                 />
@@ -611,7 +611,7 @@ export default function ProjectItemsPage() {
               <Button
                 size='sm'
                 variant='outline'
-                className='h-7 text-[10px] border-orange-200 text-orange-600 hover:bg-orange-50'
+                className='h-7 text-[10px] border-orange-200 text-orange-600 hover:bg-orange-50 shrink-0'
                 disabled={!flowSteps[0].isActive}
                 onClick={() => setIsSpdModalOpen(true)}
               >
@@ -623,16 +623,16 @@ export default function ProjectItemsPage() {
               <CardContent>
                 {existingSpd?.spd_file ? (
                   <>
-                    <div className='p-3 rounded-xl bg-orange-50/80 border border-orange-100 flex items-center justify-between shadow-sm'>
-                      <div className='flex items-center gap-3'>
-                        <div className='h-8 w-8 rounded-lg bg-white shadow-sm border border-orange-100 flex items-center justify-center text-orange-600'>
+                    <div className='p-3 rounded-xl bg-orange-50/80 border border-orange-100 flex items-center justify-between shadow-sm min-w-0 gap-2'>
+                      <div className='flex items-center gap-3 min-w-0 flex-1 mr-2'>
+                        <div className='h-8 w-8 rounded-lg bg-white shadow-sm border border-orange-100 flex items-center justify-center text-orange-600 shrink-0'>
                           <FileText className='h-4 w-4' />
                         </div>
-                        <div>
-                          <p className='text-xs font-bold text-orange-900'>
+                        <div className='min-w-0 flex-1'>
+                          <p className='text-xs font-bold text-orange-900 truncate' title="SPD Document">
                             SPD Document
                           </p>
-                          <p className='text-[10px] text-orange-600/80'>
+                          <p className='text-[10px] text-orange-600/80 truncate'>
                             {format(
                               new Date(
                                 existingSpd.target_selesai || existingSpd.tanggal || existingSpd.created_at
@@ -645,7 +645,7 @@ export default function ProjectItemsPage() {
                       <Button
                         variant='ghost'
                         size='icon'
-                        className='h-8 w-8 text-orange-600 hover:bg-orange-200 bg-white shadow-sm border border-orange-100'
+                        className='h-8 w-8 text-orange-600 hover:bg-orange-200 bg-white shadow-sm border border-orange-100 shrink-0'
                         asChild
                       >
                         <a
@@ -667,17 +667,17 @@ export default function ProjectItemsPage() {
                         </p>
                         <div className='grid grid-cols-1 gap-2'>
                           {project.file_pendukung_spd.map((fp, i) => (
-                            <div key={fp.id} className='flex items-center justify-between p-2 rounded-lg bg-white border border-orange-50 shadow-sm'>
-                              <div className='flex items-center gap-2 overflow-hidden'>
+                            <div key={fp.id} className='flex items-center justify-between p-2 rounded-lg bg-white border border-orange-50 shadow-sm min-w-0 gap-2'>
+                              <div className='flex items-center gap-2 overflow-hidden min-w-0 flex-1 mr-2'>
                                 <FileText className='h-3 w-3 text-orange-400 shrink-0' />
-                                <span className='text-[10px] text-orange-800 truncate'>
+                                <span className='text-[10px] text-orange-800 truncate' title={`File Pendukung ${i + 1}`}>
                                   File Pendukung {i + 1}
                                 </span>
                               </div>
                               <Button
                                 variant='ghost'
                                 size='icon'
-                                className='h-6 w-6 text-orange-600 hover:bg-orange-50'
+                                className='h-6 w-6 text-orange-600 hover:bg-orange-50 shrink-0'
                                 asChild
                               >
                                 <a
@@ -716,13 +716,13 @@ export default function ProjectItemsPage() {
                 : 'border-neutral-200 bg-neutral-50/80 opacity-60 grayscale-[0.5]'
             }`}
           >
-            <CardHeader className='pb-3 flex flex-row items-center justify-between gap-3'>
+            <CardHeader className='pb-3 flex flex-row items-center justify-between gap-2 min-w-0'>
               <button
-                className='flex items-center gap-3 flex-1 text-left'
+                className='flex items-center gap-2 flex-1 text-left min-w-0'
                 onClick={() => setIsAccCollapsed((v) => !v)}
               >
                 <div
-                  className={`h-8 w-8 rounded-full flex items-center justify-center font-bold ${
+                  className={`h-8 w-8 rounded-full flex items-center justify-center font-bold shrink-0 ${
                     flowSteps[1].isActive
                       ? 'bg-emerald-100 text-emerald-600'
                       : 'bg-neutral-200 text-neutral-500'
@@ -730,16 +730,16 @@ export default function ProjectItemsPage() {
                 >
                   2
                 </div>
-                <div className='flex-1'>
-                  <CardTitle className='text-base text-neutral-800'>
+                <div className='flex-1 min-w-0'>
+                  <CardTitle className='text-sm sm:text-base text-neutral-800 truncate' title="ACC Design">
                     ACC Design
                   </CardTitle>
-                  <p className='text-[10px] text-muted-foreground uppercase tracking-wider'>
+                  <p className='text-[9px] sm:text-[10px] text-muted-foreground uppercase tracking-wider truncate' title="Approval Status">
                     'Approval Status'
                   </p>
                 </div>
                 <ChevronDown
-                  className={`h-4 w-4 text-neutral-400 transition-transform duration-200 mr-1 ${
+                  className={`h-4 w-4 text-neutral-400 transition-transform duration-200 mr-1 shrink-0 ${
                     isAccCollapsed ? '-rotate-90' : ''
                   }`}
                 />
@@ -747,7 +747,7 @@ export default function ProjectItemsPage() {
               <Button
                 size='sm'
                 variant='outline'
-                className='h-7 text-[10px] border-emerald-200 text-emerald-600 hover:bg-emerald-50'
+                className='h-7 text-[10px] border-emerald-200 text-emerald-600 hover:bg-emerald-50 shrink-0'
                 disabled={!flowSteps[1].isActive}
                 onClick={() => setIsAccModalOpen(true)}
               >
@@ -760,17 +760,17 @@ export default function ProjectItemsPage() {
                 {existingAcc ? (
                   <div className='space-y-2'>
                     <div
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold shrink-0 ${
                         existingAcc.status === 'Approved'
                           ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                           : 'bg-amber-50 text-amber-700 border border-amber-200'
                       }`}
                     >
-                      <CheckCircle2 className='h-3 w-3' />
-                      {existingAcc.status}
+                      <CheckCircle2 className='h-3 w-3 shrink-0' />
+                      <span className="truncate">{existingAcc.status}</span>
                     </div>
                     {existingAcc.tanggal_kirim && (
-                      <p className='text-[10px] text-muted-foreground'>
+                      <p className='text-[10px] text-muted-foreground truncate'>
                         Kirim:{' '}
                         {format(
                           new Date(existingAcc.tanggal_kirim),
@@ -779,7 +779,7 @@ export default function ProjectItemsPage() {
                       </p>
                     )}
                     {existingAcc.tanggal_acc && (
-                      <p className='text-[10px] text-muted-foreground'>
+                      <p className='text-[10px] text-muted-foreground truncate'>
                         ACC:{' '}
                         {format(
                           new Date(existingAcc.tanggal_acc),
@@ -797,10 +797,10 @@ export default function ProjectItemsPage() {
                         }`}
                         target='_blank'
                         rel='noopener noreferrer'
-                        className='text-[10px] text-emerald-600 hover:underline flex items-center gap-1'
+                        className='text-[10px] text-emerald-600 hover:underline flex items-center gap-1 min-w-0'
                       >
-                        <FileDown className='h-3 w-3' />
-                        Bukti ACC
+                        <FileDown className='h-3 w-3 shrink-0' />
+                        <span className="truncate">Bukti ACC</span>
                       </a>
                     )}
                   </div>
@@ -813,16 +813,16 @@ export default function ProjectItemsPage() {
                 {/* Design Progress Files from Studio */}
                 {existingSpd?.design_progres && existingSpd.design_progres.length > 0 && (
                   <div className="pt-4 border-t border-neutral-100 space-y-3">
-                    <p className="text-[10px] uppercase font-bold text-neutral-500 flex items-center gap-1.5">
-                      <ImageIcon className="h-3 w-3" />
+                    <p className="text-[10px] uppercase font-bold text-neutral-500 flex items-center gap-1.5 truncate">
+                      <ImageIcon className="h-3 w-3 shrink-0" />
                       Design Progress Files
                     </p>
                     <div className="space-y-2 max-h-[250px] overflow-y-auto pr-1 custom-scrollbar">
                       {existingSpd.design_progres.map((p) => (
-                        <div key={p.id} className="p-2 rounded-lg border border-neutral-100 bg-neutral-50/50 space-y-1.5">
-                          <div className="flex items-start justify-between gap-2">
+                        <div key={p.id} className="p-2 rounded-lg border border-neutral-100 bg-neutral-50/50 space-y-1.5 min-w-0">
+                          <div className="flex items-start justify-between gap-2 min-w-0">
                             <div className="min-w-0 flex-1">
-                              <p className="text-[10px] font-bold text-neutral-800 truncate">{p.tahap_design?.nama}</p>
+                              <p className="text-[10px] font-bold text-neutral-800 truncate" title={p.tahap_design?.nama}>{p.tahap_design?.nama}</p>
                               <p className="text-[8px] text-muted-foreground">Submit: {p.tanggal_selesai ? format(new Date(p.tanggal_selesai), "MMM d, yyyy") : "-"}</p>
                             </div>
                             {p.file && (
@@ -834,7 +834,7 @@ export default function ProjectItemsPage() {
                             )}
                           </div>
                           {p.catatan && (
-                            <p className="text-[9px] text-neutral-600 bg-white p-1.5 rounded border border-neutral-50 italic">
+                            <p className="text-[9px] text-neutral-600 bg-white p-1.5 rounded border border-neutral-50 italic break-words">
                               "{p.catatan}"
                             </p>
                           )}
@@ -857,13 +857,13 @@ export default function ProjectItemsPage() {
                 : 'border-neutral-200 bg-neutral-50/80 opacity-60 grayscale-[0.5]'
             }`}
           >
-            <CardHeader className='pb-3 flex flex-row items-center justify-between gap-3'>
+            <CardHeader className='pb-3 flex flex-row items-center justify-between gap-2 min-w-0'>
               <button
-                className='flex items-center gap-3 flex-1 text-left'
+                className='flex items-center gap-2 flex-1 text-left min-w-0'
                 onClick={() => setIsSphCollapsed((v) => !v)}
               >
                 <div
-                  className={`h-8 w-8 rounded-full flex items-center justify-center font-bold ${
+                  className={`h-8 w-8 rounded-full flex items-center justify-center font-bold shrink-0 ${
                     flowSteps[2].isActive
                       ? 'bg-blue-100 text-blue-600'
                       : 'bg-neutral-200 text-neutral-500'
@@ -871,16 +871,16 @@ export default function ProjectItemsPage() {
                 >
                   3
                 </div>
-                <div className='flex-1'>
-                  <CardTitle className='text-base text-neutral-800'>
+                <div className='flex-1 min-w-0'>
+                  <CardTitle className='text-sm sm:text-base text-neutral-800 truncate' title="Upload SPH">
                     Upload SPH
                   </CardTitle>
-                  <p className='text-[10px] text-muted-foreground uppercase tracking-wider'>
+                  <p className='text-[9px] sm:text-[10px] text-muted-foreground uppercase tracking-wider truncate' title="Surat Penawaran">
                     'Surat Penawaran'
                   </p>
                 </div>
                 <ChevronDown
-                  className={`h-4 w-4 text-neutral-400 transition-transform duration-200 mr-1 ${
+                  className={`h-4 w-4 text-neutral-400 transition-transform duration-200 mr-1 shrink-0 ${
                     isSphCollapsed ? '-rotate-90' : ''
                   }`}
                 />
@@ -888,7 +888,7 @@ export default function ProjectItemsPage() {
               <Button
                 size='sm'
                 variant='outline'
-                className='h-7 text-[10px] border-blue-200 text-blue-600 hover:bg-blue-50'
+                className='h-7 text-[10px] border-blue-200 text-blue-600 hover:bg-blue-50 shrink-0'
                 disabled={!flowSteps[2].isActive}
                 onClick={() => setIsSphModalOpen(true)}
               >
@@ -900,14 +900,14 @@ export default function ProjectItemsPage() {
               <CardContent className="space-y-3">
                 {/* List Furnitur from Studio */}
                 {project?.list_furnitur?.file && (
-                  <div className="p-3 rounded-xl bg-purple-50/80 border border-purple-100 flex items-center justify-between shadow-sm">
-                    <div className="flex items-center gap-3">
-                       <div className="h-8 w-8 rounded-lg bg-white shadow-sm border border-purple-100 flex items-center justify-center text-purple-600">
+                  <div className="p-3 rounded-xl bg-purple-50/80 border border-purple-100 flex items-center justify-between shadow-sm min-w-0 gap-2">
+                    <div className="flex items-center gap-3 min-w-0 flex-1 mr-2">
+                       <div className="h-8 w-8 rounded-lg bg-white shadow-sm border border-purple-100 flex items-center justify-center text-purple-600 shrink-0">
                           <FileText className="h-4 w-4" />
                        </div>
-                       <div>
-                          <p className="text-xs font-bold text-purple-900">List Furnitur</p>
-                          <p className="text-[10px] text-purple-600/80">Uploaded by Studio</p>
+                       <div className="min-w-0 flex-1">
+                          <p className="text-xs font-bold text-purple-900 truncate">List Furnitur</p>
+                          <p className="text-[10px] text-purple-600/80 truncate">Uploaded by Studio</p>
                        </div>
                     </div>
                     <Button variant="ghost" size="icon" className="h-8 w-8 text-purple-600 hover:bg-purple-200 bg-white shadow-sm border border-purple-100 shrink-0" asChild>
@@ -918,18 +918,18 @@ export default function ProjectItemsPage() {
                   </div>
                 )}
                 {existingSph?.file ? (
-                  <div className='p-3 rounded-xl bg-blue-50/80 border border-blue-100 flex items-center justify-between shadow-sm'>
-                    <div className='flex items-center gap-3'>
-                      <div className='h-8 w-8 rounded-lg bg-white shadow-sm border border-blue-100 flex items-center justify-center text-blue-600'>
+                  <div className='p-3 rounded-xl bg-blue-50/80 border border-blue-100 flex items-center justify-between shadow-sm min-w-0 gap-2'>
+                    <div className='flex items-center gap-3 min-w-0 flex-1 mr-2'>
+                      <div className='h-8 w-8 rounded-lg bg-white shadow-sm border border-blue-100 flex items-center justify-center text-blue-600 shrink-0'>
                         <FileText className='h-4 w-4' />
                       </div>
-                      <div className='overflow-hidden'>
-                        <div className="flex items-center gap-2">
-                          <p className='text-xs font-bold text-blue-900 line-clamp-1'>
+                      <div className='min-w-0 flex-1'>
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <p className='text-xs font-bold text-blue-900 truncate max-w-full' title={existingSph.nomor_sph}>
                             {existingSph.nomor_sph}
                           </p>
                           {existingSph.status && (
-                            <Badge variant="outline" className={`text-[9px] h-4 px-1.5 uppercase tracking-wider ${
+                            <Badge variant="outline" className={`text-[9px] h-4 px-1.5 uppercase tracking-wider shrink-0 ${
                               existingSph.status === 'approved' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
                               existingSph.status === 'revision' ? 'bg-red-50 text-red-700 border-red-200' :
                               'bg-blue-50 text-blue-700 border-blue-200'
@@ -938,7 +938,7 @@ export default function ProjectItemsPage() {
                             </Badge>
                           )}
                         </div>
-                        <p className='text-[10px] text-blue-600/80'>
+                        <p className='text-[10px] text-blue-600/80 truncate'>
                           {format(
                             new Date(existingSph.created_at),
                             'MMM d, yyyy'
@@ -946,7 +946,7 @@ export default function ProjectItemsPage() {
                         </p>
                       </div>
                     </div>
-                    <div className="flex flex-col gap-1 items-end">
+                    <div className="flex items-center shrink-0">
                       <Button
                         variant='ghost'
                         size='icon'
@@ -965,23 +965,6 @@ export default function ProjectItemsPage() {
                         </a>
                       </Button>
                     </div>
-                    {existingSph.status !== 'approved' && (
-                      <div className="flex gap-2 mt-2">
-                        <Button 
-                          size="sm" 
-                          className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] h-8 shadow-sm"
-                          onClick={() => approveSphMutation.mutate()}
-                          disabled={approveSphMutation.isPending}
-                        >
-                          {approveSphMutation.isPending ? (
-                            <Loader2 className="h-3 w-3 animate-spin mr-1.5" />
-                          ) : (
-                            <CheckCircle className="h-3 w-3 mr-1.5" />
-                          )}
-                          Approve SPH
-                        </Button>
-                      </div>
-                    )}
                   </div>
                 ) : (
                   <p className='text-xs text-muted-foreground italic'>
@@ -989,18 +972,34 @@ export default function ProjectItemsPage() {
                   </p>
                 )}
 
+                {existingSph?.file && existingSph.status !== 'approved' && (
+                  <Button 
+                    size="sm" 
+                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] h-8 shadow-sm mt-1 shrink-0"
+                    onClick={() => approveSphMutation.mutate()}
+                    disabled={approveSphMutation.isPending}
+                  >
+                    {approveSphMutation.isPending ? (
+                      <Loader2 className="h-3 w-3 animate-spin mr-1.5" />
+                    ) : (
+                      <CheckCircle className="h-3 w-3 mr-1.5" />
+                    )}
+                    Approve SPH
+                  </Button>
+                )}
+
                 {existingSph?.status === 'revision' && existingSph.note_revision && (
                   <div className="p-3 rounded-xl bg-red-50 border border-red-100 space-y-1.5">
                     <p className="text-[10px] font-bold text-red-800 uppercase tracking-tight flex items-center gap-1">
-                      <AlertCircle className="h-3 w-3" />
+                      <AlertCircle className="h-3 w-3 shrink-0" />
                       Revision Requested
                     </p>
-                    <p className="text-[11px] text-red-700 italic bg-white/50 p-2 rounded border border-red-50">
+                    <p className="text-[11px] text-red-700 italic bg-white/50 p-2 rounded border border-red-50 break-words">
                       "{existingSph.note_revision}"
                     </p>
                     <Button 
                       size="sm"
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white text-[10px] h-8 mt-2 shadow-sm"
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white text-[10px] h-8 mt-2 shadow-sm shrink-0"
                       onClick={() => setIsSphModalOpen(true)}
                     >
                       <Upload className="h-3 w-3 mr-1.5" />
@@ -1015,25 +1014,25 @@ export default function ProjectItemsPage() {
                     <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider mb-2">History SPH</p>
                     <div className="space-y-2">
                       {project.sphs.slice(1).map((sph: any, idx: number) => (
-                        <div key={idx} className="flex items-center justify-between p-2 rounded-lg bg-neutral-50 border border-neutral-100 group">
-                          <div className="flex items-center gap-2 overflow-hidden">
+                        <div key={idx} className="flex items-center justify-between p-2 rounded-lg bg-neutral-50 border border-neutral-100 group min-w-0 gap-2">
+                          <div className="flex items-center gap-2 overflow-hidden min-w-0 flex-1">
                             <FileText className="h-3 w-3 text-neutral-400 shrink-0" />
-                            <div className="min-w-0">
-                              <p className="text-[10px] font-medium text-neutral-700 truncate">{sph.nomor_sph}</p>
-                              <p className="text-[9px] text-neutral-400">
+                            <div className="min-w-0 flex-1">
+                              <p className="text-[10px] font-medium text-neutral-700 truncate" title={sph.nomor_sph}>{sph.nomor_sph}</p>
+                              <p className="text-[9px] text-neutral-400 truncate">
                                 {format(new Date(sph.created_at), 'dd/MM/yyyy HH:mm')}
                               </p>
                             </div>
                           </div>
-                          <div className="flex items-center gap-1">
-                            <Badge variant="outline" className={`text-[8px] h-3.5 px-1 uppercase tracking-tight ${
+                          <div className="flex items-center gap-1 shrink-0">
+                            <Badge variant="outline" className={`text-[8px] h-3.5 px-1 uppercase tracking-tight shrink-0 ${
                               sph.status === 'approved' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
                               sph.status === 'revision' ? 'bg-red-50 text-red-600 border-red-100' :
                               'bg-blue-50 text-blue-600 border-blue-100'
                             }`}>
                               {sph.status}
                             </Badge>
-                            <Button size="icon" variant="ghost" className="h-6 w-6 text-blue-600 hover:bg-blue-100" asChild>
+                            <Button size="icon" variant="ghost" className="h-6 w-6 text-blue-600 hover:bg-blue-100 shrink-0" asChild>
                               <a 
                                 href={`${(
                                   process.env.NEXT_PUBLIC_API_URL ||
@@ -1065,13 +1064,13 @@ export default function ProjectItemsPage() {
                 : 'border-neutral-200 bg-neutral-50/80 opacity-60 grayscale-[0.5]'
             }`}
           >
-            <CardHeader className='pb-3 flex flex-row items-center justify-between gap-3'>
+            <CardHeader className='pb-3 flex flex-row items-center justify-between gap-2 min-w-0'>
               <button
-                className='flex items-center gap-3 flex-1 text-left'
+                className='flex items-center gap-2 flex-1 text-left min-w-0'
                 onClick={() => setIsSpkCollapsed((v) => !v)}
               >
                 <div
-                  className={`h-8 w-8 rounded-full flex items-center justify-center font-bold ${
+                  className={`h-8 w-8 rounded-full flex items-center justify-center font-bold shrink-0 ${
                     flowSteps[3].isActive
                       ? 'bg-purple-100 text-purple-600'
                       : 'bg-neutral-200 text-neutral-500'
@@ -1079,16 +1078,16 @@ export default function ProjectItemsPage() {
                 >
                   4
                 </div>
-                <div className='flex-1'>
-                  <CardTitle className='text-base text-neutral-800'>
+                <div className='flex-1 min-w-0'>
+                  <CardTitle className='text-sm sm:text-base text-neutral-800 truncate' title="Upload SPK">
                     Upload SPK
                   </CardTitle>
-                  <p className='text-[10px] text-muted-foreground uppercase tracking-wider'>
+                  <p className='text-[9px] sm:text-[10px] text-muted-foreground uppercase tracking-wider truncate' title="Surat Perintah Kerja">
                     Surat Perintah Kerja
                   </p>
                 </div>
                 <ChevronDown
-                  className={`h-4 w-4 text-neutral-400 transition-transform duration-200 mr-1 ${
+                  className={`h-4 w-4 text-neutral-400 transition-transform duration-200 mr-1 shrink-0 ${
                     isSpkCollapsed ? '-rotate-90' : ''
                   }`}
                 />
@@ -1096,7 +1095,7 @@ export default function ProjectItemsPage() {
               <Button
                 size='sm'
                 variant='outline'
-                className='h-7 text-[10px] border-purple-200 text-purple-600 hover:bg-purple-50'
+                className='h-7 text-[10px] border-purple-200 text-purple-600 hover:bg-purple-50 shrink-0'
                 disabled={!flowSteps[3].isActive}
                 onClick={() => setIsSpkModalOpen(true)}
               >
@@ -1108,16 +1107,16 @@ export default function ProjectItemsPage() {
               <CardContent>
                 {existingSpk?.file || existingSpk?.spk_signed_file ? (
                   <div className='space-y-3'>
-                    <div className='p-3 rounded-xl bg-purple-50/80 border border-purple-100 flex items-center justify-between shadow-sm'>
-                      <div className='flex items-center gap-3'>
-                        <div className='h-8 w-8 rounded-lg bg-white shadow-sm border border-purple-100 flex items-center justify-center text-purple-600'>
+                    <div className='p-3 rounded-xl bg-purple-50/80 border border-purple-100 flex items-center justify-between shadow-sm min-w-0 gap-2'>
+                      <div className='flex items-center gap-3 min-w-0 flex-1 mr-2'>
+                        <div className='h-8 w-8 rounded-lg bg-white shadow-sm border border-purple-100 flex items-center justify-center text-purple-600 shrink-0'>
                           <FileText className='h-4 w-4' />
                         </div>
-                        <div className='overflow-hidden'>
-                          <p className='text-xs font-bold text-purple-900 line-clamp-1'>
+                        <div className='min-w-0 flex-1'>
+                          <p className='text-xs font-bold text-purple-900 truncate' title={existingSpk.nomor_spk}>
                             {existingSpk.nomor_spk}
                           </p>
-                          <p className='text-[10px] text-purple-600/80'>
+                          <p className='text-[10px] text-purple-600/80 truncate'>
                             {format(
                               new Date(existingSpk.created_at),
                               'MMM d, yyyy'
@@ -1125,46 +1124,48 @@ export default function ProjectItemsPage() {
                           </p>
                         </div>
                       </div>
-                      <Button
-                        variant='ghost'
-                        size='icon'
-                        className='h-8 w-8 text-purple-600 hover:bg-purple-200 bg-white shadow-sm border border-purple-100 shrink-0'
-                        asChild
-                      >
-                        <a
-                          href={`${(
-                            process.env.NEXT_PUBLIC_API_URL ||
-                            'http://localhost:8000'
-                          ).replace('/api', '')}/storage/${existingSpk.spk_signed_file || existingSpk.file}`}
-                          target='_blank'
-                          rel='noopener noreferrer'
+                      <div className="flex gap-2 shrink-0">
+                        <Button
+                          variant='ghost'
+                          size='icon'
+                          className='h-8 w-8 text-purple-600 hover:bg-purple-200 bg-white shadow-sm border border-purple-100'
+                          asChild
                         >
-                          <FileDown className='h-4 w-4' />
-                        </a>
-                      </Button>
+                          <a
+                            href={`${(
+                              process.env.NEXT_PUBLIC_API_URL ||
+                              'http://localhost:8000'
+                            ).replace('/api', '')}/storage/${existingSpk.spk_signed_file || existingSpk.file}`}
+                            target='_blank'
+                            rel='noopener noreferrer'
+                          >
+                            <FileDown className='h-4 w-4' />
+                          </a>
+                        </Button>
+                      </div>
                     </div>
 
                     {/* Signed SPK Section */}
                     {existingSpk?.spk_signed_file ? (
-                      <div className='p-3 rounded-xl bg-emerald-50/80 border border-emerald-100 flex items-center justify-between shadow-sm'>
-                        <div className='flex items-center gap-3'>
-                          <div className='h-8 w-8 rounded-lg bg-white shadow-sm border border-emerald-100 flex items-center justify-center text-emerald-600'>
+                      <div className='p-3 rounded-xl bg-emerald-50/80 border border-emerald-100 flex items-center justify-between shadow-sm min-w-0 gap-2'>
+                        <div className='flex items-center gap-3 min-w-0 flex-1 mr-2'>
+                          <div className='h-8 w-8 rounded-lg bg-white shadow-sm border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0'>
                             <CheckCircle2 className='h-4 w-4' />
                           </div>
-                          <div className='overflow-hidden'>
-                            <p className='text-xs font-bold text-emerald-900 line-clamp-1'>
+                          <div className='min-w-0 flex-1'>
+                            <p className='text-xs font-bold text-emerald-900 truncate' title="SPK Bertanda Tangan">
                               SPK Bertanda Tangan
                             </p>
-                            <p className='text-[10px] text-emerald-600/80 italic font-medium'>
+                            <p className='text-[10px] text-emerald-600/80 italic font-medium truncate'>
                               {existingSpk.spk_status === 'approved' ? 'Terverifikasi' : 'Sudah diunggah'}
                             </p>
                           </div>
                         </div>
-                        <div className='flex gap-2'>
+                        <div className='flex gap-2 shrink-0'>
                           <Button
                             variant='ghost'
                             size='icon'
-                            className='h-8 w-8 text-emerald-600 hover:bg-emerald-200 bg-white shadow-sm border border-emerald-100 shrink-0'
+                            className='h-8 w-8 text-emerald-600 hover:bg-emerald-200 bg-white shadow-sm border border-emerald-100'
                             asChild
                           >
                             <a
@@ -1181,7 +1182,7 @@ export default function ProjectItemsPage() {
                           <Button
                             variant='ghost'
                             size='icon'
-                            className='h-8 w-8 text-neutral-400 hover:bg-neutral-100 bg-white shadow-sm border border-neutral-100 shrink-0'
+                            className='h-8 w-8 text-neutral-400 hover:bg-neutral-100 bg-white shadow-sm border border-neutral-100'
                             onClick={() => setIsSignedSpkModalOpen(true)}
                           >
                             <Upload className='h-3 w-3' />
@@ -1194,8 +1195,8 @@ export default function ProjectItemsPage() {
                         className='w-full text-xs h-9 border-dashed border-emerald-300 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-400'
                         onClick={() => setIsSignedSpkModalOpen(true)}
                       >
-                        <Upload className='h-3 w-3 mr-2' />
-                        Upload SPK bertanda tangan
+                        <Upload className='h-3.5 w-3.5 mr-1.5' />
+                        Upload SPK Bertanda Tangan
                       </Button>
                     )}
                   </div>
