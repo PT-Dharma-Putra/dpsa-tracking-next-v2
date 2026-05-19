@@ -383,12 +383,6 @@ export default function EngineerDetailPage() {
                                     {project.spk_number || project.spk?.nomor_spk}
                                 </span>
                             )}
-                            {project.deadline && (
-                                <span className='flex items-center gap-1 text-xs text-neutral-600'>
-                                    <Calendar className='h-3 w-3 text-neutral-400' />
-                                    {format(new Date(project.deadline), 'MMM d, yyyy')}
-                                </span>
-                            )}
                             {project.need_design ? (
                                 <span className='flex items-center gap-1 text-xs text-emerald-600'>
                                     <Info className='h-3 w-3 text-emerald-500' />
@@ -469,7 +463,7 @@ export default function EngineerDetailPage() {
             <div className='grid grid-cols-1 md:grid-cols-2 gap-4 w-full'>
                 {/* 1. ORDER GAMBAR KERJA SECTION */}
                 <Card
-                    className={`border shadow-sm transition-all duration-300 ${
+                    className={`relative border shadow-sm transition-all duration-300 ${
                         flowSteps[0].isActive
                             ? flowSteps[0].isCompleted
                                 ? 'border-orange-200 bg-white ring-1 ring-orange-100'
@@ -477,6 +471,11 @@ export default function EngineerDetailPage() {
                             : 'border-neutral-200 bg-neutral-50/80 opacity-60 grayscale-[0.5]'
                     }`}
                 >
+                    {orderGk?.file && (
+                        <div className="absolute -top-1.5 -right-1.5 h-5 w-5 bg-emerald-500 rounded-full flex items-center justify-center shadow-sm z-10 animate-in zoom-in duration-300">
+                            <CheckCircle2 className="h-3 w-3 text-white" />
+                        </div>
+                    )}
                     <CardHeader className='pb-3 flex flex-row items-center justify-between gap-3'>
                         <button
                             className='flex items-center gap-3 flex-1 text-left'
@@ -519,6 +518,7 @@ export default function EngineerDetailPage() {
                                                 Order Drawing
                                             </p>
                                             <p className='text-[10px] text-orange-600/80'>
+                                                Target:{" "}
                                                 {format(
                                                     new Date(orderGk.created_at),
                                                     'MMM d, yyyy'
