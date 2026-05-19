@@ -219,7 +219,10 @@ export const projectV2Service = {
     },
 
     updateProjectItem: async (id: number, payload: any) => {
-        const { data } = await apiClient.put<ProjectItemV2>(`/projects-v2-items/${id}`, payload);
+        const { data } = await apiClient.post<ProjectItemV2>(`/projects-v2-items/${id}`, {
+            ...payload,
+            _method: 'PUT',
+        });
         return data;
     },
 
@@ -424,10 +427,9 @@ export const projectV2Service = {
     },
 
     updateProjectItemDivisi: async (itemId: number, divisiId: number) => {
-        const { data } = await apiClient.put<ProjectItemV2>(`/projects-v2-items/${itemId}`, { 
+        const { data } = await apiClient.post<ProjectItemV2>(`/projects-v2-items/${itemId}`, { 
             divisi_id: divisiId,
-            // we need to send other required fields too if the backend validation requires them
-            // but for now let's see if partial update works or if I need to fetch the item first
+            _method: 'PUT'
         });
         return data;
     },
@@ -444,8 +446,9 @@ export const projectV2Service = {
     },
 
     updateProjectItemPic: async (itemId: number, picId: number) => {
-        const { data } = await apiClient.put<ProjectItemV2>(`/projects-v2-items/${itemId}`, { 
+        const { data } = await apiClient.post<ProjectItemV2>(`/projects-v2-items/${itemId}`, { 
             pic_engineer_id: picId,
+            _method: 'PUT'
         });
         return data;
     },
