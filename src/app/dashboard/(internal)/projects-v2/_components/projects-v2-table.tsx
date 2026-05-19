@@ -470,6 +470,7 @@ export function ProjectsV2Table({
                 <>
                   {!showEngineer && <TableHead>Client</TableHead>}
                   <TableHead>Nomor SPK</TableHead>
+                  {!showSPD && <TableHead>SPH Number</TableHead>}
                   <TableHead>Prioritas</TableHead>
                   {showPiutang && <TableHead>Progres Produksi</TableHead>}
                   {showPiutang && <TableHead>Total Penagihan</TableHead>}
@@ -503,7 +504,6 @@ export function ProjectsV2Table({
                       )}
                     </div>
                   </TableHead>
-                  <TableHead>SPH Number</TableHead>
 
                   {!showProduksi && <TableHead>Sisa Hari</TableHead>}
                 </>
@@ -711,6 +711,11 @@ export function ProjectsV2Table({
                         <TableCell className='font-medium text-blue-600'>
                           {project.spk_number || project.spk?.nomor_spk || '-'}
                         </TableCell>
+                        {!showSPD && (
+                          <TableCell>
+                            {project.sph?.nomor_sph || '-'}
+                          </TableCell>
+                        )}
                         <TableCell>
                           {project.prioritas === 'Urgent' ? (
                             <Badge className='bg-red-100 text-red-700 border border-red-200 hover:bg-red-100 font-semibold text-[11px]'>
@@ -772,9 +777,6 @@ export function ProjectsV2Table({
                         {project.deadline
                           ? format(new Date(project.deadline), 'MMM d, yyyy')
                           : '-'}
-                      </TableCell>
-                      <TableCell>
-                        {project.sph?.nomor_sph || '-'}
                       </TableCell>
 
                       {!showProduksi && (
