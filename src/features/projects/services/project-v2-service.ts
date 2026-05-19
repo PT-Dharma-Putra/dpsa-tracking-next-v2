@@ -719,6 +719,7 @@ export interface Produksi {
     id: number;
     project_item_id: number;
     jumlah_order: number;
+    menggunakan_stok?: number;
     cold_press: number;
     running_saw: number;
     edging: number;

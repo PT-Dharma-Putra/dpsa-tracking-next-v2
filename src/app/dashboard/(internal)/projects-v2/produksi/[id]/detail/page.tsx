@@ -16,6 +16,7 @@ import {
   ChevronDown,
   Package,
   FileDown,
+  X,
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -108,6 +109,7 @@ export default function ProduksiDetailPage() {
     setProduksiData(
       item.produksi || {
         jumlah_order: item.jumlah,
+        menggunakan_stok: 0,
         cold_press: 0,
         running_saw: 0,
         edging: 0,
@@ -154,12 +156,19 @@ export default function ProduksiDetailPage() {
     }, 0);
 
     const order = Number(produksiData.jumlah_order) || 1;
+    const stok = Number(produksiData.menggunakan_stok) || 0;
+    const persenStok = (stok / order) * 100;
 
     // Hitung persen: field yang dilewati tidak ikut kalkulasi
-    const calculatedPersen =
+    const persenProduksi =
       activeFields.length === 0
         ? 0
-        : Number(((totalSum * 100) / (activeFields.length * order)).toFixed(2));
+        : (totalSum * 100) / (activeFields.length * order);
+
+    const calculatedPersen = Math.min(
+      Number((persenProduksi + persenStok).toFixed(2)),
+      100
+    );
 
     // Hindari re-render tidak perlu
     setProduksiData((prev) => {
@@ -181,6 +190,7 @@ export default function ProduksiDetailPage() {
     produksiData.rakit,
     produksiData.finishing,
     produksiData.jumlah_order,
+    produksiData.menggunakan_stok,
     skippedFields,
   ]);
 
@@ -691,24 +701,37 @@ export default function ProduksiDetailPage() {
         open={isProduksiDialogOpen}
         onOpenChange={setIsProduksiDialogOpen}
       >
-        <AlertDialogContent className='max-w-2xl'>
-          <AlertDialogHeader>
-            <AlertDialogTitle className='flex items-center gap-2'>
-              <BarChart3 className='h-5 w-5 text-orange-500' />
-              Update Progress Produksi
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              Input jumlah item yang telah selesai di setiap tahapan untuk:{' '}
-              <strong>{produksiItem?.item}</strong>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className='py-4 space-y-6'>
+        <AlertDialogContent className="mb-8 flex h-[calc(70vh-2rem)] min-w-[calc(70vw-2rem)] max-w-[calc(70vw-2rem)] flex-col justify-between gap-0 p-0">
+          {/* Header */}
+          <div className="bg-white border-b px-6 py-4 flex items-center justify-between shrink-0 shadow-sm z-10">
+            <div>
+              <AlertDialogTitle className="flex items-center gap-2 text-2xl font-bold tracking-tight text-neutral-800">
+                <BarChart3 className="h-6 w-6 text-orange-500" />
+                Update Progress Produksi
+              </AlertDialogTitle>
+              <AlertDialogDescription className="text-sm text-neutral-500 mt-1">
+                Input jumlah item yang telah selesai di setiap tahapan untuk:{' '}
+                <strong>{produksiItem?.item}</strong>
+              </AlertDialogDescription>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsProduksiDialogOpen(false)}
+              className="rounded-full text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700 shrink-0 h-10 w-10"
+            >
+              <X className="w-5 h-5" />
+            </Button>
+          </div>
+
+          {/* Body */}
+          <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6">
             {/* Jumlah Order - Top Center */}
-            <div className='flex justify-center'>
-              <div className='w-1/2 space-y-2 text-center'>
-                <Label className='text-sm font-bold'>Jumlah Order</Label>
+            <div className="flex justify-center">
+              <div className="w-1/3 space-y-2 text-center">
+                <Label className="text-sm font-bold">Jumlah Order</Label>
                 <Input
-                  type='number'
+                  type="number"
                   value={produksiData.jumlah_order || 0}
                   onChange={(e) =>
                     setProduksiData({
@@ -717,24 +740,24 @@ export default function ProduksiDetailPage() {
                     })
                   }
                   disabled
-                  className='bg-neutral-50 font-bold text-center text-lg h-12'
+                  className="bg-neutral-50 font-bold text-center text-lg h-12"
                 />
               </div>
             </div>
 
             {/* Mesin Section */}
-            <div className='space-y-3'>
-              <h4 className='font-semibold text-sm text-neutral-500 uppercase tracking-wider border-b pb-2'>
+            <div className="space-y-3">
+              <h4 className="font-semibold text-sm text-neutral-500 uppercase tracking-wider border-b pb-2">
                 Mesin
               </h4>
-              <div className='grid grid-cols-2 gap-4'>
-                <div className='space-y-2'>
-                  <div className='flex items-center justify-between'>
+              <div className="grid grid-cols-4 gap-4">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
                     <Label>Cold Press</Label>
                     <Button
-                      type='button'
+                      type="button"
                       variant={skippedFields.cold_press ? 'default' : 'outline'}
-                      size='sm'
+                      size="sm"
                       className={`h-6 px-2 text-xs ${skippedFields.cold_press ? 'bg-neutral-500 hover:bg-neutral-600' : 'text-neutral-500'}`}
                       onClick={() => toggleSkipField('cold_press')}
                     >
@@ -742,7 +765,7 @@ export default function ProduksiDetailPage() {
                     </Button>
                   </div>
                   <Input
-                    type='number'
+                    type="number"
                     min={0}
                     max={produksiData.jumlah_order}
                     disabled={skippedFields.cold_press}
@@ -756,13 +779,13 @@ export default function ProduksiDetailPage() {
                     className={skippedFields.cold_press ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100' : ''}
                   />
                 </div>
-                <div className='space-y-2'>
-                  <div className='flex items-center justify-between'>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
                     <Label>Running Saw</Label>
                     <Button
-                      type='button'
+                      type="button"
                       variant={skippedFields.running_saw ? 'default' : 'outline'}
-                      size='sm'
+                      size="sm"
                       className={`h-6 px-2 text-xs ${skippedFields.running_saw ? 'bg-neutral-500 hover:bg-neutral-600' : 'text-neutral-500'}`}
                       onClick={() => toggleSkipField('running_saw')}
                     >
@@ -770,7 +793,7 @@ export default function ProduksiDetailPage() {
                     </Button>
                   </div>
                   <Input
-                    type='number'
+                    type="number"
                     min={0}
                     max={produksiData.jumlah_order}
                     disabled={skippedFields.running_saw}
@@ -784,13 +807,13 @@ export default function ProduksiDetailPage() {
                     className={skippedFields.running_saw ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100' : ''}
                   />
                 </div>
-                <div className='space-y-2'>
-                  <div className='flex items-center justify-between'>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
                     <Label>Edging</Label>
                     <Button
-                      type='button'
+                      type="button"
                       variant={skippedFields.edging ? 'default' : 'outline'}
-                      size='sm'
+                      size="sm"
                       className={`h-6 px-2 text-xs ${skippedFields.edging ? 'bg-neutral-500 hover:bg-neutral-600' : 'text-neutral-500'}`}
                       onClick={() => toggleSkipField('edging')}
                     >
@@ -798,7 +821,7 @@ export default function ProduksiDetailPage() {
                     </Button>
                   </div>
                   <Input
-                    type='number'
+                    type="number"
                     min={0}
                     max={produksiData.jumlah_order}
                     disabled={skippedFields.edging}
@@ -812,13 +835,13 @@ export default function ProduksiDetailPage() {
                     className={skippedFields.edging ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100' : ''}
                   />
                 </div>
-                <div className='space-y-2'>
-                  <div className='flex items-center justify-between'>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
                     <Label>CNC</Label>
                     <Button
-                      type='button'
+                      type="button"
                       variant={skippedFields.cnc ? 'default' : 'outline'}
-                      size='sm'
+                      size="sm"
                       className={`h-6 px-2 text-xs ${skippedFields.cnc ? 'bg-neutral-500 hover:bg-neutral-600' : 'text-neutral-500'}`}
                       onClick={() => toggleSkipField('cnc')}
                     >
@@ -826,7 +849,7 @@ export default function ProduksiDetailPage() {
                     </Button>
                   </div>
                   <Input
-                    type='number'
+                    type="number"
                     min={0}
                     max={produksiData.jumlah_order}
                     disabled={skippedFields.cnc}
@@ -844,18 +867,18 @@ export default function ProduksiDetailPage() {
             </div>
 
             {/* Manual Section */}
-            <div className='space-y-3'>
-              <h4 className='font-semibold text-sm text-neutral-500 uppercase tracking-wider border-b pb-2'>
+            <div className="space-y-3">
+              <h4 className="font-semibold text-sm text-neutral-500 uppercase tracking-wider border-b pb-2">
                 Manual
               </h4>
-              <div className='grid grid-cols-2 md:grid-cols-2 gap-4'>
-                <div className='space-y-2'>
-                  <div className='flex items-center justify-between'>
+              <div className="grid grid-cols-4 gap-4">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
                     <Label>Tukang Kayu</Label>
                     <Button
-                      type='button'
+                      type="button"
                       variant={skippedFields.tukang_kayu ? 'default' : 'outline'}
-                      size='sm'
+                      size="sm"
                       className={`h-6 px-2 text-xs ${skippedFields.tukang_kayu ? 'bg-neutral-500 hover:bg-neutral-600' : 'text-neutral-500'}`}
                       onClick={() => toggleSkipField('tukang_kayu')}
                     >
@@ -863,7 +886,7 @@ export default function ProduksiDetailPage() {
                     </Button>
                   </div>
                   <Input
-                    type='number'
+                    type="number"
                     min={0}
                     max={produksiData.jumlah_order}
                     disabled={skippedFields.tukang_kayu}
@@ -877,13 +900,13 @@ export default function ProduksiDetailPage() {
                     className={skippedFields.tukang_kayu ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100' : ''}
                   />
                 </div>
-                <div className='space-y-2'>
-                  <div className='flex items-center justify-between'>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
                     <Label>Tukang Jok</Label>
                     <Button
-                      type='button'
+                      type="button"
                       variant={skippedFields.tukang_jok ? 'default' : 'outline'}
-                      size='sm'
+                      size="sm"
                       className={`h-6 px-2 text-xs ${skippedFields.tukang_jok ? 'bg-neutral-500 hover:bg-neutral-600' : 'text-neutral-500'}`}
                       onClick={() => toggleSkipField('tukang_jok')}
                     >
@@ -891,7 +914,7 @@ export default function ProduksiDetailPage() {
                     </Button>
                   </div>
                   <Input
-                    type='number'
+                    type="number"
                     min={0}
                     max={produksiData.jumlah_order}
                     disabled={skippedFields.tukang_jok}
@@ -905,13 +928,13 @@ export default function ProduksiDetailPage() {
                     className={skippedFields.tukang_jok ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100' : ''}
                   />
                 </div>
-                <div className='space-y-2'>
-                  <div className='flex items-center justify-between'>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
                     <Label>Rakit</Label>
                     <Button
-                      type='button'
+                      type="button"
                       variant={skippedFields.rakit ? 'default' : 'outline'}
-                      size='sm'
+                      size="sm"
                       className={`h-6 px-2 text-xs ${skippedFields.rakit ? 'bg-neutral-500 hover:bg-neutral-600' : 'text-neutral-500'}`}
                       onClick={() => toggleSkipField('rakit')}
                     >
@@ -919,7 +942,7 @@ export default function ProduksiDetailPage() {
                     </Button>
                   </div>
                   <Input
-                    type='number'
+                    type="number"
                     min={0}
                     max={produksiData.jumlah_order}
                     disabled={skippedFields.rakit}
@@ -933,13 +956,13 @@ export default function ProduksiDetailPage() {
                     className={skippedFields.rakit ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100' : ''}
                   />
                 </div>
-                <div className='space-y-2'>
-                  <div className='flex items-center justify-between'>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
                     <Label>Finishing</Label>
                     <Button
-                      type='button'
+                      type="button"
                       variant={skippedFields.finishing ? 'default' : 'outline'}
-                      size='sm'
+                      size="sm"
                       className={`h-6 px-2 text-xs ${skippedFields.finishing ? 'bg-neutral-500 hover:bg-neutral-600' : 'text-neutral-500'}`}
                       onClick={() => toggleSkipField('finishing')}
                     >
@@ -947,7 +970,7 @@ export default function ProduksiDetailPage() {
                     </Button>
                   </div>
                   <Input
-                    type='number'
+                    type="number"
                     min={0}
                     max={produksiData.jumlah_order}
                     disabled={skippedFields.finishing}
@@ -964,40 +987,60 @@ export default function ProduksiDetailPage() {
               </div>
             </div>
 
-            {/* Persen Section */}
-            <div className='pt-2 border-t'>
-              <div className='space-y-2 max-w-[200px] mx-auto text-center'>
-                <Label className='text-sm font-bold'>Persen (%)</Label>
+            {/* Menggunakan Stok & Persen Section */}
+            <div className="pt-4 border-t flex justify-center gap-8">
+              <div className="space-y-2 w-[200px] text-center">
+                <Label className="text-sm font-bold">Menggunakan Stok</Label>
                 <Input
-                  type='text'
+                  type="number"
+                  min={0}
+                  max={produksiData.jumlah_order}
+                  value={produksiData.menggunakan_stok === 0 ? '' : produksiData.menggunakan_stok || ''}
+                  onChange={(e) =>
+                    setProduksiData({
+                      ...produksiData,
+                      menggunakan_stok: Math.min(Math.max(parseInt(e.target.value) || 0, 0), produksiData.jumlah_order ?? 0),
+                    })
+                  }
+                  className="font-bold text-center text-lg h-12"
+                />
+              </div>
+              <div className="space-y-2 w-[200px] text-center">
+                <Label className="text-sm font-bold">Persen (%)</Label>
+                <Input
+                  type="text"
                   value={
                     typeof produksiData.persen === 'number'
                       ? produksiData.persen.toFixed(2)
                       : (Number(produksiData.persen) || 0).toFixed(2)
                   }
                   disabled
-                  className='bg-orange-50 font-bold text-orange-700 text-center text-lg h-12 disabled:opacity-100'
+                  className="bg-orange-50 font-bold text-orange-700 text-center text-lg h-12 disabled:opacity-100"
                 />
               </div>
             </div>
           </div>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setIsProduksiDialogOpen(false)}>
+          
+          <div className="bg-white border-t px-6 py-4 flex items-center justify-end gap-4 shrink-0 shadow-[0_-4px_6px_-1px_rgb(0,0,0,0.05)] z-10">
+            <AlertDialogCancel
+              onClick={() => setIsProduksiDialogOpen(false)}
+              className="px-6 rounded-full font-medium"
+            >
               Cancel
             </AlertDialogCancel>
             <Button
-              className='bg-orange-600 hover:bg-orange-700'
+              className="bg-orange-600 hover:bg-orange-700 text-white rounded-full px-6"
               onClick={handleProduksiUpdate}
               disabled={updateProduksiMutation.isPending}
             >
               {updateProduksiMutation.isPending ? (
-                <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
               ) : (
-                <CheckCircle2 className='mr-2 h-4 w-4' />
+                <CheckCircle2 className="w-4 h-4 mr-2" />
               )}
               Update Progress
             </Button>
-          </AlertDialogFooter>
+          </div>
         </AlertDialogContent>
       </AlertDialog>
     </div>
