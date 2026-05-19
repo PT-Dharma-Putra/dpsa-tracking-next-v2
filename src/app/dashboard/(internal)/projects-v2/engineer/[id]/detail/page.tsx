@@ -82,6 +82,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog"
 
 import { projectV2Service, ProjectItemV2, TahapDesign, DesignProgres } from "@/features/projects/services/project-v2-service"
 import { ProjectItemFormDialog } from "../../../_components/project-item-form-dialog"
@@ -98,6 +99,12 @@ export default function EngineerDetailPage() {
     const [isItemDeleteDialogOpen, setIsItemDeleteDialogOpen] = React.useState(false)
     const [itemToDelete, setItemToDelete] = React.useState<ProjectItemV2 | null>(null)
     const [openPicPopover, setOpenPicPopover] = React.useState<number | null>(null)
+
+    // Quick PIC Creation States
+    const [isNewPicDialogOpen, setIsNewPicDialogOpen] = React.useState(false);
+    const [newPicName, setNewPicName] = React.useState("");
+    const [newPicEmail, setNewPicEmail] = React.useState("");
+    const [newPicDivisiId, setNewPicDivisiId] = React.useState<string>("");
 
     // Data Queries
     const { data: project, isLoading: isLoadingProject } = useQuery({
@@ -187,6 +194,40 @@ export default function EngineerDetailPage() {
             toast.error("Failed to update PIC")
         }
     })
+
+    const { data: divisions } = useQuery({
+        queryKey: ["divisions"],
+        queryFn: () => projectV2Service.getDivisions(),
+    })
+
+    const createPicMutation = useMutation({
+        mutationFn: (payload: { name: string; email: string; divisi_id: number }) => 
+            projectV2Service.createDesigner(payload),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["designers"] })
+            toast.success("PIC berhasil ditambahkan")
+            setIsNewPicDialogOpen(false)
+            setNewPicName("")
+            setNewPicEmail("")
+            setNewPicDivisiId("")
+        },
+        onError: (error: any) => {
+            const errorMsg = error.response?.data?.message || "Gagal menambahkan PIC"
+            toast.error(errorMsg)
+        }
+    })
+
+    const handleCreatePic = () => {
+        if (!newPicName || !newPicEmail || !newPicDivisiId) {
+            toast.error("Semua field harus diisi")
+            return
+        }
+        createPicMutation.mutate({
+            name: newPicName,
+            email: newPicEmail,
+            divisi_id: parseInt(newPicDivisiId)
+        })
+    }
 
     // Local States for Progress Form
     const [newStageName, setNewStageName] = React.useState("")
@@ -752,7 +793,22 @@ export default function EngineerDetailPage() {
                                                         <Command>
                                                             <CommandInput placeholder="Search engineer..." />
                                                             <CommandList>
-                                                                <CommandEmpty>No engineer found.</CommandEmpty>
+                                                                <CommandEmpty className="p-3 text-center flex flex-col items-center gap-2">
+                                                                    <span className="text-xs text-muted-foreground">No engineer found.</span>
+                                                                    <Button 
+                                                                        size="sm" 
+                                                                        variant="outline" 
+                                                                        className="w-full text-[11px] h-7 gap-1"
+                                                                        onClick={(e) => {
+                                                                            e.preventDefault();
+                                                                            e.stopPropagation();
+                                                                            setOpenPicPopover(null);
+                                                                            setIsNewPicDialogOpen(true);
+                                                                        }}
+                                                                    >
+                                                                        <Plus className="h-3 w-3" /> Tambah PIC
+                                                                    </Button>
+                                                                </CommandEmpty>
                                                                 <CommandGroup>
                                                                     {designers?.map((designer) => (
                                                                         <CommandItem
@@ -776,6 +832,16 @@ export default function EngineerDetailPage() {
                                                                             {designer.name}
                                                                         </CommandItem>
                                                                     ))}
+                                                                    <CommandItem
+                                                                        onSelect={() => {
+                                                                            setOpenPicPopover(null);
+                                                                            setIsNewPicDialogOpen(true);
+                                                                        }}
+                                                                        className="text-orange-600 font-semibold focus:text-orange-700 cursor-pointer flex items-center justify-start py-2 border-t border-neutral-100 mt-1"
+                                                                    >
+                                                                        <Plus className="mr-2 h-3.5 w-3.5" />
+                                                                        Tambah PIC Baru...
+                                                                    </CommandItem>
                                                                 </CommandGroup>
                                                             </CommandList>
                                                         </Command>
@@ -955,6 +1021,77 @@ export default function EngineerDetailPage() {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            {/* Quick Add PIC Dialog */}
+            <Dialog open={isNewPicDialogOpen} onOpenChange={setIsNewPicDialogOpen}>
+                <DialogContent className='max-w-md'>
+                    <DialogHeader>
+                        <DialogTitle className='flex items-center gap-2'>
+                            <User className='h-5 w-5 text-orange-500' />
+                            Tambah PIC Baru
+                        </DialogTitle>
+                        <DialogDescription>
+                            Tambah user PIC baru ke dalam sistem. Password default untuk user baru adalah <strong className="text-orange-600 font-bold bg-orange-50 px-1.5 py-0.5 rounded border border-orange-100">trackingDPSA88</strong>.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className='grid gap-4 py-4'>
+                        <div className='space-y-2'>
+                            <Label htmlFor="pic-name">Nama PIC</Label>
+                            <Input 
+                                id="pic-name"
+                                type='text' 
+                                value={newPicName}
+                                onChange={(e) => setNewPicName(e.target.value)}
+                                placeholder="Masukkan nama lengkap..."
+                                className='text-xs'
+                            />
+                        </div>
+                        <div className='space-y-2'>
+                            <Label htmlFor="pic-email">Email</Label>
+                            <Input 
+                                id="pic-email"
+                                type='email' 
+                                value={newPicEmail}
+                                onChange={(e) => setNewPicEmail(e.target.value)}
+                                placeholder="Masukkan alamat email..."
+                                className='text-xs'
+                            />
+                        </div>
+                        <div className='space-y-2'>
+                            <Label htmlFor="pic-divisi">Divisi</Label>
+                            <Select value={newPicDivisiId} onValueChange={setNewPicDivisiId}>
+                                <SelectTrigger id="pic-divisi" className="text-xs">
+                                    <SelectValue placeholder="Pilih Divisi..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {divisions?.map((div: any) => (
+                                        <SelectItem key={div.id} value={div.id.toString()} className="text-xs">
+                                            {div.nama}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button 
+                            variant="outline"
+                            onClick={() => setIsNewPicDialogOpen(false)}
+                            className="text-xs"
+                        >
+                            Batal
+                        </Button>
+                        <Button 
+                            className='bg-orange-600 hover:bg-orange-700 text-xs'
+                            onClick={handleCreatePic}
+                            disabled={createPicMutation.isPending}
+                        >
+                            {createPicMutation.isPending && <Loader2 className='mr-2 h-3 w-3 animate-spin' />}
+                            Tambah PIC
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
         </div>
     )

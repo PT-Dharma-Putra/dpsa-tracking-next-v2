@@ -207,6 +207,11 @@ export const projectV2Service = {
         return data;
     },
 
+    createDesigner: async (payload: { name: string; email: string; divisi_id: number }) => {
+        const { data } = await apiClient.post<any>('/designers', payload);
+        return data;
+    },
+
     // Project Items V2
     getProjectItems: async (projectId: number) => {
         const { data } = await apiClient.get<ProjectItemV2[]>(`/projects-v2/${projectId}/items`);
