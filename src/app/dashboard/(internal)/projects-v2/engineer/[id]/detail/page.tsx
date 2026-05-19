@@ -704,7 +704,6 @@ export default function EngineerDetailPage() {
                                     <TableHead>GK MDL</TableHead>
                                     <TableHead>Gambar Kerja</TableHead>
                                     <TableHead>Timeline Drawing</TableHead>
-                                    <TableHead className='text-right'>Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -891,11 +890,8 @@ export default function EngineerDetailPage() {
                                             </TableCell>
                                             <TableCell>
                                                 {item.gambar_kerja?.file ? (
-                                                    <div className='flex items-center gap-2'>
-                                                        <Badge variant='outline' className='bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px]'>
-                                                            Uploaded
-                                                        </Badge>
-                                                        <Button variant='ghost' size='icon' className='h-7 w-7 text-emerald-600' asChild>
+                                                    <div className='flex items-center gap-1'>
+                                                        <Button variant='ghost' size='icon' className='h-7 w-7 text-blue-600 hover:bg-blue-50' asChild title="Buka Gambar Kerja">
                                                             <a 
                                                                 href={item.gambar_kerja.file.startsWith('http') 
                                                                     ? item.gambar_kerja.file 
@@ -903,8 +899,17 @@ export default function EngineerDetailPage() {
                                                                 target='_blank'
                                                                 rel='noopener noreferrer'
                                                             >
-                                                                <FileDown className='h-4 w-4' />
+                                                                <Eye className='h-4 w-4' />
                                                             </a>
+                                                        </Button>
+                                                        <Button 
+                                                            variant='ghost' 
+                                                            size='icon' 
+                                                            className='h-7 w-7 text-orange-600 hover:bg-orange-50'
+                                                            onClick={() => openGkUpload(item)}
+                                                            title="Edit Gambar Kerja"
+                                                        >
+                                                            <Pencil className='h-4 w-4' />
                                                         </Button>
                                                     </div>
                                                 ) : (
@@ -937,23 +942,6 @@ export default function EngineerDetailPage() {
                                                 ) : (
                                                     <span className='text-[10px] text-muted-foreground italic'>Not set</span>
                                                 )}
-                                            </TableCell>
-                                            <TableCell className='text-right'>
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
-                                                        <Button variant='ghost' size='icon' className='h-8 w-8 rounded-full'>
-                                                            <MoreHorizontal className='h-4 w-4' />
-                                                        </Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align='end' className='w-[160px]'>
-                                                        {(item.custom || !item.mdl_item?.link_gambar_kerja) && (
-                                                            <DropdownMenuItem onClick={() => openGkUpload(item)}>
-                                                                <Upload className='mr-2 h-4 w-4' />
-                                                                Edit Gambar
-                                                            </DropdownMenuItem>
-                                                        )}
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
                                             </TableCell>
                                         </TableRow>
                                     ))
