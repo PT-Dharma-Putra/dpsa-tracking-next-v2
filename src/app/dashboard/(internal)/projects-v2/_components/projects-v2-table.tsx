@@ -470,7 +470,7 @@ export function ProjectsV2Table({
                 <>
                   {!showEngineer && <TableHead>Client</TableHead>}
                   <TableHead>Nomor SPK</TableHead>
-                  {!showSPD && <TableHead>SPH Number</TableHead>}
+                  {!showSPD && <TableHead>Nomor SPH</TableHead>}
                   <TableHead>Prioritas</TableHead>
                   {showPiutang && <TableHead>Progres Produksi</TableHead>}
                   {showPiutang && <TableHead>Total Penagihan</TableHead>}

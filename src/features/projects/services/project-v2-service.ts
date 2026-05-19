@@ -64,6 +64,7 @@ export interface ProjectV2 {
         file: string | null;
         spk_signed_file: string | null;
         spk_status: string | null;
+        tanggal_masuk: string | null;
         created_at: string;
     };
     list_furnitur?: {
@@ -305,22 +306,24 @@ export const projectV2Service = {
         return data;
     },
 
-    uploadSPK: async (projectId: number, file: File, nomor_spk: string, deadline?: string, prioritas?: string) => {
+    uploadSPK: async (projectId: number, file: File, nomor_spk: string, deadline?: string, prioritas?: string, tanggal_masuk?: string) => {
         const formData = new FormData();
         formData.append('file', file);
         formData.append('nomor_spk', nomor_spk);
         if (deadline) formData.append('deadline', deadline);
         if (prioritas) formData.append('prioritas', prioritas);
+        if (tanggal_masuk) formData.append('tanggal_masuk', tanggal_masuk);
         const { data } = await apiClient.post(`/projects-v2/${projectId}/upload-spk`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
         return data;
     },
 
-    approveSPK: async (projectId: number, file: File, deadline?: string) => {
+    approveSPK: async (projectId: number, file: File, deadline?: string, tanggal_masuk?: string) => {
         const formData = new FormData();
         formData.append('spk_signed_file', file);
         if (deadline) formData.append('deadline', deadline);
+        if (tanggal_masuk) formData.append('tanggal_masuk', tanggal_masuk);
         const { data } = await apiClient.post(`/projects-v2/${projectId}/approve-spk`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
