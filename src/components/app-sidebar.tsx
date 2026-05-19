@@ -337,8 +337,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarGroup>
         )}
 
-        
-
         {/* add sidebar collapse  */}
         {data.navMain.map((item) => (
           <Collapsible
