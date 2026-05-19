@@ -268,17 +268,19 @@ export default function ProjectItemsPage() {
   const [spkNumber, setSpkNumber] = React.useState<string>('');
   const [spkDeadline, setSpkDeadline] = React.useState<string>('');
   const [spkPrioritas, setSpkPrioritas] = React.useState<'Normal' | 'Urgent'>('Normal');
+  const [spkTanggalMasuk, setSpkTanggalMasuk] = React.useState<string>('');
 
   const uploadSpkMutation = useMutation({
-    mutationFn: ({ file, number, deadline, prioritas }: { file: File; number: string; deadline?: string; prioritas?: string }) =>
-      projectV2Service.uploadSPK(projectId, file, number, deadline, prioritas),
+    mutationFn: ({ file, number, deadline, prioritas, tanggal_masuk }: { file: File; number: string; deadline?: string; prioritas?: string; tanggal_masuk?: string }) =>
+      projectV2Service.uploadSPK(projectId, file, number, deadline, prioritas, tanggal_masuk),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects-v2', projectId] });
       toast.success('SPK uploaded successfully');
-      setSpdFile(null);
+      setSpkFile(null); // Fixed typo from earlier (was setSpdFile)
       setSpkNumber('');
       setSpkDeadline('');
       setSpkPrioritas('Normal');
+      setSpkTanggalMasuk('');
     },
     onError: () => {
       toast.error('Failed to upload SPK');
@@ -290,21 +292,23 @@ export default function ProjectItemsPage() {
       toast.error('Please provide both file and SPK number');
       return;
     }
-    uploadSpkMutation.mutate({ file: spkFile, number: spkNumber, deadline: spkDeadline, prioritas: spkPrioritas });
+    uploadSpkMutation.mutate({ file: spkFile, number: spkNumber, deadline: spkDeadline, prioritas: spkPrioritas, tanggal_masuk: spkTanggalMasuk });
   };
 
   const [signedSpkFile, setSignedSpkFile] = React.useState<File | null>(null);
   const [signedSpkDeadline, setSignedSpkDeadline] = React.useState<string>('');
+  const [signedSpkTanggalMasuk, setSignedSpkTanggalMasuk] = React.useState<string>('');
   const [isSignedSpkModalOpen, setIsSignedSpkModalOpen] = React.useState(false);
 
   const approveSpkMutation = useMutation({
-    mutationFn: ({ file, deadline }: { file: File; deadline?: string }) => 
-      projectV2Service.approveSPK(projectId, file, deadline),
+    mutationFn: ({ file, deadline, tanggal_masuk }: { file: File; deadline?: string; tanggal_masuk?: string }) => 
+      projectV2Service.approveSPK(projectId, file, deadline, tanggal_masuk),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects-v2', projectId] });
       toast.success('Signed SPK uploaded successfully');
       setSignedSpkFile(null);
       setSignedSpkDeadline('');
+      setSignedSpkTanggalMasuk('');
       setIsSignedSpkModalOpen(false);
     },
     onError: () => {
@@ -317,7 +321,11 @@ export default function ProjectItemsPage() {
       toast.error('Please provide a file');
       return;
     }
-    approveSpkMutation.mutate({ file: signedSpkFile, deadline: signedSpkDeadline });
+    approveSpkMutation.mutate({ 
+      file: signedSpkFile, 
+      deadline: signedSpkDeadline, 
+      tanggal_masuk: signedSpkTanggalMasuk 
+    });
   };
 
   const [isSpdModalOpen, setIsSpdModalOpen] = React.useState(false);
@@ -1158,6 +1166,7 @@ export default function ProjectItemsPage() {
                             </p>
                             <p className='text-[10px] text-emerald-600/80 italic font-medium truncate'>
                               {existingSpk.spk_status === 'approved' ? 'Terverifikasi' : 'Sudah diunggah'}
+                              {existingSpk.tanggal_masuk && ` • Masuk: ${format(new Date(existingSpk.tanggal_masuk), 'MMM d, yyyy')}`}
                             </p>
                           </div>
                         </div>
@@ -1659,22 +1668,20 @@ export default function ProjectItemsPage() {
           </DialogHeader>
           <div className='flex flex-col gap-3 py-2'>
             <div className='space-y-1.5'>
-              <Label className='text-xs font-medium'>
-                File (PDF/JPG/PNG/DOC)
-              </Label>
-              <Input
-                type='file'
-                accept='.pdf,.jpg,.jpeg,.png,.doc,.docx'
-                onChange={(e) => setSpkFile(e.target.files?.[0] || null)}
-                className='h-9 text-xs'
-              />
-            </div>
-            <div className='space-y-1.5'>
               <Label className='text-xs font-medium text-purple-700'>Nomor SPK</Label>
               <Input
                 placeholder='Nomor SPK'
                 value={spkNumber}
                 onChange={(e) => setSpkNumber(e.target.value)}
+                className='h-9 text-xs border-purple-200'
+              />
+            </div>
+            <div className='space-y-1.5'>
+              <Label className='text-xs font-medium text-purple-700'>Tanggal Masuk</Label>
+              <Input
+                type='date'
+                value={spkTanggalMasuk}
+                onChange={(e) => setSpkTanggalMasuk(e.target.value)}
                 className='h-9 text-xs border-purple-200'
               />
             </div>
@@ -1714,6 +1721,18 @@ export default function ProjectItemsPage() {
                 </button>
               </div>
             </div>
+            <div className='space-y-1.5'>
+              <Label className='text-xs font-medium'>
+                File (PDF/JPG/PNG/DOC)
+              </Label>
+              <Input
+                type='file'
+                accept='.pdf,.jpg,.jpeg,.png,.doc,.docx'
+                onChange={(e) => setSpkFile(e.target.files?.[0] || null)}
+                className='h-9 text-xs'
+              />
+            </div>
+
           </div>
           <DialogFooter>
             <Button
@@ -1756,6 +1775,15 @@ export default function ProjectItemsPage() {
             </DialogTitle>
           </DialogHeader>
           <div className='flex flex-col gap-4 py-4'>
+            <div className='space-y-1.5'>
+              <Label className='text-xs font-medium text-emerald-700'>Tanggal Masuk</Label>
+              <Input
+                type='date'
+                value={signedSpkTanggalMasuk}
+                onChange={(e) => setSignedSpkTanggalMasuk(e.target.value)}
+                className='h-9 text-xs border-emerald-200'
+              />
+            </div>
             <div className='space-y-1.5'>
               <Label className='text-xs font-medium text-emerald-700'>Deadline Penyelesaian</Label>
               <Input

@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { useRouter } from "next/navigation"
-import { Loader2, AlertCircle } from "lucide-react"
+import { Loader2, AlertCircle, Eye, EyeOff } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
@@ -51,6 +51,7 @@ export function UserAuthForm({ className, onSuccessRedirect = "/dashboard", ...p
     const [requires2FA, setRequires2FA] = React.useState<boolean>(false)
     const [userId, setUserId] = React.useState<number | null>(null)
     const [error, setError] = React.useState<string | null>(null)
+    const [showPassword, setShowPassword] = React.useState<boolean>(false)
 
     // Login Form Hook
     const loginForm = useForm<z.infer<typeof loginSchema>>({
@@ -214,7 +215,26 @@ export function UserAuthForm({ className, onSuccessRedirect = "/dashboard", ...p
                             <FormItem>
                                 <FormLabel>Password</FormLabel>
                                 <FormControl>
-                                    <Input placeholder="••••••••" type="password" autoComplete="current-password" {...field} />
+                                    <div className="relative">
+                                        <Input
+                                            placeholder="••••••••"
+                                            type={showPassword ? "text" : "password"}
+                                            autoComplete="current-password"
+                                            className="pr-10"
+                                            {...field}
+                                        />
+                                        <button
+                                            type="button"
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-700 focus:outline-none"
+                                            onClick={() => setShowPassword(!showPassword)}
+                                        >
+                                            {showPassword ? (
+                                                <EyeOff className="h-4 w-4" />
+                                            ) : (
+                                                <Eye className="h-4 w-4" />
+                                            )}
+                                        </button>
+                                    </div>
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>

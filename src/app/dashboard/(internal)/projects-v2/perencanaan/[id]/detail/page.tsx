@@ -599,7 +599,7 @@ export default function PerencanaanDetailPage() {
     {
       id: 4,
       title: 'Upload SPK',
-      isCompleted: !!project.spk?.file,
+      isCompleted: !!project.spk?.file || !!project.spk?.spk_signed_file,
       isActive: !!project.sph?.file,
       icon: ClipboardCheck,
       bgColor: 'bg-purple-500',
@@ -611,7 +611,7 @@ export default function PerencanaanDetailPage() {
       id: 5,
       title: 'Planning',
       isCompleted: totalItems > 0 && poDivisiCount === totalItems,
-      isActive: !!project.spk?.file,
+      isActive: !!project.spk?.file || !!project.spk?.spk_signed_file,
       icon: ListChecks,
       bgColor: 'bg-blue-500',
       lightBg: 'bg-blue-50',
@@ -732,15 +732,15 @@ export default function PerencanaanDetailPage() {
       {/* Summary Cards Grid */}
       <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-4 w-full'>
         {/* 1. SPH & SPK */}
-        <Card className={`relative border shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md ${!!project.spk?.file ? 'border-purple-200 bg-white ring-1 ring-purple-100' : 'border-neutral-200 bg-white'}`}>
-          {project.sph?.file && project.spk?.file && (
+        <Card className={`relative border shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md ${(!!project.spk?.file || !!project.spk?.spk_signed_file) ? 'border-purple-200 bg-white ring-1 ring-purple-100' : 'border-neutral-200 bg-white'}`}>
+          {project.sph?.file && (project.spk?.file || project.spk?.spk_signed_file) && (
             <div className="absolute -top-1.5 -right-1.5 h-5 w-5 bg-emerald-500 rounded-full flex items-center justify-center shadow-sm z-10 animate-in zoom-in duration-300">
               <Check className="h-3 w-3 text-white" strokeWidth={3} />
             </div>
           )}
           <CardHeader className='pb-2 flex flex-row items-center justify-between gap-3 min-w-0'>
             <button className='flex items-center gap-3 flex-1 text-left min-w-0' onClick={() => setIsSphCollapsed(!isSphCollapsed)}>
-              <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold shrink-0 ${!!project.spk?.file ? 'bg-purple-100 text-purple-600' : 'bg-neutral-100 text-neutral-500'}`}>1</div>
+              <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold shrink-0 ${(!!project.spk?.file || !!project.spk?.spk_signed_file) ? 'bg-purple-100 text-purple-600' : 'bg-neutral-100 text-neutral-500'}`}>1</div>
               <div className='flex-1 min-w-0'>
                 <CardTitle className='text-sm text-neutral-800 font-bold truncate'>SPH & SPK</CardTitle>
                 <p className='text-[10px] text-muted-foreground uppercase tracking-wider font-semibold truncate'>Documents</p>
@@ -751,17 +751,54 @@ export default function PerencanaanDetailPage() {
           {!isSphCollapsed && (
             <CardContent className='pt-0 space-y-2.5'>
                <div className='grid grid-cols-2 gap-2 border-t border-neutral-100 pt-2.5'>
-                  <div className='flex flex-col gap-0.5 min-w-0'>
-                    <span className='text-[9px] text-neutral-400 font-bold uppercase tracking-wider'>Nomor SPH</span>
-                    <span className={`text-[10px] font-extrabold truncate ${project.sph?.nomor_sph ? 'text-emerald-600' : 'text-red-500'}`} title={project.sph?.nomor_sph || undefined}>
-                      {project.sph?.nomor_sph || '-'}
-                    </span>
+                  {/* SPH Block */}
+                  <div className='flex items-center justify-between bg-neutral-50/50 p-1.5 rounded border border-neutral-100 min-w-0'>
+                    <div className='flex flex-col gap-0.5 min-w-0 flex-1 mr-1'>
+                      <span className='text-[9px] text-neutral-400 font-bold uppercase tracking-wider leading-none'>Nomor SPH</span>
+                      <span className={`text-[10px] font-extrabold truncate ${project.sph?.nomor_sph ? 'text-emerald-600' : 'text-red-500'}`} title={project.sph?.nomor_sph || undefined}>
+                        {project.sph?.nomor_sph || '-'}
+                      </span>
+                    </div>
+                    {(() => {
+                      const sphFile = project.sph?.file;
+                      if (!sphFile) return null;
+                      return (
+                        <Button variant='ghost' size='icon' className='h-6 w-6 text-blue-600 hover:bg-blue-100 shrink-0' asChild title="Lihat SPH">
+                          <a 
+                            href={sphFile.startsWith('http') ? sphFile : `${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '')}/storage/${sphFile}`} 
+                            target='_blank' 
+                            rel='noopener noreferrer'
+                          >
+                            <Eye className='h-3.5 w-3.5' />
+                          </a>
+                        </Button>
+                      );
+                    })()}
                   </div>
-                  <div className='flex flex-col gap-0.5 min-w-0'>
-                    <span className='text-[9px] text-neutral-400 font-bold uppercase tracking-wider'>Nomor SPK</span>
-                    <span className={`text-[10px] font-extrabold truncate ${project.spk?.nomor_spk ? 'text-emerald-600' : 'text-red-500'}`} title={project.spk?.nomor_spk || undefined}>
-                      {project.spk?.nomor_spk || '-'}
-                    </span>
+
+                  {/* SPK Block */}
+                  <div className='flex items-center justify-between bg-neutral-50/50 p-1.5 rounded border border-neutral-100 min-w-0'>
+                    <div className='flex flex-col gap-0.5 min-w-0 flex-1 mr-1'>
+                      <span className='text-[9px] text-neutral-400 font-bold uppercase tracking-wider leading-none'>Nomor SPK</span>
+                      <span className={`text-[10px] font-extrabold truncate ${project.spk?.nomor_spk ? 'text-emerald-600' : 'text-red-500'}`} title={project.spk?.nomor_spk || undefined}>
+                        {project.spk?.nomor_spk || '-'}
+                      </span>
+                    </div>
+                    {(() => {
+                      const spkFile = project.spk?.spk_signed_file || project.spk?.file;
+                      if (!spkFile) return null;
+                      return (
+                        <Button variant='ghost' size='icon' className='h-6 w-6 text-blue-600 hover:bg-blue-100 shrink-0' asChild title="Lihat SPK">
+                          <a 
+                            href={spkFile.startsWith('http') ? spkFile : `${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '')}/storage/${spkFile}`} 
+                            target='_blank' 
+                            rel='noopener noreferrer'
+                          >
+                            <Eye className='h-3.5 w-3.5' />
+                          </a>
+                        </Button>
+                      );
+                    })()}
                   </div>
                </div>
             </CardContent>
@@ -994,7 +1031,7 @@ export default function PerencanaanDetailPage() {
                     <div className='flex items-center gap-2 mb-1 p-2 bg-blue-50/80 rounded-md border border-blue-100 min-w-0'>
                       <FileText className='h-3.5 w-3.5 text-blue-600 shrink-0' />
                       <a 
-                        href={`http://localhost:8000/storage/${project.order_produksi[project.order_produksi.length - 1].file}`}
+                        href={`${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '')}/storage/${project.order_produksi[project.order_produksi.length - 1].file}`}
                         target='_blank'
                         rel='noopener noreferrer'
                         className='text-[10px] text-blue-700 hover:underline font-medium truncate flex-1 min-w-0'

@@ -127,6 +127,8 @@ export function ProjectsV2Table({
   const [projectToSchedule, setProjectToSchedule] =
     React.useState<ProjectV2 | null>(null);
 
+  const isJadwalEditable = showPerencanaan;
+
   // Debounce search
   React.useEffect(() => {
     const timer = setTimeout(() => {
@@ -468,6 +470,7 @@ export function ProjectsV2Table({
                 <>
                   {!showEngineer && <TableHead>Client</TableHead>}
                   <TableHead>Nomor SPK</TableHead>
+                  {!showSPD && <TableHead>Nomor SPH</TableHead>}
                   <TableHead>Prioritas</TableHead>
                   {showPiutang && <TableHead>Progres Produksi</TableHead>}
                   {showPiutang && <TableHead>Total Penagihan</TableHead>}
@@ -501,7 +504,6 @@ export function ProjectsV2Table({
                       )}
                     </div>
                   </TableHead>
-                  <TableHead>SPH Number</TableHead>
 
                   {!showProduksi && <TableHead>Sisa Hari</TableHead>}
                 </>
@@ -709,6 +711,11 @@ export function ProjectsV2Table({
                         <TableCell className='font-medium text-blue-600'>
                           {project.spk_number || project.spk?.nomor_spk || '-'}
                         </TableCell>
+                        {!showSPD && (
+                          <TableCell>
+                            {project.sph?.nomor_sph || '-'}
+                          </TableCell>
+                        )}
                         <TableCell>
                           {project.prioritas === 'Urgent' ? (
                             <Badge className='bg-red-100 text-red-700 border border-red-200 hover:bg-red-100 font-semibold text-[11px]'>
@@ -771,9 +778,6 @@ export function ProjectsV2Table({
                           ? format(new Date(project.deadline), 'MMM d, yyyy')
                           : '-'}
                       </TableCell>
-                      <TableCell>
-                        {project.sph?.nomor_sph || '-'}
-                      </TableCell>
 
                       {!showProduksi && (
                         <TableCell>
@@ -823,11 +827,11 @@ export function ProjectsV2Table({
                         <div
                           className={cn(
                             'space-y-1 p-1 rounded-md',
-                            !showProduksi &&
+                            isJadwalEditable &&
                               'cursor-pointer hover:bg-neutral-50 transition-colors group'
                           )}
                           onClick={
-                            !showProduksi
+                            isJadwalEditable
                               ? () => handleScheduleClick(project)
                               : undefined
                           }
@@ -843,7 +847,7 @@ export function ProjectsV2Table({
                                 'MMM d, yyyy'
                               )}
                             </div>
-                            {!showProduksi && (
+                            {isJadwalEditable && (
                               <Pencil className='h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity' />
                             )}
                           </div>
@@ -877,7 +881,7 @@ export function ProjectsV2Table({
                             );
                           })()}
                         </div>
-                      ) : !showProduksi ? (
+                      ) : isJadwalEditable ? (
                         <Button
                           variant='ghost'
                           size='sm'
@@ -1458,12 +1462,14 @@ export function ProjectsV2Table({
                               <Pencil className='mr-2 h-4 w-4' />
                               Edit
                             </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => handleScheduleClick(project)}
-                            >
-                              <Truck className='mr-2 h-4 w-4' />
-                              Jadwalkan Pengiriman
-                            </DropdownMenuItem>
+                            {isJadwalEditable && (
+                              <DropdownMenuItem
+                                onClick={() => handleScheduleClick(project)}
+                              >
+                                <Truck className='mr-2 h-4 w-4' />
+                                Jadwalkan Pengiriman
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
                               className='text-red-600 focus:text-red-600'
