@@ -82,6 +82,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog"
 
 import { projectV2Service, ProjectItemV2, TahapDesign, DesignProgres } from "@/features/projects/services/project-v2-service"
 import { ProjectItemFormDialog } from "../../../_components/project-item-form-dialog"
@@ -98,6 +99,12 @@ export default function EngineerDetailPage() {
     const [isItemDeleteDialogOpen, setIsItemDeleteDialogOpen] = React.useState(false)
     const [itemToDelete, setItemToDelete] = React.useState<ProjectItemV2 | null>(null)
     const [openPicPopover, setOpenPicPopover] = React.useState<number | null>(null)
+
+    // Quick PIC Creation States
+    const [isNewPicDialogOpen, setIsNewPicDialogOpen] = React.useState(false);
+    const [newPicName, setNewPicName] = React.useState("");
+    const [newPicEmail, setNewPicEmail] = React.useState("");
+    const [newPicDivisiId, setNewPicDivisiId] = React.useState<string>("");
 
     // Data Queries
     const { data: project, isLoading: isLoadingProject } = useQuery({
@@ -188,6 +195,40 @@ export default function EngineerDetailPage() {
         }
     })
 
+    const { data: divisions } = useQuery({
+        queryKey: ["divisions"],
+        queryFn: () => projectV2Service.getDivisions(),
+    })
+
+    const createPicMutation = useMutation({
+        mutationFn: (payload: { name: string; email: string; divisi_id: number }) => 
+            projectV2Service.createDesigner(payload),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["designers"] })
+            toast.success("PIC berhasil ditambahkan")
+            setIsNewPicDialogOpen(false)
+            setNewPicName("")
+            setNewPicEmail("")
+            setNewPicDivisiId("")
+        },
+        onError: (error: any) => {
+            const errorMsg = error.response?.data?.message || "Gagal menambahkan PIC"
+            toast.error(errorMsg)
+        }
+    })
+
+    const handleCreatePic = () => {
+        if (!newPicName || !newPicEmail || !newPicDivisiId) {
+            toast.error("Semua field harus diisi")
+            return
+        }
+        createPicMutation.mutate({
+            name: newPicName,
+            email: newPicEmail,
+            divisi_id: parseInt(newPicDivisiId)
+        })
+    }
+
     // Local States for Progress Form
     const [newStageName, setNewStageName] = React.useState("")
     const [selectedStageId, setSelectedStageId] = React.useState<string>("")
@@ -262,6 +303,33 @@ export default function EngineerDetailPage() {
             toast.error("Failed to update Gambar Kerja")
         }
     })
+
+    // Signed Order Gambar Kerja State
+    const [isSignedOrderGkDialogOpen, setIsSignedOrderGkDialogOpen] = React.useState(false)
+    const [signedOrderGkFile, setSignedOrderGkFile] = React.useState<File | null>(null)
+
+    const uploadSignedOrderGkMutation = useMutation({
+        mutationFn: (file: File) => 
+            projectV2Service.uploadSignedOrderGambarKerja(projectId, file),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["projects-v2", projectId] })
+            toast.success("Order Gambar Kerja Tertanda Tangan berhasil diupload")
+            setIsSignedOrderGkDialogOpen(false)
+            setSignedOrderGkFile(null)
+        },
+        onError: (err: any) => {
+            const errorMsg = err.response?.data?.message || "Gagal mengupload Order Gambar Kerja Tertanda Tangan"
+            toast.error(errorMsg)
+        }
+    })
+
+    const handleSignedOrderGkUpload = () => {
+        if (!signedOrderGkFile) {
+            toast.error("File Order Gambar Kerja harus dipilih")
+            return
+        }
+        uploadSignedOrderGkMutation.mutate(signedOrderGkFile)
+    }
 
     const handleGkUpload = () => {
         if (!gkItem) return
@@ -383,12 +451,6 @@ export default function EngineerDetailPage() {
                                     {project.spk_number || project.spk?.nomor_spk}
                                 </span>
                             )}
-                            {project.deadline && (
-                                <span className='flex items-center gap-1 text-xs text-neutral-600'>
-                                    <Calendar className='h-3 w-3 text-neutral-400' />
-                                    {format(new Date(project.deadline), 'MMM d, yyyy')}
-                                </span>
-                            )}
                             {project.need_design ? (
                                 <span className='flex items-center gap-1 text-xs text-emerald-600'>
                                     <Info className='h-3 w-3 text-emerald-500' />
@@ -469,7 +531,7 @@ export default function EngineerDetailPage() {
             <div className='grid grid-cols-1 md:grid-cols-2 gap-4 w-full'>
                 {/* 1. ORDER GAMBAR KERJA SECTION */}
                 <Card
-                    className={`border shadow-sm transition-all duration-300 ${
+                    className={`relative border shadow-sm transition-all duration-300 ${
                         flowSteps[0].isActive
                             ? flowSteps[0].isCompleted
                                 ? 'border-orange-200 bg-white ring-1 ring-orange-100'
@@ -477,6 +539,11 @@ export default function EngineerDetailPage() {
                             : 'border-neutral-200 bg-neutral-50/80 opacity-60 grayscale-[0.5]'
                     }`}
                 >
+                    {orderGk?.file && (
+                        <div className="absolute -top-1.5 -right-1.5 h-5 w-5 bg-emerald-500 rounded-full flex items-center justify-center shadow-sm z-10 animate-in zoom-in duration-300">
+                            <CheckCircle2 className="h-3 w-3 text-white" />
+                        </div>
+                    )}
                     <CardHeader className='pb-3 flex flex-row items-center justify-between gap-3'>
                         <button
                             className='flex items-center gap-3 flex-1 text-left'
@@ -509,42 +576,55 @@ export default function EngineerDetailPage() {
                     {!isSpdCollapsed && (
                         <CardContent>
                             {orderGk?.file ? (
-                                <div className='p-3 rounded-xl bg-orange-50/80 border border-orange-100 flex items-center justify-between shadow-sm'>
-                                    <div className='flex items-center gap-3'>
-                                        <div className='h-8 w-8 rounded-lg bg-white shadow-sm border border-orange-100 flex items-center justify-center text-orange-600'>
-                                            <FileText className='h-4 w-4' />
+                                <div className='space-y-2'>
+                                    <div className='p-3 rounded-xl bg-orange-50/80 border border-orange-100 flex items-center justify-between shadow-sm'>
+                                        <div className='flex items-center gap-3'>
+                                            <div className='h-8 w-8 rounded-lg bg-white shadow-sm border border-orange-100 flex items-center justify-center text-orange-600'>
+                                                <FileText className='h-4 w-4' />
+                                            </div>
+                                            <div>
+                                                <p className='text-xs font-bold text-orange-900'>
+                                                    Order Drawing
+                                                </p>
+                                                <p className='text-[10px] text-orange-600/80'>
+                                                    Target:{" "}
+                                                    {format(
+                                                        new Date(orderGk.created_at),
+                                                        'MMM d, yyyy'
+                                                    )}
+                                                </p>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <p className='text-xs font-bold text-orange-900'>
-                                                Order Drawing
-                                            </p>
-                                            <p className='text-[10px] text-orange-600/80'>
-                                                {format(
-                                                    new Date(orderGk.created_at),
-                                                    'MMM d, yyyy'
-                                                )}
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div className='flex items-center gap-2'>
-                                        <Button
-                                            variant='ghost'
-                                            size='icon'
-                                            className='h-8 w-8 text-orange-600 hover:bg-orange-200 bg-white shadow-sm border border-orange-100'
-                                            asChild
-                                        >
-                                            <a
-                                                href={`${(
-                                                    process.env.NEXT_PUBLIC_API_URL ||
-                                                    'http://localhost:8000'
-                                                ).replace('/api', '')}/storage/${orderGk.file}`}
-                                                target='_blank'
-                                                rel='noopener noreferrer'
+                                        <div className='flex items-center gap-2'>
+                                            <Button
+                                                variant='ghost'
+                                                size='icon'
+                                                className='h-8 w-8 text-orange-600 hover:bg-orange-200 bg-white shadow-sm border border-orange-100'
+                                                asChild
                                             >
-                                                <FileDown className='h-4 w-4' />
-                                            </a>
-                                        </Button>
+                                                <a
+                                                    href={`${(
+                                                        process.env.NEXT_PUBLIC_API_URL ||
+                                                        'http://localhost:8000'
+                                                    ).replace('/api', '')}/storage/${orderGk.file}`}
+                                                    target='_blank'
+                                                    rel='noopener noreferrer'
+                                                >
+                                                    <FileDown className='h-4 w-4' />
+                                                </a>
+                                            </Button>
+                                        </div>
                                     </div>
+                                    <Button 
+                                        variant='outline' 
+                                        size='sm' 
+                                        className='w-full h-7 text-[10px] text-orange-600 border-orange-200 hover:bg-orange-50 gap-2 font-bold'
+                                        onClick={() => setIsSignedOrderGkDialogOpen(true)}
+                                    >
+                                        <Upload className='h-3.5 w-3.5' />
+                                        {orderGk?.tertanda_tangan_lengkap === 1 ? 'Re-upload' : 'Upload'} Order Gambar Tertanda Tangan Engineer
+                                        {orderGk?.tertanda_tangan_lengkap === 1 && <Check className="h-3 w-3 text-emerald-600 ml-auto animate-in zoom-in" />}
+                                    </Button>
                                 </div>
                             ) : (
                                 <p className='text-xs text-muted-foreground italic'>
@@ -663,7 +743,6 @@ export default function EngineerDetailPage() {
                                     <TableHead>GK MDL</TableHead>
                                     <TableHead>Gambar Kerja</TableHead>
                                     <TableHead>Timeline Drawing</TableHead>
-                                    <TableHead className='text-right'>Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -752,7 +831,22 @@ export default function EngineerDetailPage() {
                                                         <Command>
                                                             <CommandInput placeholder="Search engineer..." />
                                                             <CommandList>
-                                                                <CommandEmpty>No engineer found.</CommandEmpty>
+                                                                <CommandEmpty className="p-3 text-center flex flex-col items-center gap-2">
+                                                                    <span className="text-xs text-muted-foreground">No engineer found.</span>
+                                                                    <Button 
+                                                                        size="sm" 
+                                                                        variant="outline" 
+                                                                        className="w-full text-[11px] h-7 gap-1"
+                                                                        onClick={(e) => {
+                                                                            e.preventDefault();
+                                                                            e.stopPropagation();
+                                                                            setOpenPicPopover(null);
+                                                                            setIsNewPicDialogOpen(true);
+                                                                        }}
+                                                                    >
+                                                                        <Plus className="h-3 w-3" /> Tambah PIC
+                                                                    </Button>
+                                                                </CommandEmpty>
                                                                 <CommandGroup>
                                                                     {designers?.map((designer) => (
                                                                         <CommandItem
@@ -776,6 +870,16 @@ export default function EngineerDetailPage() {
                                                                             {designer.name}
                                                                         </CommandItem>
                                                                     ))}
+                                                                    <CommandItem
+                                                                        onSelect={() => {
+                                                                            setOpenPicPopover(null);
+                                                                            setIsNewPicDialogOpen(true);
+                                                                        }}
+                                                                        className="text-orange-600 font-semibold focus:text-orange-700 cursor-pointer flex items-center justify-start py-2 border-t border-neutral-100 mt-1"
+                                                                    >
+                                                                        <Plus className="mr-2 h-3.5 w-3.5" />
+                                                                        Tambah PIC Baru...
+                                                                    </CommandItem>
                                                                 </CommandGroup>
                                                             </CommandList>
                                                         </Command>
@@ -825,11 +929,8 @@ export default function EngineerDetailPage() {
                                             </TableCell>
                                             <TableCell>
                                                 {item.gambar_kerja?.file ? (
-                                                    <div className='flex items-center gap-2'>
-                                                        <Badge variant='outline' className='bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px]'>
-                                                            Uploaded
-                                                        </Badge>
-                                                        <Button variant='ghost' size='icon' className='h-7 w-7 text-emerald-600' asChild>
+                                                    <div className='flex items-center gap-1'>
+                                                        <Button variant='ghost' size='icon' className='h-7 w-7 text-blue-600 hover:bg-blue-50' asChild title="Buka Gambar Kerja">
                                                             <a 
                                                                 href={item.gambar_kerja.file.startsWith('http') 
                                                                     ? item.gambar_kerja.file 
@@ -837,8 +938,17 @@ export default function EngineerDetailPage() {
                                                                 target='_blank'
                                                                 rel='noopener noreferrer'
                                                             >
-                                                                <FileDown className='h-4 w-4' />
+                                                                <Eye className='h-4 w-4' />
                                                             </a>
+                                                        </Button>
+                                                        <Button 
+                                                            variant='ghost' 
+                                                            size='icon' 
+                                                            className='h-7 w-7 text-orange-600 hover:bg-orange-50'
+                                                            onClick={() => openGkUpload(item)}
+                                                            title="Edit Gambar Kerja"
+                                                        >
+                                                            <Pencil className='h-4 w-4' />
                                                         </Button>
                                                     </div>
                                                 ) : (
@@ -871,23 +981,6 @@ export default function EngineerDetailPage() {
                                                 ) : (
                                                     <span className='text-[10px] text-muted-foreground italic'>Not set</span>
                                                 )}
-                                            </TableCell>
-                                            <TableCell className='text-right'>
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
-                                                        <Button variant='ghost' size='icon' className='h-8 w-8 rounded-full'>
-                                                            <MoreHorizontal className='h-4 w-4' />
-                                                        </Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align='end' className='w-[160px]'>
-                                                        {(item.custom || !item.mdl_item?.link_gambar_kerja) && (
-                                                            <DropdownMenuItem onClick={() => openGkUpload(item)}>
-                                                                <Upload className='mr-2 h-4 w-4' />
-                                                                Edit Gambar
-                                                            </DropdownMenuItem>
-                                                        )}
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
                                             </TableCell>
                                         </TableRow>
                                     ))
@@ -955,6 +1048,118 @@ export default function EngineerDetailPage() {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            {/* Signed Order Gambar Kerja Dialog */}
+            <AlertDialog open={isSignedOrderGkDialogOpen} onOpenChange={setIsSignedOrderGkDialogOpen}>
+                <AlertDialogContent className='max-w-md'>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className='flex items-center gap-2'>
+                            <Upload className='h-5 w-5 text-orange-500' />
+                            Upload Order Gambar Tertanda Tangan
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Upload file Order Gambar Kerja yang sudah ditandatangani oleh Engineer.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <div className='grid gap-4 py-4'>
+                        <div className='space-y-2'>
+                            <Label>File Order Gambar</Label>
+                            <Input 
+                                type='file' 
+                                accept='.pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx'
+                                onChange={(e) => {
+                                    if (e.target.files && e.target.files[0]) {
+                                        setSignedOrderGkFile(e.target.files[0])
+                                    }
+                                }}
+                                className='text-xs'
+                            />
+                        </div>
+                    </div>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => setIsSignedOrderGkDialogOpen(false)}>Cancel</AlertDialogCancel>
+                        <Button 
+                            className='bg-orange-600 hover:bg-orange-700'
+                            onClick={handleSignedOrderGkUpload}
+                            disabled={uploadSignedOrderGkMutation.isPending}
+                        >
+                            {uploadSignedOrderGkMutation.isPending && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
+                            Submit
+                        </Button>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Quick Add PIC Dialog */}
+            <Dialog open={isNewPicDialogOpen} onOpenChange={setIsNewPicDialogOpen}>
+                <DialogContent className='max-w-md'>
+                    <DialogHeader>
+                        <DialogTitle className='flex items-center gap-2'>
+                            <User className='h-5 w-5 text-orange-500' />
+                            Tambah PIC Baru
+                        </DialogTitle>
+                        <DialogDescription>
+                            Tambah user PIC baru ke dalam sistem. Password default untuk user baru adalah <strong className="text-orange-600 font-bold bg-orange-50 px-1.5 py-0.5 rounded border border-orange-100">trackingDPSA88</strong>.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className='grid gap-4 py-4'>
+                        <div className='space-y-2'>
+                            <Label htmlFor="pic-name">Nama PIC</Label>
+                            <Input 
+                                id="pic-name"
+                                type='text' 
+                                value={newPicName}
+                                onChange={(e) => setNewPicName(e.target.value)}
+                                placeholder="Masukkan nama lengkap..."
+                                className='text-xs'
+                            />
+                        </div>
+                        <div className='space-y-2'>
+                            <Label htmlFor="pic-email">Email</Label>
+                            <Input 
+                                id="pic-email"
+                                type='email' 
+                                value={newPicEmail}
+                                onChange={(e) => setNewPicEmail(e.target.value)}
+                                placeholder="Masukkan alamat email..."
+                                className='text-xs'
+                            />
+                        </div>
+                        <div className='space-y-2'>
+                            <Label htmlFor="pic-divisi">Divisi</Label>
+                            <Select value={newPicDivisiId} onValueChange={setNewPicDivisiId}>
+                                <SelectTrigger id="pic-divisi" className="text-xs">
+                                    <SelectValue placeholder="Pilih Divisi..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {divisions?.map((div: any) => (
+                                        <SelectItem key={div.id} value={div.id.toString()} className="text-xs">
+                                            {div.nama}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button 
+                            variant="outline"
+                            onClick={() => setIsNewPicDialogOpen(false)}
+                            className="text-xs"
+                        >
+                            Batal
+                        </Button>
+                        <Button 
+                            className='bg-orange-600 hover:bg-orange-700 text-xs'
+                            onClick={handleCreatePic}
+                            disabled={createPicMutation.isPending}
+                        >
+                            {createPicMutation.isPending && <Loader2 className='mr-2 h-3 w-3 animate-spin' />}
+                            Tambah PIC
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
         </div>
     )

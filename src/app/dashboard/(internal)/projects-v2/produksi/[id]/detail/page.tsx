@@ -11,6 +11,12 @@ import {
   CheckCircle2,
   Eye,
   BarChart3,
+  Building2,
+  Info,
+  ChevronDown,
+  Package,
+  FileDown,
+  X,
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -69,6 +75,8 @@ export default function ProduksiDetailPage() {
   );
   const [produksiData, setProduksiData] = React.useState<Partial<Produksi>>({});
   const [skippedFields, setSkippedFields] = React.useState<Record<string, boolean>>({});
+  const [isOrderCollapsed, setIsOrderCollapsed] = React.useState(false);
+  const [isProgressCollapsed, setIsProgressCollapsed] = React.useState(false);
 
   const toggleSkipField = (field: string) => {
     setSkippedFields((prev) => ({ ...prev, [field]: !prev[field] }));
@@ -101,6 +109,7 @@ export default function ProduksiDetailPage() {
     setProduksiData(
       item.produksi || {
         jumlah_order: item.jumlah,
+        menggunakan_stok: 0,
         cold_press: 0,
         running_saw: 0,
         edging: 0,
@@ -147,12 +156,19 @@ export default function ProduksiDetailPage() {
     }, 0);
 
     const order = Number(produksiData.jumlah_order) || 1;
+    const stok = Number(produksiData.menggunakan_stok) || 0;
+    const persenStok = (stok / order) * 100;
 
     // Hitung persen: field yang dilewati tidak ikut kalkulasi
-    const calculatedPersen =
+    const persenProduksi =
       activeFields.length === 0
         ? 0
-        : Number(((totalSum * 100) / (activeFields.length * order)).toFixed(2));
+        : (totalSum * 100) / (activeFields.length * order);
+
+    const calculatedPersen = Math.min(
+      Number((persenProduksi + persenStok).toFixed(2)),
+      100
+    );
 
     // Hindari re-render tidak perlu
     setProduksiData((prev) => {
@@ -174,6 +190,7 @@ export default function ProduksiDetailPage() {
     produksiData.rakit,
     produksiData.finishing,
     produksiData.jumlah_order,
+    produksiData.menggunakan_stok,
     skippedFields,
   ]);
 
@@ -193,125 +210,288 @@ export default function ProduksiDetailPage() {
     );
   }
 
+  const flowSteps = [
+    {
+      id: 1,
+      title: 'Order Produksi',
+      description: 'Production Order',
+      isCompleted: !!(project.order_produksi && project.order_produksi.length > 0),
+      isActive: true,
+      icon: FileText,
+      color: 'text-orange-600',
+      bgColor: 'bg-orange-500',
+      lightBg: 'bg-orange-50',
+      borderColor: 'border-orange-200',
+    },
+    {
+      id: 2,
+      title: 'Progress Produksi',
+      description: 'Production Progress',
+      isCompleted: (project.progres_produksi ?? 0) >= 100,
+      isActive: !!(project.order_produksi && project.order_produksi.length > 0),
+      icon: BarChart3,
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-500',
+      lightBg: 'bg-blue-50',
+      borderColor: 'border-blue-200',
+    },
+  ];
+
+  const latestOrderProduksi = project.order_produksi && project.order_produksi.length > 0 
+    ? project.order_produksi[project.order_produksi.length - 1] 
+    : null;
+
   return (
-    <div className='flex flex-col gap-6 p-6'>
-      <div className='flex items-center gap-4'>
-        <Button variant='ghost' size='icon' onClick={() => router.back()}>
-          <ArrowLeft className='h-5 w-5' />
-        </Button>
-        <div>
-          <h1 className='text-2xl font-bold tracking-tight'>Produksi Detail</h1>
-          <p className='text-sm text-muted-foreground'>
-            Produksi View - Project Items Management
-          </p>
+    <div className='flex flex-col gap-6 p-6 max-w-[1600px] mx-auto w-full'>
+      <div className='flex flex-col sm:flex-row sm:items-center gap-4'>
+        <div className='flex items-start gap-4 shrink-0'>
+          <Button
+            variant='ghost'
+            size='icon'
+            onClick={() => router.back()}
+            className='rounded-full hover:bg-neutral-100 mt-0.5'
+          >
+            <ArrowLeft className='h-5 w-5' />
+          </Button>
+          <div className='space-y-1.5'>
+            <div>
+              <h1 className='text-2xl font-bold tracking-tight text-neutral-900'>
+                {project.name}
+              </h1>
+              <p className='text-xs text-muted-foreground'>Produksi View - Project Items Management</p>
+            </div>
+            <div className='flex flex-wrap items-center gap-x-3 gap-y-1'>
+              {project.client?.name && (
+                <span className='flex items-center gap-1 text-xs text-neutral-600'>
+                  <Building2 className='h-3 w-3 text-neutral-400' />
+                  {project.client.name}
+                </span>
+              )}
+              {(project.spk_number || project.spk?.nomor_spk) && (
+                <span className='flex items-center gap-1 text-xs text-neutral-600'>
+                  <FileText className='h-3 w-3 text-neutral-400' />
+                  {project.spk_number || project.spk?.nomor_spk}
+                </span>
+              )}
+              {project.deadline && (
+                <span className='flex items-center gap-1 text-xs text-neutral-600'>
+                  <Info className='h-3 w-3 text-neutral-400' />
+                  Deadline: {format(new Date(project.deadline), 'MMM d, yyyy')}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Stepper Progress */}
+        <div className='ml-auto overflow-x-auto hide-scrollbar shrink-0'>
+          <div className='flex items-center gap-1 min-w-max'>
+            {flowSteps.map((step, index) => {
+              const Icon = step.icon;
+              return (
+                <React.Fragment key={step.id}>
+                  <div
+                    className={`flex items-center gap-1.5 transition-all duration-300 ${
+                      step.isActive ? 'opacity-100' : 'opacity-40 grayscale'
+                    }`}
+                  >
+                    <div
+                      className={`h-6 w-6 rounded-full flex items-center justify-center border shadow-sm transition-all duration-500 shrink-0 ${
+                        step.isCompleted
+                          ? step.bgColor + ' border-transparent text-white'
+                          : step.isActive
+                          ? step.lightBg +
+                            ' ' +
+                            step.borderColor +
+                            ' ' +
+                            step.color
+                          : 'bg-neutral-100 border-neutral-200 text-neutral-400'
+                      }`}
+                    >
+                      {step.isCompleted ? (
+                        <CheckCircle2 className='h-3 w-3' />
+                      ) : (
+                        <Icon className='h-3 w-3' />
+                      )}
+                    </div>
+                    <div className='flex flex-col leading-none'>
+                      <span
+                        className={`text-[10px] font-bold whitespace-nowrap ${
+                          step.isCompleted || step.isActive
+                            ? 'text-neutral-800'
+                            : 'text-neutral-400'
+                        }`}
+                      >
+                        {step.title}
+                      </span>
+                    </div>
+                  </div>
+                  {index < flowSteps.length - 1 && (
+                    <div className='w-6 h-[2px] rounded-full bg-neutral-200 overflow-hidden relative mx-0.5 shrink-0'>
+                      <div
+                        className={`absolute top-0 left-0 h-full w-full transition-transform duration-700 origin-left ${
+                          step.isCompleted
+                            ? step.bgColor + ' scale-x-100'
+                            : 'scale-x-0'
+                        }`}
+                      />
+                    </div>
+                  )}
+                </React.Fragment>
+              );
+            })}
+          </div>
         </div>
       </div>
 
-      {/* Project Info Card */}
-      <Card className='border-none shadow-sm bg-gradient-to-br from-white to-neutral-50/50'>
-        <CardHeader className='pb-3'>
-          <CardTitle className='flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-neutral-500'>
-            <FileText className='h-4 w-4 text-orange-500' />
-            Project Information
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6'>
-            <div className='space-y-1'>
-              <Label className='text-[10px] text-muted-foreground uppercase'>
-                Project Name
-              </Label>
-              <p className='font-bold text-neutral-900'>{project.name}</p>
+      {/* Document Section at Top */}
+      <div className='grid grid-cols-1 md:grid-cols-2 gap-4 w-full'>
+        {/* 1. ORDER PRODUKSI SECTION */}
+        <Card
+          className={`relative border shadow-sm transition-all duration-300 ${
+            flowSteps[0].isActive
+              ? flowSteps[0].isCompleted
+                ? 'border-orange-200 bg-white ring-1 ring-orange-100'
+                : 'border-orange-300 bg-white ring-2 ring-orange-500 ring-offset-2'
+              : 'border-neutral-200 bg-neutral-50/80 opacity-60 grayscale-[0.5]'
+          }`}
+        >
+          {latestOrderProduksi && (
+            <div className="absolute -top-1.5 -right-1.5 h-5 w-5 bg-emerald-500 rounded-full flex items-center justify-center shadow-sm z-10 animate-in zoom-in duration-300">
+              <CheckCircle2 className="h-3 w-3 text-white" />
             </div>
-            <div className='space-y-1'>
-              <Label className='text-[10px] text-muted-foreground uppercase'>
-                Client
-              </Label>
-              <p className='font-semibold text-neutral-800'>
-                {project.client?.name || '-'}
-              </p>
-            </div>
-            <div className='space-y-1'>
-              <Label className='text-[10px] text-muted-foreground uppercase'>
-                SPK Number
-              </Label>
-              <p className='text-neutral-700'>
-                {project.spk_number || project.spk?.nomor_spk || '-'}
-              </p>
-            </div>
-            <div className='space-y-1'>
-              <Label className='text-[10px] text-muted-foreground uppercase'>
-                Deadline
-              </Label>
-              <p className='font-bold text-orange-600'>
-                {project.deadline
-                  ? format(new Date(project.deadline), 'MMM d, yyyy')
-                  : '-'}
-              </p>
-            </div>
-            <div className='space-y-1'>
-              <Label className='text-[10px] text-muted-foreground uppercase'>
-                Target Produksi
-              </Label>
-              <div className='flex items-center gap-2'>
-                {project.order_produksi && project.order_produksi.length > 0 ? (
-                  <>
-                    <Button
-                      variant='ghost'
-                      size='icon'
-                      className='h-6 w-6 text-blue-600 hover:bg-blue-50'
-                      asChild
-                    >
-                      <a
-                        href={`${(
-                          process.env.NEXT_PUBLIC_API_URL ||
-                          'http://localhost:8000'
-                        ).replace('/api', '')}/storage/${
-                          project.order_produksi[project.order_produksi.length - 1]
-                            .file
-                        }`}
-                        target='_blank'
-                        rel='noopener noreferrer'
+          )}
+          <CardHeader className='pb-3 flex flex-row items-center justify-between gap-3'>
+            <button
+              className='flex items-center gap-3 flex-1 text-left'
+              onClick={() => setIsOrderCollapsed((v) => !v)}
+            >
+              <div
+                className={`h-8 w-8 rounded-full flex items-center justify-center font-bold ${
+                  flowSteps[0].isActive
+                    ? 'bg-orange-100 text-orange-600'
+                    : 'bg-neutral-200 text-neutral-500'
+                }`}
+              >
+                1
+              </div>
+              <div className='flex-1'>
+                <CardTitle className='text-base text-neutral-800'>
+                  Order Produksi
+                </CardTitle>
+                <p className='text-[10px] text-muted-foreground uppercase tracking-wider'>
+                  Production Order
+                </p>
+              </div>
+              <ChevronDown
+                className={`h-4 w-4 text-neutral-400 transition-transform duration-200 mr-1 ${
+                  isOrderCollapsed ? '-rotate-90' : ''
+                }`}
+              />
+            </button>
+          </CardHeader>
+          {!isOrderCollapsed && (
+            <CardContent>
+              {latestOrderProduksi ? (
+                <div className='space-y-2'>
+                  <div className='p-3 rounded-xl bg-orange-50/80 border border-orange-100 flex items-center justify-between shadow-sm'>
+                    <div className='flex items-center gap-3'>
+                      <div className='h-8 w-8 rounded-lg bg-white shadow-sm border border-orange-100 flex items-center justify-center text-orange-600'>
+                        <FileText className='h-4 w-4' />
+                      </div>
+                      <div>
+                        <p className='text-xs font-bold text-orange-900'>
+                          Order Produksi
+                        </p>
+                        <p className='text-[10px] text-orange-600/80'>
+                          Target:{" "}
+                          {latestOrderProduksi.target_selesai
+                            ? format(new Date(latestOrderProduksi.target_selesai), 'MMM d, yyyy')
+                            : '-'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className='flex items-center gap-2'>
+                      <Button
+                        variant='ghost'
+                        size='icon'
+                        className='h-8 w-8 text-orange-600 hover:bg-orange-200 bg-white shadow-sm border border-orange-100'
+                        asChild
                       >
-                        <Eye className='h-3.5 w-3.5' />
-                      </a>
-                    </Button>
-                    <p className='font-bold text-blue-600'>
-                      {format(
-                        new Date(
-                          project.order_produksi[
-                            project.order_produksi.length - 1
-                          ].target_selesai!
-                        ),
-                        'MMM d, yyyy'
-                      )}
-                    </p>
-                  </>
-                ) : (
-                  <p className='font-bold text-blue-600'>-</p>
-                )}
-              </div>
-            </div>
-            <div className='space-y-1'>
-              <Label className='text-[10px] text-muted-foreground uppercase'>
-                Persentase per SPK
-              </Label>
-              <div className='flex items-center gap-3'>
-                <div className='flex-1 max-w-[100px]'>
-                  <Progress
-                    value={project.progres_produksi || 0}
-                    className='h-2 bg-neutral-100'
-                    indicatorClassName='bg-blue-600'
-                  />
+                        <a
+                          href={`${(
+                            process.env.NEXT_PUBLIC_API_URL ||
+                            'http://localhost:8000'
+                          ).replace('/api', '')}/storage/${latestOrderProduksi.file}`}
+                          target='_blank'
+                          rel='noopener noreferrer'
+                        >
+                          <FileDown className='h-4 w-4' />
+                        </a>
+                      </Button>
+                    </div>
+                  </div>
                 </div>
-                <span className='text-sm font-bold text-neutral-900'>
-                  {Number(project.progres_produksi || 0).toFixed(2)}%
-                </span>
-              </div>
+              ) : (
+                <p className='text-xs text-muted-foreground italic'>
+                  Belum ada Order Produksi.
+                </p>
+              )}
+            </CardContent>
+          )}
+        </Card>
+
+        {/* 2. PROGRESS PRODUKSI SECTION */}
+        <Card
+          className={`relative border shadow-sm transition-all duration-300 ${
+            (project.progres_produksi || 0) >= 100
+              ? 'border-emerald-200 bg-white ring-1 ring-emerald-100'
+              : 'border-blue-200 bg-white ring-1 ring-blue-100'
+          }`}
+        >
+          {(project.progres_produksi || 0) >= 100 && (
+            <div className="absolute -top-1.5 -right-1.5 h-5 w-5 bg-emerald-500 rounded-full flex items-center justify-center shadow-sm z-10 animate-in zoom-in duration-300">
+              <CheckCircle2 className="h-3 w-3 text-white" />
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          )}
+          <CardHeader className='pb-3 flex flex-row items-center justify-between gap-3'>
+            <button
+              className='flex items-center gap-3 flex-1 text-left'
+              onClick={() => setIsProgressCollapsed((v) => !v)}
+            >
+              <div
+                className={`h-8 w-8 rounded-full flex items-center justify-center font-bold bg-blue-100 text-blue-600`}
+              >
+                2
+              </div>
+              <div className='flex-1'>
+                <CardTitle className='text-base text-neutral-800'>
+                  Progress Produksi
+                </CardTitle>
+                <p className='text-[10px] text-muted-foreground uppercase tracking-wider'>
+                  Production Progress
+                </p>
+              </div>
+              <ChevronDown
+                className={`h-4 w-4 text-neutral-400 transition-transform duration-200 mr-1 ${
+                  isProgressCollapsed ? '-rotate-90' : ''
+                }`}
+              />
+            </button>
+          </CardHeader>
+          {!isProgressCollapsed && (
+            <CardContent className='pt-0'>
+              <div className='h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden mt-4'>
+                <div className='h-full bg-blue-600 transition-all duration-500' style={{ width: `${project.progres_produksi || 0}%` }} />
+              </div>
+              <div className='flex justify-between items-center mt-1'>
+                <p className='text-[10px] font-bold text-neutral-700'>Persentase per SPK</p>
+                <p className='text-[10px] font-bold text-blue-600'>{Number(project.progres_produksi || 0).toFixed(2)}%</p>
+              </div>
+            </CardContent>
+          )}
+        </Card>
+      </div>
 
       {/* Items Table Section */}
       <div className='space-y-4 pt-4 border-t'>
@@ -521,24 +701,37 @@ export default function ProduksiDetailPage() {
         open={isProduksiDialogOpen}
         onOpenChange={setIsProduksiDialogOpen}
       >
-        <AlertDialogContent className='max-w-2xl'>
-          <AlertDialogHeader>
-            <AlertDialogTitle className='flex items-center gap-2'>
-              <BarChart3 className='h-5 w-5 text-orange-500' />
-              Update Progress Produksi
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              Input jumlah item yang telah selesai di setiap tahapan untuk:{' '}
-              <strong>{produksiItem?.item}</strong>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className='py-4 space-y-6'>
+        <AlertDialogContent className="mb-8 flex h-[calc(70vh-2rem)] min-w-[calc(70vw-2rem)] max-w-[calc(70vw-2rem)] flex-col justify-between gap-0 p-0">
+          {/* Header */}
+          <div className="bg-white border-b px-6 py-4 flex items-center justify-between shrink-0 shadow-sm z-10">
+            <div>
+              <AlertDialogTitle className="flex items-center gap-2 text-2xl font-bold tracking-tight text-neutral-800">
+                <BarChart3 className="h-6 w-6 text-orange-500" />
+                Update Progress Produksi
+              </AlertDialogTitle>
+              <AlertDialogDescription className="text-sm text-neutral-500 mt-1">
+                Input jumlah item yang telah selesai di setiap tahapan untuk:{' '}
+                <strong>{produksiItem?.item}</strong>
+              </AlertDialogDescription>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsProduksiDialogOpen(false)}
+              className="rounded-full text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700 shrink-0 h-10 w-10"
+            >
+              <X className="w-5 h-5" />
+            </Button>
+          </div>
+
+          {/* Body */}
+          <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6">
             {/* Jumlah Order - Top Center */}
-            <div className='flex justify-center'>
-              <div className='w-1/2 space-y-2 text-center'>
-                <Label className='text-sm font-bold'>Jumlah Order</Label>
+            <div className="flex justify-center">
+              <div className="w-1/3 space-y-2 text-center">
+                <Label className="text-sm font-bold">Jumlah Order</Label>
                 <Input
-                  type='number'
+                  type="number"
                   value={produksiData.jumlah_order || 0}
                   onChange={(e) =>
                     setProduksiData({
@@ -547,24 +740,24 @@ export default function ProduksiDetailPage() {
                     })
                   }
                   disabled
-                  className='bg-neutral-50 font-bold text-center text-lg h-12'
+                  className="bg-neutral-50 font-bold text-center text-lg h-12"
                 />
               </div>
             </div>
 
             {/* Mesin Section */}
-            <div className='space-y-3'>
-              <h4 className='font-semibold text-sm text-neutral-500 uppercase tracking-wider border-b pb-2'>
+            <div className="space-y-3">
+              <h4 className="font-semibold text-sm text-neutral-500 uppercase tracking-wider border-b pb-2">
                 Mesin
               </h4>
-              <div className='grid grid-cols-2 gap-4'>
-                <div className='space-y-2'>
-                  <div className='flex items-center justify-between'>
+              <div className="grid grid-cols-4 gap-4">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
                     <Label>Cold Press</Label>
                     <Button
-                      type='button'
+                      type="button"
                       variant={skippedFields.cold_press ? 'default' : 'outline'}
-                      size='sm'
+                      size="sm"
                       className={`h-6 px-2 text-xs ${skippedFields.cold_press ? 'bg-neutral-500 hover:bg-neutral-600' : 'text-neutral-500'}`}
                       onClick={() => toggleSkipField('cold_press')}
                     >
@@ -572,7 +765,7 @@ export default function ProduksiDetailPage() {
                     </Button>
                   </div>
                   <Input
-                    type='number'
+                    type="number"
                     min={0}
                     max={produksiData.jumlah_order}
                     disabled={skippedFields.cold_press}
@@ -586,13 +779,13 @@ export default function ProduksiDetailPage() {
                     className={skippedFields.cold_press ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100' : ''}
                   />
                 </div>
-                <div className='space-y-2'>
-                  <div className='flex items-center justify-between'>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
                     <Label>Running Saw</Label>
                     <Button
-                      type='button'
+                      type="button"
                       variant={skippedFields.running_saw ? 'default' : 'outline'}
-                      size='sm'
+                      size="sm"
                       className={`h-6 px-2 text-xs ${skippedFields.running_saw ? 'bg-neutral-500 hover:bg-neutral-600' : 'text-neutral-500'}`}
                       onClick={() => toggleSkipField('running_saw')}
                     >
@@ -600,7 +793,7 @@ export default function ProduksiDetailPage() {
                     </Button>
                   </div>
                   <Input
-                    type='number'
+                    type="number"
                     min={0}
                     max={produksiData.jumlah_order}
                     disabled={skippedFields.running_saw}
@@ -614,13 +807,13 @@ export default function ProduksiDetailPage() {
                     className={skippedFields.running_saw ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100' : ''}
                   />
                 </div>
-                <div className='space-y-2'>
-                  <div className='flex items-center justify-between'>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
                     <Label>Edging</Label>
                     <Button
-                      type='button'
+                      type="button"
                       variant={skippedFields.edging ? 'default' : 'outline'}
-                      size='sm'
+                      size="sm"
                       className={`h-6 px-2 text-xs ${skippedFields.edging ? 'bg-neutral-500 hover:bg-neutral-600' : 'text-neutral-500'}`}
                       onClick={() => toggleSkipField('edging')}
                     >
@@ -628,7 +821,7 @@ export default function ProduksiDetailPage() {
                     </Button>
                   </div>
                   <Input
-                    type='number'
+                    type="number"
                     min={0}
                     max={produksiData.jumlah_order}
                     disabled={skippedFields.edging}
@@ -642,13 +835,13 @@ export default function ProduksiDetailPage() {
                     className={skippedFields.edging ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100' : ''}
                   />
                 </div>
-                <div className='space-y-2'>
-                  <div className='flex items-center justify-between'>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
                     <Label>CNC</Label>
                     <Button
-                      type='button'
+                      type="button"
                       variant={skippedFields.cnc ? 'default' : 'outline'}
-                      size='sm'
+                      size="sm"
                       className={`h-6 px-2 text-xs ${skippedFields.cnc ? 'bg-neutral-500 hover:bg-neutral-600' : 'text-neutral-500'}`}
                       onClick={() => toggleSkipField('cnc')}
                     >
@@ -656,7 +849,7 @@ export default function ProduksiDetailPage() {
                     </Button>
                   </div>
                   <Input
-                    type='number'
+                    type="number"
                     min={0}
                     max={produksiData.jumlah_order}
                     disabled={skippedFields.cnc}
@@ -674,18 +867,18 @@ export default function ProduksiDetailPage() {
             </div>
 
             {/* Manual Section */}
-            <div className='space-y-3'>
-              <h4 className='font-semibold text-sm text-neutral-500 uppercase tracking-wider border-b pb-2'>
+            <div className="space-y-3">
+              <h4 className="font-semibold text-sm text-neutral-500 uppercase tracking-wider border-b pb-2">
                 Manual
               </h4>
-              <div className='grid grid-cols-2 md:grid-cols-2 gap-4'>
-                <div className='space-y-2'>
-                  <div className='flex items-center justify-between'>
+              <div className="grid grid-cols-4 gap-4">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
                     <Label>Tukang Kayu</Label>
                     <Button
-                      type='button'
+                      type="button"
                       variant={skippedFields.tukang_kayu ? 'default' : 'outline'}
-                      size='sm'
+                      size="sm"
                       className={`h-6 px-2 text-xs ${skippedFields.tukang_kayu ? 'bg-neutral-500 hover:bg-neutral-600' : 'text-neutral-500'}`}
                       onClick={() => toggleSkipField('tukang_kayu')}
                     >
@@ -693,7 +886,7 @@ export default function ProduksiDetailPage() {
                     </Button>
                   </div>
                   <Input
-                    type='number'
+                    type="number"
                     min={0}
                     max={produksiData.jumlah_order}
                     disabled={skippedFields.tukang_kayu}
@@ -707,13 +900,13 @@ export default function ProduksiDetailPage() {
                     className={skippedFields.tukang_kayu ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100' : ''}
                   />
                 </div>
-                <div className='space-y-2'>
-                  <div className='flex items-center justify-between'>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
                     <Label>Tukang Jok</Label>
                     <Button
-                      type='button'
+                      type="button"
                       variant={skippedFields.tukang_jok ? 'default' : 'outline'}
-                      size='sm'
+                      size="sm"
                       className={`h-6 px-2 text-xs ${skippedFields.tukang_jok ? 'bg-neutral-500 hover:bg-neutral-600' : 'text-neutral-500'}`}
                       onClick={() => toggleSkipField('tukang_jok')}
                     >
@@ -721,7 +914,7 @@ export default function ProduksiDetailPage() {
                     </Button>
                   </div>
                   <Input
-                    type='number'
+                    type="number"
                     min={0}
                     max={produksiData.jumlah_order}
                     disabled={skippedFields.tukang_jok}
@@ -735,13 +928,13 @@ export default function ProduksiDetailPage() {
                     className={skippedFields.tukang_jok ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100' : ''}
                   />
                 </div>
-                <div className='space-y-2'>
-                  <div className='flex items-center justify-between'>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
                     <Label>Rakit</Label>
                     <Button
-                      type='button'
+                      type="button"
                       variant={skippedFields.rakit ? 'default' : 'outline'}
-                      size='sm'
+                      size="sm"
                       className={`h-6 px-2 text-xs ${skippedFields.rakit ? 'bg-neutral-500 hover:bg-neutral-600' : 'text-neutral-500'}`}
                       onClick={() => toggleSkipField('rakit')}
                     >
@@ -749,7 +942,7 @@ export default function ProduksiDetailPage() {
                     </Button>
                   </div>
                   <Input
-                    type='number'
+                    type="number"
                     min={0}
                     max={produksiData.jumlah_order}
                     disabled={skippedFields.rakit}
@@ -763,13 +956,13 @@ export default function ProduksiDetailPage() {
                     className={skippedFields.rakit ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100' : ''}
                   />
                 </div>
-                <div className='space-y-2'>
-                  <div className='flex items-center justify-between'>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
                     <Label>Finishing</Label>
                     <Button
-                      type='button'
+                      type="button"
                       variant={skippedFields.finishing ? 'default' : 'outline'}
-                      size='sm'
+                      size="sm"
                       className={`h-6 px-2 text-xs ${skippedFields.finishing ? 'bg-neutral-500 hover:bg-neutral-600' : 'text-neutral-500'}`}
                       onClick={() => toggleSkipField('finishing')}
                     >
@@ -777,7 +970,7 @@ export default function ProduksiDetailPage() {
                     </Button>
                   </div>
                   <Input
-                    type='number'
+                    type="number"
                     min={0}
                     max={produksiData.jumlah_order}
                     disabled={skippedFields.finishing}
@@ -794,40 +987,60 @@ export default function ProduksiDetailPage() {
               </div>
             </div>
 
-            {/* Persen Section */}
-            <div className='pt-2 border-t'>
-              <div className='space-y-2 max-w-[200px] mx-auto text-center'>
-                <Label className='text-sm font-bold'>Persen (%)</Label>
+            {/* Menggunakan Stok & Persen Section */}
+            <div className="pt-4 border-t flex justify-center gap-8">
+              <div className="space-y-2 w-[200px] text-center">
+                <Label className="text-sm font-bold">Menggunakan Stok</Label>
                 <Input
-                  type='text'
+                  type="number"
+                  min={0}
+                  max={produksiData.jumlah_order}
+                  value={produksiData.menggunakan_stok === 0 ? '' : produksiData.menggunakan_stok || ''}
+                  onChange={(e) =>
+                    setProduksiData({
+                      ...produksiData,
+                      menggunakan_stok: Math.min(Math.max(parseInt(e.target.value) || 0, 0), produksiData.jumlah_order ?? 0),
+                    })
+                  }
+                  className="font-bold text-center text-lg h-12"
+                />
+              </div>
+              <div className="space-y-2 w-[200px] text-center">
+                <Label className="text-sm font-bold">Persen (%)</Label>
+                <Input
+                  type="text"
                   value={
                     typeof produksiData.persen === 'number'
                       ? produksiData.persen.toFixed(2)
                       : (Number(produksiData.persen) || 0).toFixed(2)
                   }
                   disabled
-                  className='bg-orange-50 font-bold text-orange-700 text-center text-lg h-12 disabled:opacity-100'
+                  className="bg-orange-50 font-bold text-orange-700 text-center text-lg h-12 disabled:opacity-100"
                 />
               </div>
             </div>
           </div>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setIsProduksiDialogOpen(false)}>
+          
+          <div className="bg-white border-t px-6 py-4 flex items-center justify-end gap-4 shrink-0 shadow-[0_-4px_6px_-1px_rgb(0,0,0,0.05)] z-10">
+            <AlertDialogCancel
+              onClick={() => setIsProduksiDialogOpen(false)}
+              className="px-6 rounded-full font-medium"
+            >
               Cancel
             </AlertDialogCancel>
             <Button
-              className='bg-orange-600 hover:bg-orange-700'
+              className="bg-orange-600 hover:bg-orange-700 text-white rounded-full px-6"
               onClick={handleProduksiUpdate}
               disabled={updateProduksiMutation.isPending}
             >
               {updateProduksiMutation.isPending ? (
-                <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
               ) : (
-                <CheckCircle2 className='mr-2 h-4 w-4' />
+                <CheckCircle2 className="w-4 h-4 mr-2" />
               )}
               Update Progress
             </Button>
-          </AlertDialogFooter>
+          </div>
         </AlertDialogContent>
       </AlertDialog>
     </div>

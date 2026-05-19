@@ -64,6 +64,7 @@ export interface ProjectV2 {
         file: string | null;
         spk_signed_file: string | null;
         spk_status: string | null;
+        tanggal_masuk: string | null;
         created_at: string;
     };
     list_furnitur?: {
@@ -80,6 +81,7 @@ export interface ProjectV2 {
         target_selesai: string | null;
         status: string;
         created_at: string;
+        tertanda_tangan_lengkap?: number;
     }>;
     order_produksi?: Array<{
         id: number;
@@ -207,6 +209,11 @@ export const projectV2Service = {
         return data;
     },
 
+    createDesigner: async (payload: { name: string; email: string; divisi_id: number }) => {
+        const { data } = await apiClient.post<any>('/designers', payload);
+        return data;
+    },
+
     // Project Items V2
     getProjectItems: async (projectId: number) => {
         const { data } = await apiClient.get<ProjectItemV2[]>(`/projects-v2/${projectId}/items`);
@@ -219,7 +226,10 @@ export const projectV2Service = {
     },
 
     updateProjectItem: async (id: number, payload: any) => {
-        const { data } = await apiClient.put<ProjectItemV2>(`/projects-v2-items/${id}`, payload);
+        const { data } = await apiClient.post<ProjectItemV2>(`/projects-v2-items/${id}`, {
+            ...payload,
+            _method: 'PUT',
+        });
         return data;
     },
 
@@ -297,22 +307,24 @@ export const projectV2Service = {
         return data;
     },
 
-    uploadSPK: async (projectId: number, file: File, nomor_spk: string, deadline?: string, prioritas?: string) => {
+    uploadSPK: async (projectId: number, file: File, nomor_spk: string, deadline?: string, prioritas?: string, tanggal_masuk?: string) => {
         const formData = new FormData();
         formData.append('file', file);
         formData.append('nomor_spk', nomor_spk);
         if (deadline) formData.append('deadline', deadline);
         if (prioritas) formData.append('prioritas', prioritas);
+        if (tanggal_masuk) formData.append('tanggal_masuk', tanggal_masuk);
         const { data } = await apiClient.post(`/projects-v2/${projectId}/upload-spk`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
         return data;
     },
 
-    approveSPK: async (projectId: number, file: File, deadline?: string) => {
+    approveSPK: async (projectId: number, file: File, deadline?: string, tanggal_masuk?: string) => {
         const formData = new FormData();
         formData.append('spk_signed_file', file);
         if (deadline) formData.append('deadline', deadline);
+        if (tanggal_masuk) formData.append('tanggal_masuk', tanggal_masuk);
         const { data } = await apiClient.post(`/projects-v2/${projectId}/approve-spk`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
@@ -324,6 +336,15 @@ export const projectV2Service = {
         formData.append('file', file);
         formData.append('target_selesai', target_selesai);
         const { data } = await apiClient.post(`/projects-v2/${projectId}/upload-order-gambar-kerja`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        return data;
+    },
+
+    uploadSignedOrderGambarKerja: async (projectId: number, file: File) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        const { data } = await apiClient.post(`/projects-v2/${projectId}/upload-signed-order-gambar-kerja`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
         return data;
@@ -424,10 +445,9 @@ export const projectV2Service = {
     },
 
     updateProjectItemDivisi: async (itemId: number, divisiId: number) => {
-        const { data } = await apiClient.put<ProjectItemV2>(`/projects-v2-items/${itemId}`, { 
+        const { data } = await apiClient.post<ProjectItemV2>(`/projects-v2-items/${itemId}`, { 
             divisi_id: divisiId,
-            // we need to send other required fields too if the backend validation requires them
-            // but for now let's see if partial update works or if I need to fetch the item first
+            _method: 'PUT'
         });
         return data;
     },
@@ -444,8 +464,9 @@ export const projectV2Service = {
     },
 
     updateProjectItemPic: async (itemId: number, picId: number) => {
-        const { data } = await apiClient.put<ProjectItemV2>(`/projects-v2-items/${itemId}`, { 
+        const { data } = await apiClient.post<ProjectItemV2>(`/projects-v2-items/${itemId}`, { 
             pic_engineer_id: picId,
+            _method: 'PUT'
         });
         return data;
     },
@@ -698,6 +719,7 @@ export interface Produksi {
     id: number;
     project_item_id: number;
     jumlah_order: number;
+    menggunakan_stok?: number;
     cold_press: number;
     running_saw: number;
     edging: number;
