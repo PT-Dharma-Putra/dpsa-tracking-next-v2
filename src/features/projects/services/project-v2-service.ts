@@ -81,6 +81,7 @@ export interface ProjectV2 {
         target_selesai: string | null;
         status: string;
         created_at: string;
+        tertanda_tangan_lengkap?: number;
     }>;
     order_produksi?: Array<{
         id: number;
@@ -335,6 +336,15 @@ export const projectV2Service = {
         formData.append('file', file);
         formData.append('target_selesai', target_selesai);
         const { data } = await apiClient.post(`/projects-v2/${projectId}/upload-order-gambar-kerja`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        return data;
+    },
+
+    uploadSignedOrderGambarKerja: async (projectId: number, file: File) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        const { data } = await apiClient.post(`/projects-v2/${projectId}/upload-signed-order-gambar-kerja`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
         return data;

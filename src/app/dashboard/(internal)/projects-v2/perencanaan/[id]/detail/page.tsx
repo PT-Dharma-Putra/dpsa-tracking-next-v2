@@ -1031,7 +1031,7 @@ export default function PerencanaanDetailPage() {
                     <div className='flex items-center gap-2 mb-1 p-2 bg-blue-50/80 rounded-md border border-blue-100 min-w-0'>
                       <FileText className='h-3.5 w-3.5 text-blue-600 shrink-0' />
                       <a 
-                        href={`http://localhost:8000/storage/${project.order_produksi[project.order_produksi.length - 1].file}`}
+                        href={`${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '')}/storage/${project.order_produksi[project.order_produksi.length - 1].file}`}
                         target='_blank'
                         rel='noopener noreferrer'
                         className='text-[10px] text-blue-700 hover:underline font-medium truncate flex-1 min-w-0'

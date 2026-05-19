@@ -304,6 +304,33 @@ export default function EngineerDetailPage() {
         }
     })
 
+    // Signed Order Gambar Kerja State
+    const [isSignedOrderGkDialogOpen, setIsSignedOrderGkDialogOpen] = React.useState(false)
+    const [signedOrderGkFile, setSignedOrderGkFile] = React.useState<File | null>(null)
+
+    const uploadSignedOrderGkMutation = useMutation({
+        mutationFn: (file: File) => 
+            projectV2Service.uploadSignedOrderGambarKerja(projectId, file),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["projects-v2", projectId] })
+            toast.success("Order Gambar Kerja Tertanda Tangan berhasil diupload")
+            setIsSignedOrderGkDialogOpen(false)
+            setSignedOrderGkFile(null)
+        },
+        onError: (err: any) => {
+            const errorMsg = err.response?.data?.message || "Gagal mengupload Order Gambar Kerja Tertanda Tangan"
+            toast.error(errorMsg)
+        }
+    })
+
+    const handleSignedOrderGkUpload = () => {
+        if (!signedOrderGkFile) {
+            toast.error("File Order Gambar Kerja harus dipilih")
+            return
+        }
+        uploadSignedOrderGkMutation.mutate(signedOrderGkFile)
+    }
+
     const handleGkUpload = () => {
         if (!gkItem) return
         uploadGkMutation.mutate({
@@ -549,43 +576,55 @@ export default function EngineerDetailPage() {
                     {!isSpdCollapsed && (
                         <CardContent>
                             {orderGk?.file ? (
-                                <div className='p-3 rounded-xl bg-orange-50/80 border border-orange-100 flex items-center justify-between shadow-sm'>
-                                    <div className='flex items-center gap-3'>
-                                        <div className='h-8 w-8 rounded-lg bg-white shadow-sm border border-orange-100 flex items-center justify-center text-orange-600'>
-                                            <FileText className='h-4 w-4' />
+                                <div className='space-y-2'>
+                                    <div className='p-3 rounded-xl bg-orange-50/80 border border-orange-100 flex items-center justify-between shadow-sm'>
+                                        <div className='flex items-center gap-3'>
+                                            <div className='h-8 w-8 rounded-lg bg-white shadow-sm border border-orange-100 flex items-center justify-center text-orange-600'>
+                                                <FileText className='h-4 w-4' />
+                                            </div>
+                                            <div>
+                                                <p className='text-xs font-bold text-orange-900'>
+                                                    Order Drawing
+                                                </p>
+                                                <p className='text-[10px] text-orange-600/80'>
+                                                    Target:{" "}
+                                                    {format(
+                                                        new Date(orderGk.created_at),
+                                                        'MMM d, yyyy'
+                                                    )}
+                                                </p>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <p className='text-xs font-bold text-orange-900'>
-                                                Order Drawing
-                                            </p>
-                                            <p className='text-[10px] text-orange-600/80'>
-                                                Target:{" "}
-                                                {format(
-                                                    new Date(orderGk.created_at),
-                                                    'MMM d, yyyy'
-                                                )}
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div className='flex items-center gap-2'>
-                                        <Button
-                                            variant='ghost'
-                                            size='icon'
-                                            className='h-8 w-8 text-orange-600 hover:bg-orange-200 bg-white shadow-sm border border-orange-100'
-                                            asChild
-                                        >
-                                            <a
-                                                href={`${(
-                                                    process.env.NEXT_PUBLIC_API_URL ||
-                                                    'http://localhost:8000'
-                                                ).replace('/api', '')}/storage/${orderGk.file}`}
-                                                target='_blank'
-                                                rel='noopener noreferrer'
+                                        <div className='flex items-center gap-2'>
+                                            <Button
+                                                variant='ghost'
+                                                size='icon'
+                                                className='h-8 w-8 text-orange-600 hover:bg-orange-200 bg-white shadow-sm border border-orange-100'
+                                                asChild
                                             >
-                                                <FileDown className='h-4 w-4' />
-                                            </a>
-                                        </Button>
+                                                <a
+                                                    href={`${(
+                                                        process.env.NEXT_PUBLIC_API_URL ||
+                                                        'http://localhost:8000'
+                                                    ).replace('/api', '')}/storage/${orderGk.file}`}
+                                                    target='_blank'
+                                                    rel='noopener noreferrer'
+                                                >
+                                                    <FileDown className='h-4 w-4' />
+                                                </a>
+                                            </Button>
+                                        </div>
                                     </div>
+                                    <Button 
+                                        variant='outline' 
+                                        size='sm' 
+                                        className='w-full h-7 text-[10px] text-orange-600 border-orange-200 hover:bg-orange-50 gap-2 font-bold'
+                                        onClick={() => setIsSignedOrderGkDialogOpen(true)}
+                                    >
+                                        <Upload className='h-3.5 w-3.5' />
+                                        {orderGk?.tertanda_tangan_lengkap === 1 ? 'Re-upload' : 'Upload'} Order Gambar Tertanda Tangan Engineer
+                                        {orderGk?.tertanda_tangan_lengkap === 1 && <Check className="h-3 w-3 text-emerald-600 ml-auto animate-in zoom-in" />}
+                                    </Button>
                                 </div>
                             ) : (
                                 <p className='text-xs text-muted-foreground italic'>
@@ -1005,6 +1044,47 @@ export default function EngineerDetailPage() {
                         >
                             {uploadGkMutation.isPending && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
                             Save Drawings
+                        </Button>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Signed Order Gambar Kerja Dialog */}
+            <AlertDialog open={isSignedOrderGkDialogOpen} onOpenChange={setIsSignedOrderGkDialogOpen}>
+                <AlertDialogContent className='max-w-md'>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className='flex items-center gap-2'>
+                            <Upload className='h-5 w-5 text-orange-500' />
+                            Upload Order Gambar Tertanda Tangan
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Upload file Order Gambar Kerja yang sudah ditandatangani oleh Engineer.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <div className='grid gap-4 py-4'>
+                        <div className='space-y-2'>
+                            <Label>File Order Gambar</Label>
+                            <Input 
+                                type='file' 
+                                accept='.pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx'
+                                onChange={(e) => {
+                                    if (e.target.files && e.target.files[0]) {
+                                        setSignedOrderGkFile(e.target.files[0])
+                                    }
+                                }}
+                                className='text-xs'
+                            />
+                        </div>
+                    </div>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => setIsSignedOrderGkDialogOpen(false)}>Cancel</AlertDialogCancel>
+                        <Button 
+                            className='bg-orange-600 hover:bg-orange-700'
+                            onClick={handleSignedOrderGkUpload}
+                            disabled={uploadSignedOrderGkMutation.isPending}
+                        >
+                            {uploadSignedOrderGkMutation.isPending && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
+                            Submit
                         </Button>
                     </AlertDialogFooter>
                 </AlertDialogContent>
