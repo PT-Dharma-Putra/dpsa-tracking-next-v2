@@ -77,6 +77,15 @@ export default function ProduksiDetailPage() {
   const [skippedFields, setSkippedFields] = React.useState<Record<string, boolean>>({});
   const [isOrderCollapsed, setIsOrderCollapsed] = React.useState(false);
   const [isProgressCollapsed, setIsProgressCollapsed] = React.useState(false);
+  
+  // QC View State
+  const [isQcViewOpen, setIsQcViewOpen] = React.useState(false);
+  const [qcViewItem, setQcViewItem] = React.useState<ProjectItemV2 | null>(null);
+
+  const openQcView = (item: ProjectItemV2) => {
+    setQcViewItem(item);
+    setIsQcViewOpen(true);
+  };
 
   const toggleSkipField = (field: string) => {
     setSkippedFields((prev) => ({ ...prev, [field]: !prev[field] }));
@@ -520,13 +529,14 @@ export default function ProduksiDetailPage() {
                 <TableHead>PO Divisi</TableHead>
                 <TableHead>Stok Material</TableHead>
                 <TableHead>Persentase Produksi</TableHead>
+                <TableHead>QC Cek</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoadingItems ? (
                 <TableRow>
                   <TableCell
-                    colSpan={14}
+                    colSpan={15}
                     className='h-32 text-center text-muted-foreground'
                   >
                     <Loader2 className='h-6 w-6 animate-spin mx-auto' />
@@ -535,7 +545,7 @@ export default function ProduksiDetailPage() {
               ) : items?.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={14}
+                    colSpan={15}
                     className='h-32 text-center text-muted-foreground'
                   >
                     No items recorded for this project.
@@ -682,6 +692,42 @@ export default function ProduksiDetailPage() {
                           className='h-1.5 bg-neutral-100'
                           indicatorClassName='bg-blue-600'
                         />
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div
+                        className='cursor-pointer hover:bg-neutral-100 p-2 rounded-lg transition-colors group flex items-center gap-2'
+                        onClick={() => openQcView(item)}
+                      >
+                        {item.qc_cek ? (
+                          <>
+                            <span className='text-[10px] font-bold text-neutral-600'>
+                              {item.qc_cek.qty} Unit
+                            </span>
+                            {item.qc_cek.file && (
+                              <Button
+                                variant='ghost'
+                                size='icon'
+                                className='h-6 w-6 text-blue-600'
+                                asChild
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <a
+                                  href={`${(
+                                    process.env.NEXT_PUBLIC_API_URL ||
+                                    'http://localhost:8000'
+                                  ).replace('/api', '')}/storage/${item.qc_cek.file}`}
+                                  target='_blank'
+                                  rel='noopener noreferrer'
+                                >
+                                  <Eye className='h-3.5 w-3.5' />
+                                </a>
+                              </Button>
+                            )}
+                          </>
+                        ) : (
+                          <span className='text-[10px] text-muted-foreground italic'>-</span>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -1037,6 +1083,102 @@ export default function ProduksiDetailPage() {
               Update Progress
             </Button>
           </div>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* QC Detail Dialog (View Only) */}
+      <AlertDialog open={isQcViewOpen} onOpenChange={setIsQcViewOpen}>
+        <AlertDialogContent className='max-w-md'>
+          <AlertDialogHeader>
+            <AlertDialogTitle className='flex items-center gap-2'>
+              <ListChecks className='h-5 w-5 text-emerald-500' />
+              Detail QC Check
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Hasil pengecekan kualitas untuk: <strong>{qcViewItem?.item}</strong>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          
+          <div className='py-4 space-y-5'>
+            {/* Detail Cards/Numbers */}
+            <div className='grid grid-cols-2 gap-4'>
+              <div className='bg-neutral-50 p-3 rounded-lg border border-neutral-100'>
+                <span className='text-[10px] uppercase text-neutral-400 font-bold block'>Jumlah Checked</span>
+                <span className='text-lg font-bold text-neutral-800'>{qcViewItem?.qc_cek?.qty || 0} / {qcViewItem?.jumlah || 0} Unit</span>
+              </div>
+              <div className='bg-neutral-50 p-3 rounded-lg border border-neutral-100'>
+                <span className='text-[10px] uppercase text-neutral-400 font-bold block'>Status</span>
+                <span className={`text-xs font-bold px-2 py-0.5 rounded-full inline-block mt-1 ${
+                  qcViewItem?.qc_cek?.status === 'Pass' ? 'bg-emerald-100 text-emerald-700' :
+                  qcViewItem?.qc_cek?.status === 'Repair' ? 'bg-amber-100 text-amber-700' :
+                  qcViewItem?.qc_cek?.status === 'Defect' ? 'bg-red-100 text-red-700' :
+                  'bg-neutral-100 text-neutral-700'
+                }`}>
+                  {qcViewItem?.qc_cek?.status || '-'}
+                </span>
+              </div>
+            </div>
+
+            <div className='grid grid-cols-3 gap-3 text-center'>
+              <div className='bg-amber-50/50 p-3 rounded-lg border border-amber-100'>
+                <span className='text-[10px] uppercase text-amber-600 font-bold block'>Repair</span>
+                <span className='text-lg font-black text-amber-700'>{qcViewItem?.qc_cek?.repair || 0}</span>
+              </div>
+              <div className='bg-emerald-50/50 p-3 rounded-lg border border-emerald-100'>
+                <span className='text-[10px] uppercase text-emerald-600 font-bold block'>Pass</span>
+                <span className='text-lg font-black text-emerald-700'>{qcViewItem?.qc_cek?.pass || 0}</span>
+              </div>
+              <div className='bg-red-50/50 p-3 rounded-lg border border-red-100'>
+                <span className='text-[10px] uppercase text-red-600 font-bold block'>Afkir</span>
+                <span className='text-lg font-black text-red-700'>{qcViewItem?.qc_cek?.afkir || 0}</span>
+              </div>
+            </div>
+
+            {/* Pass Rate Progress Bar */}
+            {(() => {
+              const qty = qcViewItem?.qc_cek?.qty || 1;
+              const pass = qcViewItem?.qc_cek?.pass || 0;
+              const persen = Math.min(Math.round((pass / qty) * 100), 100);
+              return (
+                <div className='bg-neutral-50 rounded-xl p-3 space-y-2 border border-neutral-100'>
+                  <div className='flex items-center justify-between'>
+                    <span className='text-xs font-semibold text-neutral-500'>Pass Rate</span>
+                    <span className={`text-sm font-bold ${
+                      persen >= 100 ? 'text-emerald-600' : persen >= 80 ? 'text-amber-600' : 'text-red-600'
+                    }`}>{persen}%</span>
+                  </div>
+                  <div className='h-2 bg-neutral-200 rounded-full overflow-hidden'>
+                    <div
+                      className={`h-full rounded-full transition-all duration-500 ${
+                        persen >= 100 ? 'bg-emerald-500' : persen >= 80 ? 'bg-amber-500' : 'bg-red-500'
+                      }`}
+                      style={{ width: `${persen}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })()}
+
+            {qcViewItem?.qc_cek?.file && (
+              <div className='space-y-1.5'>
+                <span className='text-[10px] uppercase text-neutral-400 font-bold block'>File QC</span>
+                <a 
+                  href={`${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '')}/storage/${qcViewItem.qc_cek.file}`} 
+                  target="_blank" 
+                  rel="noreferrer" 
+                  className="text-xs text-blue-600 hover:underline flex items-center gap-1"
+                >
+                  <Eye className="h-3 w-3" /> Lihat Berkas / Foto QC
+                </a>
+              </div>
+            )}
+          </div>
+          
+          <AlertDialogFooter>
+            <AlertDialogCancel className='bg-neutral-100 hover:bg-neutral-200 border-none' onClick={() => setIsQcViewOpen(false)}>
+              Tutup
+            </AlertDialogCancel>
+          </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </div>
