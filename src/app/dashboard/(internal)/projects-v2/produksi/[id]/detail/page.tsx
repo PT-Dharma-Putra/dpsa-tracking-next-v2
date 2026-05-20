@@ -87,6 +87,70 @@ export default function ProduksiDetailPage() {
     setIsQcViewOpen(true);
   };
 
+  // Barang Jadi Masuk State
+  const [isBjDialogOpen, setIsBjDialogOpen] = React.useState(false);
+  const [bjItem, setBjItem] = React.useState<ProjectItemV2 | null>(null);
+  const [bjTanggal, setBjTanggal] = React.useState<string>(
+    format(new Date(), 'yyyy-MM-dd')
+  );
+  const [bjJumlah, setBjJumlah] = React.useState<number>(0);
+  const [bjFile, setBjFile] = React.useState<File | null>(null);
+
+  const updateBjMutation = useMutation({
+    mutationFn: (payload: { tanggal: string; jumlah: number; file?: File | null }) =>
+      projectV2Service.updateBarangJadiMasuk(bjItem!.id, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['project-v2-items', projectId],
+      });
+      queryClient.invalidateQueries({ queryKey: ['projects-v2', projectId] });
+      toast.success('Barang Masuk recorded');
+      setIsBjDialogOpen(false);
+      setBjJumlah(0);
+      setBjFile(null);
+    },
+    onError: () => {
+      toast.error('Failed to record Barang Masuk');
+    },
+  });
+
+  const handleBjUpdate = () => {
+    if (!bjItem) return;
+
+    const currentTotal =
+      bjItem.barang_jadi_masuk?.reduce((sum, bj) => sum + bj.jumlah, 0) || 0;
+    if (currentTotal + bjJumlah > bjItem.jumlah) {
+      toast.error(
+        `Total barang (${
+          currentTotal + bjJumlah
+        }) tidak boleh melebihi jumlah order (${bjItem.jumlah})`
+      );
+      return;
+    }
+
+    updateBjMutation.mutate({
+      tanggal: bjTanggal,
+      jumlah: bjJumlah,
+      file: bjFile,
+    });
+  };
+
+  const openBjDialog = (item: ProjectItemV2) => {
+    setBjItem(item);
+    setBjJumlah(0);
+    setBjFile(null);
+    setIsBjDialogOpen(true);
+  };
+
+  // Packing View State (View Only)
+  const [isPackingViewOpen, setIsPackingViewOpen] = React.useState(false);
+  const [packingViewItem, setPackingViewItem] = React.useState<ProjectItemV2 | null>(null);
+
+  const openPackingView = (item: ProjectItemV2) => {
+    setPackingViewItem(item);
+    setIsPackingViewOpen(true);
+  };
+
   const toggleSkipField = (field: string) => {
     setSkippedFields((prev) => ({ ...prev, [field]: !prev[field] }));
   };
@@ -530,13 +594,15 @@ export default function ProduksiDetailPage() {
                 <TableHead>Stok Material</TableHead>
                 <TableHead>Persentase Produksi</TableHead>
                 <TableHead>QC Cek</TableHead>
+                <TableHead>Masuk</TableHead>
+                <TableHead>Packing</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoadingItems ? (
                 <TableRow>
                   <TableCell
-                    colSpan={15}
+                    colSpan={17}
                     className='h-32 text-center text-muted-foreground'
                   >
                     <Loader2 className='h-6 w-6 animate-spin mx-auto' />
@@ -545,7 +611,7 @@ export default function ProduksiDetailPage() {
               ) : items?.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={15}
+                    colSpan={17}
                     className='h-32 text-center text-muted-foreground'
                   >
                     No items recorded for this project.
@@ -727,6 +793,48 @@ export default function ProduksiDetailPage() {
                           </>
                         ) : (
                           <span className='text-[10px] text-muted-foreground italic'>-</span>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div
+                        className='cursor-pointer p-1 rounded transition-colors flex flex-col gap-0.5'
+                        onClick={() => openBjDialog(item)}
+                      >
+                        {item.barang_jadi_masuk &&
+                        item.barang_jadi_masuk.length > 0 ? (
+                          <Badge className='bg-blue-600 text-white border-none font-bold text-[10px] h-5 px-1.5 shadow-sm w-fit'>
+                            {item.barang_jadi_masuk.reduce(
+                              (sum, bj) => sum + Number(bj.jumlah),
+                              0
+                            )}{' '}
+                            / {item.jumlah}
+                          </Badge>
+                        ) : (
+                          <span className='text-[9px] text-muted-foreground italic hover:text-blue-600 transition-colors'>
+                            Record
+                          </span>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div
+                        className='cursor-pointer p-1 rounded transition-colors flex flex-col gap-0.5'
+                        onClick={() => openPackingView(item)}
+                      >
+                        {item.barang_jadi_terpacking &&
+                        item.barang_jadi_terpacking.length > 0 ? (
+                          <Badge className='bg-orange-600 text-white border-none font-bold text-[10px] h-5 px-1.5 shadow-sm w-fit'>
+                            {item.barang_jadi_terpacking.reduce(
+                              (sum, p) => sum + Number(p.jumlah),
+                              0
+                            )}{' '}
+                            / {item.jumlah}
+                          </Badge>
+                        ) : (
+                          <span className='text-[9px] text-muted-foreground italic hover:text-orange-600 transition-colors'>
+                            -
+                          </span>
                         )}
                       </div>
                     </TableCell>
@@ -1176,6 +1284,201 @@ export default function ProduksiDetailPage() {
           
           <AlertDialogFooter>
             <AlertDialogCancel className='bg-neutral-100 hover:bg-neutral-200 border-none' onClick={() => setIsQcViewOpen(false)}>
+              Tutup
+            </AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Barang Jadi Masuk Dialog */}
+      <AlertDialog open={isBjDialogOpen} onOpenChange={setIsBjDialogOpen}>
+        <AlertDialogContent className='max-w-md'>
+          <AlertDialogHeader>
+            <AlertDialogTitle className='flex items-center gap-2'>
+              <ListChecks className='h-5 w-5 text-blue-500' />
+              Record Barang Masuk Lengkap
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Catat barang yang sudah masuk lengkap untuk item:{' '}
+              <strong>{bjItem?.item}</strong>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className='grid gap-4 py-4'>
+            {bjItem?.barang_jadi_masuk &&
+              bjItem.barang_jadi_masuk.length > 0 && (
+                <div className='bg-neutral-50 rounded-lg p-3 border border-neutral-100 mb-2'>
+                  <Label className='text-[10px] uppercase text-neutral-500 font-bold mb-2 block'>
+                    Riwayat Masuk Sebelumnya
+                  </Label>
+                  <div className='space-y-2'>
+                    {bjItem.barang_jadi_masuk.map((record, i) => (
+                      <div
+                        key={i}
+                        className='flex justify-between items-center text-xs border-b border-neutral-100 last:border-0 pb-1 last:pb-0'
+                      >
+                        <span className='text-neutral-600'>
+                          {format(new Date(record.tanggal), 'dd MMM yyyy')}
+                        </span>
+                        <div className='flex items-center gap-2'>
+                          {record.file_setrim && (
+                            <a
+                              href={`${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '')}/storage/${record.file_setrim}`}
+                              target='_blank'
+                              rel='noreferrer'
+                              className='text-[10px] text-blue-600 hover:underline flex items-center gap-0.5'
+                            >
+                              <Eye className='h-3 w-3' /> File Setrim
+                            </a>
+                          )}
+                          <span className='font-bold text-blue-600'>
+                            +{record.jumlah}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                    <div className='flex justify-between text-xs pt-1 font-bold border-t border-neutral-200'>
+                      <span>Total Saat Ini</span>
+                      <span className='text-neutral-900'>
+                        {bjItem.barang_jadi_masuk.reduce(
+                          (sum, r) => sum + r.jumlah,
+                          0
+                        )}{' '}
+                        / {bjItem.jumlah}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            <div className='space-y-2'>
+              <Label>Tanggal Masuk</Label>
+              <Input
+                type='date'
+                value={bjTanggal}
+                onChange={(e) => setBjTanggal(e.target.value)}
+                className='text-xs'
+              />
+            </div>
+            <div className='space-y-2'>
+              <Label>Jumlah Barang Baru</Label>
+              <div className='flex items-center gap-4'>
+                <Input
+                  type='number'
+                  value={bjJumlah === 0 ? '' : bjJumlah}
+                  onChange={(e) => setBjJumlah(parseInt(e.target.value) || 0)}
+                  className='font-bold'
+                  max={
+                    bjItem
+                      ? bjItem.jumlah -
+                        (bjItem.barang_jadi_masuk?.reduce(
+                          (sum, bj) => sum + bj.jumlah,
+                          0
+                        ) || 0)
+                      : undefined
+                  }
+                />
+                <span className='text-sm text-muted-foreground whitespace-nowrap'>
+                  Sisa:{' '}
+                  {(bjItem?.jumlah || 0) -
+                    (bjItem?.barang_jadi_masuk?.reduce(
+                      (sum, bj) => sum + bj.jumlah,
+                      0
+                    ) || 0)}
+                </span>
+              </div>
+            </div>
+            <div className='space-y-2'>
+              <Label>File Setrim Barang Jadi</Label>
+              <Input
+                type='file'
+                onChange={(e) => setBjFile(e.target.files?.[0] || null)}
+                className='text-xs'
+              />
+            </div>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setIsBjDialogOpen(false)}>
+              Cancel
+            </AlertDialogCancel>
+            <Button
+              className='bg-blue-600 hover:bg-blue-700 text-white'
+              onClick={handleBjUpdate}
+              disabled={
+                updateBjMutation.isPending ||
+                bjJumlah < 1 ||
+                bjJumlah >
+                  (bjItem?.jumlah || 0) -
+                    (bjItem?.barang_jadi_masuk?.reduce(
+                      (sum, bj) => sum + bj.jumlah,
+                      0
+                    ) || 0)
+              }
+            >
+              {updateBjMutation.isPending ? (
+                <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+              ) : (
+                <CheckCircle2 className='mr-2 h-4 w-4' />
+              )}
+              Record Barang
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Packing Detail Dialog (View Only) */}
+      <AlertDialog open={isPackingViewOpen} onOpenChange={setIsPackingViewOpen}>
+        <AlertDialogContent className='max-w-md'>
+          <AlertDialogHeader>
+            <AlertDialogTitle className='flex items-center gap-2'>
+              <Package className='h-5 w-5 text-orange-500' />
+              Detail Packing
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Riwayat packing untuk item: <strong>{packingViewItem?.item}</strong>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          
+          <div className='py-4 space-y-4'>
+            {packingViewItem?.barang_jadi_terpacking &&
+            packingViewItem.barang_jadi_terpacking.length > 0 ? (
+              <div className='bg-neutral-50 rounded-lg p-3 border border-neutral-100'>
+                <Label className='text-[10px] uppercase text-neutral-500 font-bold mb-2 block'>
+                  Riwayat Packing
+                </Label>
+                <div className='space-y-2'>
+                  {packingViewItem.barang_jadi_terpacking.map((record, i) => (
+                    <div
+                      key={i}
+                      className='flex justify-between text-xs border-b border-neutral-100 last:border-0 pb-1 last:pb-0'
+                    >
+                      <span className='text-neutral-600'>
+                        {format(new Date(record.tanggal), 'dd MMM yyyy')}
+                      </span>
+                      <span className='font-bold text-orange-600'>
+                        +{record.jumlah}
+                      </span>
+                    </div>
+                  ))}
+                  <div className='flex justify-between text-xs pt-1 font-bold border-t border-neutral-200'>
+                    <span>Total Packed</span>
+                    <span className='text-neutral-900'>
+                      {packingViewItem.barang_jadi_terpacking.reduce(
+                        (sum, r) => sum + r.jumlah,
+                        0
+                      )}{' '}
+                      / {packingViewItem.jumlah}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <p className='text-xs text-neutral-500 italic text-center py-4'>
+                Belum ada riwayat packing untuk item ini.
+              </p>
+            )}
+          </div>
+          
+          <AlertDialogFooter>
+            <AlertDialogCancel className='bg-neutral-100 hover:bg-neutral-200 border-none' onClick={() => setIsPackingViewOpen(false)}>
               Tutup
             </AlertDialogCancel>
           </AlertDialogFooter>
