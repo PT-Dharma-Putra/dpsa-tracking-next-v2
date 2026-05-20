@@ -503,9 +503,12 @@ export const projectV2Service = {
         return data;
     },
 
-    updateQcCek: async (itemId: number, payload: { qty: number; status: string; file?: File | null }) => {
+    updateQcCek: async (itemId: number, payload: { qty: number; repair: number; pass: number; afkir: number; status: string; file?: File | null }) => {
         const formData = new FormData();
         formData.append('qty', payload.qty.toString());
+        formData.append('repair', payload.repair.toString());
+        formData.append('pass', payload.pass.toString());
+        formData.append('afkir', payload.afkir.toString());
         formData.append('status', payload.status);
         if (payload.file) formData.append('file', payload.file);
 
@@ -685,6 +688,10 @@ export interface QcCek {
     id: number;
     project_item_id: number;
     qty: number;
+    repair: number;
+    pass: number;
+    afkir: number;
+    persen: number;
     status: string;
     file: string | null;
     created_at: string;
