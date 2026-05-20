@@ -507,6 +507,7 @@ export default function ProduksiDetailPage() {
             <TableHeader className='bg-neutral-50/80'>
               <TableRow>
                 <TableHead className='w-[50px]'>#</TableHead>
+                <TableHead>Kode Barang</TableHead>
                 <TableHead>Floor</TableHead>
                 <TableHead>Room</TableHead>
                 <TableHead>Item Name</TableHead>
@@ -525,7 +526,7 @@ export default function ProduksiDetailPage() {
               {isLoadingItems ? (
                 <TableRow>
                   <TableCell
-                    colSpan={13}
+                    colSpan={14}
                     className='h-32 text-center text-muted-foreground'
                   >
                     <Loader2 className='h-6 w-6 animate-spin mx-auto' />
@@ -534,7 +535,7 @@ export default function ProduksiDetailPage() {
               ) : items?.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={13}
+                    colSpan={14}
                     className='h-32 text-center text-muted-foreground'
                   >
                     No items recorded for this project.
@@ -548,6 +549,9 @@ export default function ProduksiDetailPage() {
                   >
                     <TableCell className='text-muted-foreground font-medium'>
                       {index + 1}
+                    </TableCell>
+                    <TableCell className='text-xs font-mono text-neutral-600'>
+                      {item.mdl_item?.kode_barang || '-'}
                     </TableCell>
                     <TableCell className='text-xs font-medium'>
                       {item.lantai || '-'}
@@ -578,10 +582,7 @@ export default function ProduksiDetailPage() {
                           asChild
                         >
                           <a
-                            href={`${(
-                              process.env.NEXT_PUBLIC_API_URL ||
-                              'http://localhost:8000'
-                            ).replace('/api', '')}/storage/${
+                            href={`${
                               item.mdl_item.link_gambar_kerja
                             }`}
                             target='_blank'
@@ -609,12 +610,7 @@ export default function ProduksiDetailPage() {
                             asChild
                           >
                             <a
-                              href={`${(
-                                process.env.NEXT_PUBLIC_API_URL ||
-                                'http://localhost:8000'
-                              ).replace('/api', '')}/storage/${
-                                item.gambar_kerja.file
-                              }`}
+                              href={`${item.gambar_kerja.file}`}
                               target='_blank'
                               rel='noopener noreferrer'
                             >
