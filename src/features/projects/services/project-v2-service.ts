@@ -493,8 +493,15 @@ export const projectV2Service = {
         return data;
     },
 
-    updateBarangJadiMasuk: async (itemId: number, payload: { tanggal: string; jumlah: number }) => {
-        const { data } = await apiClient.post(`/projects-v2-items/${itemId}/barang-jadi-masuk`, payload);
+    updateBarangJadiMasuk: async (itemId: number, payload: { tanggal: string; jumlah: number; file?: File | null }) => {
+        const formData = new FormData();
+        formData.append('tanggal', payload.tanggal);
+        formData.append('jumlah', payload.jumlah.toString());
+        if (payload.file) formData.append('file_setrim', payload.file);
+
+        const { data } = await apiClient.post(`/projects-v2-items/${itemId}/barang-jadi-masuk`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
         return data;
     },
 
@@ -746,6 +753,7 @@ export interface BarangJadiMasuk {
     project_item_id: number;
     tanggal: string;
     jumlah: number;
+    file_setrim: string | null;
     created_at: string;
     updated_at: string;
 }

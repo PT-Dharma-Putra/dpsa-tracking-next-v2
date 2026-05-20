@@ -258,9 +258,10 @@ export default function PerencanaanDetailPage() {
     format(new Date(), 'yyyy-MM-dd')
   );
   const [bjJumlah, setBjJumlah] = React.useState<number>(0);
+  const [bjFile, setBjFile] = React.useState<File | null>(null);
 
   const updateBjMutation = useMutation({
-    mutationFn: (payload: { tanggal: string; jumlah: number }) =>
+    mutationFn: (payload: { tanggal: string; jumlah: number; file?: File | null }) =>
       projectV2Service.updateBarangJadiMasuk(bjItem!.id, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({
@@ -269,6 +270,7 @@ export default function PerencanaanDetailPage() {
       toast.success('Barang Masuk recorded');
       setIsBjDialogOpen(false);
       setBjJumlah(0);
+      setBjFile(null);
     },
     onError: () => {
       toast.error('Failed to record Barang Masuk');
@@ -292,12 +294,14 @@ export default function PerencanaanDetailPage() {
     updateBjMutation.mutate({
       tanggal: bjTanggal,
       jumlah: bjJumlah,
+      file: bjFile,
     });
   };
 
   const openBjDialog = (item: ProjectItemV2) => {
     setBjItem(item);
     setBjJumlah(0);
+    setBjFile(null);
     setIsBjDialogOpen(true);
   };
 
@@ -1244,7 +1248,7 @@ export default function PerencanaanDetailPage() {
                 <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>PO Divisi</TableHead>
                 <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>Gk MDL</TableHead>
                 <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>Drawing</TableHead>
-                <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>Stock</TableHead>
+                <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>Material</TableHead>
                 <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>Produksi</TableHead>
                 <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>Masuk</TableHead>
                 <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>Packing</TableHead>
@@ -1847,14 +1851,26 @@ export default function PerencanaanDetailPage() {
                     {bjItem.barang_jadi_masuk.map((record, i) => (
                       <div
                         key={i}
-                        className='flex justify-between text-xs border-b border-neutral-100 last:border-0 pb-1 last:pb-0'
+                        className='flex justify-between items-center text-xs border-b border-neutral-100 last:border-0 pb-1 last:pb-0'
                       >
                         <span className='text-neutral-600'>
                           {format(new Date(record.tanggal), 'dd MMM yyyy')}
                         </span>
-                        <span className='font-bold text-blue-600'>
-                          +{record.jumlah}
-                        </span>
+                        <div className='flex items-center gap-2'>
+                          {record.file_setrim && (
+                            <a
+                              href={`${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '')}/storage/${record.file_setrim}`}
+                              target='_blank'
+                              rel='noreferrer'
+                              className='text-[10px] text-blue-600 hover:underline flex items-center gap-0.5'
+                            >
+                              <Eye className='h-3 w-3' /> File Setrim
+                            </a>
+                          )}
+                          <span className='font-bold text-blue-600'>
+                            +{record.jumlah}
+                          </span>
+                        </div>
                       </div>
                     ))}
                     <div className='flex justify-between text-xs pt-1 font-bold border-t border-neutral-200'>
@@ -1906,6 +1922,14 @@ export default function PerencanaanDetailPage() {
                     ) || 0)}
                 </span>
               </div>
+            </div>
+            <div className='space-y-2'>
+              <Label>File Setrim Barang Jadi</Label>
+              <Input
+                type='file'
+                onChange={(e) => setBjFile(e.target.files?.[0] || null)}
+                className='text-xs'
+              />
             </div>
           </div>
           <AlertDialogFooter>
