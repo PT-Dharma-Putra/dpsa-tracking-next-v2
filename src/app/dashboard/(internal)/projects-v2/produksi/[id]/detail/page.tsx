@@ -582,10 +582,7 @@ export default function ProduksiDetailPage() {
                           asChild
                         >
                           <a
-                            href={`${(
-                              process.env.NEXT_PUBLIC_API_URL ||
-                              'http://localhost:8000'
-                            ).replace('/api', '')}/storage/${
+                            href={`${
                               item.mdl_item.link_gambar_kerja
                             }`}
                             target='_blank'
@@ -613,12 +610,7 @@ export default function ProduksiDetailPage() {
                             asChild
                           >
                             <a
-                              href={`${(
-                                process.env.NEXT_PUBLIC_API_URL ||
-                                'http://localhost:8000'
-                              ).replace('/api', '')}/storage/${
-                                item.gambar_kerja.file
-                              }`}
+                              href={`${item.gambar_kerja.file}`}
                               target='_blank'
                               rel='noopener noreferrer'
                             >
