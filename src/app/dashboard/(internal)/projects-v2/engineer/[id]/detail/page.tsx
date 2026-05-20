@@ -27,7 +27,8 @@ import {
     Info,
     FileDown,
     Check,
-    ChevronsUpDown
+    ChevronsUpDown,
+    Copy
 } from "lucide-react"
 import { format, differenceInDays } from "date-fns"
 
@@ -87,6 +88,32 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { projectV2Service, ProjectItemV2, TahapDesign, DesignProgres } from "@/features/projects/services/project-v2-service"
 import { ProjectItemFormDialog } from "../../../_components/project-item-form-dialog"
 import { Badge } from "@/components/ui/badge"
+
+function CopyableCode({ code }: { code: string }) {
+    const [copied, setCopied] = React.useState(false);
+    const handleCopy = () => {
+        navigator.clipboard.writeText(code).then(() => {
+            setCopied(true);
+            setTimeout(() => setCopied(false), 1500);
+        });
+    };
+    return (
+        <span className="inline-flex items-center gap-1 group/copy">
+            <span className="font-mono text-xs text-neutral-700">{code}</span>
+            <button
+                onClick={handleCopy}
+                title="Salin kode barang"
+                className="opacity-0 group-hover/copy:opacity-100 transition-opacity text-neutral-400 hover:text-blue-600 focus:opacity-100"
+            >
+                {copied ? (
+                    <Check className="h-3 w-3 text-emerald-500" />
+                ) : (
+                    <Copy className="h-3 w-3" />
+                )}
+            </button>
+        </span>
+    );
+}
 
 export default function EngineerDetailPage() {
     const params = useParams()
@@ -763,7 +790,11 @@ export default function EngineerDetailPage() {
                                         <TableRow key={item.id} className='group hover:bg-neutral-50/50 transition-colors'>
                                             <TableCell className='text-center font-medium text-neutral-400'>{index + 1}</TableCell>
                                             <TableCell className='text-xs text-neutral-500 font-mono'>
-                                                {item.mdl_item?.kode_barang || '-'}
+                                                {item.mdl_item?.kode_barang ? (
+                                                    <CopyableCode code={item.mdl_item.kode_barang} />
+                                                ) : (
+                                                    <span className='text-muted-foreground italic'>-</span>
+                                                )}
                                             </TableCell>
                                             <TableCell>
                                                 <div className='flex flex-col'>
