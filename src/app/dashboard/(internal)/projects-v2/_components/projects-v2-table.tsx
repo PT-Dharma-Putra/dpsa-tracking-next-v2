@@ -437,6 +437,7 @@ export function ProjectsV2Table({
                   <TableHead>Client</TableHead>
                   <TableHead>Description</TableHead>
                   <TableHead>Nomor SPK</TableHead>
+                  <TableHead>SPK Masuk</TableHead>
                   <TableHead>Nomor SPH</TableHead>
                   <TableHead>Prioritas</TableHead>
                   <TableHead
@@ -470,6 +471,7 @@ export function ProjectsV2Table({
                 <>
                   {!showEngineer && <TableHead>Client</TableHead>}
                   <TableHead>Nomor SPK</TableHead>
+                  <TableHead>SPK Masuk</TableHead>
                   {!showSPD && <TableHead>Nomor SPH</TableHead>}
                   <TableHead>Prioritas</TableHead>
                   {showPiutang && <TableHead>Progres Produksi</TableHead>}
@@ -548,7 +550,7 @@ export function ProjectsV2Table({
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={showProduksi ? 13 : (showEngineer ? 15 : 16)} className='h-32 text-center text-muted-foreground'>
+                <TableCell colSpan={showProduksi ? 14 : (showEngineer ? 16 : 17)} className='h-32 text-center text-muted-foreground'>
                   <div className='flex items-center justify-center'>
                     <Loader2 className='h-6 w-6 animate-spin text-neutral-400' />
                   </div>
@@ -557,7 +559,7 @@ export function ProjectsV2Table({
             ) : projects.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={showProduksi ? 13 : (showEngineer ? 15 : 16)}
+                  colSpan={showProduksi ? 14 : (showEngineer ? 16 : 17)}
                   className='h-32 text-center text-muted-foreground'
                 >
                   No projects found.
@@ -580,6 +582,11 @@ export function ProjectsV2Table({
                         <TableCell className='font-medium text-blue-600'>
                           {project.spk_number || project.spk?.nomor_spk || '-'}
                         </TableCell>
+                         <TableCell>
+                           {project.spk?.tanggal_masuk
+                             ? format(new Date(project.spk.tanggal_masuk), 'dd MMM yyyy')
+                             : '-'}
+                         </TableCell>
                         <TableCell>
                           {project.sph?.nomor_sph || '-'}
                         </TableCell>
@@ -711,6 +718,11 @@ export function ProjectsV2Table({
                         <TableCell className='font-medium text-blue-600'>
                           {project.spk_number || project.spk?.nomor_spk || '-'}
                         </TableCell>
+                         <TableCell>
+                           {project.spk?.tanggal_masuk
+                             ? format(new Date(project.spk.tanggal_masuk), 'dd MMM yyyy')
+                             : '-'}
+                         </TableCell>
                         {!showSPD && (
                           <TableCell>
                             {project.sph?.nomor_sph || '-'}
