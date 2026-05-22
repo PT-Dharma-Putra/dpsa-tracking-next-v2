@@ -64,6 +64,41 @@ import {
     CreatePenagihanPayload,
 } from '@/features/projects/services/penagihan-service';
 
+const formatRupiah = (value: string | number) => {
+  if (value === null || value === undefined || value === '') return '';
+  
+  if (typeof value === 'number') {
+    const rounded = Math.round(value);
+    return 'Rp ' + new Intl.NumberFormat('id-ID').format(rounded);
+  }
+  
+  if (/^-?\d+(\.\d+)?$/.test(value)) {
+    const num = parseFloat(value);
+    if (!isNaN(num)) {
+      const rounded = Math.round(num);
+      return 'Rp ' + new Intl.NumberFormat('id-ID').format(rounded);
+    }
+  }
+
+  const numberString = value.toString().replace(/[^,\d]/g, '');
+  const split = numberString.split(',');
+  const sisa = split[0].length % 3;
+  let rupiah = split[0].substr(0, sisa);
+  const ribuan = split[0].substr(sisa).match(/\d{3}/gi);
+
+  if (ribuan) {
+    const separator = sisa ? '.' : '';
+    rupiah += separator + ribuan.join('.');
+  }
+
+  rupiah = split[1] !== undefined ? rupiah + ',' + split[1] : rupiah;
+  return 'Rp ' + rupiah;
+};
+
+const parseRawNumber = (value: string) => {
+  return value.replace(/[^0-9]/g, '');
+};
+
 const STATUS_OPTIONS = ['Belum Bayar', 'Sebagian Dibayar', 'Lunas'] as const;
 
 const statusBadgeClass = (status: string) => {
@@ -72,16 +107,17 @@ const statusBadgeClass = (status: string) => {
     return 'bg-red-50 text-red-700 border-red-200';
 };
 
-const emptyForm: Omit<CreatePenagihanPayload, 'project_id'> = {
+const emptyForm = {
     termin_id: 0,
     persentase: 0,
+    nominal_penagihan: '',
     tanggal_kirim: '',
     tanggal_invoice: '',
     jatuh_tempo: '',
-    status: 'Belum Bayar',
+    status: 'Belum Bayar' as 'Belum Bayar' | 'Sebagian Dibayar' | 'Lunas',
     tanggal_dibayar: '',
     nominal_dibayar: 0,
-    file: undefined,
+    file: undefined as File | undefined,
 };
 
 export default function PiutangDetailPage() {
@@ -196,6 +232,7 @@ export default function PiutangDetailPage() {
         setForm({
             termin_id: p.termin_id,
             persentase: p.persentase,
+            nominal_penagihan: p.nominal_penagihan ? formatRupiah(p.nominal_penagihan) : '',
             tanggal_kirim: p.tanggal_kirim || '',
             tanggal_invoice: p.tanggal_invoice || '',
             jatuh_tempo: p.jatuh_tempo || '',
@@ -225,6 +262,7 @@ export default function PiutangDetailPage() {
             project_id: projectId,
             termin_id: form.termin_id,
             persentase: form.persentase,
+            nominal_penagihan: parseRawNumber(form.nominal_penagihan) || undefined,
             status: form.status,
             tanggal_kirim: form.tanggal_kirim || undefined,
             tanggal_invoice: form.tanggal_invoice || undefined,
@@ -344,6 +382,7 @@ export default function PiutangDetailPage() {
                                 <TableHead className='w-[50px]'>#</TableHead>
                                 <TableHead>Termin</TableHead>
                                 <TableHead>Persentase</TableHead>
+                                <TableHead>Nominal</TableHead>
                                 <TableHead>Tanggal Kirim</TableHead>
                                 <TableHead>Tanggal Invoice</TableHead>
                                 <TableHead>Jatuh Tempo</TableHead>
@@ -356,13 +395,13 @@ export default function PiutangDetailPage() {
                         <TableBody>
                             {isLoadingPenagihan ? (
                                 <TableRow>
-                                    <TableCell colSpan={10} className='h-32 text-center'>
+                                    <TableCell colSpan={11} className='h-32 text-center'>
                                         <Loader2 className='h-6 w-6 animate-spin mx-auto text-neutral-400' />
                                     </TableCell>
                                 </TableRow>
                             ) : penagihanList.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={10} className='h-32 text-center text-muted-foreground'>
+                                    <TableCell colSpan={11} className='h-32 text-center text-muted-foreground'>
                                         Belum ada data penagihan.
                                     </TableCell>
                                 </TableRow>
@@ -372,6 +411,9 @@ export default function PiutangDetailPage() {
                                         <TableCell className='text-muted-foreground font-medium'>{index + 1}</TableCell>
                                         <TableCell className='font-semibold'>{item.termin?.nama || '-'}</TableCell>
                                         <TableCell className='font-bold text-blue-600'>{item.persentase}%</TableCell>
+                                        <TableCell className='font-semibold text-emerald-700'>
+                                            {item.nominal_penagihan ? formatRupiah(item.nominal_penagihan) : '-'}
+                                        </TableCell>
                                         <TableCell className='text-sm'>
                                             {item.tanggal_kirim ? format(new Date(item.tanggal_kirim), 'dd MMM yyyy') : '-'}
                                         </TableCell>
@@ -483,8 +525,19 @@ export default function PiutangDetailPage() {
                                 type='number'
                                 min={0}
                                 max={100}
-                                value={form.persentase}
+                                value={form.persentase || 0}
                                 onChange={(e) => setForm((prev) => ({ ...prev, persentase: parseFloat(e.target.value) || 0 }))}
+                            />
+                        </div>
+
+                        {/* Nominal */}
+                        <div className='space-y-2'>
+                            <Label>Nominal</Label>
+                            <Input
+                                type='text'
+                                placeholder='Rp 0'
+                                value={form.nominal_penagihan || ''}
+                                onChange={(e) => setForm((prev) => ({ ...prev, nominal_penagihan: formatRupiah(e.target.value) }))}
                             />
                         </div>
 
@@ -494,7 +547,7 @@ export default function PiutangDetailPage() {
                                 <Label>Tanggal Kirim</Label>
                                 <Input
                                     type='date'
-                                    value={form.tanggal_kirim}
+                                    value={form.tanggal_kirim || ''}
                                     onChange={(e) => setForm((prev) => ({ ...prev, tanggal_kirim: e.target.value }))}
                                 />
                             </div>
@@ -504,7 +557,7 @@ export default function PiutangDetailPage() {
                                 <Label>Tanggal Invoice</Label>
                                 <Input
                                     type='date'
-                                    value={form.tanggal_invoice}
+                                    value={form.tanggal_invoice || ''}
                                     onChange={(e) => setForm((prev) => ({ ...prev, tanggal_invoice: e.target.value }))}
                                 />
                             </div>
@@ -514,7 +567,7 @@ export default function PiutangDetailPage() {
                                 <Label>Jatuh Tempo</Label>
                                 <Input
                                     type='date'
-                                    value={form.jatuh_tempo}
+                                    value={form.jatuh_tempo || ''}
                                     onChange={(e) => setForm((prev) => ({ ...prev, jatuh_tempo: e.target.value }))}
                                 />
                             </div>
@@ -549,7 +602,7 @@ export default function PiutangDetailPage() {
                                 <Input
                                     type='number'
                                     placeholder='Masukkan nominal yang sudah dibayar'
-                                    value={form.nominal_dibayar}
+                                    value={form.nominal_dibayar || 0}
                                     onChange={(e) => setForm((prev) => ({ ...prev, nominal_dibayar: parseFloat(e.target.value) || 0 }))}
                                 />
                             </div>
@@ -560,7 +613,7 @@ export default function PiutangDetailPage() {
                             <Label>Tanggal Dibayar</Label>
                             <Input
                                 type='date'
-                                value={form.tanggal_dibayar}
+                                value={form.tanggal_dibayar || ''}
                                 onChange={(e) => setForm((prev) => ({ ...prev, tanggal_dibayar: e.target.value }))}
                             />
                         </div>
