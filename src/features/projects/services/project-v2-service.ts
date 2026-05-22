@@ -18,6 +18,10 @@ export interface ProjectV2 {
         id: number;
         name: string;
     };
+    marketing?: {
+        id: number;
+        name: string;
+    } | null;
     created_at: string;
     updated_at: string;
     designs?: Array<{
@@ -61,6 +65,7 @@ export interface ProjectV2 {
     spk?: {
         id: number;
         nomor_spk?: string;
+        nominal?: string | number | null;
         file: string | null;
         spk_signed_file: string | null;
         spk_status: string | null;
@@ -320,11 +325,12 @@ export const projectV2Service = {
         return data;
     },
 
-    approveSPK: async (projectId: number, file: File, deadline?: string, tanggal_masuk?: string) => {
+    approveSPK: async (projectId: number, file: File, deadline?: string, tanggal_masuk?: string, nominal?: string) => {
         const formData = new FormData();
         formData.append('spk_signed_file', file);
         if (deadline) formData.append('deadline', deadline);
         if (tanggal_masuk) formData.append('tanggal_masuk', tanggal_masuk);
+        if (nominal) formData.append('nominal', nominal);
         const { data } = await apiClient.post(`/projects-v2/${projectId}/approve-spk`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
         });

@@ -434,6 +434,7 @@ export function ProjectsV2Table({
               <TableHead className='w-[50px]'>#</TableHead>
               {showAllDashboard ? (
                 <>
+                  <TableHead>Marketing</TableHead>
                   <TableHead>Client</TableHead>
                   <TableHead>Description</TableHead>
                   <TableHead>Nomor SPK</TableHead>
@@ -469,6 +470,7 @@ export function ProjectsV2Table({
                 </>
               ) : (
                 <>
+                  {!showEngineer && <TableHead>Marketing</TableHead>}
                   {!showEngineer && <TableHead>Client</TableHead>}
                   <TableHead>Nomor SPK</TableHead>
                   <TableHead>SPK Masuk</TableHead>
@@ -476,7 +478,7 @@ export function ProjectsV2Table({
                   <TableHead>Prioritas</TableHead>
                   {showPiutang && <TableHead>Progres Produksi</TableHead>}
                   {showPiutang && <TableHead>Total Penagihan</TableHead>}
-                  {!showProduksi && <TableHead>Description</TableHead>}
+                  {!showProduksi && !showPiutang && <TableHead>Description</TableHead>}
                 </>
               )}
               {!showAllDashboard && !showSPD && (
@@ -507,10 +509,10 @@ export function ProjectsV2Table({
                     </div>
                   </TableHead>
 
-                  {!showProduksi && <TableHead>Sisa Hari</TableHead>}
+                  {!showProduksi && !showPiutang && <TableHead>Sisa Hari</TableHead>}
                 </>
               )}
-              {!showAllDashboard && !showProduksi && <TableHead>Pakai Desain</TableHead>}
+              {!showAllDashboard && !showProduksi && !showPiutang && <TableHead>Pakai Desain</TableHead>}
               {!showAllDashboard && !showSPD && <TableHead>Jadwal Pengiriman</TableHead>}
               
               {showAllDashboard && (
@@ -550,7 +552,7 @@ export function ProjectsV2Table({
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={showProduksi ? 14 : (showEngineer ? 16 : 17)} className='h-32 text-center text-muted-foreground'>
+                <TableCell colSpan={showEngineer ? 16 : (showProduksi || showPiutang ? 15 : 18)} className='h-32 text-center text-muted-foreground'>
                   <div className='flex items-center justify-center'>
                     <Loader2 className='h-6 w-6 animate-spin text-neutral-400' />
                   </div>
@@ -559,7 +561,7 @@ export function ProjectsV2Table({
             ) : projects.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={showProduksi ? 14 : (showEngineer ? 16 : 17)}
+                  colSpan={showEngineer ? 16 : (showProduksi || showPiutang ? 15 : 18)}
                   className='h-32 text-center text-muted-foreground'
                 >
                   No projects found.
@@ -573,6 +575,7 @@ export function ProjectsV2Table({
                   </TableCell>
                    {showAllDashboard ? (
                      <>
+                        <TableCell>{project.marketing?.name || '-'}</TableCell>
                         <TableCell>{project.client?.name || '-'}</TableCell>
                         <TableCell className='max-w-[200px] truncate'>
                           {project.description || (
@@ -714,6 +717,7 @@ export function ProjectsV2Table({
                      </>
                    ) : (
                      <>
+                        {!showAllDashboard && !showEngineer && <TableCell>{project.marketing?.name || '-'}</TableCell>}
                         {!showAllDashboard && !showEngineer && <TableCell className="font-semibold">{project.client?.name || '-'}</TableCell>}
                         <TableCell className='font-medium text-blue-600'>
                           {project.spk_number || project.spk?.nomor_spk || '-'}
@@ -776,7 +780,7 @@ export function ProjectsV2Table({
                      </TableCell>
                    )}
 
-                  {!showAllDashboard && !showProduksi && (
+                  {!showAllDashboard && !showProduksi && !showPiutang && (
                     <TableCell className='max-w-[200px] truncate'>
                       {project.description || (
                         <span className='text-muted-foreground italic'>None</span>
@@ -791,7 +795,7 @@ export function ProjectsV2Table({
                           : '-'}
                       </TableCell>
 
-                      {!showProduksi && (
+                      {!showProduksi && !showPiutang && (
                         <TableCell>
                           {project.deadline ? (
                             (() => {
@@ -828,7 +832,7 @@ export function ProjectsV2Table({
                       )}
                     </>
                   )}
-                  {!showAllDashboard && !showProduksi && (
+                  {!showAllDashboard && !showProduksi && !showPiutang && (
                     <TableCell>
                       {project.need_design ? 'Ya' : 'Tidak'}
                     </TableCell>
