@@ -76,6 +76,7 @@ const emptyForm: Omit<CreatePenagihanPayload, 'project_id'> = {
     termin_id: 0,
     persentase: 0,
     tanggal_kirim: '',
+    tanggal_invoice: '',
     jatuh_tempo: '',
     status: 'Belum Bayar',
     tanggal_dibayar: '',
@@ -196,6 +197,7 @@ export default function PiutangDetailPage() {
             termin_id: p.termin_id,
             persentase: p.persentase,
             tanggal_kirim: p.tanggal_kirim || '',
+            tanggal_invoice: p.tanggal_invoice || '',
             jatuh_tempo: p.jatuh_tempo || '',
             status: p.status,
             tanggal_dibayar: p.tanggal_dibayar || '',
@@ -225,6 +227,7 @@ export default function PiutangDetailPage() {
             persentase: form.persentase,
             status: form.status,
             tanggal_kirim: form.tanggal_kirim || undefined,
+            tanggal_invoice: form.tanggal_invoice || undefined,
             jatuh_tempo: form.jatuh_tempo || undefined,
             tanggal_dibayar: form.tanggal_dibayar || undefined,
             nominal_dibayar: form.status === 'Sebagian Dibayar' ? form.nominal_dibayar : undefined,
@@ -342,6 +345,7 @@ export default function PiutangDetailPage() {
                                 <TableHead>Termin</TableHead>
                                 <TableHead>Persentase</TableHead>
                                 <TableHead>Tanggal Kirim</TableHead>
+                                <TableHead>Tanggal Invoice</TableHead>
                                 <TableHead>Jatuh Tempo</TableHead>
                                 <TableHead>Status</TableHead>
                                 <TableHead>Tanggal Dibayar</TableHead>
@@ -352,13 +356,13 @@ export default function PiutangDetailPage() {
                         <TableBody>
                             {isLoadingPenagihan ? (
                                 <TableRow>
-                                    <TableCell colSpan={9} className='h-32 text-center'>
+                                    <TableCell colSpan={10} className='h-32 text-center'>
                                         <Loader2 className='h-6 w-6 animate-spin mx-auto text-neutral-400' />
                                     </TableCell>
                                 </TableRow>
                             ) : penagihanList.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={9} className='h-32 text-center text-muted-foreground'>
+                                    <TableCell colSpan={10} className='h-32 text-center text-muted-foreground'>
                                         Belum ada data penagihan.
                                     </TableCell>
                                 </TableRow>
@@ -370,6 +374,9 @@ export default function PiutangDetailPage() {
                                         <TableCell className='font-bold text-blue-600'>{item.persentase}%</TableCell>
                                         <TableCell className='text-sm'>
                                             {item.tanggal_kirim ? format(new Date(item.tanggal_kirim), 'dd MMM yyyy') : '-'}
+                                        </TableCell>
+                                        <TableCell className='text-sm'>
+                                            {item.tanggal_invoice ? format(new Date(item.tanggal_invoice), 'dd MMM yyyy') : '-'}
                                         </TableCell>
                                         <TableCell className='text-sm'>
                                             {item.jatuh_tempo ? format(new Date(item.jatuh_tempo), 'dd MMM yyyy') : '-'}
@@ -481,7 +488,7 @@ export default function PiutangDetailPage() {
                             />
                         </div>
 
-                        <div className='grid grid-cols-2 gap-4'>
+                        <div className='grid grid-cols-3 gap-4'>
                             {/* Tanggal Kirim */}
                             <div className='space-y-2'>
                                 <Label>Tanggal Kirim</Label>
@@ -489,6 +496,16 @@ export default function PiutangDetailPage() {
                                     type='date'
                                     value={form.tanggal_kirim}
                                     onChange={(e) => setForm((prev) => ({ ...prev, tanggal_kirim: e.target.value }))}
+                                />
+                            </div>
+
+                            {/* Tanggal Invoice */}
+                            <div className='space-y-2'>
+                                <Label>Tanggal Invoice</Label>
+                                <Input
+                                    type='date'
+                                    value={form.tanggal_invoice}
+                                    onChange={(e) => setForm((prev) => ({ ...prev, tanggal_invoice: e.target.value }))}
                                 />
                             </div>
 
