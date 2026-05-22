@@ -81,7 +81,21 @@ import { CatalogModal } from '../../_components/catalog-modal';
 import { Badge } from '@/components/ui/badge';
 
 const formatRupiah = (value: string | number) => {
-  if (!value) return '';
+  if (value === null || value === undefined || value === '') return '';
+  
+  if (typeof value === 'number') {
+    const rounded = Math.round(value);
+    return 'Rp ' + new Intl.NumberFormat('id-ID').format(rounded);
+  }
+  
+  if (/^-?\d+(\.\d+)?$/.test(value)) {
+    const num = parseFloat(value);
+    if (!isNaN(num)) {
+      const rounded = Math.round(num);
+      return 'Rp ' + new Intl.NumberFormat('id-ID').format(rounded);
+    }
+  }
+
   const numberString = value.toString().replace(/[^,\d]/g, '');
   const split = numberString.split(',');
   const sisa = split[0].length % 3;
@@ -359,6 +373,15 @@ export default function ProjectItemsPage() {
       setNeedDesignValue(project.need_design);
     }
   }, [existingAcc, project]);
+
+  // Pre-populate signed SPK states when modal opens
+  React.useEffect(() => {
+    if (isSignedSpkModalOpen && existingSpk) {
+      setSignedSpkDeadline(existingSpk.deadline || '');
+      setSignedSpkTanggalMasuk(existingSpk.tanggal_masuk || '');
+      setSignedSpkNominal(existingSpk.nominal ? formatRupiah(existingSpk.nominal) : '');
+    }
+  }, [isSignedSpkModalOpen, existingSpk]);
 
   const updateNeedDesignMutation = useMutation({
     mutationFn: (value: number) => {

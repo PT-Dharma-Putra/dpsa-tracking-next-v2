@@ -66,6 +66,7 @@ export interface ProjectV2 {
         id: number;
         nomor_spk?: string;
         nominal?: string | number | null;
+        deadline?: string | null;
         file: string | null;
         spk_signed_file: string | null;
         spk_status: string | null;
