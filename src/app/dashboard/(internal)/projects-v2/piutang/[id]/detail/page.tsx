@@ -321,11 +321,7 @@ export default function PiutangDetailPage() {
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div className='grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6'>
-                        <div className='space-y-1'>
-                            <Label className='text-[10px] text-muted-foreground uppercase'>Nama Proyek</Label>
-                            <p className='font-bold text-neutral-900'>{project.name}</p>
-                        </div>
+                    <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-6'>
                         <div className='space-y-1'>
                             <Label className='text-[10px] text-muted-foreground uppercase'>Client</Label>
                             <p className='font-semibold text-neutral-800'>{project.client?.name || '-'}</p>
@@ -350,6 +346,40 @@ export default function PiutangDetailPage() {
                             <Label className='text-[10px] text-muted-foreground uppercase'>Total Penagihan</Label>
                             <p className='font-bold text-amber-600'>
                                 {penagihanList.reduce((sum, p) => sum + Number(p.persentase || 0), 0)}%
+                            </p>
+                        </div>
+                        <div className='space-y-1'>
+                            <Label className='text-[10px] text-muted-foreground uppercase'>File SPK</Label>
+                            <p className='text-sm'>
+                                {project.spk?.spk_signed_file || project.spk?.file ? (
+                                    <a
+                                        href={`${storageBase}/storage/${project.spk.spk_signed_file || project.spk.file}`}
+                                        target='_blank'
+                                        rel='noopener noreferrer'
+                                        className='inline-flex items-center gap-1.5 font-semibold text-blue-600 hover:text-blue-800 hover:underline'
+                                    >
+                                        <Download className='h-3.5 w-3.5 shrink-0' /> Download SPK
+                                    </a>
+                                ) : (
+                                    <span className='text-neutral-400 italic'>-</span>
+                                )}
+                            </p>
+                        </div>
+                        <div className='space-y-1'>
+                            <Label className='text-[10px] text-muted-foreground uppercase'>File SPH</Label>
+                            <p className='text-sm'>
+                                {project.sph?.file || project.sphs?.[0]?.file ? (
+                                    <a
+                                        href={`${storageBase}/storage/${project.sph?.file || project.sphs?.[0]?.file}`}
+                                        target='_blank'
+                                        rel='noopener noreferrer'
+                                        className='inline-flex items-center gap-1.5 font-semibold text-blue-600 hover:text-blue-800 hover:underline'
+                                    >
+                                        <Download className='h-3.5 w-3.5 shrink-0' /> Download SPH
+                                    </a>
+                                ) : (
+                                    <span className='text-neutral-400 italic'>-</span>
+                                )}
                             </p>
                         </div>
                     </div>
@@ -518,27 +548,29 @@ export default function PiutangDetailPage() {
                             )}
                         </div>
 
-                        {/* Persentase */}
-                        <div className='space-y-2'>
-                            <Label>Persentase (%)</Label>
-                            <Input
-                                type='number'
-                                min={0}
-                                max={100}
-                                value={form.persentase || 0}
-                                onChange={(e) => setForm((prev) => ({ ...prev, persentase: parseFloat(e.target.value) || 0 }))}
-                            />
-                        </div>
+                        <div className='grid grid-cols-2 gap-4'>
+                            {/* Persentase */}
+                            <div className='space-y-2'>
+                                <Label>Persentase (%)</Label>
+                                <Input
+                                    type='number'
+                                    min={0}
+                                    max={100}
+                                    value={form.persentase || 0}
+                                    onChange={(e) => setForm((prev) => ({ ...prev, persentase: parseFloat(e.target.value) || 0 }))}
+                                />
+                            </div>
 
-                        {/* Nominal */}
-                        <div className='space-y-2'>
-                            <Label>Nominal</Label>
-                            <Input
-                                type='text'
-                                placeholder='Rp 0'
-                                value={form.nominal_penagihan || ''}
-                                onChange={(e) => setForm((prev) => ({ ...prev, nominal_penagihan: formatRupiah(e.target.value) }))}
-                            />
+                            {/* Nominal */}
+                            <div className='space-y-2'>
+                                <Label>Nominal</Label>
+                                <Input
+                                    type='text'
+                                    placeholder='Rp 0'
+                                    value={form.nominal_penagihan || ''}
+                                    onChange={(e) => setForm((prev) => ({ ...prev, nominal_penagihan: formatRupiah(e.target.value) }))}
+                                />
+                            </div>
                         </div>
 
                         <div className='grid grid-cols-3 gap-4'>
