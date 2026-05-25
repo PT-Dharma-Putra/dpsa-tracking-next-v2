@@ -10,7 +10,9 @@ export interface Penagihan {
     project_id: number;
     termin_id: number;
     persentase: number;
+    nominal_penagihan?: string | number | null;
     tanggal_kirim: string | null;
+    tanggal_invoice: string | null;
     jatuh_tempo: string | null;
     status: 'Belum Bayar' | 'Sebagian Dibayar' | 'Lunas';
     tanggal_dibayar: string | null;
@@ -25,7 +27,9 @@ export interface CreatePenagihanPayload {
     project_id: number;
     termin_id: number;
     persentase: number;
+    nominal_penagihan?: string;
     tanggal_kirim?: string;
+    tanggal_invoice?: string;
     jatuh_tempo?: string;
     status: 'Belum Bayar' | 'Sebagian Dibayar' | 'Lunas';
     tanggal_dibayar?: string;
@@ -67,6 +71,8 @@ export const penagihanService = {
         formData.append('persentase', payload.persentase.toString());
         formData.append('status', payload.status);
         if (payload.tanggal_kirim) formData.append('tanggal_kirim', payload.tanggal_kirim);
+        if (payload.tanggal_invoice) formData.append('tanggal_invoice', payload.tanggal_invoice);
+        if (payload.nominal_penagihan !== undefined) formData.append('nominal_penagihan', payload.nominal_penagihan);
         if (payload.jatuh_tempo) formData.append('jatuh_tempo', payload.jatuh_tempo);
         if (payload.tanggal_dibayar) formData.append('tanggal_dibayar', payload.tanggal_dibayar);
         if (payload.nominal_dibayar !== undefined) formData.append('nominal_dibayar', payload.nominal_dibayar.toString());
@@ -84,6 +90,8 @@ export const penagihanService = {
         if (payload.persentase !== undefined) formData.append('persentase', payload.persentase.toString());
         if (payload.status) formData.append('status', payload.status);
         if (payload.tanggal_kirim) formData.append('tanggal_kirim', payload.tanggal_kirim);
+        if (payload.tanggal_invoice) formData.append('tanggal_invoice', payload.tanggal_invoice);
+        if (payload.nominal_penagihan !== undefined) formData.append('nominal_penagihan', payload.nominal_penagihan);
         if (payload.jatuh_tempo) formData.append('jatuh_tempo', payload.jatuh_tempo);
         if (payload.tanggal_dibayar) formData.append('tanggal_dibayar', payload.tanggal_dibayar);
         if (payload.nominal_dibayar !== undefined) formData.append('nominal_dibayar', payload.nominal_dibayar.toString());
