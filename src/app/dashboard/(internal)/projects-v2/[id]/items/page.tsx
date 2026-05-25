@@ -81,7 +81,21 @@ import { CatalogModal } from '../../_components/catalog-modal';
 import { Badge } from '@/components/ui/badge';
 
 const formatRupiah = (value: string | number) => {
-  if (!value) return '';
+  if (value === null || value === undefined || value === '') return '';
+  
+  if (typeof value === 'number') {
+    const rounded = Math.round(value);
+    return 'Rp ' + new Intl.NumberFormat('id-ID').format(rounded);
+  }
+  
+  if (/^-?\d+(\.\d+)?$/.test(value)) {
+    const num = parseFloat(value);
+    if (!isNaN(num)) {
+      const rounded = Math.round(num);
+      return 'Rp ' + new Intl.NumberFormat('id-ID').format(rounded);
+    }
+  }
+
   const numberString = value.toString().replace(/[^,\d]/g, '');
   const split = numberString.split(',');
   const sisa = split[0].length % 3;
@@ -298,17 +312,19 @@ export default function ProjectItemsPage() {
   const [signedSpkFile, setSignedSpkFile] = React.useState<File | null>(null);
   const [signedSpkDeadline, setSignedSpkDeadline] = React.useState<string>('');
   const [signedSpkTanggalMasuk, setSignedSpkTanggalMasuk] = React.useState<string>('');
+  const [signedSpkNominal, setSignedSpkNominal] = React.useState<string>('');
   const [isSignedSpkModalOpen, setIsSignedSpkModalOpen] = React.useState(false);
 
   const approveSpkMutation = useMutation({
-    mutationFn: ({ file, deadline, tanggal_masuk }: { file: File; deadline?: string; tanggal_masuk?: string }) => 
-      projectV2Service.approveSPK(projectId, file, deadline, tanggal_masuk),
+    mutationFn: ({ file, deadline, tanggal_masuk, nominal }: { file: File; deadline?: string; tanggal_masuk?: string; nominal?: string }) => 
+      projectV2Service.approveSPK(projectId, file, deadline, tanggal_masuk, nominal),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects-v2', projectId] });
       toast.success('Signed SPK uploaded successfully');
       setSignedSpkFile(null);
       setSignedSpkDeadline('');
       setSignedSpkTanggalMasuk('');
+      setSignedSpkNominal('');
       setIsSignedSpkModalOpen(false);
     },
     onError: () => {
@@ -324,7 +340,8 @@ export default function ProjectItemsPage() {
     approveSpkMutation.mutate({ 
       file: signedSpkFile, 
       deadline: signedSpkDeadline, 
-      tanggal_masuk: signedSpkTanggalMasuk 
+      tanggal_masuk: signedSpkTanggalMasuk,
+      nominal: parseRawNumber(signedSpkNominal) || undefined
     });
   };
 
@@ -356,6 +373,15 @@ export default function ProjectItemsPage() {
       setNeedDesignValue(project.need_design);
     }
   }, [existingAcc, project]);
+
+  // Pre-populate signed SPK states when modal opens
+  React.useEffect(() => {
+    if (isSignedSpkModalOpen && existingSpk) {
+      setSignedSpkDeadline(existingSpk.deadline || '');
+      setSignedSpkTanggalMasuk(existingSpk.tanggal_masuk || '');
+      setSignedSpkNominal(existingSpk.nominal ? formatRupiah(existingSpk.nominal) : '');
+    }
+  }, [isSignedSpkModalOpen, existingSpk]);
 
   const updateNeedDesignMutation = useMutation({
     mutationFn: (value: number) => {
@@ -1167,6 +1193,7 @@ export default function ProjectItemsPage() {
                             <p className='text-[10px] text-emerald-600/80 italic font-medium truncate'>
                               {existingSpk.spk_status === 'approved' ? 'Terverifikasi' : 'Sudah diunggah'}
                               {existingSpk.tanggal_masuk && ` • Masuk: ${format(new Date(existingSpk.tanggal_masuk), 'MMM d, yyyy')}`}
+                              {existingSpk.nominal && ` • Nominal: ${formatRupiah(existingSpk.nominal)}`}
                             </p>
                           </div>
                         </div>
@@ -1790,6 +1817,16 @@ export default function ProjectItemsPage() {
                 type='date'
                 value={signedSpkDeadline}
                 onChange={(e) => setSignedSpkDeadline(e.target.value)}
+                className='h-9 text-xs border-emerald-200'
+              />
+            </div>
+            <div className='space-y-1.5'>
+              <Label className='text-xs font-medium text-emerald-700'>Nominal</Label>
+              <Input
+                type='text'
+                placeholder='Masukkan Nominal SPK'
+                value={signedSpkNominal}
+                onChange={(e) => setSignedSpkNominal(formatRupiah(e.target.value))}
                 className='h-9 text-xs border-emerald-200'
               />
             </div>

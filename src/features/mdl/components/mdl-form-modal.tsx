@@ -86,6 +86,12 @@ export function MDLFormModal({ open, onOpenChange, item, onSuccess }: MDLFormMod
             spesifikasi_dan_material: "",
             prioritas_garansi: "1 Bulan",
             nama_satuan_beli: "UNIT",
+            kode_satuan_beli: "",
+            link_gambar_kerja: "",
+            dimensi_panjang: undefined,
+            dimensi_lebar: undefined,
+            dimensi_tinggi: undefined,
+            volume: undefined,
             // prices defaults
             harga_jabodetabek: 0,
             harga_pulau_jawa: 0,
@@ -104,15 +110,15 @@ export function MDLFormModal({ open, onOpenChange, item, onSuccess }: MDLFormMod
                     kode_barang: item.kode_barang || "",
                     nama_barang: item.nama_barang,
                     spesifikasi_dan_material: item.spesifikasi_dan_material || "",
-                    dimensi_panjang: item.dimensi_panjang,
-                    dimensi_lebar: item.dimensi_lebar,
-                    dimensi_tinggi: item.dimensi_tinggi,
-                    volume: item.volume,
+                    dimensi_panjang: item.dimensi_panjang ?? undefined,
+                    dimensi_lebar: item.dimensi_lebar ?? undefined,
+                    dimensi_tinggi: item.dimensi_tinggi ?? undefined,
+                    volume: item.volume ?? undefined,
                     kode_satuan_beli: item.kode_satuan_beli || "",
                     nama_satuan_beli: item.nama_satuan_beli || "",
-                    harga_jabodetabek: item.harga_jabodetabek,
-                    harga_pulau_jawa: item.harga_pulau_jawa,
-                    harga_luar_jawa: item.harga_luar_jawa,
+                    harga_jabodetabek: item.harga_jabodetabek ?? 0,
+                    harga_pulau_jawa: item.harga_pulau_jawa ?? 0,
+                    harga_luar_jawa: item.harga_luar_jawa ?? 0,
                     prioritas_garansi: item.prioritas_garansi || "",
                     link_gambar_kerja: item.link_gambar_kerja || "",
                 })
@@ -120,12 +126,21 @@ export function MDLFormModal({ open, onOpenChange, item, onSuccess }: MDLFormMod
                 form.reset({
                     kategori_mdl: "",
                     sub_kategori: "",
+                    lokasi_ruangan: "",
+                    kode_barang: "",
                     nama_barang: "",
-                    prioritas_garansi: "6 Bulan",
+                    spesifikasi_dan_material: "",
+                    dimensi_panjang: undefined,
+                    dimensi_lebar: undefined,
+                    dimensi_tinggi: undefined,
+                    volume: undefined,
+                    kode_satuan_beli: "",
                     nama_satuan_beli: "UNIT",
                     harga_jabodetabek: 0,
                     harga_pulau_jawa: 0,
                     harga_luar_jawa: 0,
+                    prioritas_garansi: "6 Bulan",
+                    link_gambar_kerja: "",
                 })
             }
         }
@@ -219,7 +234,7 @@ export function MDLFormModal({ open, onOpenChange, item, onSuccess }: MDLFormMod
                                             <FormItem>
                                                 <FormLabel>Sub Kategori</FormLabel>
                                                 <FormControl>
-                                                    <Input placeholder="Contoh: Meja, Kursi" {...field} />
+                                                    <Input placeholder="Contoh: Meja, Kursi" {...field} value={field.value ?? ""} />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>
@@ -234,7 +249,7 @@ export function MDLFormModal({ open, onOpenChange, item, onSuccess }: MDLFormMod
                                         <FormItem>
                                             <FormLabel>Nama Barang *</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="Nama lengkap item..." {...field} />
+                                                <Input placeholder="Nama lengkap item..." {...field} value={field.value ?? ""} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -249,7 +264,7 @@ export function MDLFormModal({ open, onOpenChange, item, onSuccess }: MDLFormMod
                                             <FormItem>
                                                 <FormLabel>Kode Barang (Opsional)</FormLabel>
                                                 <FormControl>
-                                                    <Input placeholder="Kode unik" {...field} />
+                                                    <Input placeholder="Kode unik" {...field} value={field.value ?? ""} />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>
@@ -262,15 +277,13 @@ export function MDLFormModal({ open, onOpenChange, item, onSuccess }: MDLFormMod
                                             <FormItem>
                                                 <FormLabel>Lokasi / Ruangan</FormLabel>
                                                 <FormControl>
-                                                    <Input placeholder="Gudang A / Ruang Tamu" {...field} />
+                                                    <Input placeholder="Gudang A / Ruang Tamu" {...field} value={field.value ?? ""} />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>
                                         )}
                                     />
                                 </div>
-
-
                             </TabsContent>
 
                             {/* TAB 2: SPECS */}
@@ -284,7 +297,7 @@ export function MDLFormModal({ open, onOpenChange, item, onSuccess }: MDLFormMod
                                             <FormItem>
                                                 <FormLabel className="text-xs">Panjang</FormLabel>
                                                 <FormControl>
-                                                    <Input type="number" step="0.01" {...field} onChange={e => { field.onChange(e); calculateVolume(); }} />
+                                                    <Input type="number" step="0.01" {...field} value={field.value ?? ""} onChange={e => { field.onChange(e); calculateVolume(); }} />
                                                 </FormControl>
                                             </FormItem>
                                         )}
@@ -296,7 +309,7 @@ export function MDLFormModal({ open, onOpenChange, item, onSuccess }: MDLFormMod
                                             <FormItem>
                                                 <FormLabel className="text-xs">Lebar</FormLabel>
                                                 <FormControl>
-                                                    <Input type="number" step="0.01" {...field} onChange={e => { field.onChange(e); calculateVolume(); }} />
+                                                    <Input type="number" step="0.01" {...field} value={field.value ?? ""} onChange={e => { field.onChange(e); calculateVolume(); }} />
                                                 </FormControl>
                                             </FormItem>
                                         )}
@@ -308,7 +321,7 @@ export function MDLFormModal({ open, onOpenChange, item, onSuccess }: MDLFormMod
                                             <FormItem>
                                                 <FormLabel className="text-xs">Tinggi</FormLabel>
                                                 <FormControl>
-                                                    <Input type="number" step="0.01" {...field} onChange={e => { field.onChange(e); calculateVolume(); }} />
+                                                    <Input type="number" step="0.01" {...field} value={field.value ?? ""} onChange={e => { field.onChange(e); calculateVolume(); }} />
                                                 </FormControl>
                                             </FormItem>
                                         )}
@@ -320,7 +333,7 @@ export function MDLFormModal({ open, onOpenChange, item, onSuccess }: MDLFormMod
                                             <FormItem>
                                                 <FormLabel className="text-xs">Volume (m³)</FormLabel>
                                                 <FormControl>
-                                                    <Input type="number" step="0.0001" {...field} />
+                                                    <Input type="number" step="0.0001" {...field} value={field.value ?? ""} />
                                                 </FormControl>
                                             </FormItem>
                                         )}
@@ -334,7 +347,7 @@ export function MDLFormModal({ open, onOpenChange, item, onSuccess }: MDLFormMod
                                         <FormItem>
                                             <FormLabel>Spesifikasi & Material</FormLabel>
                                             <FormControl>
-                                                <Textarea placeholder="Detail material, finishing, dll..." className="min-h-[120px]" {...field} />
+                                                <Textarea placeholder="Detail material, finishing, dll..." className="min-h-[120px]" {...field} value={field.value ?? ""} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -348,7 +361,7 @@ export function MDLFormModal({ open, onOpenChange, item, onSuccess }: MDLFormMod
                                         <FormItem>
                                             <FormLabel>Link Gambar Kerja (URL)</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="https://drive.google.com/..." {...field} />
+                                                <Input placeholder="https://drive.google.com/..." {...field} value={field.value ?? ""} />
                                             </FormControl>
                                             <FormDescription className="text-xs">Link ke Google Drive atau penyimpanan cloud lainnya.</FormDescription>
                                             <FormMessage />
@@ -367,7 +380,7 @@ export function MDLFormModal({ open, onOpenChange, item, onSuccess }: MDLFormMod
                                             <FormItem>
                                                 <FormLabel>Satuan</FormLabel>
                                                 <FormControl>
-                                                    <Input placeholder="UNIT / SET / M2" {...field} />
+                                                    <Input placeholder="UNIT / SET / M2" {...field} value={field.value ?? ""} />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>
@@ -380,7 +393,7 @@ export function MDLFormModal({ open, onOpenChange, item, onSuccess }: MDLFormMod
                                             <FormItem>
                                                 <FormLabel>Garansi</FormLabel>
                                                 <FormControl>
-                                                    <Input placeholder="Contoh: 1 Tahun" {...field} />
+                                                    <Input placeholder="Contoh: 1 Tahun" {...field} value={field.value ?? ""} />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>
@@ -397,7 +410,7 @@ export function MDLFormModal({ open, onOpenChange, item, onSuccess }: MDLFormMod
                                             <FormItem>
                                                 <FormLabel>Harga Pulau Jawa (Utama)</FormLabel>
                                                 <FormControl>
-                                                    <Input type="number" {...field} />
+                                                    <Input type="number" {...field} value={field.value ?? ""} />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>
@@ -411,7 +424,7 @@ export function MDLFormModal({ open, onOpenChange, item, onSuccess }: MDLFormMod
                                                 <FormItem>
                                                     <FormLabel>Harga Jabodetabek</FormLabel>
                                                     <FormControl>
-                                                        <Input type="number" {...field} />
+                                                        <Input type="number" {...field} value={field.value ?? ""} />
                                                     </FormControl>
                                                     <FormMessage />
                                                 </FormItem>
@@ -424,7 +437,7 @@ export function MDLFormModal({ open, onOpenChange, item, onSuccess }: MDLFormMod
                                                 <FormItem>
                                                     <FormLabel>Harga Luar Jawa</FormLabel>
                                                     <FormControl>
-                                                        <Input type="number" {...field} />
+                                                        <Input type="number" {...field} value={field.value ?? ""} />
                                                     </FormControl>
                                                     <FormMessage />
                                                 </FormItem>
