@@ -232,10 +232,7 @@ export const projectV2Service = {
     },
 
     updateProjectItem: async (id: number, payload: any) => {
-        const { data } = await apiClient.post<ProjectItemV2>(`/projects-v2-items/${id}`, {
-            ...payload,
-            _method: 'PUT',
-        });
+        const { data } = await apiClient.put<ProjectItemV2>(`/projects-v2-items/${id}`, payload);
         return data;
     },
 
