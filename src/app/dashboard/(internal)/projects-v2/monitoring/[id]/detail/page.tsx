@@ -75,8 +75,8 @@ export default function ProjectMonitoringDetailPage() {
   if (!project) return null;
 
   const progres = project.progres_kerja;
-  const totalQtyOrder = items.reduce((sum, i) => sum + i.jumlah, 0) || 0;
-  const totalQtyKeluar = items.reduce((sum, i) => sum + (i.barang_jadi_keluar?.reduce((s, bjk) => s + bjk.jumlah, 0) || 0), 0) || 0;
+  const totalQtyOrder = items.reduce((sum, i) => sum + Number(i.jumlah || 0), 0) || 0;
+  const totalQtyKeluar = items.reduce((sum, i) => sum + (i.barang_jadi_keluar?.reduce((s, bjk) => s + Number(bjk.jumlah || 0), 0) || 0), 0) || 0;
 
     const percentKeluar = totalQtyOrder > 0 ? (totalQtyKeluar / totalQtyOrder) * 100 : 0;
   
@@ -322,8 +322,8 @@ export default function ProjectMonitoringDetailPage() {
                   </TableRow>
                 ) : (
                   filteredItems.map((item, idx) => {
-                    const totalMasuk = item.barang_jadi_masuk?.reduce((s, b) => s + b.jumlah, 0) || 0;
-                    const totalPacking = item.barang_jadi_terpacking?.reduce((s, b) => s + b.jumlah, 0) || 0;
+                    const totalMasuk = item.barang_jadi_masuk?.reduce((s, b) => s + Number(b.jumlah || 0), 0) || 0;
+                    const totalPacking = item.barang_jadi_terpacking?.reduce((s, b) => s + Number(b.jumlah || 0), 0) || 0;
                     const gudangProgress = item.jumlah > 0 ? ((totalMasuk + totalPacking) / (2 * item.jumlah)) * 100 : 0;
                     
                     return (
