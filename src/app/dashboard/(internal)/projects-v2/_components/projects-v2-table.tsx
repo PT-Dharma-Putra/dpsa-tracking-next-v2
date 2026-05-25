@@ -643,7 +643,7 @@ export function ProjectsV2Table({
                             : '-'}
                         </TableCell>
                         <TableCell>
-                          {project.deadline ? (
+                          {project.deadline && !(project.progres_kerja && Math.round(project.progres_kerja.total) === 100) ? (
                             (() => {
                               const diff = differenceInDays(
                                 startOfDay(new Date(project.deadline)),
