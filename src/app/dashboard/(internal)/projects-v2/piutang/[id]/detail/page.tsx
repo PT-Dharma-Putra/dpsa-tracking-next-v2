@@ -99,6 +99,20 @@ const parseRawNumber = (value: string) => {
   return value.replace(/[^0-9]/g, '');
 };
 
+const parseDatabaseNominal = (value: string | number | null | undefined) => {
+  if (value === null || value === undefined || value === '') return 0;
+  if (typeof value === 'number') return value;
+  const str = value.toString().trim();
+  if (/^-?\d+(\.\d+)?$/.test(str)) {
+    return parseFloat(str) || 0;
+  }
+  const cleanStr = str
+    .replace(/Rp\s?/g, '')
+    .replace(/\./g, '')
+    .replace(/,/g, '.');
+  return parseFloat(cleanStr) || 0;
+};
+
 const STATUS_OPTIONS = ['Belum Bayar', 'Sebagian Dibayar', 'Lunas'] as const;
 
 const statusBadgeClass = (status: string) => {
@@ -321,7 +335,7 @@ export default function PiutangDetailPage() {
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-6'>
+                    <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-6'>
                         <div className='space-y-1'>
                             <Label className='text-[10px] text-muted-foreground uppercase'>Client</Label>
                             <p className='font-semibold text-neutral-800'>{project.client?.name || '-'}</p>
@@ -329,6 +343,12 @@ export default function PiutangDetailPage() {
                         <div className='space-y-1'>
                             <Label className='text-[10px] text-muted-foreground uppercase'>Nomor SPK</Label>
                             <p className='text-neutral-700'>{project.spk_number || project.spk?.nomor_spk || '-'}</p>
+                        </div>
+                        <div className='space-y-1'>
+                            <Label className='text-[10px] text-muted-foreground uppercase'>Nominal</Label>
+                            <p className='font-bold text-neutral-800'>
+                                {project.spk?.nominal ? formatRupiah(project.spk.nominal) : '-'}
+                            </p>
                         </div>
                         <div className='space-y-1'>
                             <Label className='text-[10px] text-muted-foreground uppercase'>Tanggal SPK turun</Label>
@@ -557,7 +577,18 @@ export default function PiutangDetailPage() {
                                     min={0}
                                     max={100}
                                     value={form.persentase || 0}
-                                    onChange={(e) => setForm((prev) => ({ ...prev, persentase: parseFloat(e.target.value) || 0 }))}
+                                    onChange={(e) => {
+                                        const pct = parseFloat(e.target.value) || 0;
+                                        const spkNominal = project?.spk?.nominal 
+                                            ? parseDatabaseNominal(project.spk.nominal) 
+                                            : 0;
+                                        const calculated = (pct / 100) * spkNominal;
+                                        setForm((prev) => ({ 
+                                            ...prev, 
+                                            persentase: pct,
+                                            nominal_penagihan: calculated > 0 ? formatRupiah(calculated) : ''
+                                        }));
+                                    }}
                                 />
                             </div>
 
@@ -568,7 +599,20 @@ export default function PiutangDetailPage() {
                                     type='text'
                                     placeholder='Rp 0'
                                     value={form.nominal_penagihan || ''}
-                                    onChange={(e) => setForm((prev) => ({ ...prev, nominal_penagihan: formatRupiah(e.target.value) }))}
+                                    onChange={(e) => {
+                                        const formatted = formatRupiah(e.target.value);
+                                        const rawNominal = parseRawNumber(e.target.value);
+                                        const nominalVal = parseFloat(rawNominal) || 0;
+                                        const spkNominal = project?.spk?.nominal 
+                                            ? parseDatabaseNominal(project.spk.nominal) 
+                                            : 0;
+                                        const pct = spkNominal > 0 ? Math.round((nominalVal / spkNominal) * 100 * 100) / 100 : 0;
+                                        setForm((prev) => ({
+                                            ...prev,
+                                            nominal_penagihan: formatted,
+                                            persentase: pct
+                                        }));
+                                    }}
                                 />
                             </div>
                         </div>
