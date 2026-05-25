@@ -47,9 +47,9 @@ import { cn } from "@/lib/utils"
 import { MDLItemSelectorDialog } from "./mdl-item-selector-dialog"
 
 const itemSchema = z.object({
-    id: z.number().optional(), // For edit mode
+    id: z.preprocess((val) => (val === "" || val === null || val === undefined ? undefined : Number(val)), z.number().optional()), // For edit mode
     item: z.string().min(1, "Item Name is required"),
-    mdl_item_id: z.number().nullable().default(null),
+    mdl_item_id: z.preprocess((val) => (val === "" || val === null || val === undefined ? null : Number(val)), z.number().nullable().default(null)),
     lantai: z.string().default(""),
     ruang: z.string().default(""),
     keterangan: z.string().default(""),
@@ -59,7 +59,7 @@ const itemSchema = z.object({
     tinggi: z.preprocess((val) => (val === "" || val === null ? null : Number(val)), z.number().nullable()),
     satuan: z.string().default("UNIT"),
     jumlah: z.preprocess((val) => (val === "" || val === null ? 1 : Number(val)), z.number().min(1, "Quantity must be at least 1")),
-    custom: z.boolean().default(false),
+    custom: z.preprocess((val) => val === true || val === 1 || val === "1" || val === "true", z.boolean().default(false)),
 })
 
 const formSchema = z.object({
@@ -108,19 +108,19 @@ export function ProjectItemFormDialog({ open, onOpenChange, projectId, item }: P
         if (open) {
             if (item) {
                 replace([{
-                    id: item.id,
-                    mdl_item_id: item.mdl_item_id,
+                    id: item.id ? Number(item.id) : undefined,
+                    mdl_item_id: item.mdl_item_id ? Number(item.mdl_item_id) : null,
                     item: item.item,
                     lantai: item.lantai || "",
                     ruang: item.ruang || "",
                     keterangan: item.keterangan || "",
-                    volume: item.volume,
-                    panjang: item.panjang,
-                    lebar: item.lebar,
-                    tinggi: item.tinggi,
+                    volume: item.volume !== null && item.volume !== undefined ? Number(item.volume) : null,
+                    panjang: item.panjang !== null && item.panjang !== undefined ? Number(item.panjang) : null,
+                    lebar: item.lebar !== null && item.lebar !== undefined ? Number(item.lebar) : null,
+                    tinggi: item.tinggi !== null && item.tinggi !== undefined ? Number(item.tinggi) : null,
                     satuan: item.satuan || "UNIT",
-                    jumlah: item.jumlah,
-                    custom: !!item.custom,
+                    jumlah: item.jumlah !== null && item.jumlah !== undefined ? Number(item.jumlah) : 1,
+                    custom: (item.custom as any) === true || (item.custom as any) === 1 || (item.custom as any) === "1",
                 }])
             } else {
                 replace([{
@@ -240,7 +240,7 @@ export function ProjectItemFormDialog({ open, onOpenChange, projectId, item }: P
                 </DialogHeader>
                 
                 <Form {...(form as any)}>
-                    <form onSubmit={form.handleSubmit(onSubmit as any)} className="flex flex-col gap-4 overflow-hidden">
+                    <form onSubmit={form.handleSubmit(onSubmit as any, (errors) => console.error("Validation Errors:", errors))} className="flex flex-col gap-4 overflow-hidden">
                         <div className="overflow-x-auto pb-4">
                             <div className="min-w-[1200px] space-y-2">
                                 <div className="grid grid-cols-[1.2fr_0.5fr_0.9fr_0.4fr_0.4fr_0.4fr_0.5fr_0.6fr_0.4fr_1.1fr_0.6fr_40px] gap-0.5 px-1 text-xs font-medium text-muted-foreground uppercase">
