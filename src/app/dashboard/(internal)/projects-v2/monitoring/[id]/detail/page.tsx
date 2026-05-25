@@ -21,7 +21,9 @@ import {
   TrendingUp,
   Box,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  BarChart3,
+  Activity
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -39,14 +41,32 @@ import {
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
-import { projectV2Service } from '@/features/projects/services/project-v2-service';
+import { projectV2Service, ProjectItemV2 } from '@/features/projects/services/project-v2-service';
 import { cn } from '@/lib/utils';
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+} from '@/components/ui/alert-dialog';
 
 export default function ProjectMonitoringDetailPage() {
   const params = useParams();
   const id = parseInt(params.id as string);
   const router = useRouter();
   const [searchTerm, setSearchTerm] = React.useState('');
+
+  // View Produksi State
+  const [isProduksiViewOpen, setIsProduksiViewOpen] = React.useState(false);
+  const [produksiViewItem, setProduksiViewItem] = React.useState<ProjectItemV2 | null>(null);
+
+  const openProduksiView = (item: ProjectItemV2) => {
+    setProduksiViewItem(item);
+    setIsProduksiViewOpen(true);
+  };
 
   const { data: project, isLoading: isProjectLoading } = useQuery({
     queryKey: ['project-v2', id],
@@ -349,7 +369,10 @@ export default function ProjectMonitoringDetailPage() {
                           ) : '-'}
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-2">
+                          <div 
+                            className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
+                            onClick={() => openProduksiView(item as any)}
+                          >
                             <div className="flex-1 min-w-[80px] h-1.5 bg-neutral-100 rounded-full overflow-hidden">
                               <div 
                                 className="h-full bg-cyan-500 rounded-full transition-all duration-500" 
@@ -390,6 +413,99 @@ export default function ProjectMonitoringDetailPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* View Produksi Progress Dialog (PPIC View-Only) */}
+      <AlertDialog open={isProduksiViewOpen} onOpenChange={setIsProduksiViewOpen}>
+        <AlertDialogContent className='max-w-2xl'>
+          <AlertDialogHeader>
+            <AlertDialogTitle className='flex items-center gap-2'>
+              <BarChart3 className='h-5 w-5 text-orange-500' />
+              Detail Progress Produksi
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Melihat progress produksi untuk item: <strong>{produksiViewItem?.item}</strong>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          
+          <div className='py-4 space-y-6'>
+            {/* Summary Progress */}
+            <div className='flex flex-col items-center gap-2 p-4 bg-orange-50 rounded-xl border border-orange-100'>
+              <span className='text-xs font-bold text-orange-800 uppercase tracking-wider'>Total Progress</span>
+              <div className='flex items-baseline gap-1'>
+                <span className='text-4xl font-black text-orange-600'>{Math.round(produksiViewItem?.produksi?.persen || 0)}</span>
+                <span className='text-xl font-bold text-orange-400'>%</span>
+              </div>
+              <Progress value={produksiViewItem?.produksi?.persen || 0} className='h-2 bg-orange-200/50 w-full max-w-md' />
+            </div>
+
+            <div className='grid grid-cols-2 gap-x-8 gap-y-6'>
+              {/* Mesin Section */}
+              <div className='space-y-3'>
+                <h4 className='font-bold text-xs text-neutral-400 uppercase tracking-widest border-b pb-2 flex items-center gap-2'>
+                  <Activity className='h-3 w-3' />
+                  Tahapan Mesin
+                </h4>
+                <div className='space-y-3'>
+                  {[
+                    { label: 'Cold Press', value: produksiViewItem?.produksi?.cold_press, key: 'cold_press' },
+                    { label: 'Running Saw', value: produksiViewItem?.produksi?.running_saw, key: 'running_saw' },
+                    { label: 'Edging', value: produksiViewItem?.produksi?.edging, key: 'edging' },
+                    { label: 'CNC', value: produksiViewItem?.produksi?.cnc, key: 'cnc' },
+                  ].map((field) => {
+                    const isSkipped = (produksiViewItem?.produksi as any)?.skipped_fields?.includes(field.key);
+                    return (
+                      <div key={field.key} className='flex items-center justify-between'>
+                        <span className='text-xs text-neutral-600'>{field.label}</span>
+                        <div className='flex items-center gap-2'>
+                          {isSkipped ? (
+                            <Badge variant='secondary' className='text-[9px] bg-neutral-100 text-neutral-400 border-none'>SKIPPED</Badge>
+                          ) : (
+                            <span className='text-sm font-bold text-neutral-900'>{field.value || 0} <span className='text-[10px] text-neutral-400 font-normal'>/ {produksiViewItem?.jumlah}</span></span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Manual Section */}
+              <div className='space-y-3'>
+                <h4 className='font-bold text-xs text-neutral-400 uppercase tracking-widest border-b pb-2 flex items-center gap-2'>
+                  <UserIcon className='h-3 w-3' />
+                  Tahapan Manual
+                </h4>
+                <div className='space-y-3'>
+                  {[
+                    { label: 'Tukang Kayu', value: produksiViewItem?.produksi?.tukang_kayu, key: 'tukang_kayu' },
+                    { label: 'Tukang Jok', value: produksiViewItem?.produksi?.tukang_jok, key: 'tukang_jok' },
+                    { label: 'Rakit', value: produksiViewItem?.produksi?.rakit, key: 'rakit' },
+                    { label: 'Finishing', value: produksiViewItem?.produksi?.finishing, key: 'finishing' },
+                  ].map((field) => {
+                    const isSkipped = (produksiViewItem?.produksi as any)?.skipped_fields?.includes(field.key);
+                    return (
+                      <div key={field.key} className='flex items-center justify-between'>
+                        <span className='text-xs text-neutral-600'>{field.label}</span>
+                        <div className='flex items-center gap-2'>
+                          {isSkipped ? (
+                            <Badge variant='secondary' className='text-[9px] bg-neutral-100 text-neutral-400 border-none'>SKIPPED</Badge>
+                          ) : (
+                            <span className='text-sm font-bold text-neutral-900'>{field.value || 0} <span className='text-[10px] text-neutral-400 font-normal'>/ {produksiViewItem?.jumlah}</span></span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <AlertDialogFooter className='border-t pt-4'>
+            <AlertDialogCancel className='bg-neutral-100 hover:bg-neutral-200 border-none'>Tutup</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
