@@ -13,8 +13,13 @@ import {
     Download,
     Receipt,
     X,
+    CheckCircle2,
+    Building2,
+    Info,
+    ChevronDown,
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { Progress } from '@/components/ui/progress';
 
 import {
     Table,
@@ -99,6 +104,20 @@ const parseRawNumber = (value: string) => {
   return value.replace(/[^0-9]/g, '');
 };
 
+const parseDatabaseNominal = (value: string | number | null | undefined) => {
+  if (value === null || value === undefined || value === '') return 0;
+  if (typeof value === 'number') return value;
+  const str = value.toString().trim();
+  if (/^-?\d+(\.\d+)?$/.test(str)) {
+    return parseFloat(str) || 0;
+  }
+  const cleanStr = str
+    .replace(/Rp\s?/g, '')
+    .replace(/\./g, '')
+    .replace(/,/g, '.');
+  return parseFloat(cleanStr) || 0;
+};
+
 const STATUS_OPTIONS = ['Belum Bayar', 'Sebagian Dibayar', 'Lunas'] as const;
 
 const statusBadgeClass = (status: string) => {
@@ -154,6 +173,10 @@ export default function PiutangDetailPage() {
     // Termin management
     const [isTerminOpen, setIsTerminOpen] = React.useState(false);
     const [newTerminName, setNewTerminName] = React.useState('');
+
+    // Collapsing states
+    const [isBilledCollapsed, setIsBilledCollapsed] = React.useState(false);
+    const [isPaymentCollapsed, setIsPaymentCollapsed] = React.useState(false);
     const [editingTermin, setEditingTermin] = React.useState<{ id: number; nama: string } | null>(null);
     const [deleteTerminTarget, setDeleteTerminTarget] = React.useState<{ id: number; nama: string } | null>(null);
 
@@ -297,94 +320,324 @@ export default function PiutangDetailPage() {
         );
     }
 
+    const spkNominal = project?.spk?.nominal ? parseDatabaseNominal(project.spk.nominal) : 0;
+    
+    // Calculate actual billed amount
+    const totalBilledAmount = penagihanList.reduce((sum, p) => {
+        const nominalVal = p.nominal_penagihan 
+            ? parseDatabaseNominal(p.nominal_penagihan) 
+            : (Number(p.persentase || 0) / 100) * spkNominal;
+        return sum + nominalVal;
+    }, 0);
+    
+    // Calculate actual paid amount
+    const totalPaidAmount = penagihanList.reduce((sum, p) => {
+        const nominalVal = p.nominal_penagihan 
+            ? parseDatabaseNominal(p.nominal_penagihan) 
+            : (Number(p.persentase || 0) / 100) * spkNominal;
+        if (p.status === 'Lunas') {
+            return sum + nominalVal;
+        } else if (p.status === 'Sebagian Dibayar') {
+            const paidVal = p.nominal_dibayar ? parseDatabaseNominal(p.nominal_dibayar) : 0;
+            return sum + paidVal;
+        }
+        return sum;
+    }, 0);
+
+    const totalBilledPercent = spkNominal > 0 ? (totalBilledAmount / spkNominal) * 100 : penagihanList.reduce((sum, p) => sum + Number(p.persentase || 0), 0);
+    const totalPaidPercent = spkNominal > 0 ? (totalPaidAmount / spkNominal) * 100 : 0;
+
+    const flowSteps = [
+        {
+            id: 1,
+            title: 'Progress Penagihan',
+            description: 'Billed Progress',
+            isCompleted: totalBilledPercent >= 100,
+            isActive: true,
+            icon: Receipt,
+            color: 'text-orange-600',
+            bgColor: 'bg-orange-500',
+            lightBg: 'bg-orange-50',
+            borderColor: 'border-orange-200',
+        },
+        {
+            id: 2,
+            title: 'Progress Pembayaran',
+            description: 'Payment Progress',
+            isCompleted: totalPaidPercent >= 100 && totalBilledPercent > 0,
+            isActive: totalBilledPercent > 0,
+            icon: CheckCircle2,
+            color: 'text-blue-600',
+            bgColor: 'bg-blue-500',
+            lightBg: 'bg-blue-50',
+            borderColor: 'border-blue-200',
+        },
+    ];
+
     return (
-        <div className='flex flex-col gap-6 p-6'>
+        <div className='flex flex-col gap-6 p-6 max-w-[1600px] mx-auto w-full'>
             {/* Header */}
-            <div className='flex items-center gap-4'>
-                <Button variant='ghost' size='icon' onClick={() => router.back()}>
-                    <ArrowLeft className='h-5 w-5' />
-                </Button>
-                <div>
-                    <h1 className='text-2xl font-bold tracking-tight'>Piutang - Penagihan</h1>
-                    <p className='text-sm text-muted-foreground'>
-                        Manajemen penagihan untuk proyek ini
-                    </p>
+            <div className='flex flex-col sm:flex-row sm:items-center gap-4'>
+                <div className='flex items-start gap-4 shrink-0'>
+                    <Button
+                        variant='ghost'
+                        size='icon'
+                        onClick={() => router.back()}
+                        className='rounded-full hover:bg-neutral-100 mt-0.5'
+                    >
+                        <ArrowLeft className='h-5 w-5' />
+                    </Button>
+                    <div className='space-y-1.5'>
+                        <div>
+                            <h1 className='text-2xl font-bold tracking-tight text-neutral-900'>
+                                {project.name}
+                            </h1>
+                            <p className='text-xs text-muted-foreground'>Piutang & Penagihan View</p>
+                        </div>
+                        <div className='flex flex-wrap items-center gap-x-3 gap-y-1'>
+                            {project.client?.name && (
+                                <span className='flex items-center gap-1 text-xs text-neutral-600'>
+                                    <Building2 className='h-3 w-3 text-neutral-400' />
+                                    {project.client.name}
+                                </span>
+                            )}
+                            {(project.spk_number || project.spk?.nomor_spk) && (
+                                <span className='flex items-center gap-1 text-xs text-neutral-600'>
+                                    <FileText className='h-3 w-3 text-neutral-400' />
+                                    {project.spk_number || project.spk?.nomor_spk}
+                                </span>
+                            )}
+                            {project.spk?.nominal && (
+                                <span className='flex items-center gap-1 text-xs text-neutral-600 font-bold'>
+                                    <Receipt className='h-3 w-3 text-neutral-400' />
+                                    Nominal SPK: {formatRupiah(project.spk.nominal)}
+                                </span>
+                            )}
+                            {project.spk?.created_at && (
+                                <span className='flex items-center gap-1 text-xs text-neutral-600'>
+                                    <Info className='h-3 w-3 text-neutral-400' />
+                                    SPK Date: {format(new Date(project.spk.created_at), 'MMM d, yyyy')}
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Stepper Progress */}
+                <div className='ml-auto overflow-x-auto hide-scrollbar shrink-0'>
+                    <div className='flex items-center gap-1 min-w-max'>
+                        {flowSteps.map((step, index) => {
+                            const Icon = step.icon;
+                            return (
+                                <React.Fragment key={step.id}>
+                                    <div
+                                        className={`flex items-center gap-1.5 transition-all duration-300 ${
+                                            step.isActive ? 'opacity-100' : 'opacity-40 grayscale'
+                                        }`}
+                                    >
+                                        <div
+                                            className={`h-6 w-6 rounded-full flex items-center justify-center border shadow-sm transition-all duration-500 shrink-0 ${
+                                                step.isCompleted
+                                                    ? step.bgColor + ' border-transparent text-white'
+                                                    : step.isActive
+                                                    ? step.lightBg +
+                                                      ' ' +
+                                                      step.borderColor +
+                                                      ' ' +
+                                                      step.color
+                                                    : 'bg-neutral-100 border-neutral-200 text-neutral-400'
+                                            }`}
+                                        >
+                                            {step.isCompleted ? (
+                                                <CheckCircle2 className='h-3 w-3' />
+                                            ) : (
+                                                <Icon className='h-3 w-3' />
+                                            )}
+                                        </div>
+                                        <div className='flex flex-col leading-none'>
+                                            <span
+                                                className={`text-[10px] font-bold whitespace-nowrap ${
+                                                    step.isCompleted || step.isActive
+                                                        ? 'text-neutral-800'
+                                                        : 'text-neutral-400'
+                                                }`}
+                                            >
+                                                {step.title}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    {index < flowSteps.length - 1 && (
+                                        <div className='w-6 h-[2px] rounded-full bg-neutral-200 overflow-hidden relative mx-0.5 shrink-0'>
+                                            <div
+                                                className={`absolute top-0 left-0 h-full w-full transition-transform duration-700 origin-left ${
+                                                    step.isCompleted
+                                                        ? step.bgColor + ' scale-x-100'
+                                                        : 'scale-x-0'
+                                                }`}
+                                            />
+                                        </div>
+                                    )}
+                                </React.Fragment>
+                            );
+                        })}
+                    </div>
                 </div>
             </div>
 
-            {/* Project Info */}
-            <Card className='border-none shadow-sm bg-gradient-to-br from-white to-neutral-50/50'>
-                <CardHeader className='pb-3'>
-                    <CardTitle className='flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-neutral-500'>
-                        <FileText className='h-4 w-4 text-blue-500' />
-                        Informasi Proyek
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-6'>
-                        <div className='space-y-1'>
-                            <Label className='text-[10px] text-muted-foreground uppercase'>Client</Label>
-                            <p className='font-semibold text-neutral-800'>{project.client?.name || '-'}</p>
+            {/* Document Section at Top */}
+            <div className='grid grid-cols-1 md:grid-cols-2 gap-4 w-full'>
+                {/* 1. BILLED PROGRESS SECTION */}
+                <Card
+                    className={`relative border shadow-sm transition-all duration-300 ${
+                        flowSteps[0].isActive
+                            ? flowSteps[0].isCompleted
+                                ? 'border-orange-200 bg-white ring-1 ring-orange-100'
+                                : 'border-orange-300 bg-white ring-2 ring-orange-500 ring-offset-2'
+                            : 'border-neutral-200 bg-neutral-50/80 opacity-60 grayscale-[0.5]'
+                    }`}
+                >
+                    {flowSteps[0].isCompleted && (
+                        <div className="absolute -top-1.5 -right-1.5 h-5 w-5 bg-emerald-500 rounded-full flex items-center justify-center shadow-sm z-10 animate-in zoom-in duration-300">
+                            <CheckCircle2 className="h-3 w-3 text-white" />
                         </div>
-                        <div className='space-y-1'>
-                            <Label className='text-[10px] text-muted-foreground uppercase'>Nomor SPK</Label>
-                            <p className='text-neutral-700'>{project.spk_number || project.spk?.nomor_spk || '-'}</p>
+                    )}
+                    <CardHeader className='pb-3 flex flex-row items-center justify-between gap-3'>
+                        <button
+                            className='flex items-center gap-3 flex-1 text-left'
+                            onClick={() => setIsBilledCollapsed((v) => !v)}
+                        >
+                            <div
+                                className={`h-8 w-8 rounded-full flex items-center justify-center font-bold ${
+                                    flowSteps[0].isActive
+                                        ? 'bg-orange-100 text-orange-600'
+                                        : 'bg-neutral-200 text-neutral-500'
+                                }`}
+                            >
+                                1
+                            </div>
+                            <div className='flex-1'>
+                                <CardTitle className='text-base text-neutral-800'>
+                                    Progress Penagihan
+                                </CardTitle>
+                                <p className='text-[10px] text-muted-foreground uppercase tracking-wider'>
+                                    Billed Progress
+                                </p>
+                            </div>
+                            <ChevronDown
+                                className={`h-4 w-4 text-neutral-400 transition-transform duration-200 mr-1 ${
+                                    isBilledCollapsed ? '-rotate-90' : ''
+                                }`}
+                            />
+                        </button>
+                    </CardHeader>
+                    {!isBilledCollapsed && (
+                        <CardContent>
+                            <div className='h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden mt-2'>
+                                <div className='h-full bg-orange-500 transition-all duration-500' style={{ width: `${Math.min(totalBilledPercent, 100)}%` }} />
+                            </div>
+                            <div className='flex justify-between items-center mt-1 mb-3'>
+                                <p className='text-[10px] font-bold text-neutral-700'>Persentase Ditagih</p>
+                                <p className='text-[10px] font-bold text-orange-600'>{Number(totalBilledPercent).toFixed(2)}%</p>
+                            </div>
+
+                            <div className='pt-2 space-y-2 border-t border-neutral-100 mt-2'>
+                                <div className='grid grid-cols-2 gap-2'>
+                                    {project.spk?.spk_signed_file || project.spk?.file ? (
+                                        <a
+                                            href={`${storageBase}/storage/${project.spk.spk_signed_file || project.spk.file}`}
+                                            target='_blank'
+                                            rel='noopener noreferrer'
+                                            className='inline-flex items-center justify-between p-2 rounded-lg bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 text-xs font-semibold text-neutral-700 transition-colors'
+                                        >
+                                            <span className='flex items-center gap-1.5'>
+                                                <Download className='h-3.5 w-3.5 text-blue-500' /> File SPK
+                                            </span>
+                                        </a>
+                                    ) : null}
+                                    {project.sph?.file || project.sphs?.[0]?.file ? (
+                                        <a
+                                            href={`${storageBase}/storage/${project.sph?.file || project.sphs?.[0]?.file}`}
+                                            target='_blank'
+                                            rel='noopener noreferrer'
+                                            className='inline-flex items-center justify-between p-2 rounded-lg bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 text-xs font-semibold text-neutral-700 transition-colors'
+                                        >
+                                            <span className='flex items-center gap-1.5'>
+                                                <Download className='h-3.5 w-3.5 text-blue-500' /> File SPH
+                                            </span>
+                                        </a>
+                                    ) : null}
+                                </div>
+                            </div>
+                        </CardContent>
+                    )}
+                </Card>
+
+                {/* 2. PAYMENT PROGRESS SECTION */}
+                <Card
+                    className={`relative border shadow-sm transition-all duration-300 ${
+                        totalPaidPercent >= 100
+                            ? 'border-emerald-200 bg-white ring-1 ring-emerald-100'
+                            : 'border-blue-200 bg-white ring-1 ring-blue-100'
+                    }`}
+                >
+                    {totalPaidPercent >= 100 && (
+                        <div className="absolute -top-1.5 -right-1.5 h-5 w-5 bg-emerald-500 rounded-full flex items-center justify-center shadow-sm z-10 animate-in zoom-in duration-300">
+                            <CheckCircle2 className="h-3 w-3 text-white" />
                         </div>
-                        <div className='space-y-1'>
-                            <Label className='text-[10px] text-muted-foreground uppercase'>Tanggal SPK turun</Label>
-                            <p className='font-bold text-blue-600'>
-                                {project.spk?.created_at ? format(new Date(project.spk.created_at), 'MMM d, yyyy') : '-'}
-                            </p>
-                        </div>
-                        <div className='space-y-1'>
-                            <Label className='text-[10px] text-muted-foreground uppercase'>Progres Produksi</Label>
-                            <p className='font-bold text-emerald-600'>
-                                {project.progres_produksi || 0}%
-                            </p>
-                        </div>
-                        <div className='space-y-1'>
-                            <Label className='text-[10px] text-muted-foreground uppercase'>Total Penagihan</Label>
-                            <p className='font-bold text-amber-600'>
-                                {penagihanList.reduce((sum, p) => sum + Number(p.persentase || 0), 0)}%
-                            </p>
-                        </div>
-                        <div className='space-y-1'>
-                            <Label className='text-[10px] text-muted-foreground uppercase'>File SPK</Label>
-                            <p className='text-sm'>
-                                {project.spk?.spk_signed_file || project.spk?.file ? (
-                                    <a
-                                        href={`${storageBase}/storage/${project.spk.spk_signed_file || project.spk.file}`}
-                                        target='_blank'
-                                        rel='noopener noreferrer'
-                                        className='inline-flex items-center gap-1.5 font-semibold text-blue-600 hover:text-blue-800 hover:underline'
-                                    >
-                                        <Download className='h-3.5 w-3.5 shrink-0' /> Download SPK
-                                    </a>
-                                ) : (
-                                    <span className='text-neutral-400 italic'>-</span>
-                                )}
-                            </p>
-                        </div>
-                        <div className='space-y-1'>
-                            <Label className='text-[10px] text-muted-foreground uppercase'>File SPH</Label>
-                            <p className='text-sm'>
-                                {project.sph?.file || project.sphs?.[0]?.file ? (
-                                    <a
-                                        href={`${storageBase}/storage/${project.sph?.file || project.sphs?.[0]?.file}`}
-                                        target='_blank'
-                                        rel='noopener noreferrer'
-                                        className='inline-flex items-center gap-1.5 font-semibold text-blue-600 hover:text-blue-800 hover:underline'
-                                    >
-                                        <Download className='h-3.5 w-3.5 shrink-0' /> Download SPH
-                                    </a>
-                                ) : (
-                                    <span className='text-neutral-400 italic'>-</span>
-                                )}
-                            </p>
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
+                    )}
+                    <CardHeader className='pb-3 flex flex-row items-center justify-between gap-3'>
+                        <button
+                            className='flex items-center gap-3 flex-1 text-left'
+                            onClick={() => setIsPaymentCollapsed((v) => !v)}
+                        >
+                            <div
+                                className={`h-8 w-8 rounded-full flex items-center justify-center font-bold bg-blue-100 text-blue-600`}
+                            >
+                                2
+                            </div>
+                            <div className='flex-1'>
+                                <CardTitle className='text-base text-neutral-800'>
+                                    Progress Pembayaran
+                                </CardTitle>
+                                <p className='text-[10px] text-muted-foreground uppercase tracking-wider'>
+                                    Payment Progress
+                                </p>
+                            </div>
+                            <ChevronDown
+                                className={`h-4 w-4 text-neutral-400 transition-transform duration-200 mr-1 ${
+                                    isPaymentCollapsed ? '-rotate-90' : ''
+                                }`}
+                            />
+                        </button>
+                    </CardHeader>
+                    {!isPaymentCollapsed && (
+                        <CardContent className='pt-0'>
+                            <div className='h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden mt-4'>
+                                <div className='h-full bg-blue-600 transition-all duration-500' style={{ width: `${Math.min(totalPaidPercent, 100)}%` }} />
+                            </div>
+                            <div className='flex justify-between items-center mt-1'>
+                                <p className='text-[10px] font-bold text-neutral-700'>Persentase Dibayar</p>
+                                <p className='text-[10px] font-bold text-blue-600'>{Number(totalPaidPercent).toFixed(2)}%</p>
+                            </div>
+
+                            <div className='pt-2 space-y-1 border-t border-neutral-100 mt-3 text-xs'>
+                                <div className='flex justify-between'>
+                                    <span className='text-neutral-500'>Total Ditagih:</span>
+                                    <span className='font-semibold text-neutral-800'>{formatRupiah(totalBilledAmount)}</span>
+                                </div>
+                                <div className='flex justify-between'>
+                                    <span className='text-neutral-500'>Total Dibayar:</span>
+                                    <span className='font-bold text-emerald-600'>{formatRupiah(totalPaidAmount)}</span>
+                                </div>
+                                <div className='flex justify-between'>
+                                    <span className='text-neutral-500'>Sisa Piutang:</span>
+                                    <span className='font-bold text-red-600'>{formatRupiah(Math.max(totalBilledAmount - totalPaidAmount, 0))}</span>
+                                </div>
+                            </div>
+                        </CardContent>
+                    )}
+                </Card>
+            </div>
 
             {/* Penagihan Table */}
             <div className='space-y-4 pt-4 border-t'>
@@ -557,7 +810,18 @@ export default function PiutangDetailPage() {
                                     min={0}
                                     max={100}
                                     value={form.persentase || 0}
-                                    onChange={(e) => setForm((prev) => ({ ...prev, persentase: parseFloat(e.target.value) || 0 }))}
+                                    onChange={(e) => {
+                                        const pct = parseFloat(e.target.value) || 0;
+                                        const spkNominal = project?.spk?.nominal 
+                                            ? parseDatabaseNominal(project.spk.nominal) 
+                                            : 0;
+                                        const calculated = (pct / 100) * spkNominal;
+                                        setForm((prev) => ({ 
+                                            ...prev, 
+                                            persentase: pct,
+                                            nominal_penagihan: calculated > 0 ? formatRupiah(calculated) : ''
+                                        }));
+                                    }}
                                 />
                             </div>
 
@@ -568,7 +832,20 @@ export default function PiutangDetailPage() {
                                     type='text'
                                     placeholder='Rp 0'
                                     value={form.nominal_penagihan || ''}
-                                    onChange={(e) => setForm((prev) => ({ ...prev, nominal_penagihan: formatRupiah(e.target.value) }))}
+                                    onChange={(e) => {
+                                        const formatted = formatRupiah(e.target.value);
+                                        const rawNominal = parseRawNumber(e.target.value);
+                                        const nominalVal = parseFloat(rawNominal) || 0;
+                                        const spkNominal = project?.spk?.nominal 
+                                            ? parseDatabaseNominal(project.spk.nominal) 
+                                            : 0;
+                                        const pct = spkNominal > 0 ? Math.round((nominalVal / spkNominal) * 100 * 100) / 100 : 0;
+                                        setForm((prev) => ({
+                                            ...prev,
+                                            nominal_penagihan: formatted,
+                                            persentase: pct
+                                        }));
+                                    }}
                                 />
                             </div>
                         </div>
