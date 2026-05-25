@@ -158,6 +158,7 @@ export function ProjectsV2Table({
     React.useState<ProjectV2 | null>(null);
 
   const isJadwalEditable = showPerencanaan;
+  const isMainProjectsV2Page = !showSPD && !showPerencanaan && !showProduksi && !showEngineer && !showPiutang && !showQC && !showAllDashboard;
 
   // Debounce search
   React.useEffect(() => {
@@ -577,13 +578,19 @@ export function ProjectsV2Table({
                 </>
               )}
               {showProduksi && <TableHead>Progres Produksi</TableHead>}
+              {isMainProjectsV2Page && (
+                <>
+                  <TableHead>Persentase Kerja</TableHead>
+                  <TableHead>Progres Terakhir</TableHead>
+                </>
+              )}
               <TableHead className='w-[100px] text-right'>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={showEngineer ? 16 : (showProduksi ? 15 : (showPiutang ? 13 : 18))} className='h-32 text-center text-muted-foreground'>
+                <TableCell colSpan={showEngineer ? 16 : (showProduksi ? 15 : (showPiutang ? 13 : (isMainProjectsV2Page ? 20 : 18)))} className='h-32 text-center text-muted-foreground'>
                   <div className='flex items-center justify-center'>
                     <Loader2 className='h-6 w-6 animate-spin text-neutral-400' />
                   </div>
@@ -592,7 +599,7 @@ export function ProjectsV2Table({
             ) : projects.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={showEngineer ? 16 : (showProduksi ? 15 : (showPiutang ? 13 : 18))}
+                  colSpan={showEngineer ? 16 : (showProduksi ? 15 : (showPiutang ? 13 : (isMainProjectsV2Page ? 20 : 18)))}
                   className='h-32 text-center text-muted-foreground'
                 >
                   No projects found.
@@ -950,6 +957,64 @@ export function ProjectsV2Table({
                       )}
                     </TableCell>
                   )}
+                  {isMainProjectsV2Page && (
+                    <>
+                      <TableCell>
+                        {project.progres_kerja ? (
+                          <span className='text-sm font-black text-blue-600 tabular-nums'>
+                            {Math.round(project.progres_kerja.total)}%
+                          </span>
+                        ) : (
+                          <span className='text-muted-foreground italic text-xs'>-</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {(() => {
+                          if (!project.progres_kerja) return <span className='text-muted-foreground italic text-xs'>-</span>;
+                          
+                          const stages = [
+                            { name: 'PO Divisi', date: project.progres_kerja.tanggal_update_po_divisi, color: 'blue' },
+                            { name: 'Gambar Kerja', date: project.progres_kerja.tanggal_update_gambar_kerja, color: 'orange' },
+                            { name: 'Dokubah', date: project.progres_kerja.tanggal_update_dokubah, color: 'purple' },
+                            { name: 'Stok Material', date: project.progres_kerja.tanggal_update_stok_material, color: 'emerald' },
+                            { name: 'Produksi', date: project.progres_kerja.tanggal_update_produksi, color: 'cyan' },
+                            { name: 'Gudang', date: project.progres_kerja.tanggal_update_gudang_barang_jadi, color: 'indigo' },
+                            { name: 'Pengiriman', date: project.progres_kerja.tanggal_update_pengiriman, color: 'rose' },
+                          ];
+
+                          const latest = stages
+                            .filter(s => s.date)
+                            .sort((a, b) => new Date(b.date!).getTime() - new Date(a.date!).getTime())[0];
+
+                          if (!latest) return <span className='text-muted-foreground italic text-xs'>-</span>;
+
+                          const getColor = (color: string) => {
+                            switch (color) {
+                              case 'blue': return 'bg-blue-50 text-blue-700 border-blue-200';
+                              case 'orange': return 'bg-orange-50 text-orange-700 border-orange-200';
+                              case 'purple': return 'bg-purple-50 text-purple-700 border-purple-200';
+                              case 'emerald': return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+                              case 'cyan': return 'bg-cyan-50 text-cyan-700 border-cyan-200';
+                              case 'indigo': return 'bg-indigo-50 text-indigo-700 border-indigo-200';
+                              case 'rose': return 'bg-rose-50 text-rose-700 border-rose-200';
+                              default: return 'bg-neutral-50 text-neutral-700 border-neutral-200';
+                            }
+                          };
+
+                          return (
+                            <div className='flex flex-col gap-0.5'>
+                              <Badge variant='outline' className={cn("text-[9px] font-bold py-0 h-4 w-fit", getColor(latest.color))}>
+                                {latest.name}
+                              </Badge>
+                              <span className='text-[8px] text-muted-foreground whitespace-nowrap'>
+                                {format(new Date(latest.date!), 'MMM d, HH:mm')}
+                              </span>
+                            </div>
+                          );
+                        })()}
+                      </TableCell>
+                    </>
+                  )}
                   {!showAllDashboard && showSPD && (
                     <>
                       {!showEngineer && (
@@ -1296,8 +1361,8 @@ export function ProjectsV2Table({
                             )
                           : '-'}
                       </TableCell>
-                      <TableCell>
-                        {project.order_produksi?.[0]?.target_selesai ? (
+                       <TableCell>
+                        {project.order_produksi?.[0]?.target_selesai && !(Math.round(project.progres_produksi || 0) === 100) ? (
                           (() => {
                             const diff = differenceInDays(
                               startOfDay(new Date(project.order_produksi[0].target_selesai)),
