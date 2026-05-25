@@ -1296,8 +1296,8 @@ export function ProjectsV2Table({
                             )
                           : '-'}
                       </TableCell>
-                      <TableCell>
-                        {project.order_produksi?.[0]?.target_selesai ? (
+                       <TableCell>
+                        {project.order_produksi?.[0]?.target_selesai && !(Math.round(project.progres_produksi || 0) === 100) ? (
                           (() => {
                             const diff = differenceInDays(
                               startOfDay(new Date(project.order_produksi[0].target_selesai)),
