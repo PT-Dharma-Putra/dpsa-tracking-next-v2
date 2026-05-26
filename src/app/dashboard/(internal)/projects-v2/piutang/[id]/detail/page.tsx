@@ -129,6 +129,7 @@ const statusBadgeClass = (status: string) => {
 const emptyForm = {
     termin_id: 0,
     persentase: 0,
+    nomor_invoice: '',
     nominal_penagihan: '',
     tanggal_kirim: '',
     tanggal_invoice: '',
@@ -255,6 +256,7 @@ export default function PiutangDetailPage() {
         setForm({
             termin_id: p.termin_id,
             persentase: p.persentase,
+            nomor_invoice: p.nomor_invoice || '',
             nominal_penagihan: p.nominal_penagihan ? formatRupiah(p.nominal_penagihan) : '',
             tanggal_kirim: p.tanggal_kirim || '',
             tanggal_invoice: p.tanggal_invoice || '',
@@ -285,6 +287,7 @@ export default function PiutangDetailPage() {
             project_id: projectId,
             termin_id: form.termin_id,
             persentase: form.persentase,
+            nomor_invoice: form.nomor_invoice || undefined,
             nominal_penagihan: parseRawNumber(form.nominal_penagihan) || undefined,
             status: form.status,
             tanggal_kirim: form.tanggal_kirim || undefined,
@@ -664,6 +667,7 @@ export default function PiutangDetailPage() {
                             <TableRow>
                                 <TableHead className='w-[50px]'>#</TableHead>
                                 <TableHead>Termin</TableHead>
+                                <TableHead>No Invoice</TableHead>
                                 <TableHead>Persentase</TableHead>
                                 <TableHead>Nominal</TableHead>
                                 <TableHead>Tanggal Kirim</TableHead>
@@ -678,13 +682,13 @@ export default function PiutangDetailPage() {
                         <TableBody>
                             {isLoadingPenagihan ? (
                                 <TableRow>
-                                    <TableCell colSpan={11} className='h-32 text-center'>
+                                    <TableCell colSpan={12} className='h-32 text-center'>
                                         <Loader2 className='h-6 w-6 animate-spin mx-auto text-neutral-400' />
                                     </TableCell>
                                 </TableRow>
                             ) : penagihanList.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={11} className='h-32 text-center text-muted-foreground'>
+                                    <TableCell colSpan={12} className='h-32 text-center text-muted-foreground'>
                                         Belum ada data penagihan.
                                     </TableCell>
                                 </TableRow>
@@ -693,6 +697,7 @@ export default function PiutangDetailPage() {
                                     <TableRow key={item.id} className='hover:bg-neutral-50/50 transition-colors'>
                                         <TableCell className='text-muted-foreground font-medium'>{index + 1}</TableCell>
                                         <TableCell className='font-semibold'>{item.termin?.nama || '-'}</TableCell>
+                                        <TableCell className='text-sm font-medium text-neutral-700'>{item.nomor_invoice || '-'}</TableCell>
                                         <TableCell className='font-bold text-blue-600'>{item.persentase}%</TableCell>
                                         <TableCell className='font-semibold text-emerald-700'>
                                             {item.nominal_penagihan ? formatRupiah(item.nominal_penagihan) : '-'}
@@ -799,6 +804,18 @@ export default function PiutangDetailPage() {
                                     </TabsList>
                                 </Tabs>
                             )}
+                        </div>
+
+                        {/* No Invoice */}
+                        <div className='space-y-2'>
+                            <Label htmlFor="nomor_invoice">No Invoice</Label>
+                            <Input
+                                id="nomor_invoice"
+                                type='text'
+                                placeholder='Masukkan nomor invoice...'
+                                value={form.nomor_invoice || ''}
+                                onChange={(e) => setForm((prev) => ({ ...prev, nomor_invoice: e.target.value }))}
+                            />
                         </div>
 
                         <div className='grid grid-cols-2 gap-4'>
