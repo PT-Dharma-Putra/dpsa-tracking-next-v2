@@ -18,7 +18,7 @@ import {
     Info,
     ChevronDown,
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, differenceInDays, startOfDay } from 'date-fns';
 import { Progress } from '@/components/ui/progress';
 
 import {
@@ -675,6 +675,7 @@ export default function PiutangDetailPage() {
                                 <TableHead>Jatuh Tempo</TableHead>
                                 <TableHead>Status</TableHead>
                                 <TableHead>Tanggal Dibayar</TableHead>
+                                <TableHead>Umur Penagihan</TableHead>
                                 <TableHead>File</TableHead>
                                 <TableHead className='text-right'>Aksi</TableHead>
                             </TableRow>
@@ -682,13 +683,13 @@ export default function PiutangDetailPage() {
                         <TableBody>
                             {isLoadingPenagihan ? (
                                 <TableRow>
-                                    <TableCell colSpan={12} className='h-32 text-center'>
+                                    <TableCell colSpan={13} className='h-32 text-center'>
                                         <Loader2 className='h-6 w-6 animate-spin mx-auto text-neutral-400' />
                                     </TableCell>
                                 </TableRow>
                             ) : penagihanList.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={12} className='h-32 text-center text-muted-foreground'>
+                                    <TableCell colSpan={13} className='h-32 text-center text-muted-foreground'>
                                         Belum ada data penagihan.
                                     </TableCell>
                                 </TableRow>
@@ -723,6 +724,23 @@ export default function PiutangDetailPage() {
                                         </TableCell>
                                         <TableCell className='text-sm'>
                                             {item.tanggal_dibayar ? format(new Date(item.tanggal_dibayar), 'dd MMM yyyy') : '-'}
+                                        </TableCell>
+                                        <TableCell className='text-sm'>
+                                            {item.tanggal_invoice ? (
+                                                (() => {
+                                                    const diff = differenceInDays(
+                                                        startOfDay(new Date()),
+                                                        startOfDay(new Date(item.tanggal_invoice))
+                                                    );
+                                                    return (
+                                                        <Badge variant='outline' className='font-bold bg-neutral-50 text-neutral-700 border-neutral-200 whitespace-nowrap'>
+                                                            {diff} Hari
+                                                        </Badge>
+                                                    );
+                                                })()
+                                            ) : (
+                                                <span className='text-muted-foreground italic text-xs'>-</span>
+                                            )}
                                         </TableCell>
                                         <TableCell>
                                             {item.file ? (
