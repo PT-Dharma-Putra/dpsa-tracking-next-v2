@@ -226,6 +226,17 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           },
         ],
       },
+      {
+        title: 'Task IT',
+        url: '#',
+        allowedRoles: ['Super-Admin'],
+        items: [
+          {
+            title: 'Task IT',
+            url: '/dashboard/task-it',
+          },
+        ],
+      },
     ].filter((group) => {
       if (!user) return false;
 
