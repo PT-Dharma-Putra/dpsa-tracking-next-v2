@@ -19,7 +19,7 @@ export default function TaskItPage() {
     return (
         <div className="space-y-6">
             <div>
-                <h1 className="text-2xl font-semibold tracking-tight pt-4">Taski IT</h1>
+                <h1 className="text-2xl font-semibold tracking-tight pt-4">Task IT</h1>
                 <p className="text-sm text-muted-foreground">
                     Kelola daftar pekerjaan IT untuk operasional internal.
                 </p>
