@@ -668,9 +668,9 @@ export default function PiutangDetailPage() {
                     <Table>
                         <TableHeader className='bg-neutral-50/80'>
                             <TableRow>
-                                <TableHead className='w-[50px]'>#</TableHead>
-                                <TableHead>Termin</TableHead>
+                                <TableHead className='w-[50px]'>No</TableHead>
                                 <TableHead>No Invoice</TableHead>
+                                <TableHead>Termin</TableHead>
                                 <TableHead>Deskripsi</TableHead>
                                 <TableHead>Persentase</TableHead>
                                 <TableHead>Nominal</TableHead>
@@ -701,8 +701,8 @@ export default function PiutangDetailPage() {
                                 penagihanList.map((item, index) => (
                                     <TableRow key={item.id} className='hover:bg-neutral-50/50 transition-colors'>
                                         <TableCell className='text-muted-foreground font-medium'>{index + 1}</TableCell>
-                                        <TableCell className='font-semibold'>{item.termin?.nama || '-'}</TableCell>
                                         <TableCell className='text-sm font-medium text-neutral-700'>{item.nomor_invoice || '-'}</TableCell>
+                                        <TableCell className='font-semibold'>{item.termin?.nama || '-'}</TableCell>
                                         <TableCell className='text-sm text-neutral-600 max-w-[200px] truncate'>{item.deskripsi || '-'}</TableCell>
                                         <TableCell className='font-bold text-blue-600'>{item.persentase}%</TableCell>
                                         <TableCell className='font-semibold text-emerald-700'>
