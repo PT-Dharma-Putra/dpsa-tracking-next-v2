@@ -10,6 +10,7 @@ export interface Penagihan {
     project_id: number;
     termin_id: number;
     nomor_invoice: string | null;
+    deskripsi: string | null;
     persentase: number;
     nominal_penagihan?: string | number | null;
     tanggal_kirim: string | null;
@@ -28,6 +29,7 @@ export interface CreatePenagihanPayload {
     project_id: number;
     termin_id: number;
     nomor_invoice?: string;
+    deskripsi?: string;
     persentase: number;
     nominal_penagihan?: string;
     tanggal_kirim?: string;
@@ -71,6 +73,7 @@ export const penagihanService = {
         formData.append('project_id', payload.project_id.toString());
         formData.append('termin_id', payload.termin_id.toString());
         if (payload.nomor_invoice !== undefined) formData.append('nomor_invoice', payload.nomor_invoice);
+        if (payload.deskripsi !== undefined) formData.append('deskripsi', payload.deskripsi);
         formData.append('persentase', payload.persentase.toString());
         formData.append('status', payload.status);
         if (payload.tanggal_kirim) formData.append('tanggal_kirim', payload.tanggal_kirim);
@@ -91,6 +94,7 @@ export const penagihanService = {
         const formData = new FormData();
         if (payload.termin_id !== undefined) formData.append('termin_id', payload.termin_id.toString());
         if (payload.nomor_invoice !== undefined) formData.append('nomor_invoice', payload.nomor_invoice);
+        if (payload.deskripsi !== undefined) formData.append('deskripsi', payload.deskripsi);
         if (payload.persentase !== undefined) formData.append('persentase', payload.persentase.toString());
         if (payload.status) formData.append('status', payload.status);
         if (payload.tanggal_kirim) formData.append('tanggal_kirim', payload.tanggal_kirim);

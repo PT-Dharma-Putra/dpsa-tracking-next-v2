@@ -130,6 +130,7 @@ const emptyForm = {
     termin_id: 0,
     persentase: 0,
     nomor_invoice: '',
+    deskripsi: '',
     nominal_penagihan: '',
     tanggal_kirim: '',
     tanggal_invoice: '',
@@ -257,6 +258,7 @@ export default function PiutangDetailPage() {
             termin_id: p.termin_id,
             persentase: p.persentase,
             nomor_invoice: p.nomor_invoice || '',
+            deskripsi: p.deskripsi || '',
             nominal_penagihan: p.nominal_penagihan ? formatRupiah(p.nominal_penagihan) : '',
             tanggal_kirim: p.tanggal_kirim || '',
             tanggal_invoice: p.tanggal_invoice || '',
@@ -288,6 +290,7 @@ export default function PiutangDetailPage() {
             termin_id: form.termin_id,
             persentase: form.persentase,
             nomor_invoice: form.nomor_invoice || undefined,
+            deskripsi: form.deskripsi || undefined,
             nominal_penagihan: parseRawNumber(form.nominal_penagihan) || undefined,
             status: form.status,
             tanggal_kirim: form.tanggal_kirim || undefined,
@@ -668,6 +671,7 @@ export default function PiutangDetailPage() {
                                 <TableHead className='w-[50px]'>#</TableHead>
                                 <TableHead>Termin</TableHead>
                                 <TableHead>No Invoice</TableHead>
+                                <TableHead>Deskripsi</TableHead>
                                 <TableHead>Persentase</TableHead>
                                 <TableHead>Nominal</TableHead>
                                 <TableHead>Tanggal Kirim</TableHead>
@@ -683,13 +687,13 @@ export default function PiutangDetailPage() {
                         <TableBody>
                             {isLoadingPenagihan ? (
                                 <TableRow>
-                                    <TableCell colSpan={13} className='h-32 text-center'>
+                                    <TableCell colSpan={14} className='h-32 text-center'>
                                         <Loader2 className='h-6 w-6 animate-spin mx-auto text-neutral-400' />
                                     </TableCell>
                                 </TableRow>
                             ) : penagihanList.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={13} className='h-32 text-center text-muted-foreground'>
+                                    <TableCell colSpan={14} className='h-32 text-center text-muted-foreground'>
                                         Belum ada data penagihan.
                                     </TableCell>
                                 </TableRow>
@@ -699,6 +703,7 @@ export default function PiutangDetailPage() {
                                         <TableCell className='text-muted-foreground font-medium'>{index + 1}</TableCell>
                                         <TableCell className='font-semibold'>{item.termin?.nama || '-'}</TableCell>
                                         <TableCell className='text-sm font-medium text-neutral-700'>{item.nomor_invoice || '-'}</TableCell>
+                                        <TableCell className='text-sm text-neutral-600 max-w-[200px] truncate'>{item.deskripsi || '-'}</TableCell>
                                         <TableCell className='font-bold text-blue-600'>{item.persentase}%</TableCell>
                                         <TableCell className='font-semibold text-emerald-700'>
                                             {item.nominal_penagihan ? formatRupiah(item.nominal_penagihan) : '-'}
@@ -833,6 +838,18 @@ export default function PiutangDetailPage() {
                                 placeholder='Masukkan nomor invoice...'
                                 value={form.nomor_invoice || ''}
                                 onChange={(e) => setForm((prev) => ({ ...prev, nomor_invoice: e.target.value }))}
+                            />
+                        </div>
+
+                        {/* Deskripsi */}
+                        <div className='space-y-2'>
+                            <Label htmlFor="deskripsi">Deskripsi</Label>
+                            <Input
+                                id="deskripsi"
+                                type='text'
+                                placeholder='Masukkan deskripsi penagihan...'
+                                value={form.deskripsi || ''}
+                                onChange={(e) => setForm((prev) => ({ ...prev, deskripsi: e.target.value }))}
                             />
                         </div>
 
