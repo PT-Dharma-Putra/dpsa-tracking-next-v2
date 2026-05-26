@@ -18,7 +18,7 @@ import {
     Info,
     ChevronDown,
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, differenceInDays, startOfDay } from 'date-fns';
 import { Progress } from '@/components/ui/progress';
 
 import {
@@ -129,6 +129,8 @@ const statusBadgeClass = (status: string) => {
 const emptyForm = {
     termin_id: 0,
     persentase: 0,
+    nomor_invoice: '',
+    deskripsi: '',
     nominal_penagihan: '',
     tanggal_kirim: '',
     tanggal_invoice: '',
@@ -255,6 +257,8 @@ export default function PiutangDetailPage() {
         setForm({
             termin_id: p.termin_id,
             persentase: p.persentase,
+            nomor_invoice: p.nomor_invoice || '',
+            deskripsi: p.deskripsi || '',
             nominal_penagihan: p.nominal_penagihan ? formatRupiah(p.nominal_penagihan) : '',
             tanggal_kirim: p.tanggal_kirim || '',
             tanggal_invoice: p.tanggal_invoice || '',
@@ -285,6 +289,8 @@ export default function PiutangDetailPage() {
             project_id: projectId,
             termin_id: form.termin_id,
             persentase: form.persentase,
+            nomor_invoice: form.nomor_invoice || undefined,
+            deskripsi: form.deskripsi || undefined,
             nominal_penagihan: parseRawNumber(form.nominal_penagihan) || undefined,
             status: form.status,
             tanggal_kirim: form.tanggal_kirim || undefined,
@@ -662,8 +668,10 @@ export default function PiutangDetailPage() {
                     <Table>
                         <TableHeader className='bg-neutral-50/80'>
                             <TableRow>
-                                <TableHead className='w-[50px]'>#</TableHead>
+                                <TableHead className='w-[50px]'>No</TableHead>
+                                <TableHead>No Invoice</TableHead>
                                 <TableHead>Termin</TableHead>
+                                <TableHead>Deskripsi</TableHead>
                                 <TableHead>Persentase</TableHead>
                                 <TableHead>Nominal</TableHead>
                                 <TableHead>Tanggal Kirim</TableHead>
@@ -671,6 +679,7 @@ export default function PiutangDetailPage() {
                                 <TableHead>Jatuh Tempo</TableHead>
                                 <TableHead>Status</TableHead>
                                 <TableHead>Tanggal Dibayar</TableHead>
+                                <TableHead>Umur Penagihan</TableHead>
                                 <TableHead>File</TableHead>
                                 <TableHead className='text-right'>Aksi</TableHead>
                             </TableRow>
@@ -678,13 +687,13 @@ export default function PiutangDetailPage() {
                         <TableBody>
                             {isLoadingPenagihan ? (
                                 <TableRow>
-                                    <TableCell colSpan={11} className='h-32 text-center'>
+                                    <TableCell colSpan={14} className='h-32 text-center'>
                                         <Loader2 className='h-6 w-6 animate-spin mx-auto text-neutral-400' />
                                     </TableCell>
                                 </TableRow>
                             ) : penagihanList.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={11} className='h-32 text-center text-muted-foreground'>
+                                    <TableCell colSpan={14} className='h-32 text-center text-muted-foreground'>
                                         Belum ada data penagihan.
                                     </TableCell>
                                 </TableRow>
@@ -692,7 +701,9 @@ export default function PiutangDetailPage() {
                                 penagihanList.map((item, index) => (
                                     <TableRow key={item.id} className='hover:bg-neutral-50/50 transition-colors'>
                                         <TableCell className='text-muted-foreground font-medium'>{index + 1}</TableCell>
+                                        <TableCell className='text-sm font-medium text-neutral-700'>{item.nomor_invoice || '-'}</TableCell>
                                         <TableCell className='font-semibold'>{item.termin?.nama || '-'}</TableCell>
+                                        <TableCell className='text-sm text-neutral-600 max-w-[200px] truncate'>{item.deskripsi || '-'}</TableCell>
                                         <TableCell className='font-bold text-blue-600'>{item.persentase}%</TableCell>
                                         <TableCell className='font-semibold text-emerald-700'>
                                             {item.nominal_penagihan ? formatRupiah(item.nominal_penagihan) : '-'}
@@ -718,6 +729,23 @@ export default function PiutangDetailPage() {
                                         </TableCell>
                                         <TableCell className='text-sm'>
                                             {item.tanggal_dibayar ? format(new Date(item.tanggal_dibayar), 'dd MMM yyyy') : '-'}
+                                        </TableCell>
+                                        <TableCell className='text-sm'>
+                                            {item.tanggal_invoice ? (
+                                                (() => {
+                                                    const diff = differenceInDays(
+                                                        startOfDay(new Date()),
+                                                        startOfDay(new Date(item.tanggal_invoice))
+                                                    );
+                                                    return (
+                                                        <Badge variant='outline' className='font-bold bg-neutral-50 text-neutral-700 border-neutral-200 whitespace-nowrap'>
+                                                            {diff} Hari
+                                                        </Badge>
+                                                    );
+                                                })()
+                                            ) : (
+                                                <span className='text-muted-foreground italic text-xs'>-</span>
+                                            )}
                                         </TableCell>
                                         <TableCell>
                                             {item.file ? (
@@ -799,6 +827,30 @@ export default function PiutangDetailPage() {
                                     </TabsList>
                                 </Tabs>
                             )}
+                        </div>
+
+                        {/* No Invoice */}
+                        <div className='space-y-2'>
+                            <Label htmlFor="nomor_invoice">No Invoice</Label>
+                            <Input
+                                id="nomor_invoice"
+                                type='text'
+                                placeholder='Masukkan nomor invoice...'
+                                value={form.nomor_invoice || ''}
+                                onChange={(e) => setForm((prev) => ({ ...prev, nomor_invoice: e.target.value }))}
+                            />
+                        </div>
+
+                        {/* Deskripsi */}
+                        <div className='space-y-2'>
+                            <Label htmlFor="deskripsi">Deskripsi</Label>
+                            <Input
+                                id="deskripsi"
+                                type='text'
+                                placeholder='Masukkan deskripsi penagihan...'
+                                value={form.deskripsi || ''}
+                                onChange={(e) => setForm((prev) => ({ ...prev, deskripsi: e.target.value }))}
+                            />
                         </div>
 
                         <div className='grid grid-cols-2 gap-4'>

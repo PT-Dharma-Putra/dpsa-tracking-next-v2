@@ -650,7 +650,11 @@ export function ProjectsV2Table({
                             : '-'}
                         </TableCell>
                         <TableCell>
-                          {project.deadline && !(project.progres_kerja && Math.round(project.progres_kerja.total) === 100) ? (
+                          {project.progres_kerja && Math.round(project.progres_kerja.total) === 100 ? (
+                            <div className='flex items-center justify-center h-7 w-7 rounded-full bg-emerald-50 text-emerald-600'>
+                              <Check className='h-4 w-4 stroke-[3]' />
+                            </div>
+                          ) : project.deadline ? (
                             (() => {
                               const diff = differenceInDays(
                                 startOfDay(new Date(project.deadline)),
@@ -840,7 +844,11 @@ export function ProjectsV2Table({
 
                       {!showProduksi && !showPiutang && (
                         <TableCell>
-                          {project.deadline ? (
+                          {project.progres_kerja && Math.round(project.progres_kerja.total) === 100 ? (
+                            <div className='flex items-center justify-center h-7 w-7 rounded-full bg-emerald-50 text-emerald-600'>
+                              <Check className='h-4 w-4 stroke-[3]' />
+                            </div>
+                          ) : project.deadline ? (
                             (() => {
                               const diff = differenceInDays(
                                 startOfDay(new Date(project.deadline)),
