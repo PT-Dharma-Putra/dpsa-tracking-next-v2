@@ -23,16 +23,16 @@ interface DivisionAssignmentWidgetProps {
 }
 
 const DIVISIONS = [
+    { value: "ASD", label: "ASD" },
+    { value: "BACY", label: "BACY" },
+    { value: "DCA", label: "DCA" },
     { value: "DPSA", label: "DPSA" },
     { value: "KJAS", label: "KJAS" },
-    { value: "SSDA", label: "SSDA" },
-    { value: "SDB", label: "SDB" },
-    { value: "UISA", label: "UISA" },
-    { value: "DCA", label: "DCA" },
-    { value: "BACY", label: "BACY" },
-    { value: "SMB", label: "SMB" },
     { value: "KPSA", label: "KPSA" },
-    { value: "ASD", label: "ASD" },
+    { value: "SDB", label: "SDB" },
+    { value: "SMB", label: "SMB" },
+    { value: "SSDA", label: "SSDA" },
+    { value: "UISA", label: "UISA" },
 ];
 
 export function DivisionAssignmentWidget({ projectId, spkNumber }: DivisionAssignmentWidgetProps) {
