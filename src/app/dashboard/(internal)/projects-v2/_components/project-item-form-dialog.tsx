@@ -165,7 +165,7 @@ export function ProjectItemFormDialog({ open, onOpenChange, projectId, item }: P
             } else if (satuan === "M2 (pxt)" || satuan === "M2_PXT") {
                 calculatedVolume = panjang * tinggi;
             } else if (satuan === "UNIT" || satuan === "SET") {
-                calculatedVolume = qty;
+                calculatedVolume = 1;
             }
 
             if (calculatedVolume !== item.volume) {

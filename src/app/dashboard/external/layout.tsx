@@ -41,7 +41,7 @@ export default function CustomerLayout({ children }: { children: ReactNode }) {
         // Check Role: Only Clients allowed
         if (user?.role !== 'Client') {
             // Staff should not be here
-            router.replace("/dashboard")
+            router.replace("/dashboard/all")
             return
         }
 

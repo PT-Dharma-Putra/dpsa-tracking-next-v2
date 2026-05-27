@@ -432,9 +432,13 @@ export function UserListTable() {
                                             </SelectTrigger>
                                             <SelectContent>
                                                 <SelectItem value="none">None</SelectItem>
-                                                {divisions?.map((div: any) => (
-                                                    <SelectItem key={div.id} value={div.id.toString()}>{div.nama}</SelectItem>
-                                                ))}
+                                                {divisions
+                                                    ? [...divisions]
+                                                        .sort((a, b) => a.nama.localeCompare(b.nama))
+                                                        .map((div: any) => (
+                                                            <SelectItem key={div.id} value={div.id.toString()}>{div.nama}</SelectItem>
+                                                        ))
+                                                    : null}
                                             </SelectContent>
                                         </Select>
                                     </div>

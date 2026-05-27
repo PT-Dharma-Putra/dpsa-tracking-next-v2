@@ -44,7 +44,7 @@ interface UserAuthFormProps extends React.HTMLAttributes<HTMLDivElement> {
     onSuccessRedirect?: string
 }
 
-export function UserAuthForm({ className, onSuccessRedirect = "/dashboard", ...props }: UserAuthFormProps) {
+export function UserAuthForm({ className, onSuccessRedirect = "/dashboard/all", ...props }: UserAuthFormProps) {
     const router = useRouter()
     const { setAuth } = useAuthStore()
     const [isLoading, setIsLoading] = React.useState<boolean>(false)
@@ -87,7 +87,10 @@ export function UserAuthForm({ className, onSuccessRedirect = "/dashboard", ...p
             else if ('access_token' in response.data) {
                 setAuth(response.data.user, response.data.access_token)
                 toast.success("Login successful")
-                router.push(onSuccessRedirect)
+                const redirectPath = onSuccessRedirect === "/dashboard"
+                    ? (response.data.user.role === 'Client' ? "/dashboard/external" : "/dashboard/all")
+                    : onSuccessRedirect;
+                router.push(redirectPath)
             }
         } catch (error: any) {
             const msg = error.response?.data?.message || "Invalid email or password."
@@ -113,7 +116,10 @@ export function UserAuthForm({ className, onSuccessRedirect = "/dashboard", ...p
             if (response.status === 'success') {
                 setAuth(response.data.user, response.data.access_token)
                 toast.success("Authentication successful")
-                router.push(onSuccessRedirect)
+                const redirectPath = onSuccessRedirect === "/dashboard"
+                    ? (response.data.user.role === 'Client' ? "/dashboard/external" : "/dashboard/all")
+                    : onSuccessRedirect;
+                router.push(redirectPath)
             }
         } catch (error: any) {
             const msg = error.response?.data?.message || "Invalid OTP Code"

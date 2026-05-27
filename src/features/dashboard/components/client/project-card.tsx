@@ -15,6 +15,7 @@ interface Project {
     thumbnail?: string | null;
     description?: string | null;
     last_updated_at?: string;
+    nomor_spk?: string | null;
 }
 
 export function ClientProjectCard({ project }: { project: Project }) {
@@ -36,9 +37,17 @@ export function ClientProjectCard({ project }: { project: Project }) {
             <CardContent className="p-6 space-y-4">
                 <div className="flex justify-between items-start">
                     <div className="space-y-1">
-                        <Badge variant="outline" className={`border-none px-0 ${getStatusColor(project.status)} bg-transparent font-bold uppercase tracking-wider`}>
-                            {project.status.replace(/_/g, " ")}
-                        </Badge>
+                        <div className="flex flex-col gap-0.5">
+                            {/* <Badge variant="outline" className={`border-none px-0 w-fit ${getStatusColor(project.status)} bg-transparent font-bold uppercase tracking-wider`}>
+                                {project.status.replace(/_/g, " ")}
+                            </Badge> */}
+
+                            {project.nomor_spk && (
+                                <span className="text-sm font-semibold text-neutral-500">
+                                    {project.nomor_spk}
+                                </span>
+                            )}
+                        </div>
                         <h3 className="text-xl font-bold text-neutral-900 tracking-tight group-hover:text-orange-600 transition-colors">
                             {project.name}
                         </h3>

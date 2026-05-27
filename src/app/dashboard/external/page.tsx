@@ -75,7 +75,7 @@ export default function ClientDashboardPage() {
             <div>
                 <div className="flex items-center justify-between mb-6">
                     <h3 className="text-xl font-bold text-neutral-900 flex items-center gap-2">
-                        Active Projects
+                        Active Projectsd
                         <Badge variant="outline" className="ml-2 bg-orange-50 text-orange-700 border-none">{activeProjects} Ongoing</Badge>
                     </h3>
                     <span className="text-sm text-neutral-400">Sorted by Priority</span>

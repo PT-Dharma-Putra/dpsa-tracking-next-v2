@@ -1163,11 +1163,15 @@ export default function EngineerDetailPage() {
                                     <SelectValue placeholder="Pilih Divisi..." />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {divisions?.map((div: any) => (
-                                        <SelectItem key={div.id} value={div.id.toString()} className="text-xs">
-                                            {div.nama}
-                                        </SelectItem>
-                                    ))}
+                                    {divisions
+                                        ? [...divisions]
+                                            .sort((a, b) => a.nama.localeCompare(b.nama))
+                                            .map((div: any) => (
+                                                <SelectItem key={div.id} value={div.id.toString()} className="text-xs">
+                                                    {div.nama}
+                                                </SelectItem>
+                                            ))
+                                        : null}
                                 </SelectContent>
                             </Select>
                         </div>
