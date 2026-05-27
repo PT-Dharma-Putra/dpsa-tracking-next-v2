@@ -1225,7 +1225,8 @@ export default function ProjectItemsPage() {
                           </Button>
                         </div>
                       </div>
-                    ) : (
+                    ) 
+                    : (
                       <Button
                         variant='outline'
                         className='w-full text-xs h-9 border-dashed border-emerald-300 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-400'
@@ -1234,7 +1235,8 @@ export default function ProjectItemsPage() {
                         <Upload className='h-3.5 w-3.5 mr-1.5' />
                         Upload SPK Bertanda Tangan
                       </Button>
-                    )}
+                    )
+                    }
                   </div>
                 ) : (
                   <p className='text-xs text-muted-foreground italic'>

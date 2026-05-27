@@ -283,10 +283,11 @@ export default function ProjectItemsPage() {
   const [spkDeadline, setSpkDeadline] = React.useState<string>('');
   const [spkPrioritas, setSpkPrioritas] = React.useState<'Normal' | 'Urgent'>('Normal');
   const [spkTanggalMasuk, setSpkTanggalMasuk] = React.useState<string>('');
+  const [spkNominal, setSpkNominal] = React.useState<string>('');
 
   const uploadSpkMutation = useMutation({
-    mutationFn: ({ file, number, deadline, prioritas, tanggal_masuk }: { file: File; number: string; deadline?: string; prioritas?: string; tanggal_masuk?: string }) =>
-      projectV2Service.uploadSPK(projectId, file, number, deadline, prioritas, tanggal_masuk),
+    mutationFn: ({ file, number, deadline, prioritas, tanggal_masuk, nominal }: { file: File; number: string; deadline?: string; prioritas?: string; tanggal_masuk?: string; nominal?: string }) =>
+      projectV2Service.uploadSPK(projectId, file, number, deadline, prioritas, tanggal_masuk, nominal),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects-v2', projectId] });
       toast.success('SPK uploaded successfully');
@@ -295,6 +296,7 @@ export default function ProjectItemsPage() {
       setSpkDeadline('');
       setSpkPrioritas('Normal');
       setSpkTanggalMasuk('');
+      setSpkNominal('');
     },
     onError: () => {
       toast.error('Failed to upload SPK');
@@ -306,7 +308,14 @@ export default function ProjectItemsPage() {
       toast.error('Please provide both file and SPK number');
       return;
     }
-    uploadSpkMutation.mutate({ file: spkFile, number: spkNumber, deadline: spkDeadline, prioritas: spkPrioritas, tanggal_masuk: spkTanggalMasuk });
+    uploadSpkMutation.mutate({ 
+      file: spkFile, 
+      number: spkNumber, 
+      deadline: spkDeadline, 
+      prioritas: spkPrioritas, 
+      tanggal_masuk: spkTanggalMasuk,
+      nominal: parseRawNumber(spkNominal)
+    });
   };
 
   const [signedSpkFile, setSignedSpkFile] = React.useState<File | null>(null);
@@ -642,16 +651,6 @@ export default function ProjectItemsPage() {
                   }`}
                 />
               </button>
-              <Button
-                size='sm'
-                variant='outline'
-                className='h-7 text-[10px] border-orange-200 text-orange-600 hover:bg-orange-50 shrink-0'
-                disabled={!flowSteps[0].isActive}
-                onClick={() => setIsSpdModalOpen(true)}
-              >
-                <Upload className='h-3 w-3 mr-1' />
-                {existingSpd?.spd_file ? 'Ganti' : 'Upload'}
-              </Button>
             </CardHeader>
             {!isSpdCollapsed && (
               <CardContent>
@@ -671,7 +670,7 @@ export default function ProjectItemsPage() {
                               new Date(
                                 existingSpd.target_selesai || existingSpd.tanggal || existingSpd.created_at
                               ),
-                              'MMM d, yyyy'
+                               'MMM d, yyyy'
                             )}
                           </p>
                         </div>
@@ -730,11 +729,33 @@ export default function ProjectItemsPage() {
                         </div>
                       </div>
                     )}
+                    <Button
+                      size='sm'
+                      variant='outline'
+                      className='w-full h-8 text-[10px] border-orange-200 text-orange-600 hover:bg-orange-50 mt-3 shrink-0'
+                      disabled={!flowSteps[0].isActive || project.need_design === 0}
+                      onClick={() => setIsSpdModalOpen(true)}
+                    >
+                      <Upload className='h-3 w-3 mr-1' />
+                      Ganti SPD
+                    </Button>
                   </>
                 ) : (
-                  <p className='text-xs text-muted-foreground italic'>
-                    {project.need_design === 0 ? 'Tanpa Desain' : 'Belum ada file SPD.'}
-                  </p>
+                  <div className="space-y-3">
+                    <p className='text-xs text-muted-foreground italic'>
+                      {project.need_design === 0 ? 'Tanpa Desain' : 'Belum ada file SPD.'}
+                    </p>
+                    <Button
+                      size='sm'
+                      variant='outline'
+                      className='w-full h-8 text-[10px] border-orange-200 text-orange-600 hover:bg-orange-50 shrink-0'
+                      disabled={!flowSteps[0].isActive || project.need_design === 0}
+                      onClick={() => setIsSpdModalOpen(true)}
+                    >
+                      <Upload className='h-3 w-3 mr-1' />
+                      Upload SPD
+                    </Button>
+                  </div>
                 )}
               </CardContent>
             )}
@@ -778,70 +799,84 @@ export default function ProjectItemsPage() {
                   }`}
                 />
               </button>
-              <Button
-                size='sm'
-                variant='outline'
-                className='h-7 text-[10px] border-emerald-200 text-emerald-600 hover:bg-emerald-50 shrink-0'
-                disabled={!flowSteps[1].isActive}
-                onClick={() => setIsAccModalOpen(true)}
-              >
-                <Pencil className='h-3 w-3 mr-1' />
-                Update
-              </Button>
             </CardHeader>
             {!isAccCollapsed && (
               <CardContent className="space-y-4">
                 {existingAcc ? (
-                  <div className='space-y-2'>
-                    <div
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold shrink-0 ${
-                        existingAcc.status === 'Approved'
-                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                          : 'bg-amber-50 text-amber-700 border border-amber-200'
-                      }`}
-                    >
-                      <CheckCircle2 className='h-3 w-3 shrink-0' />
-                      <span className="truncate">{existingAcc.status}</span>
-                    </div>
-                    {existingAcc.tanggal_kirim && (
-                      <p className='text-[10px] text-muted-foreground truncate'>
-                        Kirim:{' '}
-                        {format(
-                          new Date(existingAcc.tanggal_kirim),
-                          'MMM d, yyyy'
-                        )}
-                      </p>
-                    )}
-                    {existingAcc.tanggal_acc && (
-                      <p className='text-[10px] text-muted-foreground truncate'>
-                        ACC:{' '}
-                        {format(
-                          new Date(existingAcc.tanggal_acc),
-                          'MMM d, yyyy'
-                        )}
-                      </p>
-                    )}
-                    {existingAcc.bukti_acc && (
-                      <a
-                        href={`${(
-                          process.env.NEXT_PUBLIC_API_URL ||
-                          'http://localhost:8000'
-                        ).replace('/api', '')}/storage/${
-                          existingAcc.bukti_acc
+                  <div className="space-y-3">
+                    <div className='space-y-2'>
+                      <div
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold shrink-0 ${
+                          existingAcc.status === 'Approved'
+                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                            : 'bg-amber-50 text-amber-700 border border-amber-200'
                         }`}
-                        target='_blank'
-                        rel='noopener noreferrer'
-                        className='text-[10px] text-emerald-600 hover:underline flex items-center gap-1 min-w-0'
                       >
-                        <FileDown className='h-3 w-3 shrink-0' />
-                        <span className="truncate">Bukti ACC</span>
-                      </a>
-                    )}
+                        <CheckCircle2 className='h-3 w-3 shrink-0' />
+                        <span className="truncate">{existingAcc.status}</span>
+                      </div>
+                      {existingAcc.tanggal_kirim && (
+                        <p className='text-[10px] text-muted-foreground truncate'>
+                          Kirim:{' '}
+                          {format(
+                            new Date(existingAcc.tanggal_kirim),
+                            'MMM d, yyyy'
+                          )}
+                        </p>
+                      )}
+                      {existingAcc.tanggal_acc && (
+                        <p className='text-[10px] text-muted-foreground truncate'>
+                          ACC:{' '}
+                          {format(
+                            new Date(existingAcc.tanggal_acc),
+                            'MMM d, yyyy'
+                          )}
+                        </p>
+                      )}
+                      {existingAcc.bukti_acc && (
+                        <a
+                          href={`${(
+                            process.env.NEXT_PUBLIC_API_URL ||
+                            'http://localhost:8000'
+                          ).replace('/api', '')}/storage/${
+                            existingAcc.bukti_acc
+                          }`}
+                          target='_blank'
+                          rel='noopener noreferrer'
+                          className='text-[10px] text-emerald-600 hover:underline flex items-center gap-1 min-w-0'
+                        >
+                          <FileDown className='h-3 w-3 shrink-0' />
+                          <span className="truncate">Bukti ACC</span>
+                        </a>
+                      )}
+                    </div>
+                    <Button
+                      size='sm'
+                      variant='outline'
+                      className='w-full h-8 text-[10px] border-emerald-200 text-emerald-600 hover:bg-emerald-50 shrink-0'
+                      disabled={!flowSteps[1].isActive || project.need_design === 0}
+                      onClick={() => setIsAccModalOpen(true)}
+                    >
+                      <Pencil className='h-3 w-3 mr-1' />
+                      Update ACC Design
+                    </Button>
                   </div>
                 ) : (
-                  <p className='text-xs text-muted-foreground italic'>
-                    {project.need_design === 0 ? 'Tanpa Desain' : 'Belum ada data ACC.'}
-                  </p>
+                  <div className="space-y-3">
+                    <p className='text-xs text-muted-foreground italic'>
+                      {project.need_design === 0 ? 'Tanpa Desain' : 'Belum ada data ACC.'}
+                    </p>
+                    <Button
+                      size='sm'
+                      variant='outline'
+                      className='w-full h-8 text-[10px] border-emerald-200 text-emerald-600 hover:bg-emerald-50 shrink-0'
+                      disabled={!flowSteps[1].isActive || project.need_design === 0}
+                      onClick={() => setIsAccModalOpen(true)}
+                    >
+                      <Pencil className='h-3 w-3 mr-1' />
+                      Update ACC Design
+                    </Button>
+                  </div>
                 )}
 
                 {/* Design Progress Files from Studio */}
@@ -919,16 +954,6 @@ export default function ProjectItemsPage() {
                   }`}
                 />
               </button>
-              <Button
-                size='sm'
-                variant='outline'
-                className='h-7 text-[10px] border-blue-200 text-blue-600 hover:bg-blue-50 shrink-0'
-                disabled={!flowSteps[2].isActive}
-                onClick={() => setIsSphModalOpen(true)}
-              >
-                <Upload className='h-3 w-3 mr-1' />
-                {existingSph?.file ? 'Ganti' : 'Upload'}
-              </Button>
             </CardHeader>
             {!isSphCollapsed && (
               <CardContent className="space-y-3">
@@ -952,58 +977,82 @@ export default function ProjectItemsPage() {
                   </div>
                 )}
                 {existingSph?.file ? (
-                  <div className='p-3 rounded-xl bg-blue-50/80 border border-blue-100 flex items-center justify-between shadow-sm min-w-0 gap-2'>
-                    <div className='flex items-center gap-3 min-w-0 flex-1 mr-2'>
-                      <div className='h-8 w-8 rounded-lg bg-white shadow-sm border border-blue-100 flex items-center justify-center text-blue-600 shrink-0'>
-                        <FileText className='h-4 w-4' />
-                      </div>
-                      <div className='min-w-0 flex-1'>
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          <p className='text-xs font-bold text-blue-900 truncate max-w-full' title={existingSph.nomor_sph}>
-                            {existingSph.nomor_sph}
-                          </p>
-                          {existingSph.status && (
-                            <Badge variant="outline" className={`text-[9px] h-4 px-1.5 uppercase tracking-wider shrink-0 ${
-                              existingSph.status === 'approved' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-                              existingSph.status === 'revision' ? 'bg-red-50 text-red-700 border-red-200' :
-                              'bg-blue-50 text-blue-700 border-blue-200'
-                            }`}>
-                              {existingSph.status}
-                            </Badge>
-                          )}
+                  <div className="space-y-3">
+                    <div className='p-3 rounded-xl bg-blue-50/80 border border-blue-100 flex items-center justify-between shadow-sm min-w-0 gap-2'>
+                      <div className='flex items-center gap-3 min-w-0 flex-1 mr-2'>
+                        <div className='h-8 w-8 rounded-lg bg-white shadow-sm border border-blue-100 flex items-center justify-center text-blue-600 shrink-0'>
+                          <FileText className='h-4 w-4' />
                         </div>
-                        <p className='text-[10px] text-blue-600/80 truncate'>
-                          {format(
-                            new Date(existingSph.created_at),
-                            'MMM d, yyyy'
-                          )}
-                        </p>
+                        <div className='min-w-0 flex-1'>
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <p className='text-xs font-bold text-blue-900 truncate max-w-full' title={existingSph.nomor_sph}>
+                              {existingSph.nomor_sph}
+                            </p>
+                            {existingSph.status && (
+                              <Badge variant="outline" className={`text-[9px] h-4 px-1.5 uppercase tracking-wider shrink-0 ${
+                                existingSph.status === 'approved' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                                existingSph.status === 'revision' ? 'bg-red-50 text-red-700 border-red-200' :
+                                'bg-blue-50 text-blue-700 border-blue-200'
+                              }`}>
+                                {existingSph.status}
+                              </Badge>
+                            )}
+                          </div>
+                          <p className='text-[10px] text-blue-600/80 truncate'>
+                            {format(
+                              new Date(existingSph.created_at),
+                              'MMM d, yyyy'
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center shrink-0">
+                        <Button
+                          variant='ghost'
+                          size='icon'
+                          className='h-8 w-8 text-blue-600 hover:bg-blue-200 bg-white shadow-sm border border-blue-100 shrink-0'
+                          asChild
+                        >
+                          <a
+                            href={`${(
+                              process.env.NEXT_PUBLIC_API_URL ||
+                              'http://localhost:8000'
+                            ).replace('/api', '')}/storage/${existingSph.file}`}
+                            target='_blank'
+                            rel='noopener noreferrer'
+                          >
+                            <FileDown className='h-4 w-4' />
+                          </a>
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex items-center shrink-0">
-                      <Button
-                        variant='ghost'
-                        size='icon'
-                        className='h-8 w-8 text-blue-600 hover:bg-blue-200 bg-white shadow-sm border border-blue-100 shrink-0'
-                        asChild
-                      >
-                        <a
-                          href={`${(
-                            process.env.NEXT_PUBLIC_API_URL ||
-                            'http://localhost:8000'
-                          ).replace('/api', '')}/storage/${existingSph.file}`}
-                          target='_blank'
-                          rel='noopener noreferrer'
-                        >
-                          <FileDown className='h-4 w-4' />
-                        </a>
-                      </Button>
-                    </div>
+                    <Button
+                      size='sm'
+                      variant='outline'
+                      className='w-full h-8 text-[10px] border-blue-200 text-blue-600 hover:bg-blue-50 shrink-0'
+                      disabled={!flowSteps[2].isActive || existingSph?.status === 'approved'}
+                      onClick={() => setIsSphModalOpen(true)}
+                    >
+                      <Upload className='h-3 w-3 mr-1' />
+                      Ganti SPH
+                    </Button>
                   </div>
                 ) : (
-                  <p className='text-xs text-muted-foreground italic'>
-                    {project.need_design === 0 ? 'Tanpa Desain' : 'Belum ada file SPH.'}
-                  </p>
+                  <div className="space-y-3">
+                    <p className='text-xs text-muted-foreground italic'>
+                      {project.need_design === 0 ? 'Tanpa Desain' : 'Belum ada file SPH.'}
+                    </p>
+                    <Button
+                      size='sm'
+                      variant='outline'
+                      className='w-full h-8 text-[10px] border-blue-200 text-blue-600 hover:bg-blue-50 shrink-0'
+                      disabled={!flowSteps[2].isActive}
+                      onClick={() => setIsSphModalOpen(true)}
+                    >
+                      <Upload className='h-3 w-3 mr-1' />
+                      Upload SPH
+                    </Button>
+                  </div>
                 )}
 
                 {existingSph?.file && existingSph.status !== 'approved' && (
@@ -1126,16 +1175,6 @@ export default function ProjectItemsPage() {
                   }`}
                 />
               </button>
-              <Button
-                size='sm'
-                variant='outline'
-                className='h-7 text-[10px] border-purple-200 text-purple-600 hover:bg-purple-50 shrink-0'
-                disabled={!flowSteps[3].isActive}
-                onClick={() => setIsSpkModalOpen(true)}
-              >
-                <Upload className='h-3 w-3 mr-1' />
-                {existingSpk?.file || existingSpk?.spk_signed_file ? 'Ganti' : 'Upload'}
-              </Button>
             </CardHeader>
             {!isSpkCollapsed && (
               <CardContent>
@@ -1178,9 +1217,9 @@ export default function ProjectItemsPage() {
                         </Button>
                       </div>
                     </div>
-
+ 
                     {/* Signed SPK Section */}
-                    {existingSpk?.spk_signed_file ? (
+                    {existingSpk?.spk_signed_file && (
                       <div className='p-3 rounded-xl bg-emerald-50/80 border border-emerald-100 flex items-center justify-between shadow-sm min-w-0 gap-2'>
                         <div className='flex items-center gap-3 min-w-0 flex-1 mr-2'>
                           <div className='h-8 w-8 rounded-lg bg-white shadow-sm border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0'>
@@ -1225,21 +1264,45 @@ export default function ProjectItemsPage() {
                           </Button>
                         </div>
                       </div>
-                    ) : (
-                      <Button
-                        variant='outline'
-                        className='w-full text-xs h-9 border-dashed border-emerald-300 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-400'
-                        onClick={() => setIsSignedSpkModalOpen(true)}
-                      >
-                        <Upload className='h-3.5 w-3.5 mr-1.5' />
-                        Upload SPK Bertanda Tangan
-                      </Button>
-                    )}
+                    ) 
+                    // : (
+                    //   <Button
+                    //     variant='outline'
+                    //     className='w-full text-xs h-9 border-dashed border-emerald-300 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-400 font-semibold'
+                    //     onClick={() => setIsSignedSpkModalOpen(true)}
+                    //   >
+                    //     <Upload className='h-3.5 w-3.5 mr-1.5' />
+                    //     Upload SPK Bertanda Tangan
+                    //   </Button>
+                    // )
+                    }
+                    <Button
+                      size='sm'
+                      variant='outline'
+                      className='w-full h-8 text-[10px] border-purple-200 text-purple-600 hover:bg-purple-50 shrink-0 mt-1'
+                      disabled={!flowSteps[3].isActive}
+                      onClick={() => setIsSpkModalOpen(true)}
+                    >
+                      <Upload className='h-3 w-3 mr-1' />
+                      Ganti SPK
+                    </Button>
                   </div>
                 ) : (
-                  <p className='text-xs text-muted-foreground italic'>
-                    Belum ada file SPK.
-                  </p>
+                  <div className="space-y-3">
+                    <p className='text-xs text-muted-foreground italic'>
+                      Belum ada file SPK.
+                    </p>
+                    <Button
+                      size='sm'
+                      variant='outline'
+                      className='w-full h-8 text-[10px] border-purple-200 text-purple-600 hover:bg-purple-50 shrink-0'
+                      disabled={!flowSteps[3].isActive}
+                      onClick={() => setIsSpkModalOpen(true)}
+                    >
+                      <Upload className='h-3 w-3 mr-1' />
+                      Upload SPK
+                    </Button>
+                  </div>
                 )}
               </CardContent>
             )}
@@ -1718,6 +1781,16 @@ export default function ProjectItemsPage() {
                 type='date'
                 value={spkDeadline}
                 onChange={(e) => setSpkDeadline(e.target.value)}
+                className='h-9 text-xs border-purple-200'
+              />
+            </div>
+            <div className='space-y-1.5'>
+              <Label className='text-xs font-medium text-purple-700'>Nominal SPK</Label>
+              <Input
+                type='text'
+                placeholder='Nominal SPK'
+                value={spkNominal}
+                onChange={(e) => setSpkNominal(formatRupiah(e.target.value))}
                 className='h-9 text-xs border-purple-200'
               />
             </div>
