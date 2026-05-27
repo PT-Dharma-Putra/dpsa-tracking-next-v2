@@ -1745,7 +1745,7 @@ export function ProjectsV2Table({
                             <DropdownMenuItem
                               onClick={() =>
                                 router.push(
-                                  `/dashboard/projects-v2/${project.id}/items`
+                                  `/dashboard/projects-v2/marketing/${project.id}/items`
                                 )
                               }
                             >
