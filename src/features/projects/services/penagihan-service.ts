@@ -13,6 +13,7 @@ export interface Penagihan {
     deskripsi: string | null;
     persentase: number;
     nominal_penagihan?: string | number | null;
+    take_out?: string | number | null;
     tanggal_kirim: string | null;
     tanggal_invoice: string | null;
     jatuh_tempo: string | null;
@@ -32,6 +33,7 @@ export interface CreatePenagihanPayload {
     deskripsi?: string;
     persentase: number;
     nominal_penagihan?: string;
+    take_out?: string;
     tanggal_kirim?: string;
     tanggal_invoice?: string;
     jatuh_tempo?: string;
@@ -79,6 +81,7 @@ export const penagihanService = {
         if (payload.tanggal_kirim) formData.append('tanggal_kirim', payload.tanggal_kirim);
         if (payload.tanggal_invoice) formData.append('tanggal_invoice', payload.tanggal_invoice);
         if (payload.nominal_penagihan !== undefined) formData.append('nominal_penagihan', payload.nominal_penagihan);
+        if (payload.take_out !== undefined) formData.append('take_out', payload.take_out);
         if (payload.jatuh_tempo) formData.append('jatuh_tempo', payload.jatuh_tempo);
         if (payload.tanggal_dibayar) formData.append('tanggal_dibayar', payload.tanggal_dibayar);
         if (payload.nominal_dibayar !== undefined) formData.append('nominal_dibayar', payload.nominal_dibayar.toString());
@@ -100,6 +103,7 @@ export const penagihanService = {
         if (payload.tanggal_kirim) formData.append('tanggal_kirim', payload.tanggal_kirim);
         if (payload.tanggal_invoice) formData.append('tanggal_invoice', payload.tanggal_invoice);
         if (payload.nominal_penagihan !== undefined) formData.append('nominal_penagihan', payload.nominal_penagihan);
+        if (payload.take_out !== undefined) formData.append('take_out', payload.take_out);
         if (payload.jatuh_tempo) formData.append('jatuh_tempo', payload.jatuh_tempo);
         if (payload.tanggal_dibayar) formData.append('tanggal_dibayar', payload.tanggal_dibayar);
         if (payload.nominal_dibayar !== undefined) formData.append('nominal_dibayar', payload.nominal_dibayar.toString());

@@ -401,7 +401,7 @@ function DocumentsTabContent({ projectId }: { projectId: string }) {
         });
     };
 
-    const isSPHApproved = sph?.status === 'approved';
+    const isSPHApproved = sph?.sph_status === 'approved';
 
     if (isLoadingSPH || isLoadingSPK || isLoadingInvoices) return <div>Loading documents...</div>;
 

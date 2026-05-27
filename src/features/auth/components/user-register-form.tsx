@@ -59,8 +59,8 @@ const ALLOWED_ROLES = [
 ]
 
 const ALLOWED_DIVISIONS = [
-    'DPSA', 'KJAS', 'SSDA', 'SDB', 'UISA',
-    'DCA', 'BACY', 'SMB', 'KPSA', 'ASD'
+    'ASD', 'BACY', 'DCA', 'DPSA', 'KJAS',
+    'KPSA', 'SDB', 'SMB', 'SSDA', 'UISA'
 ]
 
 export function UserRegisterForm({ className, ...props }: UserRegisterFormProps) {

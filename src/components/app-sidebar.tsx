@@ -88,7 +88,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         items: [
           {
             title: 'Projects V2',
-            url: '/dashboard/projects-v2',
+            url: '/dashboard/projects-v2/marketing',
           },
         ],
       },

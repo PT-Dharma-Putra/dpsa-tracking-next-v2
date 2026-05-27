@@ -1352,11 +1352,15 @@ export default function PerencanaanDetailPage() {
                                 <SelectValue placeholder='Pilih' />
                               </SelectTrigger>
                               <SelectContent>
-                                {divisions?.map((d) => (
-                                  <SelectItem key={d.id} value={d.id.toString()} className='text-[10px]'>
-                                    {d.nama}
-                                  </SelectItem>
-                                ))}
+                                {divisions
+                                  ? [...divisions]
+                                      .sort((a, b) => a.nama.localeCompare(b.nama))
+                                      .map((d) => (
+                                        <SelectItem key={d.id} value={d.id.toString()} className='text-[10px]'>
+                                          {d.nama}
+                                        </SelectItem>
+                                      ))
+                                  : null}
                               </SelectContent>
                             </Select>
                           </div>

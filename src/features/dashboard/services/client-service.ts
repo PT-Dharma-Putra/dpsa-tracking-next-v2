@@ -10,6 +10,7 @@ export interface ClientProject {
     total_items: number;
     last_updated_at?: string;
     created_at: string;
+    nomor_spk?: string | null;
 }
 
 
