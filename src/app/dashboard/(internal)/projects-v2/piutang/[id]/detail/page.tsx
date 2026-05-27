@@ -674,7 +674,6 @@ export default function PiutangDetailPage() {
                                 <TableHead>Deskripsi</TableHead>
                                 <TableHead>Persentase</TableHead>
                                 <TableHead>Nominal</TableHead>
-                                <TableHead>Tanggal Kirim</TableHead>
                                 <TableHead>Tanggal Invoice</TableHead>
                                 <TableHead>Jatuh Tempo</TableHead>
                                 <TableHead>Status</TableHead>
@@ -687,13 +686,13 @@ export default function PiutangDetailPage() {
                         <TableBody>
                             {isLoadingPenagihan ? (
                                 <TableRow>
-                                    <TableCell colSpan={14} className='h-32 text-center'>
+                                    <TableCell colSpan={13} className='h-32 text-center'>
                                         <Loader2 className='h-6 w-6 animate-spin mx-auto text-neutral-400' />
                                     </TableCell>
                                 </TableRow>
                             ) : penagihanList.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={14} className='h-32 text-center text-muted-foreground'>
+                                    <TableCell colSpan={13} className='h-32 text-center text-muted-foreground'>
                                         Belum ada data penagihan.
                                     </TableCell>
                                 </TableRow>
@@ -707,9 +706,6 @@ export default function PiutangDetailPage() {
                                         <TableCell className='font-bold text-blue-600'>{item.persentase}%</TableCell>
                                         <TableCell className='font-semibold text-emerald-700'>
                                             {item.nominal_penagihan ? formatRupiah(item.nominal_penagihan) : '-'}
-                                        </TableCell>
-                                        <TableCell className='text-sm'>
-                                            {item.tanggal_kirim ? format(new Date(item.tanggal_kirim), 'dd MMM yyyy') : '-'}
                                         </TableCell>
                                         <TableCell className='text-sm'>
                                             {item.tanggal_invoice ? format(new Date(item.tanggal_invoice), 'dd MMM yyyy') : '-'}
@@ -902,17 +898,7 @@ export default function PiutangDetailPage() {
                             </div>
                         </div>
 
-                        <div className='grid grid-cols-3 gap-4'>
-                            {/* Tanggal Kirim */}
-                            <div className='space-y-2'>
-                                <Label>Tanggal Kirim</Label>
-                                <Input
-                                    type='date'
-                                    value={form.tanggal_kirim || ''}
-                                    onChange={(e) => setForm((prev) => ({ ...prev, tanggal_kirim: e.target.value }))}
-                                />
-                            </div>
-
+                        <div className='grid grid-cols-2 gap-4'>
                             {/* Tanggal Invoice */}
                             <div className='space-y-2'>
                                 <Label>Tanggal Invoice</Label>
