@@ -132,6 +132,7 @@ const emptyForm = {
     nomor_invoice: '',
     deskripsi: '',
     nominal_penagihan: '',
+    take_out: '',
     tanggal_kirim: '',
     tanggal_invoice: '',
     jatuh_tempo: '',
@@ -260,6 +261,7 @@ export default function PiutangDetailPage() {
             nomor_invoice: p.nomor_invoice || '',
             deskripsi: p.deskripsi || '',
             nominal_penagihan: p.nominal_penagihan ? formatRupiah(p.nominal_penagihan) : '',
+            take_out: p.take_out ? formatRupiah(p.take_out) : '',
             tanggal_kirim: p.tanggal_kirim || '',
             tanggal_invoice: p.tanggal_invoice || '',
             jatuh_tempo: p.jatuh_tempo || '',
@@ -292,6 +294,7 @@ export default function PiutangDetailPage() {
             nomor_invoice: form.nomor_invoice || undefined,
             deskripsi: form.deskripsi || undefined,
             nominal_penagihan: parseRawNumber(form.nominal_penagihan) || undefined,
+            take_out: parseRawNumber(form.take_out) || undefined,
             status: form.status,
             tanggal_kirim: form.tanggal_kirim || undefined,
             tanggal_invoice: form.tanggal_invoice || undefined,
@@ -350,7 +353,7 @@ export default function PiutangDetailPage() {
         return sum;
     }, 0);
 
-    const totalBilledPercent = spkNominal > 0 ? (totalBilledAmount / spkNominal) * 100 : penagihanList.reduce((sum, p) => sum + Number(p.persentase || 0), 0);
+    const totalBilledPercent = penagihanList.reduce((sum, p) => sum + Number(p.persentase || 0), 0);
     const totalPaidPercent = spkNominal > 0 ? (totalPaidAmount / spkNominal) * 100 : 0;
 
     const flowSteps = [
@@ -674,6 +677,7 @@ export default function PiutangDetailPage() {
                                 <TableHead>Deskripsi</TableHead>
                                 <TableHead>Persentase</TableHead>
                                 <TableHead>Nominal</TableHead>
+                                <TableHead>Take Out</TableHead>
                                 <TableHead>Tanggal Invoice</TableHead>
                                 <TableHead>Jatuh Tempo</TableHead>
                                 <TableHead>Status</TableHead>
@@ -686,13 +690,13 @@ export default function PiutangDetailPage() {
                         <TableBody>
                             {isLoadingPenagihan ? (
                                 <TableRow>
-                                    <TableCell colSpan={13} className='h-32 text-center'>
+                                    <TableCell colSpan={14} className='h-32 text-center'>
                                         <Loader2 className='h-6 w-6 animate-spin mx-auto text-neutral-400' />
                                     </TableCell>
                                 </TableRow>
                             ) : penagihanList.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={13} className='h-32 text-center text-muted-foreground'>
+                                    <TableCell colSpan={14} className='h-32 text-center text-muted-foreground'>
                                         Belum ada data penagihan.
                                     </TableCell>
                                 </TableRow>
@@ -706,6 +710,9 @@ export default function PiutangDetailPage() {
                                         <TableCell className='font-bold text-blue-600'>{item.persentase}%</TableCell>
                                         <TableCell className='font-semibold text-emerald-700'>
                                             {item.nominal_penagihan ? formatRupiah(item.nominal_penagihan) : '-'}
+                                        </TableCell>
+                                        <TableCell className='font-semibold text-amber-700'>
+                                            {item.take_out ? formatRupiah(item.take_out) : '-'}
                                         </TableCell>
                                         <TableCell className='text-sm'>
                                             {item.tanggal_invoice ? format(new Date(item.tanggal_invoice), 'dd MMM yyyy') : '-'}
@@ -849,7 +856,7 @@ export default function PiutangDetailPage() {
                             />
                         </div>
 
-                        <div className='grid grid-cols-2 gap-4'>
+                        <div className='grid grid-cols-3 gap-4'>
                             {/* Persentase */}
                             <div className='space-y-2'>
                                 <Label>Persentase (%)</Label>
@@ -864,10 +871,13 @@ export default function PiutangDetailPage() {
                                             ? parseDatabaseNominal(project.spk.nominal) 
                                             : 0;
                                         const calculated = (pct / 100) * spkNominal;
+                                        const rawTakeOut = parseRawNumber(form.take_out || '');
+                                        const takeOutVal = parseFloat(rawTakeOut) || 0;
+                                        const finalNominal = Math.max(calculated - takeOutVal, 0);
                                         setForm((prev) => ({ 
                                             ...prev, 
                                             persentase: pct,
-                                            nominal_penagihan: calculated > 0 ? formatRupiah(calculated) : ''
+                                            nominal_penagihan: finalNominal > 0 ? formatRupiah(finalNominal) : ''
                                         }));
                                     }}
                                 />
@@ -884,14 +894,44 @@ export default function PiutangDetailPage() {
                                         const formatted = formatRupiah(e.target.value);
                                         const rawNominal = parseRawNumber(e.target.value);
                                         const nominalVal = parseFloat(rawNominal) || 0;
+                                        
+                                        const rawTakeOut = parseRawNumber(form.take_out || '');
+                                        const takeOutVal = parseFloat(rawTakeOut) || 0;
+                                        
                                         const spkNominal = project?.spk?.nominal 
                                             ? parseDatabaseNominal(project.spk.nominal) 
                                             : 0;
-                                        const pct = spkNominal > 0 ? Math.round((nominalVal / spkNominal) * 100 * 100) / 100 : 0;
+                                        const pct = spkNominal > 0 ? Math.round(((nominalVal + takeOutVal) / spkNominal) * 100 * 100) / 100 : 0;
                                         setForm((prev) => ({
                                             ...prev,
                                             nominal_penagihan: formatted,
                                             persentase: pct
+                                        }));
+                                    }}
+                                />
+                            </div>
+
+                            {/* Take Out */}
+                            <div className='space-y-2'>
+                                <Label>Take Out</Label>
+                                <Input
+                                    type='text'
+                                    placeholder='Rp 0'
+                                    value={form.take_out || ''}
+                                    onChange={(e) => {
+                                        const formatted = formatRupiah(e.target.value);
+                                        const rawTakeOut = parseRawNumber(e.target.value);
+                                        const takeOutVal = parseFloat(rawTakeOut) || 0;
+                                        
+                                        const spkNominal = project?.spk?.nominal 
+                                            ? parseDatabaseNominal(project.spk.nominal) 
+                                            : 0;
+                                        const baseNominal = (form.persentase / 100) * spkNominal;
+                                        const finalNominal = Math.max(baseNominal - takeOutVal, 0);
+                                        setForm((prev) => ({
+                                            ...prev,
+                                            take_out: formatted,
+                                            nominal_penagihan: finalNominal > 0 ? formatRupiah(finalNominal) : ''
                                         }));
                                     }}
                                 />
