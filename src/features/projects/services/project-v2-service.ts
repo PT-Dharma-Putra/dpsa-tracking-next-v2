@@ -162,6 +162,16 @@ export interface ProjectV2Response {
     per_page: number;
 }
 
+export interface ProjectV2Stats {
+    total_spk: number;
+    selesai: number;
+    on_progress: number;
+    belum_dikerjakan: number;
+    deadline_dekat: number;
+    overdue: number;
+    urgent: number;
+}
+
 interface GetProjectsV2Params {
     page?: number;
     search?: string;
@@ -175,6 +185,11 @@ interface GetProjectsV2Params {
 export const projectV2Service = {
     getProjects: async (params?: GetProjectsV2Params) => {
         const { data } = await apiClient.get<ProjectV2Response>('/projects-v2', { params });
+        return data;
+    },
+
+    getProjectStats: async (params?: Omit<GetProjectsV2Params, 'page' | 'sort_by' | 'sort_order'>) => {
+        const { data } = await apiClient.get<ProjectV2Stats>('/projects-v2/summary-stats', { params });
         return data;
     },
 

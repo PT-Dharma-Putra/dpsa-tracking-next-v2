@@ -12,9 +12,7 @@ export default function AllProjectsPage() {
                 </p>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-neutral-200">
-                <ProjectsV2Table showAllDashboard={true} />
-            </div>
+            <ProjectsV2Table showAllDashboard={true} />
         </div>
     )
 }
