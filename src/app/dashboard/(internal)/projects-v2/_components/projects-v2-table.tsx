@@ -23,6 +23,13 @@ import {
   Truck,
   CalendarDays,
   Eye,
+  FileText,
+  CheckCircle2,
+  Activity,
+  Clock,
+  AlertTriangle,
+  AlertCircle,
+  Zap,
 } from 'lucide-react';
 import { format, differenceInDays, startOfDay } from 'date-fns';
 
@@ -183,6 +190,17 @@ export function ProjectsV2Table({
       }),
   });
 
+  const { data: stats } = useQuery({
+    queryKey: ['projects-v2-stats', search, clientId, selectedMonth, selectedYear],
+    queryFn: () =>
+      projectV2Service.getProjectStats({
+        search,
+        client_id: clientId !== 'all' ? clientId : undefined,
+        month: selectedMonth !== 'all' ? selectedMonth : undefined,
+        year: selectedYear !== 'all' ? selectedYear : undefined,
+      }),
+  });
+
   const [clientPopoverOpen, setClientPopoverOpen] = React.useState(false);
   const [clientSearch, setClientSearch] = React.useState('');
   const [debouncedClientSearch, setDebouncedClientSearch] = React.useState('');
@@ -315,7 +333,92 @@ export function ProjectsV2Table({
   const projects = data?.data || [];
 
   return (
-    <div className='flex flex-col gap-4 p-4'>
+    <div className="space-y-6">
+      {showAllDashboard && stats && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-4">
+          {/* Total SPK */}
+          <div className="flex items-center gap-3 p-4 rounded-xl border border-slate-100 bg-slate-50/30 shadow-sm transition-all duration-300 hover:shadow-md">
+            <div className="h-10 w-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 shrink-0">
+              <FileText className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Total SPK</p>
+              <p className="text-xl font-bold text-slate-800">{stats.total_spk}</p>
+            </div>
+          </div>
+
+          {/* Selesai */}
+          <div className="flex items-center gap-3 p-4 rounded-xl border border-emerald-100 bg-emerald-50/20 shadow-sm transition-all duration-300 hover:shadow-md">
+            <div className="h-10 w-10 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
+              <CheckCircle2 className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Selesai</p>
+              <p className="text-xl font-bold text-emerald-800">{stats.selesai}</p>
+            </div>
+          </div>
+
+          {/* On Progress */}
+          <div className="flex items-center gap-3 p-4 rounded-xl border border-blue-100 bg-blue-50/20 shadow-sm transition-all duration-300 hover:shadow-md">
+            <div className="h-10 w-10 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 shrink-0">
+              <Activity className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">On Progress</p>
+              <p className="text-xl font-bold text-blue-800">{stats.on_progress}</p>
+            </div>
+          </div>
+
+          {/* Belum Dikerjakan */}
+          <div className="flex items-center gap-3 p-4 rounded-xl border border-amber-100 bg-amber-50/20 shadow-sm transition-all duration-300 hover:shadow-md">
+            <div className="h-10 w-10 rounded-lg bg-amber-100 flex items-center justify-center text-amber-600 shrink-0">
+              <Clock className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wider">Belum Dikerjakan</p>
+              <p className="text-xl font-bold text-amber-800">{stats.belum_dikerjakan}</p>
+            </div>
+          </div>
+
+          {/* Deadline Dekat */}
+          <div className="flex items-center gap-3 p-4 rounded-xl border border-orange-100 bg-orange-50/20 shadow-sm transition-all duration-300 hover:shadow-md">
+            <div className="h-10 w-10 rounded-lg bg-orange-100 flex items-center justify-center text-orange-600 shrink-0">
+              <AlertTriangle className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-orange-600 uppercase tracking-wider">Deadline Dekat</p>
+              <p className="text-xl font-bold text-orange-800">{stats.deadline_dekat}</p>
+            </div>
+          </div>
+
+          {/* Overdue */}
+          <div className="flex items-center gap-3 p-4 rounded-xl border border-red-100 bg-red-50/20 shadow-sm transition-all duration-300 hover:shadow-md">
+            <div className="h-10 w-10 rounded-lg bg-red-100 flex items-center justify-center text-red-600 shrink-0">
+              <AlertCircle className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-red-600 uppercase tracking-wider">Overdue</p>
+              <p className="text-xl font-bold text-red-800">{stats.overdue}</p>
+            </div>
+          </div>
+
+          {/* Urgent */}
+          <div className="flex items-center gap-3 p-4 rounded-xl border border-rose-100 bg-rose-50/20 shadow-sm transition-all duration-300 hover:shadow-md">
+            <div className="h-10 w-10 rounded-lg bg-rose-100 flex items-center justify-center text-rose-600 shrink-0">
+              <Zap className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-rose-600 uppercase tracking-wider">Urgent</p>
+              <p className="text-xl font-bold text-rose-800">{stats.urgent}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className={cn(
+        showAllDashboard && "bg-white rounded-xl shadow-sm border border-neutral-200"
+      )}>
+        <div className='flex flex-col gap-4 p-4'>
       <div className='flex flex-col sm:flex-row justify-between gap-4 items-start sm:items-center'>
         <div className='flex flex-1 gap-2 items-center w-full sm:max-w-md'>
           <div className='relative flex-1'>
@@ -868,9 +971,47 @@ export function ProjectsV2Table({
                             : '-'}
                         </TableCell>
                         <TableCell>
-                          {project.progres_kerja && Math.round(project.progres_kerja.total) === 100 ? (
-                            <div className='flex items-center justify-center h-7 w-7 rounded-full bg-emerald-50 text-emerald-600'>
-                              <Check className='h-4 w-4 stroke-[3]' />
+                          {project.tanggal_selesai ? (
+                            <div className='flex items-center gap-2'>
+                              <div className='flex items-center justify-center h-7 w-7 rounded-full bg-emerald-50 text-emerald-600 shrink-0'>
+                                <Check className='h-4 w-4 stroke-[3]' />
+                              </div>
+                              {project.tanggal_selesai && project.deadline && (
+                                (() => {
+                                  const diff = differenceInDays(
+                                    startOfDay(new Date(project.deadline)),
+                                    startOfDay(new Date(project.tanggal_selesai))
+                                  );
+                                  if (diff >= 4) {
+                                    return (
+                                      <Badge
+                                        variant='outline'
+                                        className='bg-emerald-50 text-emerald-700 border-emerald-200 font-bold whitespace-nowrap'
+                                      >
+                                        Cepat
+                                      </Badge>
+                                    );
+                                  } else if (diff >= 0) {
+                                    return (
+                                      <Badge
+                                        variant='outline'
+                                        className='bg-blue-50 text-blue-700 border-blue-200 font-bold whitespace-nowrap'
+                                      >
+                                        Normal
+                                      </Badge>
+                                    );
+                                  } else {
+                                    return (
+                                      <Badge
+                                        variant='outline'
+                                        className='bg-red-50 text-red-700 border-red-200 font-bold whitespace-nowrap'
+                                      >
+                                        Lambat
+                                      </Badge>
+                                    );
+                                  }
+                                })()
+                              )}
                             </div>
                           ) : project.deadline ? (
                             (() => {
@@ -886,7 +1027,7 @@ export function ProjectsV2Table({
                                       'font-bold',
                                       diff < 0
                                         ? 'bg-red-50 text-red-700 border-red-200'
-                                        : diff <= 3
+                                        : diff < 8
                                         ? 'bg-orange-50 text-orange-700 border-orange-200'
                                         : 'bg-emerald-50 text-emerald-700 border-emerald-200'
                                     )}
@@ -1062,9 +1203,47 @@ export function ProjectsV2Table({
 
                       {!showProduksi && !showPiutang && (
                         <TableCell>
-                          {project.progres_kerja && Math.round(project.progres_kerja.total) === 100 ? (
-                            <div className='flex items-center justify-center h-7 w-7 rounded-full bg-emerald-50 text-emerald-600'>
-                              <Check className='h-4 w-4 stroke-[3]' />
+                          {project.tanggal_selesai ? (
+                            <div className='flex items-center gap-2'>
+                              <div className='flex items-center justify-center h-7 w-7 rounded-full bg-emerald-50 text-emerald-600 shrink-0'>
+                                <Check className='h-4 w-4 stroke-[3]' />
+                              </div>
+                              {project.tanggal_selesai && project.deadline && (
+                                (() => {
+                                  const diff = differenceInDays(
+                                    startOfDay(new Date(project.deadline)),
+                                    startOfDay(new Date(project.tanggal_selesai))
+                                  );
+                                  if (diff >= 4) {
+                                    return (
+                                      <Badge
+                                        variant='outline'
+                                        className='bg-emerald-50 text-emerald-700 border-emerald-200 font-bold whitespace-nowrap'
+                                      >
+                                        Cepat
+                                      </Badge>
+                                    );
+                                  } else if (diff >= 0) {
+                                    return (
+                                      <Badge
+                                        variant='outline'
+                                        className='bg-blue-50 text-blue-700 border-blue-200 font-bold whitespace-nowrap'
+                                      >
+                                        Normal
+                                      </Badge>
+                                    );
+                                  } else {
+                                    return (
+                                      <Badge
+                                        variant='outline'
+                                        className='bg-red-50 text-red-700 border-red-200 font-bold whitespace-nowrap'
+                                      >
+                                        Lambat
+                                      </Badge>
+                                    );
+                                  }
+                                })()
+                              )}
                             </div>
                           ) : project.deadline ? (
                             (() => {
@@ -1080,7 +1259,7 @@ export function ProjectsV2Table({
                                       'font-bold',
                                       diff < 0
                                         ? 'bg-red-50 text-red-700 border-red-200'
-                                        : diff <= 3
+                                        : diff < 8
                                         ? 'bg-orange-50 text-orange-700 border-orange-200'
                                         : 'bg-emerald-50 text-emerald-700 border-emerald-200'
                                     )}
@@ -1602,7 +1781,7 @@ export function ProjectsV2Table({
                                     'font-bold',
                                     diff < 0
                                       ? 'bg-red-50 text-red-700 border-red-200'
-                                      : diff <= 3
+                                      : diff < 8
                                       ? 'bg-orange-50 text-orange-700 border-orange-200'
                                       : 'bg-emerald-50 text-emerald-700 border-emerald-200'
                                   )}
@@ -1896,6 +2075,8 @@ export function ProjectsV2Table({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+        </div>
+      </div>
     </div>
   );
 }

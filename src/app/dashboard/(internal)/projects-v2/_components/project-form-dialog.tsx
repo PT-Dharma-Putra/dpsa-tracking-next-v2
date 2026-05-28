@@ -53,6 +53,7 @@ const formSchema = z.object({
     client_id: z.string().min(1, "Client is required"),
     description: z.string().optional(),
     deadline: z.date().optional().nullable(),
+    tanggal_selesai: z.date().optional().nullable(),
     need_design: z.number(),
 })
 
@@ -121,6 +122,7 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
             client_id: "",
             description: "",
             deadline: null,
+            tanggal_selesai: null,
             need_design: 1,
         },
     })
@@ -133,6 +135,7 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
                     client_id: project.client_id.toString(),
                     description: project.description || "",
                     deadline: project.deadline ? new Date(project.deadline) : null,
+                    tanggal_selesai: project.tanggal_selesai ? new Date(project.tanggal_selesai) : null,
                     need_design: project.need_design ?? 1,
                 })
             } else {
@@ -141,6 +144,7 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
                     client_id: "",
                     description: "",
                     deadline: null,
+                    tanggal_selesai: null,
                     need_design: 1,
                 })
             }
@@ -154,6 +158,7 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
                 client_id: parseInt(values.client_id),
                 description: values.description,
                 deadline: values.deadline ? format(values.deadline, "yyyy-MM-dd") : undefined,
+                tanggal_selesai: values.tanggal_selesai ? format(values.tanggal_selesai, "yyyy-MM-dd") : null,
                 need_design: values.need_design,
             }
 
@@ -290,6 +295,85 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
                                 </FormItem>
                             )}
                         />
+
+                        <FormField
+                            control={form.control}
+                            name="deadline"
+                            render={({ field }) => (
+                                <FormItem className="flex flex-col">
+                                    <FormLabel>Deadline</FormLabel>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <FormControl>
+                                                <Button
+                                                    variant={"outline"}
+                                                    className={cn(
+                                                        "w-full pl-3 text-left font-normal",
+                                                        !field.value && "text-muted-foreground"
+                                                    )}
+                                                >
+                                                    {field.value ? (
+                                                        format(field.value, "PPP")
+                                                    ) : (
+                                                        <span>Pick a date</span>
+                                                    )}
+                                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                                </Button>
+                                            </FormControl>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0" align="start">
+                                            <Calendar
+                                                mode="single"
+                                                selected={field.value || undefined}
+                                                onSelect={field.onChange}
+                                                initialFocus
+                                            />
+                                        </PopoverContent>
+                                    </Popover>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        <FormField
+                            control={form.control}
+                            name="tanggal_selesai"
+                            render={({ field }) => (
+                                <FormItem className="flex flex-col">
+                                    <FormLabel>Tanggal Selesai</FormLabel>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <FormControl>
+                                                <Button
+                                                    variant={"outline"}
+                                                    className={cn(
+                                                        "w-full pl-3 text-left font-normal",
+                                                        !field.value && "text-muted-foreground"
+                                                    )}
+                                                >
+                                                    {field.value ? (
+                                                        format(field.value, "PPP")
+                                                    ) : (
+                                                        <span>Pick a date</span>
+                                                    )}
+                                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                                </Button>
+                                            </FormControl>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0" align="start">
+                                            <Calendar
+                                                mode="single"
+                                                selected={field.value || undefined}
+                                                onSelect={field.onChange}
+                                                initialFocus
+                                            />
+                                        </PopoverContent>
+                                    </Popover>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
                         <FormField
                             control={form.control}
                             name="need_design"
