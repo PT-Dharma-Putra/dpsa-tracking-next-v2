@@ -1247,10 +1247,10 @@ export default function PerencanaanDetailPage() {
                 <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>Qty</TableHead>
                 <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>PO Divisi</TableHead>
                 <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>Gk MDL</TableHead>
-                <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>Drawing</TableHead>
+                <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>GK Custom</TableHead>
                 <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>Material</TableHead>
                 <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>Produksi</TableHead>
-                <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>Masuk</TableHead>
+                <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>B. Jadi</TableHead>
                 <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>Packing</TableHead>
                 <TableHead className='w-[100px] text-right text-[10px] uppercase font-bold text-neutral-500 pr-4'>Actions</TableHead>
               </TableRow>

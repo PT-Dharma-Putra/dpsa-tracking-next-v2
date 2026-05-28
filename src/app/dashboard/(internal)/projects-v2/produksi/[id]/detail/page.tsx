@@ -589,12 +589,12 @@ export default function ProduksiDetailPage() {
                 <TableHead>Dimensions</TableHead>
                 <TableHead>Qty</TableHead>
                 <TableHead>GK MDL</TableHead>
-                <TableHead>Gambar Kerja</TableHead>
+                <TableHead>GK Custom</TableHead>
                 <TableHead>PO Divisi</TableHead>
                 <TableHead>Stok Material</TableHead>
                 <TableHead>Persentase Produksi</TableHead>
                 <TableHead>QC Cek</TableHead>
-                <TableHead>Masuk</TableHead>
+                <TableHead>Barang Jadi</TableHead>
                 <TableHead>Packing</TableHead>
               </TableRow>
             </TableHeader>
@@ -676,9 +676,6 @@ export default function ProduksiDetailPage() {
                     <TableCell>
                       {item.gambar_kerja?.file ? (
                         <div className='flex items-center gap-2'>
-                          <div className='h-6 w-6 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center'>
-                            <CheckCircle2 className='h-3.5 w-3.5' />
-                          </div>
                           <Button
                             variant='ghost'
                             size='icon'

@@ -9,6 +9,7 @@ export interface ProjectV2 {
     spk_number: string | null;
     client_id: number;
     deadline: string | null;
+    tanggal_selesai?: string | null;
     status: string;
     need_design: number;
     drawing_progress?: number;
@@ -181,12 +182,12 @@ export const projectV2Service = {
         return data;
     },
 
-    createProject: async (payload: { name: string; client_id: number; description?: string; deadline?: string; need_design?: number }) => {
+    createProject: async (payload: { name: string; client_id: number; description?: string; deadline?: string; tanggal_selesai?: string | null; need_design?: number }) => {
         const { data } = await apiClient.post<ProjectV2>('/projects-v2', payload);
         return data;
     },
 
-    updateProject: async (id: number, payload: { name: string; client_id: number; description?: string; deadline?: string; need_design?: number }) => {
+    updateProject: async (id: number, payload: { name: string; client_id: number; description?: string; deadline?: string; tanggal_selesai?: string | null; need_design?: number }) => {
         const { data } = await apiClient.put<ProjectV2>(`/projects-v2/${id}`, payload);
         return data;
     },

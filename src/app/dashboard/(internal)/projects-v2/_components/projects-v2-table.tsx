@@ -869,8 +869,46 @@ export function ProjectsV2Table({
                         </TableCell>
                         <TableCell>
                           {project.progres_kerja && Math.round(project.progres_kerja.total) === 100 ? (
-                            <div className='flex items-center justify-center h-7 w-7 rounded-full bg-emerald-50 text-emerald-600'>
-                              <Check className='h-4 w-4 stroke-[3]' />
+                            <div className='flex items-center gap-2'>
+                              <div className='flex items-center justify-center h-7 w-7 rounded-full bg-emerald-50 text-emerald-600 shrink-0'>
+                                <Check className='h-4 w-4 stroke-[3]' />
+                              </div>
+                              {project.tanggal_selesai && project.deadline && (
+                                (() => {
+                                  const diff = differenceInDays(
+                                    startOfDay(new Date(project.deadline)),
+                                    startOfDay(new Date(project.tanggal_selesai))
+                                  );
+                                  if (diff >= 4) {
+                                    return (
+                                      <Badge
+                                        variant='outline'
+                                        className='bg-emerald-50 text-emerald-700 border-emerald-200 font-bold whitespace-nowrap'
+                                      >
+                                        Cepat
+                                      </Badge>
+                                    );
+                                  } else if (diff >= 0) {
+                                    return (
+                                      <Badge
+                                        variant='outline'
+                                        className='bg-blue-50 text-blue-700 border-blue-200 font-bold whitespace-nowrap'
+                                      >
+                                        Normal
+                                      </Badge>
+                                    );
+                                  } else {
+                                    return (
+                                      <Badge
+                                        variant='outline'
+                                        className='bg-red-50 text-red-700 border-red-200 font-bold whitespace-nowrap'
+                                      >
+                                        Lambat
+                                      </Badge>
+                                    );
+                                  }
+                                })()
+                              )}
                             </div>
                           ) : project.deadline ? (
                             (() => {
@@ -1063,8 +1101,46 @@ export function ProjectsV2Table({
                       {!showProduksi && !showPiutang && (
                         <TableCell>
                           {project.progres_kerja && Math.round(project.progres_kerja.total) === 100 ? (
-                            <div className='flex items-center justify-center h-7 w-7 rounded-full bg-emerald-50 text-emerald-600'>
-                              <Check className='h-4 w-4 stroke-[3]' />
+                            <div className='flex items-center gap-2'>
+                              <div className='flex items-center justify-center h-7 w-7 rounded-full bg-emerald-50 text-emerald-600 shrink-0'>
+                                <Check className='h-4 w-4 stroke-[3]' />
+                              </div>
+                              {project.tanggal_selesai && project.deadline && (
+                                (() => {
+                                  const diff = differenceInDays(
+                                    startOfDay(new Date(project.deadline)),
+                                    startOfDay(new Date(project.tanggal_selesai))
+                                  );
+                                  if (diff >= 4) {
+                                    return (
+                                      <Badge
+                                        variant='outline'
+                                        className='bg-emerald-50 text-emerald-700 border-emerald-200 font-bold whitespace-nowrap'
+                                      >
+                                        Cepat
+                                      </Badge>
+                                    );
+                                  } else if (diff >= 0) {
+                                    return (
+                                      <Badge
+                                        variant='outline'
+                                        className='bg-blue-50 text-blue-700 border-blue-200 font-bold whitespace-nowrap'
+                                      >
+                                        Normal
+                                      </Badge>
+                                    );
+                                  } else {
+                                    return (
+                                      <Badge
+                                        variant='outline'
+                                        className='bg-red-50 text-red-700 border-red-200 font-bold whitespace-nowrap'
+                                      >
+                                        Lambat
+                                      </Badge>
+                                    );
+                                  }
+                                })()
+                              )}
                             </div>
                           ) : project.deadline ? (
                             (() => {
