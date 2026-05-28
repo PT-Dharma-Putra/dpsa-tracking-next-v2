@@ -112,6 +112,7 @@ export interface ProjectV2 {
         tanggal_mulai: string | null;
         tanggal_selesai: string | null;
         file: string | null;
+        file_rekap_dokubah: string | null;
     };
 }
 
@@ -458,9 +459,10 @@ export const projectV2Service = {
         return data;
     },
 
-    uploadDokubah: async (projectId: number, payload: { file?: File | string; tanggal_mulai?: string; tanggal_selesai?: string }) => {
+    uploadDokubah: async (projectId: number, payload: { file?: File | string; file_rekap_dokubah?: File | string; tanggal_mulai?: string; tanggal_selesai?: string }) => {
         const formData = new FormData();
         if (payload.file) formData.append('file', payload.file);
+        if (payload.file_rekap_dokubah) formData.append('file_rekap_dokubah', payload.file_rekap_dokubah);
         if (payload.tanggal_mulai) formData.append('tanggal_mulai', payload.tanggal_mulai);
         if (payload.tanggal_selesai) formData.append('tanggal_selesai', payload.tanggal_selesai);
         const { data } = await apiClient.post(`/projects-v2/${projectId}/upload-dokubah`, formData, {

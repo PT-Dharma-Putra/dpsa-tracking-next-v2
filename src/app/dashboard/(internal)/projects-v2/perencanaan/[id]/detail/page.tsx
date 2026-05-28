@@ -157,12 +157,14 @@ export default function PerencanaanDetailPage() {
   // Dokubah State
   const [isDokubahDialogOpen, setIsDokubahDialogOpen] = React.useState(false);
   const [dokubahFile, setDokubahFile] = React.useState<File | string | null>(null);
+  const [dokubahRekapFile, setDokubahRekapFile] = React.useState<File | string | null>(null);
   const [dokubahStart, setDokubahStart] = React.useState<string>('');
   const [dokubahEnd, setDokubahEnd] = React.useState<string>('');
 
   const uploadDokubahMutation = useMutation({
     mutationFn: (payload: {
       file?: File | string;
+      file_rekap_dokubah?: File | string;
       tanggal_mulai?: string;
       tanggal_selesai?: string;
     }) => projectV2Service.uploadDokubah(projectId, payload),
@@ -173,6 +175,7 @@ export default function PerencanaanDetailPage() {
       toast.success('Dokubah updated');
       setIsDokubahDialogOpen(false);
       setDokubahFile(null);
+      setDokubahRekapFile(null);
     },
     onError: () => {
       toast.error('Failed to update Dokubah');
@@ -182,6 +185,7 @@ export default function PerencanaanDetailPage() {
   const handleDokubahUpload = () => {
     uploadDokubahMutation.mutate({
       file: dokubahFile || undefined,
+      file_rekap_dokubah: dokubahRekapFile || undefined,
       tanggal_mulai: dokubahStart || undefined,
       tanggal_selesai: dokubahEnd || undefined,
     });
@@ -191,6 +195,7 @@ export default function PerencanaanDetailPage() {
     setDokubahStart(project?.dokubah?.tanggal_mulai || '');
     setDokubahEnd(project?.dokubah?.tanggal_selesai || '');
     setDokubahFile(project?.dokubah?.file || null);
+    setDokubahRekapFile(project?.dokubah?.file_rekap_dokubah || null);
     setIsDokubahDialogOpen(true);
   };
 
@@ -554,7 +559,7 @@ export default function PerencanaanDetailPage() {
   const totalItems = items?.length || 0;
   const poDivisiCount = items?.filter(i => i.divisi_id).length || 0;
   const gambarKerjaCount = items?.filter(i => i.gambar_kerja?.file || i.mdl_item?.link_gambar_kerja).length || 0;
-  const dokubahCount = project.dokubah?.file ? 1 : 0;
+  const dokubahCount = (project.dokubah?.file || project.dokubah?.file_rekap_dokubah) ? 1 : 0;
   const stokTersediaCount = items?.filter(i => i.bahan_baku?.ketersediaan_stok === 'Tersedia').length || 0;
   const perintahProduksiCount = items?.filter(i => i.divisi_id && (i.gambar_kerja?.file || i.mdl_item?.link_gambar_kerja)).length || 0;
   
@@ -916,15 +921,15 @@ export default function PerencanaanDetailPage() {
         </Card>
 
         {/* 4. Dokubah */}
-        <Card className={`relative border shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md ${project.dokubah?.file ? 'border-emerald-200 bg-white ring-1 ring-emerald-100' : 'border-neutral-200 bg-white'}`}>
-          {project.dokubah?.file && (
+        <Card className={`relative border shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md ${(project.dokubah?.file || project.dokubah?.file_rekap_dokubah) ? 'border-emerald-200 bg-white ring-1 ring-emerald-100' : 'border-neutral-200 bg-white'}`}>
+          {(project.dokubah?.file || project.dokubah?.file_rekap_dokubah) && (
             <div className="absolute -top-1.5 -right-1.5 h-5 w-5 bg-emerald-500 rounded-full flex items-center justify-center shadow-sm z-10 animate-in zoom-in duration-300">
               <Check className="h-3 w-3 text-white" strokeWidth={3} />
             </div>
           )}
           <CardHeader className='pb-2 flex flex-row items-center justify-between gap-3 min-w-0'>
             <button className='flex items-center gap-3 flex-1 text-left min-w-0' onClick={() => setIsDokubahCollapsed(!isDokubahCollapsed)}>
-              <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold shrink-0 ${project.dokubah?.file ? 'bg-emerald-100 text-emerald-600' : 'bg-neutral-100 text-neutral-500'}`}>4</div>
+              <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold shrink-0 ${(project.dokubah?.file || project.dokubah?.file_rekap_dokubah) ? 'bg-emerald-100 text-emerald-600' : 'bg-neutral-100 text-neutral-500'}`}>4</div>
               <div className='flex-1 min-w-0'>
                 <CardTitle className='text-sm text-neutral-800 font-bold truncate'>Dokubah</CardTitle>
                 <p className='text-[10px] text-muted-foreground uppercase tracking-wider font-semibold truncate'>Changes Document</p>
@@ -936,7 +941,7 @@ export default function PerencanaanDetailPage() {
             <CardContent className='pt-0'>
                <div className='space-y-2 border-t border-neutral-100 pt-2.5'>
                   <div className='h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden'>
-                    <div className='h-full bg-blue-500 transition-all duration-500' style={{ width: `${project.dokubah?.file ? 100 : 0}%` }} />
+                    <div className='h-full bg-blue-500 transition-all duration-500' style={{ width: `${(project.dokubah?.file || project.dokubah?.file_rekap_dokubah) ? 100 : 0}%` }} />
                   </div>
                   
                   {project.dokubah?.file && (
@@ -953,6 +958,29 @@ export default function PerencanaanDetailPage() {
                       <Button variant='ghost' size='icon' className='h-7 w-7 text-blue-600 hover:bg-blue-100 bg-white border border-blue-100 shadow-sm shrink-0' asChild>
                         <a 
                           href={project.dokubah.file.startsWith('http') ? project.dokubah.file : `${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '')}/storage/${project.dokubah.file}`} 
+                          target='_blank' 
+                          rel='noopener noreferrer'
+                        >
+                          <Eye className='h-3.5 w-3.5' />
+                        </a>
+                      </Button>
+                    </div>
+                  )}
+
+                  {project.dokubah?.file_rekap_dokubah && (
+                    <div className='p-2 rounded bg-indigo-50 border border-indigo-100 flex items-center justify-between gap-1 min-w-0 mt-2'>
+                      <div className='flex items-center gap-2 overflow-hidden text-left min-w-0 flex-1 mr-1'>
+                        <div className='h-6 w-6 rounded bg-white border border-indigo-100 flex items-center justify-center text-indigo-600 shrink-0'>
+                          <FileText className='h-3 w-3' />
+                        </div>
+                        <div className='flex flex-col min-w-0 flex-1'>
+                          <span className='text-[9px] font-bold text-indigo-900 leading-none truncate'>Rekap Dokubah</span>
+                          <span className='text-[8px] text-indigo-600/85 truncate' title={project.dokubah.file_rekap_dokubah.split('/').pop()}>{project.dokubah.file_rekap_dokubah.split('/').pop()}</span>
+                        </div>
+                      </div>
+                      <Button variant='ghost' size='icon' className='h-7 w-7 text-indigo-600 hover:bg-indigo-100 bg-white border border-indigo-100 shadow-sm shrink-0' asChild>
+                        <a 
+                          href={project.dokubah.file_rekap_dokubah.startsWith('http') ? project.dokubah.file_rekap_dokubah : `${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '')}/storage/${project.dokubah.file_rekap_dokubah}`} 
                           target='_blank' 
                           rel='noopener noreferrer'
                         >
@@ -1615,13 +1643,24 @@ export default function PerencanaanDetailPage() {
           </AlertDialogHeader>
           <div className='grid gap-4 py-4'>
             <div className='space-y-2'>
-              <Label htmlFor='dokubah-file'>Link Google Drive / Dokumen</Label>
+              <Label htmlFor='dokubah-file'>Link Dokubah</Label>
               <Input
                 id='dokubah-file'
                 type='text'
                 placeholder='Masukkan link google drive...'
                 value={typeof dokubahFile === 'string' ? dokubahFile : ''}
                 onChange={(e) => setDokubahFile(e.target.value)}
+                className='text-xs'
+              />
+            </div>
+            <div className='space-y-2'>
+              <Label htmlFor='rekap-dokubah-file'>Link Rekap Dokubah</Label>
+              <Input
+                id='rekap-dokubah-file'
+                type='text'
+                placeholder='Masukkan link rekap dokubah...'
+                value={typeof dokubahRekapFile === 'string' ? dokubahRekapFile : ''}
+                onChange={(e) => setDokubahRekapFile(e.target.value)}
                 className='text-xs'
               />
             </div>
