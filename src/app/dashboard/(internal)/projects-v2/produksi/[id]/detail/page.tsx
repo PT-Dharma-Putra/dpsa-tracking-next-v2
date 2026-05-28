@@ -464,51 +464,83 @@ export default function ProduksiDetailPage() {
             </button>
           </CardHeader>
           {!isOrderCollapsed && (
-            <CardContent>
+            <CardContent className="space-y-2">
               {latestOrderProduksi ? (
-                <div className='space-y-2'>
-                  <div className='p-3 rounded-xl bg-orange-50/80 border border-orange-100 flex items-center justify-between shadow-sm'>
-                    <div className='flex items-center gap-3'>
-                      <div className='h-8 w-8 rounded-lg bg-white shadow-sm border border-orange-100 flex items-center justify-center text-orange-600'>
-                        <FileText className='h-4 w-4' />
-                      </div>
-                      <div>
-                        <p className='text-xs font-bold text-orange-900'>
-                          Order Produksi
-                        </p>
-                        <p className='text-[10px] text-orange-600/80'>
-                          Target:{" "}
-                          {latestOrderProduksi.target_selesai
-                            ? format(new Date(latestOrderProduksi.target_selesai), 'MMM d, yyyy')
-                            : '-'}
-                        </p>
-                      </div>
+                <div className='p-3 rounded-xl bg-orange-50/80 border border-orange-100 flex items-center justify-between shadow-sm'>
+                  <div className='flex items-center gap-3'>
+                    <div className='h-8 w-8 rounded-lg bg-white shadow-sm border border-orange-100 flex items-center justify-center text-orange-600'>
+                      <FileText className='h-4 w-4' />
                     </div>
-                    <div className='flex items-center gap-2'>
-                      <Button
-                        variant='ghost'
-                        size='icon'
-                        className='h-8 w-8 text-orange-600 hover:bg-orange-200 bg-white shadow-sm border border-orange-100'
-                        asChild
-                      >
-                        <a
-                          href={`${(
-                            process.env.NEXT_PUBLIC_API_URL ||
-                            'http://localhost:8000'
-                          ).replace('/api', '')}/storage/${latestOrderProduksi.file}`}
-                          target='_blank'
-                          rel='noopener noreferrer'
-                        >
-                          <FileDown className='h-4 w-4' />
-                        </a>
-                      </Button>
+                    <div>
+                      <p className='text-xs font-bold text-orange-900'>
+                        Order Produksi
+                      </p>
+                      <p className='text-[10px] text-orange-600/80'>
+                        Target:{" "}
+                        {latestOrderProduksi.target_selesai
+                          ? format(new Date(latestOrderProduksi.target_selesai), 'MMM d, yyyy')
+                          : '-'}
+                      </p>
                     </div>
                   </div>
+                  <div className='flex items-center gap-2'>
+                    <Button
+                      variant='ghost'
+                      size='icon'
+                      className='h-8 w-8 text-orange-600 hover:bg-orange-200 bg-white shadow-sm border border-orange-100'
+                      asChild
+                    >
+                      <a
+                        href={`${(
+                          process.env.NEXT_PUBLIC_API_URL ||
+                          'http://localhost:8000'
+                        ).replace('/api', '')}/storage/${latestOrderProduksi.file}`}
+                        target='_blank'
+                        rel='noopener noreferrer'
+                      >
+                        <FileDown className='h-4 w-4' />
+                      </a>
+                    </Button>
+                  </div>
                 </div>
-              ) : (
+              ) : !project.dokubah?.file_rekap_dokubah && (
                 <p className='text-xs text-muted-foreground italic'>
                   Belum ada Order Produksi.
                 </p>
+              )}
+
+              {project.dokubah?.file_rekap_dokubah && (
+                <div className='p-3 rounded-xl bg-indigo-50/80 border border-indigo-100 flex items-center justify-between shadow-sm'>
+                  <div className='flex items-center gap-3'>
+                    <div className='h-8 w-8 rounded-lg bg-white shadow-sm border border-indigo-100 flex items-center justify-center text-indigo-600'>
+                      <FileText className='h-4 w-4' />
+                    </div>
+                    <div>
+                      <p className='text-xs font-bold text-indigo-900'>
+                        Rekap Dokubah
+                      </p>
+                      <p className='text-[10px] text-indigo-600/80 truncate max-w-[200px]' title={project.dokubah.file_rekap_dokubah.split('/').pop()}>
+                        {project.dokubah.file_rekap_dokubah.split('/').pop()}
+                      </p>
+                    </div>
+                  </div>
+                  <div className='flex items-center gap-2'>
+                    <Button
+                      variant='ghost'
+                      size='icon'
+                      className='h-8 w-8 text-indigo-600 hover:bg-indigo-100 bg-white shadow-sm border border-indigo-100'
+                      asChild
+                    >
+                      <a
+                        href={project.dokubah.file_rekap_dokubah.startsWith('http') ? project.dokubah.file_rekap_dokubah : `${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '')}/storage/${project.dokubah.file_rekap_dokubah}`}
+                        target='_blank'
+                        rel='noopener noreferrer'
+                      >
+                        <Eye className='h-4 w-4' />
+                      </a>
+                    </Button>
+                  </div>
+                </div>
               )}
             </CardContent>
           )}
