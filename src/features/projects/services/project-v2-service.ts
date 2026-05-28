@@ -9,6 +9,7 @@ export interface ProjectV2 {
     spk_number: string | null;
     client_id: number;
     deadline: string | null;
+    tanggal_selesai?: string | null;
     status: string;
     need_design: number;
     drawing_progress?: number;
@@ -111,6 +112,7 @@ export interface ProjectV2 {
         tanggal_mulai: string | null;
         tanggal_selesai: string | null;
         file: string | null;
+        file_rekap_dokubah: string | null;
     };
 }
 
@@ -160,6 +162,16 @@ export interface ProjectV2Response {
     per_page: number;
 }
 
+export interface ProjectV2Stats {
+    total_spk: number;
+    selesai: number;
+    on_progress: number;
+    belum_dikerjakan: number;
+    deadline_dekat: number;
+    overdue: number;
+    urgent: number;
+}
+
 interface GetProjectsV2Params {
     page?: number;
     search?: string;
@@ -176,17 +188,22 @@ export const projectV2Service = {
         return data;
     },
 
+    getProjectStats: async (params?: Omit<GetProjectsV2Params, 'page' | 'sort_by' | 'sort_order'>) => {
+        const { data } = await apiClient.get<ProjectV2Stats>('/projects-v2/summary-stats', { params });
+        return data;
+    },
+
     getProject: async (id: number) => {
         const { data } = await apiClient.get<ProjectV2>(`/projects-v2/${id}`);
         return data;
     },
 
-    createProject: async (payload: { name: string; client_id: number; description?: string; deadline?: string; need_design?: number }) => {
+    createProject: async (payload: { name: string; client_id: number; description?: string; deadline?: string; tanggal_selesai?: string | null; need_design?: number }) => {
         const { data } = await apiClient.post<ProjectV2>('/projects-v2', payload);
         return data;
     },
 
-    updateProject: async (id: number, payload: { name: string; client_id: number; description?: string; deadline?: string; need_design?: number }) => {
+    updateProject: async (id: number, payload: { name: string; client_id: number; description?: string; deadline?: string; tanggal_selesai?: string | null; need_design?: number }) => {
         const { data } = await apiClient.put<ProjectV2>(`/projects-v2/${id}`, payload);
         return data;
     },
@@ -457,9 +474,10 @@ export const projectV2Service = {
         return data;
     },
 
-    uploadDokubah: async (projectId: number, payload: { file?: File | string; tanggal_mulai?: string; tanggal_selesai?: string }) => {
+    uploadDokubah: async (projectId: number, payload: { file?: File | string; file_rekap_dokubah?: File | string; tanggal_mulai?: string; tanggal_selesai?: string }) => {
         const formData = new FormData();
         if (payload.file) formData.append('file', payload.file);
+        if (payload.file_rekap_dokubah) formData.append('file_rekap_dokubah', payload.file_rekap_dokubah);
         if (payload.tanggal_mulai) formData.append('tanggal_mulai', payload.tanggal_mulai);
         if (payload.tanggal_selesai) formData.append('tanggal_selesai', payload.tanggal_selesai);
         const { data } = await apiClient.post(`/projects-v2/${projectId}/upload-dokubah`, formData, {
