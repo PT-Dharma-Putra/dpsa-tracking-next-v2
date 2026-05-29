@@ -164,10 +164,12 @@ export interface ProjectV2Response {
 }
 
 export interface ProjectV2Stats {
+    total_project: number;
     total_spk: number;
+    total_sph: number;
     selesai: number;
     on_progress: number;
-    belum_dikerjakan: number;
+    belum_produksi: number;
     deadline_dekat: number;
     overdue: number;
     urgent: number;

@@ -30,6 +30,7 @@ import {
   AlertTriangle,
   AlertCircle,
   Zap,
+  Briefcase,
 } from 'lucide-react';
 import { format, differenceInDays, startOfDay } from 'date-fns';
 
@@ -335,15 +336,37 @@ export function ProjectsV2Table({
   return (
     <div className="space-y-6">
       {showAllDashboard && stats && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-4">
-          {/* Total SPK */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-9 gap-4">
+          {/* Total Project */}
           <div className="flex items-center gap-3 p-4 rounded-xl border border-slate-100 bg-slate-50/30 shadow-sm transition-all duration-300 hover:shadow-md">
             <div className="h-10 w-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 shrink-0">
+              <Briefcase className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Total Project</p>
+              <p className="text-xl font-bold text-slate-800">{stats.total_project}</p>
+            </div>
+          </div>
+
+          {/* Total SPK */}
+          <div className="flex items-center gap-3 p-4 rounded-xl border border-indigo-100 bg-indigo-50/20 shadow-sm transition-all duration-300 hover:shadow-md">
+            <div className="h-10 w-10 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600 shrink-0">
               <FileText className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Total SPK</p>
+              <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider">Total SPK</p>
               <p className="text-xl font-bold text-slate-800">{stats.total_spk}</p>
+            </div>
+          </div>
+
+          {/* Total SPH */}
+          <div className="flex items-center gap-3 p-4 rounded-xl border border-orange-100 bg-orange-50/20 shadow-sm transition-all duration-300 hover:shadow-md">
+            <div className="h-10 w-10 rounded-lg bg-orange-100 flex items-center justify-center text-orange-600 shrink-0">
+              <FileText className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-orange-600 uppercase tracking-wider">Total SPH</p>
+              <p className="text-xl font-bold text-orange-800">{stats.total_sph}</p>
             </div>
           </div>
 
@@ -369,14 +392,14 @@ export function ProjectsV2Table({
             </div>
           </div>
 
-          {/* Belum Dikerjakan */}
+          {/* SPK Belum Produksi */}
           <div className="flex items-center gap-3 p-4 rounded-xl border border-amber-100 bg-amber-50/20 shadow-sm transition-all duration-300 hover:shadow-md">
             <div className="h-10 w-10 rounded-lg bg-amber-100 flex items-center justify-center text-amber-600 shrink-0">
               <Clock className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wider">Belum Dikerjakan</p>
-              <p className="text-xl font-bold text-amber-800">{stats.belum_dikerjakan}</p>
+              <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wider">SPK Belum Produksi</p>
+              <p className="text-xl font-bold text-amber-800">{stats.belum_produksi}</p>
             </div>
           </div>
 
