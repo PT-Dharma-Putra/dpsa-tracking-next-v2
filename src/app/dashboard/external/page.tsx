@@ -67,9 +67,9 @@ export default function ClientDashboardPage() {
             </div>
 
             {/* 2.5 Action Center */}
-            <div className="mb-8">
+            {/* <div className="mb-8">
                 <ActionCenter />
-            </div>
+            </div> */}
 
             {/* 3. Projects Grid */}
             <div>
