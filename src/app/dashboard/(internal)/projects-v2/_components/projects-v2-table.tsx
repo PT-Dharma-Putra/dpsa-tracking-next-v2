@@ -898,7 +898,7 @@ export function ProjectsV2Table({
                 </>
               )}
               {showProduksi && <TableHead>Progres Produksi</TableHead>}
-               {isMainProjectsV2Page && (
+               {(isMainProjectsV2Page || showPerencanaan) && (
                  <>
                   <TableHead
                     className='cursor-pointer hover:bg-neutral-100 transition-colors group'
@@ -934,7 +934,7 @@ export function ProjectsV2Table({
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={showEngineer ? 16 : (showProduksi ? 15 : (showPiutang ? 13 : (isMainProjectsV2Page ? 20 : 18)))} className='h-32 text-center text-muted-foreground'>
+                <TableCell colSpan={showEngineer ? 16 : (showProduksi ? 15 : (showPiutang ? 13 : ((isMainProjectsV2Page || showPerencanaan) ? 20 : 18)))} className='h-32 text-center text-muted-foreground'>
                   <div className='flex items-center justify-center'>
                     <Loader2 className='h-6 w-6 animate-spin text-neutral-400' />
                   </div>
@@ -943,7 +943,7 @@ export function ProjectsV2Table({
             ) : projects.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={showEngineer ? 16 : (showProduksi ? 15 : (showPiutang ? 13 : (isMainProjectsV2Page ? 20 : 18)))}
+                  colSpan={showEngineer ? 16 : (showProduksi ? 15 : (showPiutang ? 13 : ((isMainProjectsV2Page || showPerencanaan) ? 20 : 18)))}
                   className='h-32 text-center text-muted-foreground'
                 >
                   No projects found.
@@ -1385,7 +1385,7 @@ export function ProjectsV2Table({
                       )}
                     </TableCell>
                   )}
-                  {isMainProjectsV2Page && (
+                  {(isMainProjectsV2Page || showPerencanaan) && (
                     <>
                       <TableCell>
                         {project.progres_kerja ? (
