@@ -115,6 +115,31 @@ function CopyableCode({ code }: { code: string }) {
     );
 }
 
+function CopyButton({ text, tooltip }: { text: string; tooltip?: string }) {
+    const [copied, setCopied] = React.useState(false);
+    const handleCopy = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        navigator.clipboard.writeText(text).then(() => {
+            setCopied(true);
+            toast.success("Nomor SPK berhasil disalin!");
+            setTimeout(() => setCopied(false), 1500);
+        });
+    };
+    return (
+        <button
+            onClick={handleCopy}
+            title={tooltip || "Salin"}
+            className="text-neutral-400 hover:text-neutral-600 transition-colors inline-flex items-center justify-center p-0.5 rounded hover:bg-neutral-100"
+        >
+            {copied ? (
+                <Check className="h-3 w-3 text-emerald-500" />
+            ) : (
+                <Copy className="h-3 w-3" />
+            )}
+        </button>
+    );
+}
+
 export default function EngineerDetailPage() {
     const params = useParams()
     const router = useRouter()
@@ -476,6 +501,10 @@ export default function EngineerDetailPage() {
                                 <span className='flex items-center gap-1 text-xs text-neutral-600'>
                                     <FileText className='h-3 w-3 text-neutral-400' />
                                     {project.spk_number || project.spk?.nomor_spk}
+                                    <CopyButton 
+                                        text={(project.spk_number || project.spk?.nomor_spk) as string} 
+                                        tooltip="Salin Nomor SPK" 
+                                    />
                                 </span>
                             )}
                             {project.need_design ? (

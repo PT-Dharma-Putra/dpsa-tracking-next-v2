@@ -14,9 +14,9 @@ export function ActionCenter() {
         queryFn: ClientService.getActionItems
     })
 
-    if (isLoading) {
-        return <ActionCenterSkeleton />
-    }
+    // if (isLoading) {
+    //     return <ActionCenterSkeleton />
+    // }
 
     if (!actions || actions.length === 0) {
         return (

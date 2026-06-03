@@ -72,6 +72,7 @@ export interface ProjectV2 {
         spk_signed_file: string | null;
         spk_status: string | null;
         tanggal_masuk: string | null;
+        tanggal_spk?: string | null;
         created_at: string;
     };
     list_furnitur?: {
@@ -163,10 +164,12 @@ export interface ProjectV2Response {
 }
 
 export interface ProjectV2Stats {
+    total_project: number;
     total_spk: number;
+    total_sph: number;
     selesai: number;
     on_progress: number;
-    belum_dikerjakan: number;
+    belum_produksi: number;
     deadline_dekat: number;
     overdue: number;
     urgent: number;
@@ -327,7 +330,7 @@ export const projectV2Service = {
         return data;
     },
 
-    uploadSPK: async (projectId: number, file: File, nomor_spk: string, deadline?: string, prioritas?: string, tanggal_masuk?: string, nominal?: string) => {
+    uploadSPK: async (projectId: number, file: File, nomor_spk: string, deadline?: string, prioritas?: string, tanggal_masuk?: string, nominal?: string, tanggal_spk?: string) => {
         const formData = new FormData();
         formData.append('file', file);
         formData.append('nomor_spk', nomor_spk);
@@ -335,6 +338,7 @@ export const projectV2Service = {
         if (prioritas) formData.append('prioritas', prioritas);
         if (tanggal_masuk) formData.append('tanggal_masuk', tanggal_masuk);
         if (nominal) formData.append('nominal', nominal);
+        if (tanggal_spk) formData.append('tanggal_spk', tanggal_spk);
         const { data } = await apiClient.post(`/projects-v2/${projectId}/upload-spk`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
@@ -506,6 +510,7 @@ export const projectV2Service = {
         pic_id?: number;
         new_pic_name?: string;
         new_pic_jabatan?: string;
+        deskripsi_belum_lengkap?: string;
     }) => {
         const { data } = await apiClient.post(`/projects-v2-items/${itemId}/bahan-baku`, payload);
         return data;
@@ -733,6 +738,7 @@ export interface BahanBaku {
     project_item_id: number;
     tanggal_menerima_dokubah: string | null;
     ketersediaan_stok: string | null;
+    deskripsi_belum_lengkap?: string | null;
     tanggal_keluar: string | null;
     pic_id: number | null;
     pic?: Pic;

@@ -617,9 +617,10 @@ export default function ProduksiDetailPage() {
                 <TableHead>Room</TableHead>
                 <TableHead>Item Name</TableHead>
                 <TableHead>Desc</TableHead>
-                <TableHead>Vol</TableHead>
                 <TableHead>Dimensions</TableHead>
+                <TableHead>Vol</TableHead>
                 <TableHead>Qty</TableHead>
+                <TableHead>Satuan</TableHead>
                 <TableHead>GK MDL</TableHead>
                 <TableHead>GK Custom</TableHead>
                 <TableHead>PO Divisi</TableHead>
@@ -673,14 +674,18 @@ export default function ProduksiDetailPage() {
                     <TableCell className='max-w-[150px] truncate text-xs text-muted-foreground'>
                       {item.keterangan || '-'}
                     </TableCell>
+                    <TableCell className='text-[10px] text-muted-foreground'>
+                      {item.panjang || '-'}x{item.lebar || '-'}x
+                      {item.tinggi || '-'}
+                    </TableCell>
+
                     <TableCell className='font-bold text-blue-600 text-xs'>
                       {item.volume || '-'}
                     </TableCell>
-                    <TableCell className='text-[10px] text-muted-foreground'>
-                      {item.panjang || '-'}x{item.lebar || '-'}x
-                      {item.tinggi || '-'} {item.satuan}
-                    </TableCell>
                     <TableCell className='font-bold'>{item.jumlah}</TableCell>
+                    <TableCell className='text-[10px] text-muted-foreground'>
+                      {item.satuan}
+                    </TableCell>
                     <TableCell>
                       {item.mdl_item?.link_gambar_kerja ? (
                         <Button
@@ -749,10 +754,11 @@ export default function ProduksiDetailPage() {
                           <Badge
                             variant='outline'
                             className={`font-bold ${
-                              item.bahan_baku.ketersediaan_stok === 'Tersedia'
+                              item.bahan_baku.ketersediaan_stok === 'Tersedia' ||
+                              item.bahan_baku.ketersediaan_stok === 'Lengkap'
                                 ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                : item.bahan_baku.ketersediaan_stok ===
-                                  'Belum Tersedia'
+                                : item.bahan_baku.ketersediaan_stok === 'Belum Tersedia' ||
+                                  item.bahan_baku.ketersediaan_stok === 'Belum Lengkap'
                                 ? 'bg-red-50 text-red-700 border-red-200'
                                 : 'bg-amber-50 text-amber-700 border-amber-200'
                             }`}

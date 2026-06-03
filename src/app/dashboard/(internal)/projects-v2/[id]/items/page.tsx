@@ -280,18 +280,20 @@ export default function ProjectItemsPage() {
 
   const [spkFile, setSpkFile] = React.useState<File | null>(null);
   const [spkNumber, setSpkNumber] = React.useState<string>('');
+  const [spkTanggalSpk, setSpkTanggalSpk] = React.useState<string>('');
   const [spkDeadline, setSpkDeadline] = React.useState<string>('');
   const [spkPrioritas, setSpkPrioritas] = React.useState<'Normal' | 'Urgent'>('Normal');
   const [spkTanggalMasuk, setSpkTanggalMasuk] = React.useState<string>('');
 
   const uploadSpkMutation = useMutation({
-    mutationFn: ({ file, number, deadline, prioritas, tanggal_masuk }: { file: File; number: string; deadline?: string; prioritas?: string; tanggal_masuk?: string }) =>
-      projectV2Service.uploadSPK(projectId, file, number, deadline, prioritas, tanggal_masuk),
+    mutationFn: ({ file, number, deadline, prioritas, tanggal_masuk, tanggal_spk }: { file: File; number: string; deadline?: string; prioritas?: string; tanggal_masuk?: string; tanggal_spk?: string }) =>
+      projectV2Service.uploadSPK(projectId, file, number, deadline, prioritas, tanggal_masuk, undefined, tanggal_spk),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects-v2', projectId] });
       toast.success('SPK uploaded successfully');
       setSpkFile(null); // Fixed typo from earlier (was setSpdFile)
       setSpkNumber('');
+      setSpkTanggalSpk('');
       setSpkDeadline('');
       setSpkPrioritas('Normal');
       setSpkTanggalMasuk('');
@@ -306,7 +308,14 @@ export default function ProjectItemsPage() {
       toast.error('Please provide both file and SPK number');
       return;
     }
-    uploadSpkMutation.mutate({ file: spkFile, number: spkNumber, deadline: spkDeadline, prioritas: spkPrioritas, tanggal_masuk: spkTanggalMasuk });
+    uploadSpkMutation.mutate({ 
+      file: spkFile, 
+      number: spkNumber, 
+      deadline: spkDeadline, 
+      prioritas: spkPrioritas, 
+      tanggal_masuk: spkTanggalMasuk,
+      tanggal_spk: spkTanggalSpk
+    });
   };
 
   const [signedSpkFile, setSignedSpkFile] = React.useState<File | null>(null);
@@ -1155,6 +1164,7 @@ export default function ProjectItemsPage() {
                               new Date(existingSpk.created_at),
                               'MMM d, yyyy'
                             )}
+                            {existingSpk.tanggal_spk && ` • SPK: ${format(new Date(existingSpk.tanggal_spk), 'MMM d, yyyy')}`}
                           </p>
                         </div>
                       </div>
@@ -1705,14 +1715,25 @@ export default function ProjectItemsPage() {
                 className='h-9 text-xs border-purple-200'
               />
             </div>
-            <div className='space-y-1.5'>
-              <Label className='text-xs font-medium text-purple-700'>Tanggal Masuk</Label>
-              <Input
-                type='date'
-                value={spkTanggalMasuk}
-                onChange={(e) => setSpkTanggalMasuk(e.target.value)}
-                className='h-9 text-xs border-purple-200'
-              />
+            <div className='grid grid-cols-2 gap-3'>
+              <div className='space-y-1.5'>
+                <Label className='text-xs font-medium text-purple-700'>Tanggal SPK</Label>
+                <Input
+                  type='date'
+                  value={spkTanggalSpk}
+                  onChange={(e) => setSpkTanggalSpk(e.target.value)}
+                  className='h-9 text-xs border-purple-200 w-full'
+                />
+              </div>
+              <div className='space-y-1.5'>
+                <Label className='text-xs font-medium text-purple-700'>Tanggal Masuk</Label>
+                <Input
+                  type='date'
+                  value={spkTanggalMasuk}
+                  onChange={(e) => setSpkTanggalMasuk(e.target.value)}
+                  className='h-9 text-xs border-purple-200 w-full'
+                />
+              </div>
             </div>
             <div className='space-y-1.5'>
               <Label className='text-xs font-medium text-purple-700'>Deadline Project</Label>
