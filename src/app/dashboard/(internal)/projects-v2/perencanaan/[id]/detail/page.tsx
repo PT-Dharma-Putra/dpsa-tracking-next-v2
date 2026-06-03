@@ -1724,9 +1724,8 @@ export default function PerencanaanDetailPage() {
               <Label>Ketersediaan Stok</Label>
               <div className='flex p-1 bg-neutral-100 rounded-lg border border-neutral-200'>
                 {[
-                  { value: 'Belum Tersedia', label: 'Belum Tersedia', color: 'bg-red-500' },
-                  { value: 'Mutasi', label: 'Mutasi', color: 'bg-amber-500' },
-                  { value: 'Tersedia', label: 'Tersedia', color: 'bg-emerald-500' }
+                  { value: 'Belum Lengkap', label: 'Belum Lengkap', color: 'bg-red-500' },
+                  { value: 'Lengkap', label: 'Lengkap', color: 'bg-emerald-500' }
                 ].map((option) => (
                   <button
                     key={option.value}
