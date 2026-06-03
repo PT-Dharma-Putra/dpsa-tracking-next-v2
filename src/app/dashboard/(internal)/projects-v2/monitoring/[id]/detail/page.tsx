@@ -345,6 +345,7 @@ export default function ProjectMonitoringDetailPage() {
                     const totalMasuk = item.barang_jadi_masuk?.reduce((s, b) => s + Number(b.jumlah || 0), 0) || 0;
                     const totalPacking = item.barang_jadi_terpacking?.reduce((s, b) => s + Number(b.jumlah || 0), 0) || 0;
                     const gudangProgress = item.jumlah > 0 ? ((totalMasuk + totalPacking) / (2 * item.jumlah)) * 100 : 0;
+                    const totalKeluar = item.barang_jadi_keluar?.reduce((s, bjk) => s + Number(bjk.jumlah || 0), 0) || 0;
                     
                     return (
                       <TableRow key={item.id} className="hover:bg-neutral-50/50 transition-colors">
@@ -394,7 +395,7 @@ export default function ProjectMonitoringDetailPage() {
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
-                          {item.produksi?.persen === 100 && totalMasuk >= item.jumlah && totalPacking >= item.jumlah ? (
+                          {totalKeluar >= item.jumlah ? (
                             <Badge className="bg-emerald-500 text-white border-none text-[10px] font-black uppercase tracking-widest px-2 py-1">
                               Completed
                             </Badge>
