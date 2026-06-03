@@ -173,6 +173,11 @@ export interface ProjectV2Stats {
     deadline_dekat: number;
     overdue: number;
     urgent: number;
+    po_divisi_completed: number;
+    gambar_kerja_completed: number;
+    dokubah_completed: number;
+    stok_material_completed: number;
+    produksi_completed: number;
 }
 
 interface GetProjectsV2Params {
@@ -183,6 +188,12 @@ interface GetProjectsV2Params {
     year?: string;
     sort_by?: string;
     sort_order?: 'asc' | 'desc';
+    po_divisi_status?: string;
+    spk_status?: string;
+    gambar_kerja_status?: string;
+    dokubah_status?: string;
+    stok_material_status?: string;
+    produksi_status?: string;
 }
 
 export const projectV2Service = {

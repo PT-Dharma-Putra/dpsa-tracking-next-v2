@@ -31,6 +31,10 @@ import {
   AlertCircle,
   Zap,
   Briefcase,
+  Image as ImageIcon,
+  FileEdit,
+  Package,
+  Hammer,
 } from 'lucide-react';
 import { format, differenceInDays, startOfDay } from 'date-fns';
 
@@ -152,6 +156,22 @@ export function ProjectsV2Table({
   const [sortOrder, setSortOrder] = React.useState<'asc' | 'desc'>('desc');
   const [selectedMonth, setSelectedMonth] = React.useState<string>('all');
   const [selectedYear, setSelectedYear] = React.useState<string>('all');
+  const [poDivisiFilterActive, setPoDivisiFilterActive] = React.useState(false);
+  const [spkFilterActive, setSpkFilterActive] = React.useState(false);
+  const [gambarKerjaFilterActive, setGambarKerjaFilterActive] = React.useState(false);
+  const [dokubahFilterActive, setDokubahFilterActive] = React.useState(false);
+  const [stokMaterialFilterActive, setStokMaterialFilterActive] = React.useState(false);
+  const [produksiFilterActive, setProduksiFilterActive] = React.useState(false);
+
+  const handleFilterClick = (filterType: 'spk' | 'po_divisi' | 'gambar_kerja' | 'dokubah' | 'stok_material' | 'produksi') => {
+    setSpkFilterActive(filterType === 'spk' ? !spkFilterActive : false);
+    setPoDivisiFilterActive(filterType === 'po_divisi' ? !poDivisiFilterActive : false);
+    setGambarKerjaFilterActive(filterType === 'gambar_kerja' ? !gambarKerjaFilterActive : false);
+    setDokubahFilterActive(filterType === 'dokubah' ? !dokubahFilterActive : false);
+    setStokMaterialFilterActive(filterType === 'stok_material' ? !stokMaterialFilterActive : false);
+    setProduksiFilterActive(filterType === 'produksi' ? !produksiFilterActive : false);
+    setPage(1);
+  };
 
   const [isFormOpen, setIsFormOpen] = React.useState(false);
   const [selectedProject, setSelectedProject] =
@@ -178,7 +198,22 @@ export function ProjectsV2Table({
   }, [searchInput]);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['projects-v2', page, search, clientId, selectedMonth, selectedYear, sortBy, sortOrder],
+    queryKey: [
+      'projects-v2',
+      page,
+      search,
+      clientId,
+      selectedMonth,
+      selectedYear,
+      sortBy,
+      sortOrder,
+      poDivisiFilterActive,
+      spkFilterActive,
+      gambarKerjaFilterActive,
+      dokubahFilterActive,
+      stokMaterialFilterActive,
+      produksiFilterActive,
+    ],
     queryFn: () =>
       projectV2Service.getProjects({
         page,
@@ -188,6 +223,12 @@ export function ProjectsV2Table({
         year: selectedYear !== 'all' ? selectedYear : undefined,
         sort_by: sortBy,
         sort_order: sortOrder,
+        po_divisi_status: poDivisiFilterActive ? 'not_completed' : undefined,
+        spk_status: spkFilterActive ? 'has_spk' : undefined,
+        gambar_kerja_status: gambarKerjaFilterActive ? 'not_completed' : undefined,
+        dokubah_status: dokubahFilterActive ? 'not_completed' : undefined,
+        stok_material_status: stokMaterialFilterActive ? 'not_completed' : undefined,
+        produksi_status: produksiFilterActive ? 'not_completed' : undefined,
       }),
   });
 
@@ -335,6 +376,202 @@ export function ProjectsV2Table({
 
   return (
     <div className="space-y-6">
+      {showPerencanaan && stats && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4">
+          {/* Total Project */}
+          <div className="flex items-center gap-3 p-4 rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md">
+            <div className="h-10 w-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 shrink-0">
+              <Briefcase className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Total Projek</p>
+              <p className="text-xl font-bold text-slate-800">{stats.total_project}</p>
+            </div>
+          </div>
+
+          {/* Total SPK */}
+          <div
+            onClick={() => handleFilterClick('spk')}
+            className={cn(
+              "flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-indigo-400 select-none",
+              spkFilterActive 
+                ? "border-indigo-500 bg-indigo-50/50 ring-2 ring-indigo-500/20" 
+                : "border-indigo-200 bg-white"
+            )}
+          >
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600 shrink-0">
+                <FileText className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider">Total SPK</p>
+                <p className="text-xl font-bold text-slate-800">{stats.total_spk}</p>
+              </div>
+            </div>
+            {spkFilterActive && (
+              <span className="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-semibold animate-pulse">
+                Ada SPK
+              </span>
+            )}
+          </div>
+
+          {/* PO Divisi */}
+          <div
+            onClick={() => handleFilterClick('po_divisi')}
+            className={cn(
+              "flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-emerald-400 select-none",
+              poDivisiFilterActive 
+                ? "border-emerald-500 bg-emerald-50/50 ring-2 ring-emerald-500/20" 
+                : "border-emerald-200 bg-white"
+            )}
+          >
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
+                <CheckCircle2 className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">PO Divisi</p>
+                <div className="flex items-baseline gap-1.5">
+                  <p className="text-xl font-bold text-slate-800">{stats.po_divisi_completed}</p>
+                  <p className="text-xs text-muted-foreground">
+                    ({stats.total_project > 0 ? Math.round((stats.po_divisi_completed / stats.total_project) * 100) : 0}%)
+                  </p>
+                </div>
+              </div>
+            </div>
+            {poDivisiFilterActive && (
+              <span className="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-semibold animate-pulse">
+                Belum 100%
+              </span>
+            )}
+          </div>
+
+          {/* Gambar Kerja */}
+          <div
+            onClick={() => handleFilterClick('gambar_kerja')}
+            className={cn(
+              "flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-blue-400 select-none",
+              gambarKerjaFilterActive 
+                ? "border-blue-500 bg-blue-50/50 ring-2 ring-blue-500/20" 
+                : "border-blue-200 bg-white"
+            )}
+          >
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 shrink-0">
+                <ImageIcon className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">Gambar Kerja</p>
+                <div className="flex items-baseline gap-1.5">
+                  <p className="text-xl font-bold text-slate-800">{stats.gambar_kerja_completed}</p>
+                  <p className="text-xs text-muted-foreground">
+                    ({stats.total_project > 0 ? Math.round((stats.gambar_kerja_completed / stats.total_project) * 100) : 0}%)
+                  </p>
+                </div>
+              </div>
+            </div>
+            {gambarKerjaFilterActive && (
+              <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-semibold animate-pulse">
+                Belum 100%
+              </span>
+            )}
+          </div>
+
+          {/* Dokubah */}
+          <div
+            onClick={() => handleFilterClick('dokubah')}
+            className={cn(
+              "flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-amber-400 select-none",
+              dokubahFilterActive 
+                ? "border-amber-500 bg-amber-50/50 ring-2 ring-amber-500/20" 
+                : "border-amber-200 bg-white"
+            )}
+          >
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg bg-amber-100 flex items-center justify-center text-amber-600 shrink-0">
+                <FileEdit className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wider">Dokubah</p>
+                <div className="flex items-baseline gap-1.5">
+                  <p className="text-xl font-bold text-slate-800">{stats.dokubah_completed}</p>
+                  <p className="text-xs text-muted-foreground">
+                    ({stats.total_project > 0 ? Math.round((stats.dokubah_completed / stats.total_project) * 100) : 0}%)
+                  </p>
+                </div>
+              </div>
+            </div>
+            {dokubahFilterActive && (
+              <span className="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-semibold animate-pulse">
+                Belum 100%
+              </span>
+            )}
+          </div>
+
+          {/* Stok Material */}
+          <div
+            onClick={() => handleFilterClick('stok_material')}
+            className={cn(
+              "flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-violet-400 select-none",
+              stokMaterialFilterActive 
+                ? "border-violet-500 bg-violet-50/50 ring-2 ring-violet-500/20" 
+                : "border-violet-200 bg-white"
+            )}
+          >
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg bg-violet-100 flex items-center justify-center text-violet-600 shrink-0">
+                <Package className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-violet-600 uppercase tracking-wider">Stok Material</p>
+                <div className="flex items-baseline gap-1.5">
+                  <p className="text-xl font-bold text-slate-800">{stats.stok_material_completed}</p>
+                  <p className="text-xs text-muted-foreground">
+                    ({stats.total_project > 0 ? Math.round((stats.stok_material_completed / stats.total_project) * 100) : 0}%)
+                  </p>
+                </div>
+              </div>
+            </div>
+            {stokMaterialFilterActive && (
+              <span className="text-[10px] bg-violet-100 text-violet-700 px-2 py-0.5 rounded-full font-semibold animate-pulse">
+                Belum 100%
+              </span>
+            )}
+          </div>
+
+          {/* Perintah Produksi */}
+          <div
+            onClick={() => handleFilterClick('produksi')}
+            className={cn(
+              "flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-rose-400 select-none",
+              produksiFilterActive 
+                ? "border-rose-500 bg-rose-50/50 ring-2 ring-rose-500/20" 
+                : "border-rose-200 bg-white"
+            )}
+          >
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg bg-rose-100 flex items-center justify-center text-rose-600 shrink-0">
+                <Hammer className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-rose-600 uppercase tracking-wider">P. Produksi</p>
+                <div className="flex items-baseline gap-1.5">
+                  <p className="text-xl font-bold text-slate-800">{stats.produksi_completed}</p>
+                  <p className="text-xs text-muted-foreground">
+                    ({stats.total_project > 0 ? Math.round((stats.produksi_completed / stats.total_project) * 100) : 0}%)
+                  </p>
+                </div>
+              </div>
+            </div>
+            {produksiFilterActive && (
+              <span className="text-[10px] bg-rose-100 text-rose-700 px-2 py-0.5 rounded-full font-semibold animate-pulse">
+                Belum 100%
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
       {showAllDashboard && stats && (
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-9 gap-4">
           {/* Total Project */}
@@ -439,7 +676,7 @@ export function ProjectsV2Table({
       )}
 
       <div className={cn(
-        showAllDashboard && "bg-white rounded-xl shadow-sm border border-neutral-200"
+        (showAllDashboard || showPerencanaan) && "bg-white rounded-xl shadow-sm border border-neutral-200"
       )}>
         <div className='flex flex-col gap-4 p-4'>
       <div className='flex flex-col sm:flex-row justify-between gap-4 items-start sm:items-center'>
