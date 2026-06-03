@@ -565,7 +565,11 @@ export default function PerencanaanDetailPage() {
   const poDivisiCount = items?.filter(i => i.divisi_id).length || 0;
   const gambarKerjaCount = items?.filter(i => i.gambar_kerja?.file || i.mdl_item?.link_gambar_kerja).length || 0;
   const dokubahCount = (project.dokubah?.file || project.dokubah?.file_rekap_dokubah) ? 1 : 0;
-  const stokTersediaCount = items?.filter(i => i.bahan_baku?.ketersediaan_stok === 'Tersedia').length || 0;
+  const stokLengkapCount = items?.filter(i => i.bahan_baku?.ketersediaan_stok === 'Tersedia' || i.bahan_baku?.ketersediaan_stok === 'Lengkap').length || 0;
+  const stokBelumLengkapCount = totalItems - stokLengkapCount;
+  const stokLengkapPercentage = totalItems ? Math.round((stokLengkapCount / totalItems) * 100) : 0;
+  const stokBelumLengkapPercentage = totalItems ? Math.round((stokBelumLengkapCount / totalItems) * 100) : 0;
+  const isStokTerisi = totalItems > 0 && (items?.every(i => !!i.bahan_baku?.ketersediaan_stok) || false);
   const perintahProduksiCount = items?.filter(i => i.divisi_id && (i.gambar_kerja?.file || i.mdl_item?.link_gambar_kerja)).length || 0;
   
   const totalQtyOrder = items?.reduce((sum, i) => sum + i.jumlah, 0) || 0;
@@ -1010,15 +1014,15 @@ export default function PerencanaanDetailPage() {
         </Card>
 
         {/* 5. Stok Material */}
-        <Card className={`relative border shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md ${stokTersediaCount === totalItems && totalItems > 0 ? 'border-emerald-200 bg-white ring-1 ring-emerald-100' : 'border-neutral-200 bg-white'}`}>
-          {stokTersediaCount === totalItems && totalItems > 0 && (
+        <Card className={`relative border shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md ${isStokTerisi ? 'border-emerald-200 bg-white ring-1 ring-emerald-100' : 'border-neutral-200 bg-white'}`}>
+          {isStokTerisi && (
             <div className="absolute -top-1.5 -right-1.5 h-5 w-5 bg-emerald-500 rounded-full flex items-center justify-center shadow-sm z-10 animate-in zoom-in duration-300">
               <Check className="h-3 w-3 text-white" strokeWidth={3} />
             </div>
           )}
           <CardHeader className='pb-2 flex flex-row items-center justify-between gap-3 min-w-0'>
             <button className='flex items-center gap-3 flex-1 text-left min-w-0' onClick={() => setIsStokCollapsed(!isStokCollapsed)}>
-              <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold shrink-0 ${stokTersediaCount > 0 ? 'bg-emerald-100 text-emerald-600' : 'bg-neutral-100 text-neutral-500'}`}>5</div>
+              <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold shrink-0 ${isStokTerisi ? 'bg-emerald-100 text-emerald-600' : 'bg-neutral-100 text-neutral-500'}`}>5</div>
               <div className='flex-1 min-w-0'>
                 <CardTitle className='text-sm text-neutral-800 font-bold truncate'>Stok Material</CardTitle>
                 <p className='text-[10px] text-muted-foreground uppercase tracking-wider font-semibold truncate'>Availability</p>
@@ -1030,11 +1034,17 @@ export default function PerencanaanDetailPage() {
             <CardContent className='pt-0'>
                <div className='space-y-2 border-t border-neutral-100 pt-2.5'>
                   <div className='h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden'>
-                    <div className='h-full bg-emerald-500 transition-all duration-500' style={{ width: `${totalItems ? (stokTersediaCount / totalItems) * 100 : 0}%` }} />
+                    <div className='h-full bg-emerald-500 transition-all duration-500' style={{ width: `${stokLengkapPercentage}%` }} />
                   </div>
-                  <div className='flex justify-between items-center'>
-                    <p className='text-[10px] font-bold text-neutral-700'>{stokTersediaCount} / {totalItems} Items Ready</p>
-                    <p className='text-[10px] font-bold text-emerald-600'>{Math.round(totalItems ? (stokTersediaCount / totalItems) * 100 : 0)}%</p>
+                  <div className='space-y-1 text-[10px] font-bold'>
+                    <div className='flex justify-between items-center text-emerald-600'>
+                      <span>Lengkap: {stokLengkapCount}</span>
+                      <span>{stokLengkapPercentage}%</span>
+                    </div>
+                    <div className='flex justify-between items-center text-red-500'>
+                      <span>Belum Lengkap: {stokBelumLengkapCount}</span>
+                      <span>{stokBelumLengkapPercentage}%</span>
+                    </div>
                   </div>
                </div>
             </CardContent>
