@@ -84,12 +84,13 @@ export function TaskItTable() {
         }
     })
 
-    const updateStatusMutation = useMutation({
-        mutationFn: ({ id, status, userId, deskripsi, tanggalSelesai }: { id: number, status: string, userId: number, deskripsi: string, tanggalSelesai: string | null }) => {
+    const updateFieldMutation = useMutation({
+        mutationFn: ({ id, status, userId, deskripsi, tanggalSelesai, prioritas }: { id: number, status: string, userId: number, deskripsi: string, tanggalSelesai: string | null, prioritas: string }) => {
             const formData = new FormData()
             formData.append("user_id", userId.toString())
             formData.append("deskripsi", deskripsi)
             formData.append("status", status)
+            formData.append("prioritas", prioritas)
             if (tanggalSelesai) {
                 formData.append("tanggal_selesai", tanggalSelesai)
             }
@@ -97,10 +98,9 @@ export function TaskItTable() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["task-its"] })
-            toast.success("Status task berhasil diperbarui")
         },
         onError: () => {
-            toast.error("Gagal memperbarui status task")
+            toast.error("Gagal memperbarui task")
         }
     })
 
@@ -143,6 +143,10 @@ export function TaskItTable() {
                 case "status":
                     valA = a.status.toLowerCase()
                     valB = b.status.toLowerCase()
+                    break
+                case "prioritas":
+                    valA = (a.prioritas || "").toLowerCase()
+                    valB = (b.prioritas || "").toLowerCase()
                     break
                 case "tanggal_selesai":
                     valA = a.tanggal_selesai ? new Date(a.tanggal_selesai).getTime() : 0
@@ -190,7 +194,7 @@ export function TaskItTable() {
     }
 
     const getStatusSelect = (task: TaskIt) => {
-        const isUpdating = updateStatusMutation.isPending && updateStatusMutation.variables?.id === task.id
+        const isUpdating = updateFieldMutation.isPending && updateFieldMutation.variables?.id === task.id
         
         const getStatusStyles = (statusVal: string) => {
             switch (statusVal.toLowerCase()) {
@@ -221,12 +225,17 @@ export function TaskItTable() {
                             const tzOffset = now.getTimezoneOffset() * 60000
                             finalTanggalSelesai = new Date(now.getTime() - tzOffset).toISOString().slice(0, 19).replace('T', ' ')
                         }
-                        updateStatusMutation.mutate({
+                        updateFieldMutation.mutate({
                             id: task.id,
                             status: newStatus,
                             userId: task.user_id,
                             deskripsi: task.deskripsi,
-                            tanggalSelesai: finalTanggalSelesai
+                            tanggalSelesai: finalTanggalSelesai,
+                            prioritas: task.prioritas
+                        }, {
+                            onSuccess: () => {
+                                toast.success("Status task berhasil diperbarui")
+                            }
                         })
                     }}
                 >
@@ -237,6 +246,55 @@ export function TaskItTable() {
                         <SelectItem value="Pending">Pending</SelectItem>
                         <SelectItem value="In Progress">In Progress</SelectItem>
                         <SelectItem value="Completed">Completed</SelectItem>
+                    </SelectContent>
+                </Select>
+                {isUpdating && <Loader2 className="h-3 w-3 animate-spin text-neutral-400" />}
+            </div>
+        )
+    }
+
+    const getPrioritasSelect = (task: TaskIt) => {
+        const isUpdating = updateFieldMutation.isPending && updateFieldMutation.variables?.id === task.id
+        
+        const getPrioritasStyles = (prioritasVal: string) => {
+            switch (prioritasVal.toLowerCase()) {
+                case "high":
+                    return "bg-red-50 text-red-700 border-red-200 focus:ring-red-500 font-bold"
+                case "low":
+                    return "bg-blue-50 text-blue-700 border-blue-200 focus:ring-blue-500 font-bold"
+                case "medium":
+                default:
+                    return "bg-yellow-50 text-yellow-700 border-yellow-200 focus:ring-yellow-500 font-bold"
+            }
+        }
+
+        return (
+            <div className="flex items-center gap-1.5">
+                <Select
+                    value={task.prioritas}
+                    disabled={isUpdating}
+                    onValueChange={(newPrioritas) => {
+                        updateFieldMutation.mutate({
+                            id: task.id,
+                            status: task.status,
+                            userId: task.user_id,
+                            deskripsi: task.deskripsi,
+                            tanggalSelesai: task.tanggal_selesai,
+                            prioritas: newPrioritas
+                        }, {
+                            onSuccess: () => {
+                                toast.success("Prioritas task berhasil diperbarui")
+                            }
+                        })
+                    }}
+                >
+                    <SelectTrigger className={`w-[100px] h-7 rounded-full border text-xs px-2 focus:outline-none focus:ring-1 ${getPrioritasStyles(task.prioritas)}`}>
+                        <SelectValue placeholder="Pilih Prioritas" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="High">High</SelectItem>
+                        <SelectItem value="Medium">Medium</SelectItem>
+                        <SelectItem value="Low">Low</SelectItem>
                     </SelectContent>
                 </Select>
                 {isUpdating && <Loader2 className="h-3 w-3 animate-spin text-neutral-400" />}
@@ -282,6 +340,7 @@ export function TaskItTable() {
                             <TableHead className="w-[50px]">#</TableHead>
                             <TableHead className="max-w-[300px]">{sortableHeader("deskripsi", "Deskripsi")}</TableHead>
                             <TableHead>{sortableHeader("user", "User Assigned")}</TableHead>
+                            <TableHead>{sortableHeader("prioritas", "Prioritas")}</TableHead>
                             <TableHead>{sortableHeader("status", "Status")}</TableHead>
                             <TableHead>{sortableHeader("created_at", "Tanggal Dibuat")}</TableHead>
                             <TableHead>{sortableHeader("tanggal_selesai", "Tanggal Selesai")}</TableHead>
@@ -292,13 +351,13 @@ export function TaskItTable() {
                     <TableBody>
                         {isLoading ? (
                             <TableRow>
-                                <TableCell colSpan={8} className="h-32 text-center">
+                                <TableCell colSpan={9} className="h-32 text-center">
                                     <Loader2 className="h-6 w-6 animate-spin mx-auto text-neutral-400" />
                                 </TableCell>
                             </TableRow>
                         ) : filtered.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={8} className="h-32 text-center text-muted-foreground text-sm">
+                                <TableCell colSpan={9} className="h-32 text-center text-muted-foreground text-sm">
                                     {search ? "Tidak ada task yang cocok." : "Belum ada task IT. Klik 'Tambah Task' untuk memulai."}
                                 </TableCell>
                             </TableRow>
@@ -314,6 +373,9 @@ export function TaskItTable() {
                                             <span className="text-sm font-semibold text-neutral-700">{task.user?.name || "Unassigned"}</span>
                                             <span className="text-xs text-muted-foreground">{task.user?.email || "-"}</span>
                                         </div>
+                                    </TableCell>
+                                    <TableCell>
+                                        {getPrioritasSelect(task)}
                                     </TableCell>
                                     <TableCell>
                                         {getStatusSelect(task)}

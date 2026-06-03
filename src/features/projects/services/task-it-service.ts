@@ -7,6 +7,7 @@ export interface TaskIt {
     file: string | null;
     file_url?: string | null;
     status: string;
+    prioritas: string;
     tanggal_selesai: string | null;
     created_at: string;
     updated_at: string;

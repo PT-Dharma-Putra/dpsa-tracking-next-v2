@@ -49,6 +49,7 @@ export function TaskItFormDialog({ open, onOpenChange, task }: TaskItFormDialogP
     const [deskripsi, setDeskripsi] = React.useState("")
     const [userId, setUserId] = React.useState("")
     const [status, setStatus] = React.useState("Pending")
+    const [prioritas, setPrioritas] = React.useState("Medium")
     const [tanggalSelesai, setTanggalSelesai] = React.useState("")
     const [file, setFile] = React.useState<File | null>(null)
     const [existingFile, setExistingFile] = React.useState<string | null>(null)
@@ -75,6 +76,7 @@ export function TaskItFormDialog({ open, onOpenChange, task }: TaskItFormDialogP
                     ? new Date(task.tanggal_selesai).toISOString().slice(0, 16)
                     : ""
             )
+            setPrioritas(task.prioritas || "Medium")
             setExistingFile(task.file)
             setRemoveExistingFile(false)
             setFile(null)
@@ -85,6 +87,7 @@ export function TaskItFormDialog({ open, onOpenChange, task }: TaskItFormDialogP
             setDeskripsi("")
             setUserId("")
             setStatus("Pending")
+            setPrioritas("Medium")
             setTanggalSelesai("")
             setExistingFile(null)
             setRemoveExistingFile(false)
@@ -124,6 +127,7 @@ export function TaskItFormDialog({ open, onOpenChange, task }: TaskItFormDialogP
         formData.append("user_id", userId)
         formData.append("deskripsi", deskripsi)
         formData.append("status", status)
+        formData.append("prioritas", prioritas)
         
         if (tanggalSelesai) {
             formData.append("tanggal_selesai", tanggalSelesai)
@@ -241,15 +245,32 @@ export function TaskItFormDialog({ open, onOpenChange, task }: TaskItFormDialogP
                                 </Select>
                             </div>
                             <div className="grid gap-2">
-                                <Label htmlFor="tanggal_selesai">Tanggal Selesai (Opsional)</Label>
-                                <Input
-                                    id="tanggal_selesai"
-                                    type="datetime-local"
-                                    value={tanggalSelesai}
-                                    onChange={(e) => setTanggalSelesai(e.target.value)}
-                                    className="bg-neutral-50 border-neutral-200 focus:bg-white"
-                                />
+                                <Label htmlFor="prioritas">Prioritas</Label>
+                                <Select
+                                    value={prioritas}
+                                    onValueChange={(val) => setPrioritas(val)}
+                                >
+                                    <SelectTrigger className="bg-neutral-50 border-neutral-200">
+                                        <SelectValue placeholder="Pilih Prioritas" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="High">High</SelectItem>
+                                        <SelectItem value="Medium">Medium</SelectItem>
+                                        <SelectItem value="Low">Low</SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
+                        </div>
+
+                        <div className="grid gap-2">
+                            <Label htmlFor="tanggal_selesai">Tanggal Selesai (Opsional)</Label>
+                            <Input
+                                id="tanggal_selesai"
+                                type="datetime-local"
+                                value={tanggalSelesai}
+                                onChange={(e) => setTanggalSelesai(e.target.value)}
+                                className="bg-neutral-50 border-neutral-200 focus:bg-white"
+                            />
                         </div>
 
                         <div className="grid gap-2">
