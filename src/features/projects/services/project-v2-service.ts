@@ -510,6 +510,7 @@ export const projectV2Service = {
         pic_id?: number;
         new_pic_name?: string;
         new_pic_jabatan?: string;
+        deskripsi_belum_lengkap?: string;
     }) => {
         const { data } = await apiClient.post(`/projects-v2-items/${itemId}/bahan-baku`, payload);
         return data;
@@ -737,6 +738,7 @@ export interface BahanBaku {
     project_item_id: number;
     tanggal_menerima_dokubah: string | null;
     ketersediaan_stok: string | null;
+    deskripsi_belum_lengkap?: string | null;
     tanggal_keluar: string | null;
     pic_id: number | null;
     pic?: Pic;

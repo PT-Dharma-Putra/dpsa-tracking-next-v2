@@ -60,6 +60,7 @@ import {
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import {
   Popover,
@@ -206,6 +207,7 @@ export default function PerencanaanDetailPage() {
   const [stokKeluar, setStokKeluar] = React.useState<string>('');
   const [stokPicId, setStokPicId] = React.useState<string>('');
   const [stokStatus, setStokStatus] = React.useState<string>('');
+  const [stokDeskripsiBelumLengkap, setStokDeskripsiBelumLengkap] = React.useState<string>('');
   const [stokPicOpen, setStokPicOpen] = React.useState(false);
   const [isManualPic, setIsManualPic] = React.useState(false);
   const [newPicName, setNewPicName] = React.useState('');
@@ -219,6 +221,7 @@ export default function PerencanaanDetailPage() {
       pic_id?: number;
       new_pic_name?: string;
       new_pic_jabatan?: string;
+      deskripsi_belum_lengkap?: string;
     }) => projectV2Service.updateBahanBaku(stokItem!.id, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({
@@ -241,6 +244,7 @@ export default function PerencanaanDetailPage() {
       pic_id: isManualPic ? undefined : (stokPicId ? parseInt(stokPicId) : undefined),
       new_pic_name: isManualPic ? newPicName : undefined,
       new_pic_jabatan: isManualPic ? newPicJabatan : undefined,
+      deskripsi_belum_lengkap: stokStatus === 'Belum Lengkap' ? stokDeskripsiBelumLengkap : '',
     });
   };
 
@@ -250,6 +254,7 @@ export default function PerencanaanDetailPage() {
     setStokMenerima(item.bahan_baku?.tanggal_menerima_dokubah || '');
     setStokKeluar(item.bahan_baku?.tanggal_keluar || '');
     setStokPicId(item.bahan_baku?.pic_id?.toString() || '');
+    setStokDeskripsiBelumLengkap(item.bahan_baku?.deskripsi_belum_lengkap || '');
     setIsManualPic(false);
     setNewPicName('');
     setNewPicJabatan('');
@@ -1465,10 +1470,11 @@ export default function PerencanaanDetailPage() {
                           <Badge
                             variant='outline'
                             className={`font-bold text-[9px] h-5 px-1.5 ${
-                              item.bahan_baku.ketersediaan_stok === 'Tersedia'
+                              item.bahan_baku.ketersediaan_stok === 'Tersedia' ||
+                              item.bahan_baku.ketersediaan_stok === 'Lengkap'
                                 ? 'bg-emerald-50 text-emerald-700 border-emerald-200 shadow-sm'
-                                : item.bahan_baku.ketersediaan_stok ===
-                                  'Belum Tersedia'
+                                : item.bahan_baku.ketersediaan_stok === 'Belum Tersedia' ||
+                                  item.bahan_baku.ketersediaan_stok === 'Belum Lengkap'
                                 ? 'bg-red-50 text-red-700 border-red-200'
                                 : 'bg-amber-50 text-amber-700 border-amber-200'
                             }`}
@@ -1743,6 +1749,19 @@ export default function PerencanaanDetailPage() {
                 ))}
               </div>
             </div>
+            {stokStatus === 'Belum Lengkap' && (
+              <div className='space-y-2'>
+                <Label htmlFor='deskripsi_belum_lengkap'>Deskripsi Bahan Belum Lengkap</Label>
+                <Textarea
+                  id='deskripsi_belum_lengkap'
+                  placeholder='Masukkan deskripsi jika bahan belum lengkap...'
+                  value={stokDeskripsiBelumLengkap}
+                  onChange={(e) => setStokDeskripsiBelumLengkap(e.target.value)}
+                  className='text-xs resize-none'
+                  rows={3}
+                />
+              </div>
+            )}
             <div className='grid grid-cols-2 gap-4'>
               <div className='space-y-2'>
                 <Label>Tgl Menerima Dokubah</Label>

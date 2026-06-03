@@ -754,10 +754,11 @@ export default function ProduksiDetailPage() {
                           <Badge
                             variant='outline'
                             className={`font-bold ${
-                              item.bahan_baku.ketersediaan_stok === 'Tersedia'
+                              item.bahan_baku.ketersediaan_stok === 'Tersedia' ||
+                              item.bahan_baku.ketersediaan_stok === 'Lengkap'
                                 ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                : item.bahan_baku.ketersediaan_stok ===
-                                  'Belum Tersedia'
+                                : item.bahan_baku.ketersediaan_stok === 'Belum Tersedia' ||
+                                  item.bahan_baku.ketersediaan_stok === 'Belum Lengkap'
                                 ? 'bg-red-50 text-red-700 border-red-200'
                                 : 'bg-amber-50 text-amber-700 border-amber-200'
                             }`}
