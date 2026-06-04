@@ -209,8 +209,6 @@ export default function PrintSuratJalanPage() {
           </div>
         </div>
 
-        <p className="text-xs text-neutral-700 mb-3">Harap diterima dengan baik, barang-barang yang tercantum di bawah ini:</p>
-
         {/* Table of Items */}
         <table className="w-full text-[11px] text-left border border-black mb-8 border-collapse">
           <thead>
