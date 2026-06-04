@@ -191,21 +191,9 @@ export default function PrintSuratJalanPage() {
               <span className="col-span-2">: {pengiriman.no_kendaraan || "-"}</span>
             </div>
             <div className="grid grid-cols-3 gap-2">
-              <span className="text-neutral-500">Nama Supir</span>
+              <span className="text-neutral-500">Nama Sopir</span>
               <span className="col-span-2">: {pengiriman.supir || "-"}</span>
             </div>
-            {pengiriman.koor_setting && (
-              <div className="grid grid-cols-3 gap-2">
-                <span className="text-neutral-500">Koor. Setting</span>
-                <span className="col-span-2">: {pengiriman.koor_setting}</span>
-              </div>
-            )}
-            {pengiriman.setrim && (
-              <div className="grid grid-cols-3 gap-2">
-                <span className="text-neutral-500">Setrim</span>
-                <span className="col-span-2">: {pengiriman.setrim}</span>
-              </div>
-            )}
           </div>
         </div>
 
@@ -213,16 +201,21 @@ export default function PrintSuratJalanPage() {
         <table className="w-full text-[11px] text-left border border-black mb-8 border-collapse">
           <thead>
             <tr className="bg-neutral-100 border-b border-black">
-              <th className="p-2 border-r border-black font-semibold text-center w-10">NO</th>
-              <th className="p-2 border-r border-black font-semibold w-16 text-center">LANTAI</th>
-              <th className="p-2 border-r border-black font-semibold w-24">RUANG</th>
-              <th className="p-2 border-r border-black font-semibold w-28">NO. SPK</th>
-              <th className="p-2 border-r border-black font-semibold">ITEM/PERABOT</th>
-              <th className="p-2 border-r border-black font-semibold w-24 text-center">DIMENSI (METER)</th>
-              <th className="p-2 border-r border-black font-semibold w-16 text-center">VOL</th>
-              <th className="p-2 border-r border-black font-semibold w-16 text-center">SAT</th>
-              <th className="p-2 border-r border-black font-semibold text-center w-20">JML</th>
-              <th className="p-2 font-semibold text-center w-24">KET</th>
+              <th className="p-2 border-r border-black font-semibold text-center w-10" rowSpan={2}>NO</th>
+              <th className="p-2 border-r border-black font-semibold w-16 text-center" rowSpan={2}>LANTAI</th>
+              <th className="p-2 border-r border-black font-semibold w-24" rowSpan={2}>RUANG</th>
+              <th className="p-2 border-r border-black font-semibold w-28" rowSpan={2}>NO. SPK</th>
+              <th className="p-2 border-r border-black font-semibold" rowSpan={2}>ITEM/PERABOT</th>
+              <th className="p-2 border-r border-black font-semibold w-24 text-center" colSpan={3}>DIMENSI (METER)</th>
+              <th className="p-2 border-r border-black font-semibold w-16 text-center" rowSpan={2}>VOL</th>
+              <th className="p-2 border-r border-black font-semibold w-16 text-center" rowSpan={2}>SAT</th>
+              <th className="p-2 border-r border-black font-semibold text-center w-20" rowSpan={2}>JML</th>
+              <th className="p-2 font-semibold text-center w-24" rowSpan={2}>KET</th>
+            </tr>
+            <tr className="bg-neutral-100 border-b border-black">
+              <th className="p-2 border-r border-black font-semibold w-24 text-center">P</th>
+              <th className="p-2 border-r border-black font-semibold w-16 text-center">L</th>
+              <th className="p-2 border-r border-black font-semibold text-center w-20">T</th>
             </tr>
           </thead>
           <tbody>
@@ -243,7 +236,9 @@ export default function PrintSuratJalanPage() {
                   <td className="p-2 border-r border-black">{detail.project_item?.ruang || "-"}</td>
                   <td className="p-2 border-r border-black font-medium">{detail.project_item?.project?.spk_number || "-"}</td>
                   <td className="p-2 border-r border-black">{detail.project_item?.item || "-"}</td>
-                  <td className="p-2 border-r border-black text-center font-mono">{dimensi}</td>
+                  <td className="p-2 border-r border-black">{detail.project_item?.panjang || "-"}</td>
+                  <td className="p-2 border-r border-black">{detail.project_item?.lebar || "-"}</td>
+                  <td className="p-2 border-r border-black">{detail.project_item?.tinggi || "-"}</td>
                   <td className="p-2 border-r border-black text-center">{detail.project_item?.volume ?? "-"}</td>
                   <td className="p-2 border-r border-black text-center">{detail.project_item?.satuan || "-"}</td>
                   <td className="p-2 border-r border-black text-center font-bold text-xs">{detail.jumlah_keluar}</td>
@@ -279,20 +274,20 @@ export default function PrintSuratJalanPage() {
 
           <div className="grid grid-cols-4 gap-4 text-xs text-center">
             <div className="flex flex-col justify-between h-24">
-              <span>Diterbitkan Oleh:<br /><span className="font-semibold">Petugas Gudang</span></span>
-              <span className="border-t border-neutral-400 pt-1 w-3/4 mx-auto">( ............................ )</span>
+              <span>Diserahkan Oleh:<br /><span className="font-semibold">Petugas Gudang</span></span>
+              <span className="pt-1 w-3/4 mx-auto">( ............................ )</span>
             </div>
             <div className="flex flex-col justify-between h-24">
-              <span>Diterbitkan Oleh:<br /><span className="font-semibold">Petugas Pengiriman</span></span>
-              <span className="border-t border-neutral-400 pt-1 w-3/4 mx-auto">( ............................ )</span>
+              <span>Diterima Oleh:<br /><span className="font-semibold">Petugas Pengiriman</span></span>
+              <span className="pt-1 w-3/4 mx-auto">( ............................ )</span>
             </div>
             <div className="flex flex-col justify-between h-24">
               <span>Mengetahui:<br /><span className="font-semibold">Security DPSA</span></span>
-              <span className="border-t border-neutral-400 pt-1 w-3/4 mx-auto">( ............................ )</span>
+              <span className="pt-1 w-3/4 mx-auto">( ............................ )</span>
             </div>
             <div className="flex flex-col justify-between h-24">
               <span>Diterima Oleh:<br /><span className="font-semibold">Konsumen</span></span>
-              <span className="border-t border-neutral-400 pt-1 w-3/4 mx-auto">( ............................ )</span>
+              <span className="pt-1 w-3/4 mx-auto">( ............................ )</span>
             </div>
           </div>
         </div>
