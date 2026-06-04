@@ -375,7 +375,7 @@ export function ProjectsV2Table({
   const projects = data?.data || [];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-full max-w-full overflow-hidden">
       {showPerencanaan && stats && (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4">
           {/* Total Project */}
@@ -573,7 +573,7 @@ export function ProjectsV2Table({
       )}
 
       {showAllDashboard && stats && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-9 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-9 gap-4 w-full">
           {/* Total Project */}
           <div className="flex items-center gap-3 p-4 rounded-xl border border-slate-100 bg-slate-50/30 shadow-sm transition-all duration-300 hover:shadow-md">
             <div className="h-10 w-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 shrink-0">
@@ -676,9 +676,10 @@ export function ProjectsV2Table({
       )}
 
       <div className={cn(
+        "w-full max-w-full overflow-hidden",
         (showAllDashboard || showPerencanaan) && "bg-white rounded-xl shadow-sm border border-neutral-200"
       )}>
-        <div className='flex flex-col gap-4 p-4'>
+        <div className='flex flex-col gap-4 p-4 w-full max-w-full overflow-hidden'>
       <div className='flex flex-col sm:flex-row justify-between gap-4 items-start sm:items-center'>
         <div className='flex flex-1 gap-2 items-center w-full sm:max-w-md'>
           <div className='relative flex-1'>
@@ -821,7 +822,7 @@ export function ProjectsV2Table({
         )}
       </div>
 
-      <div className='rounded-md border overflow-hidden'>
+      <div className='rounded-md border overflow-x-auto w-full'>
         <Table>
           <TableHeader className='bg-neutral-50'>
             <TableRow>
