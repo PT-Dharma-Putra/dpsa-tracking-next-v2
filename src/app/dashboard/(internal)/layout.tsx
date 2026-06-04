@@ -65,7 +65,7 @@ export default function DashboardLayout({
     return (
         <SidebarProvider>
             <AppSidebar />
-            <SidebarInset>
+            <SidebarInset className="min-w-0 overflow-hidden">
                 <header className="flex h-16 shrink-0 items-center justify-between transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 border-b border-neutral-200 bg-white px-4">
                     <div className="flex items-center gap-2">
                         <SidebarTrigger className="-ml-1" />
@@ -76,7 +76,7 @@ export default function DashboardLayout({
                         <NotificationsPopover />
                     </div>
                 </header>
-                <div className="flex flex-1 flex-col gap-4 p-4 pt-0 bg-neutral-50/50">
+                <div className="flex flex-1 flex-col gap-4 p-4 pt-0 bg-neutral-50/50 min-w-0 w-full overflow-hidden">
                     {children}
                 </div>
             </SidebarInset>
