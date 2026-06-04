@@ -828,7 +828,7 @@ export function ProjectsV2Table({
               <TableHead className='w-[50px]'>#</TableHead>
               {showAllDashboard ? (
                 <>
-                  <TableHead>Marketing</TableHead>
+                  <TableHead>Mkt</TableHead>
                   <TableHead>Client</TableHead>
                   <TableHead>Description</TableHead>
                   <TableHead>Nomor SPK</TableHead>
