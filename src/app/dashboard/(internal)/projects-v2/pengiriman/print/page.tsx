@@ -169,39 +169,19 @@ export default function PrintSuratJalanPage() {
       </div>
 
       {/* Print Content Area */}
-      <div id="print-area" className="max-w-[800px] mx-auto p-4 border border-neutral-300 md:border-0 rounded-lg md:rounded-none bg-white">
+      <div id="print-area" className="max-w-[800px] mx-auto p-4 border border-neutral-300 md:border-0 rounded-lg md:rounded-none bg-white pt-24">
         
-        {/* Header (Kop Surat) */}
-        <div className="flex justify-between items-start border-b-2 border-black pb-4 mb-6">
-          <div>
-            <h1 className="text-xl font-bold tracking-wide text-black uppercase">PT. DHARMA PUTRA SETIA ABADI</h1>
-            <p className="text-xs text-neutral-600 mt-1">
-              Workshop: Jl. Raya Puspiptek No. 12, Tangerang Selatan<br />
-              Telp: (021) 7560000 | Email: info@dharmaputra.com<br />
-              Interior & Furniture Manufacture
-            </p>
-          </div>
-          <div className="text-right">
-            <h2 className="text-lg font-bold border-b border-black pb-1 mb-1">SURAT JALAN</h2>
-            <p className="text-xs font-semibold">No: {pengiriman.surat_jalan || "-"}</p>
+        {/* Header (SURAT JALAN Title & No only) */}
+        <div className="flex justify-center mb-6 pt-24">
+          <div className="text-center">
+            <h2 className="text-lg font-bold pb-1 mb-1">SURAT JALAN</h2>
           </div>
         </div>
 
-        {/* Metadata Section */}
-        <div className="grid grid-cols-2 gap-8 mb-6 text-sm">
-          {/* Kepada Yth */}
-          <div>
-            <span className="text-xs text-neutral-500 block uppercase font-semibold">Kepada Yth.</span>
-            <div className="font-bold text-base mt-0.5">{pengiriman.client?.name || "-"}</div>
-            {pengiriman.client?.address && (
-              <p className="text-xs text-neutral-600 mt-1 leading-relaxed whitespace-pre-line">
-                {pengiriman.client.address}
-              </p>
-            )}
-          </div>
-
+        {/* Metadata Section (Right-aligned info only) */}
+        <div className="flex justify-end mb-6 text-sm">
           {/* Pengiriman Info */}
-          <div className="space-y-1 text-xs">
+          <div className="space-y-1 text-xs w-72">
             <div className="grid grid-cols-3 gap-2">
               <span className="text-neutral-500">Tujuan</span>
               <span className="col-span-2 font-semibold">: {pengiriman.client?.name || "-"}</span>
@@ -211,7 +191,7 @@ export default function PrintSuratJalanPage() {
               <span className="col-span-2">: {pengiriman.no_kendaraan || "-"}</span>
             </div>
             <div className="grid grid-cols-3 gap-2">
-              <span className="text-neutral-500">Supir</span>
+              <span className="text-neutral-500">Nama Supir</span>
               <span className="col-span-2">: {pengiriman.supir || "-"}</span>
             </div>
             {pengiriman.koor_setting && (
@@ -229,22 +209,20 @@ export default function PrintSuratJalanPage() {
           </div>
         </div>
 
-        <p className="text-xs text-neutral-700 mb-3">Harap diterima dengan baik, barang-barang yang tercantum di bawah ini:</p>
-
         {/* Table of Items */}
         <table className="w-full text-[11px] text-left border border-black mb-8 border-collapse">
           <thead>
             <tr className="bg-neutral-100 border-b border-black">
-              <th className="p-2 border-r border-black font-semibold text-center w-10">No.</th>
-              <th className="p-2 border-r border-black font-semibold w-16 text-center">Lantai</th>
-              <th className="p-2 border-r border-black font-semibold w-24">Ruang</th>
-              <th className="p-2 border-r border-black font-semibold w-28">No. SPK</th>
-              <th className="p-2 border-r border-black font-semibold">Nama Barang / Deskripsi</th>
-              <th className="p-2 border-r border-black font-semibold w-24 text-center">Dimensi</th>
-              <th className="p-2 border-r border-black font-semibold w-16 text-center">Volume</th>
-              <th className="p-2 border-r border-black font-semibold w-16 text-center">Satuan</th>
-              <th className="p-2 border-r border-black font-semibold text-center w-20">Jumlah Kirim</th>
-              <th className="p-2 font-semibold text-center w-24">Keterangan</th>
+              <th className="p-2 border-r border-black font-semibold text-center w-10">NO</th>
+              <th className="p-2 border-r border-black font-semibold w-16 text-center">LANTAI</th>
+              <th className="p-2 border-r border-black font-semibold w-24">RUANG</th>
+              <th className="p-2 border-r border-black font-semibold w-28">NO. SPK</th>
+              <th className="p-2 border-r border-black font-semibold">ITEM/PERABOT</th>
+              <th className="p-2 border-r border-black font-semibold w-24 text-center">DIMENSI (METER)</th>
+              <th className="p-2 border-r border-black font-semibold w-16 text-center">VOL</th>
+              <th className="p-2 border-r border-black font-semibold w-16 text-center">SAT</th>
+              <th className="p-2 border-r border-black font-semibold text-center w-20">JML</th>
+              <th className="p-2 font-semibold text-center w-24">KET</th>
             </tr>
           </thead>
           <tbody>
