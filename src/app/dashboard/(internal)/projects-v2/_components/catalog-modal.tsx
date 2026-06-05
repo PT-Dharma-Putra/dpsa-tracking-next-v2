@@ -136,16 +136,37 @@ export function CatalogModal({ isOpen, onClose, projectId }: CatalogModalProps) 
   }
 
   const handleSubmit = () => {
-    const itemsToSubmit = Object.values(cart).map(cartItem => ({
-      mdl_item_id: cartItem.mdlItem.id,
-      item: cartItem.mdlItem.nama_barang,
-      jumlah: cartItem.quantity,
-      volume: cartItem.mdlItem.volume || null,
-      keterangan: cartItem.mdlItem.spesifikasi_dan_material || null,
-      lantai: null,
-      ruang: cartItem.mdlItem.lokasi_ruangan || null,
-      divisi_id: null,
-    }))
+    const itemsToSubmit = Object.values(cart).map(cartItem => {
+      let satuan = "UNIT"
+      if (cartItem.mdlItem.kode_satuan_beli) {
+        const normalized = cartItem.mdlItem.kode_satuan_beli.toUpperCase()
+        if (["M1", "M2 (PXL)", "M2 (PXT)", "UNIT", "SET"].includes(normalized)) {
+          satuan = normalized
+        } else if (normalized === "PCS") {
+          satuan = "UNIT"
+        } else if (normalized === "M2") {
+          // Default to M2 (pxl) if it is M2
+          satuan = "M2 (pxl)"
+        } else {
+          satuan = normalized
+        }
+      }
+
+      return {
+        mdl_item_id: cartItem.mdlItem.id,
+        item: cartItem.mdlItem.nama_barang,
+        jumlah: cartItem.quantity,
+        volume: cartItem.mdlItem.volume || null,
+        panjang: cartItem.mdlItem.dimensi_panjang !== undefined ? cartItem.mdlItem.dimensi_panjang : null,
+        lebar: cartItem.mdlItem.dimensi_lebar !== undefined ? cartItem.mdlItem.dimensi_lebar : null,
+        tinggi: cartItem.mdlItem.dimensi_tinggi !== undefined ? cartItem.mdlItem.dimensi_tinggi : null,
+        satuan: satuan,
+        keterangan: cartItem.mdlItem.spesifikasi_dan_material || null,
+        lantai: null,
+        ruang: cartItem.mdlItem.lokasi_ruangan || null,
+        divisi_id: null,
+      }
+    })
 
     if (itemsToSubmit.length === 0) {
       toast.error("Cart is empty")
