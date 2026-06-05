@@ -179,6 +179,9 @@ export interface ProjectV2Stats {
     dokubah_completed: number;
     stok_material_completed: number;
     produksi_completed: number;
+    total_order: number;
+    tanpa_gambar: number;
+    belum_diorder: number;
 }
 
 interface GetProjectsV2Params {
@@ -195,6 +198,7 @@ interface GetProjectsV2Params {
     dokubah_status?: string;
     stok_material_status?: string;
     produksi_status?: string;
+    order_status?: string;
 }
 
 export const projectV2Service = {
