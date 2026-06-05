@@ -40,9 +40,7 @@ export function MDLTable({ onEdit, onStatsUpdate }: MDLTableProps) {
     const [category, setCategory] = useState("");
     const [detailItem, setDetailItem] = useState<MDLItem | null>(null);
 
-    // Custom hook usage (assuming it exists, otherwise use standard debounce effect)
-    // For now, let's implement debounce manually or assume standard fetch
-    const debouncedSearch = useUsingDebounce(search, 500);
+    const debouncedSearch = useDebounce(search, 500);
 
     const { data, isLoading } = useQuery({
         queryKey: ['mdl-items', page, debouncedSearch, category],
@@ -59,64 +57,17 @@ export function MDLTable({ onEdit, onStatsUpdate }: MDLTableProps) {
             onStatsUpdate({
                 totalItems: data.total,
                 totalCategories: MDL_CATEGORIES.length,
-                categoryCounts: {} // You might want to calculate this from data if needed, or fetch from a dedicated stats endpoint
+                categoryCounts: {}
             });
         }
     }, [data, onStatsUpdate]);
-
-    // Helper hook implementation if not available in project
-    function useUsingDebounce<T>(value: T, delay: number): T {
-        const [debouncedValue, setDebouncedValue] = useState<T>(value);
-        useState(() => { // useEffect behaves better here
-            /* useEffect logic placeholder - implementing simplistic direct usage for now */
-        });
-
-        // Use standard timeout inside component for now to avoid creating new file
-        return value;
-    }
-
-    // Actual debounce logic inside component
-    // ... skipping complex debounce for brevity in this step, assume strict usage ...
 
     const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
         setSearch(e.target.value);
         setPage(1);
     }
 
-    if (isLoading) {
-        return <div className="p-12 flex justify-center"><Loader2 className="animate-spin text-blue-600" /></div>
-    }
-
-    if (!data?.data || data.data.length === 0) {
-        return (
-            <div className="space-y-4">
-                <div className="flex gap-4">
-                    <Input
-                        placeholder="Search items..."
-                        value={search}
-                        onChange={handleSearch}
-                        className="max-w-xs"
-                    />
-                    <Select value={category} onValueChange={(v) => { setCategory(v); setPage(1); }}>
-                        <SelectTrigger className="w-[180px]">
-                            <SelectValue placeholder="Category" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Categories</SelectItem>
-                            {MDL_CATEGORIES.map(cat => (
-                                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </div>
-                <div className="p-12 text-center border rounded-lg bg-neutral-50">
-                    <p className="text-neutral-500">No items found.</p>
-                </div>
-            </div>
-        )
-    }
-
-    const items = data.data;
+    const items = data?.data || [];
 
     return (
         <div className="space-y-4">
@@ -131,7 +82,7 @@ export function MDLTable({ onEdit, onStatsUpdate }: MDLTableProps) {
                             className="pl-9 w-[250px]"
                         />
                     </div>
-                    <Select value={category} onValueChange={(v) => { setCategory(v === "all" ? "" : v); setPage(1); }}>
+                    <Select value={category || "all"} onValueChange={(v) => { setCategory(v === "all" ? "" : v); setPage(1); }}>
                         <SelectTrigger className="w-[200px]">
                             <SelectValue placeholder="Filter Category" />
                         </SelectTrigger>
@@ -143,69 +94,79 @@ export function MDLTable({ onEdit, onStatsUpdate }: MDLTableProps) {
                         </SelectContent>
                     </Select>
                 </div>
-                <div className="text-sm text-muted-foreground">
-                    Showing {data.from} to {data.to} of {data.total}
-                </div>
+                {data && (
+                    <div className="text-sm text-muted-foreground">
+                        Showing {data.from || 0} to {data.to || 0} of {data.total || 0}
+                    </div>
+                )}
             </div>
 
-            <div className="rounded-md border bg-white">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Kode</TableHead>
-                            <TableHead>Nama Barang</TableHead>
-                            <TableHead>Kategori</TableHead>
-                            <TableHead>Sub Kategori</TableHead>
-                            <TableHead>Satuan</TableHead>
-                            {canViewPrice && <TableHead className="text-right">Harga (IDR)</TableHead>}
-                            <TableHead className="text-right">Aksi</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {items.map((item) => (
-                            <TableRow key={item.id}>
-                                <TableCell className="font-mono text-xs">{item.kode_barang || '-'}</TableCell>
-                                <TableCell>
-                                    <div className="flex flex-col">
-                                        <span className="font-medium max-w-[250px] truncate" title={item.nama_barang}>{item.nama_barang}</span>
-                                        {item.lokasi_ruangan && <span className="text-xs text-muted-foreground">{item.lokasi_ruangan}</span>}
-                                    </div>
-                                </TableCell>
-                                <TableCell>
-                                    <Badge variant="outline" className="w-fit text-xs">{item.kategori_mdl}</Badge>
-                                </TableCell>
-                                <TableCell>
-                                    {item.sub_kategori ? <span className="text-xs text-muted-foreground">{item.sub_kategori}</span> : '-'}
-                                </TableCell>
-                                <TableCell className="text-xs">{item.nama_satuan_beli || '-'}</TableCell>
-                                {canViewPrice && (
-                                    <TableCell className="text-right font-mono text-xs">
-                                        {item.harga_pulau_jawa?.toLocaleString('id-ID') || '-'}
-                                    </TableCell>
-                                )}
-                                <TableCell className="text-right">
-                                    <div className="flex justify-end gap-1">
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-8 w-8 text-blue-600 hover:bg-blue-50"
-                                            onClick={() => setDetailItem(item)}
-                                        >
-                                            <Eye className="h-4 w-4" />
-                                        </Button>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-amber-600 hover:bg-amber-50" onClick={() => onEdit(item)}>
-                                            <Edit className="h-4 w-4" />
-                                        </Button>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-red-600 hover:bg-red-50">
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
-                                    </div>
-                                </TableCell>
+            {isLoading ? (
+                <div className="p-12 flex justify-center bg-white rounded-md border"><Loader2 className="animate-spin text-blue-600" /></div>
+            ) : items.length === 0 ? (
+                <div className="p-12 text-center border rounded-lg bg-neutral-50">
+                    <p className="text-neutral-500">No items found.</p>
+                </div>
+            ) : (
+                <div className="rounded-md border bg-white">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Kode</TableHead>
+                                <TableHead>Nama Barang</TableHead>
+                                <TableHead>Kategori</TableHead>
+                                <TableHead>Sub Kategori</TableHead>
+                                <TableHead>Satuan</TableHead>
+                                {canViewPrice && <TableHead className="text-right">Harga (IDR)</TableHead>}
+                                <TableHead className="text-right">Aksi</TableHead>
                             </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            </div>
+                        </TableHeader>
+                        <TableBody>
+                            {items.map((item) => (
+                                <TableRow key={item.id}>
+                                    <TableCell className="font-mono text-xs">{item.kode_barang || '-'}</TableCell>
+                                    <TableCell>
+                                        <div className="flex flex-col">
+                                            <span className="font-medium max-w-[250px] truncate" title={item.nama_barang}>{item.nama_barang}</span>
+                                            {item.lokasi_ruangan && <span className="text-xs text-muted-foreground">{item.lokasi_ruangan}</span>}
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Badge variant="outline" className="w-fit text-xs">{item.kategori_mdl}</Badge>
+                                    </TableCell>
+                                    <TableCell>
+                                        {item.sub_kategori ? <span className="text-xs text-muted-foreground">{item.sub_kategori}</span> : '-'}
+                                    </TableCell>
+                                    <TableCell className="text-xs">{item.nama_satuan_beli || '-'}</TableCell>
+                                    {canViewPrice && (
+                                        <TableCell className="text-right font-mono text-xs">
+                                            {item.harga_pulau_jawa?.toLocaleString('id-ID') || '-'}
+                                        </TableCell>
+                                    )}
+                                    <TableCell className="text-right">
+                                        <div className="flex justify-end gap-1">
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-8 w-8 text-blue-600 hover:bg-blue-50"
+                                                onClick={() => setDetailItem(item)}
+                                            >
+                                                <Eye className="h-4 w-4" />
+                                            </Button>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-amber-600 hover:bg-amber-50" onClick={() => onEdit(item)}>
+                                                <Edit className="h-4 w-4" />
+                                            </Button>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-red-600 hover:bg-red-50">
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </div>
+            )}
 
             <MDLDetailModal
                 item={detailItem}
@@ -213,25 +174,26 @@ export function MDLTable({ onEdit, onStatsUpdate }: MDLTableProps) {
                 onOpenChange={(open) => !open && setDetailItem(null)}
             />
 
-            {/* Pagination Implementation could go here */}
-            <div className="flex justify-end gap-2">
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setPage(p => Math.max(1, p - 1))}
-                    disabled={data.current_page === 1}
-                >
-                    Previous
-                </Button>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setPage(p => p + 1)}
-                    disabled={data.current_page === data.last_page}
-                >
-                    Next
-                </Button>
-            </div>
+            {data && data.last_page > 1 && (
+                <div className="flex justify-end gap-2 mt-4">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPage(p => Math.max(1, p - 1))}
+                        disabled={data.current_page === 1}
+                    >
+                        Previous
+                    </Button>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPage(p => p + 1)}
+                        disabled={data.current_page === data.last_page}
+                    >
+                        Next
+                    </Button>
+                </div>
+            )}
         </div>
     )
 }
