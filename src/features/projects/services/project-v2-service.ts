@@ -90,6 +90,7 @@ export interface ProjectV2 {
         status: string;
         created_at: string;
         tertanda_tangan_lengkap?: number;
+        pakai_gambar?: number;
     }>;
     order_produksi?: Array<{
         id: number;
@@ -178,6 +179,9 @@ export interface ProjectV2Stats {
     dokubah_completed: number;
     stok_material_completed: number;
     produksi_completed: number;
+    total_order: number;
+    tanpa_gambar: number;
+    belum_diorder: number;
 }
 
 interface GetProjectsV2Params {
@@ -194,6 +198,7 @@ interface GetProjectsV2Params {
     dokubah_status?: string;
     stok_material_status?: string;
     produksi_status?: string;
+    order_status?: string;
 }
 
 export const projectV2Service = {
@@ -368,10 +373,11 @@ export const projectV2Service = {
         return data;
     },
 
-    uploadOrderGambarKerja: async (projectId: number, file: File, target_selesai: string) => {
+    uploadOrderGambarKerja: async (projectId: number, file: File | null, target_selesai: string | null, pakaiGambar: number) => {
         const formData = new FormData();
-        formData.append('file', file);
-        formData.append('target_selesai', target_selesai);
+        if (file) formData.append('file', file);
+        if (target_selesai) formData.append('target_selesai', target_selesai);
+        formData.append('pakai_gambar', pakaiGambar.toString());
         const { data } = await apiClient.post(`/projects-v2/${projectId}/upload-order-gambar-kerja`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
         });

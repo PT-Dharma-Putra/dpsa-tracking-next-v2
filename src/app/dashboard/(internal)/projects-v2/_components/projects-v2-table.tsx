@@ -162,6 +162,7 @@ export function ProjectsV2Table({
   const [dokubahFilterActive, setDokubahFilterActive] = React.useState(false);
   const [stokMaterialFilterActive, setStokMaterialFilterActive] = React.useState(false);
   const [produksiFilterActive, setProduksiFilterActive] = React.useState(false);
+  const [orderStatusFilter, setOrderStatusFilter] = React.useState<'has_order' | 'tanpa_gambar' | 'belum_diorder' | null>(null);
 
   const handleFilterClick = (filterType: 'spk' | 'po_divisi' | 'gambar_kerja' | 'dokubah' | 'stok_material' | 'produksi') => {
     setSpkFilterActive(filterType === 'spk' ? !spkFilterActive : false);
@@ -170,6 +171,18 @@ export function ProjectsV2Table({
     setDokubahFilterActive(filterType === 'dokubah' ? !dokubahFilterActive : false);
     setStokMaterialFilterActive(filterType === 'stok_material' ? !stokMaterialFilterActive : false);
     setProduksiFilterActive(filterType === 'produksi' ? !produksiFilterActive : false);
+    setOrderStatusFilter(null);
+    setPage(1);
+  };
+
+  const handleOrderStatusFilterClick = (type: 'has_order' | 'tanpa_gambar' | 'belum_diorder') => {
+    setOrderStatusFilter(orderStatusFilter === type ? null : type);
+    setSpkFilterActive(false);
+    setPoDivisiFilterActive(false);
+    setGambarKerjaFilterActive(false);
+    setDokubahFilterActive(false);
+    setStokMaterialFilterActive(false);
+    setProduksiFilterActive(false);
     setPage(1);
   };
 
@@ -213,6 +226,7 @@ export function ProjectsV2Table({
       dokubahFilterActive,
       stokMaterialFilterActive,
       produksiFilterActive,
+      orderStatusFilter,
     ],
     queryFn: () =>
       projectV2Service.getProjects({
@@ -229,6 +243,7 @@ export function ProjectsV2Table({
         dokubah_status: dokubahFilterActive ? 'not_completed' : undefined,
         stok_material_status: stokMaterialFilterActive ? 'not_completed' : undefined,
         produksi_status: produksiFilterActive ? 'not_completed' : undefined,
+        order_status: orderStatusFilter || undefined,
       }),
   });
 
@@ -376,6 +391,114 @@ export function ProjectsV2Table({
 
   return (
     <div className="space-y-6 w-full max-w-full overflow-hidden">
+      {showEngineer && stats && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+          {/* Total SPK */}
+          <div
+            onClick={() => handleFilterClick('spk')}
+            className={cn(
+              "flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-indigo-400 select-none",
+              spkFilterActive 
+                ? "border-indigo-500 bg-indigo-50/50 ring-2 ring-indigo-500/20" 
+                : "border-indigo-200 bg-white"
+            )}
+          >
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600 shrink-0">
+                <FileText className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider">Total SPK</p>
+                <p className="text-xl font-bold text-slate-800">{stats.total_spk}</p>
+              </div>
+            </div>
+            {spkFilterActive && (
+              <span className="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-semibold animate-pulse">
+                Active
+              </span>
+            )}
+          </div>
+
+          {/* Order Gambar */}
+          <div
+            onClick={() => handleOrderStatusFilterClick('has_order')}
+            className={cn(
+              "flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-amber-400 select-none",
+              orderStatusFilter === 'has_order' 
+                ? "border-amber-500 bg-amber-50/50 ring-2 ring-amber-500/20" 
+                : "border-amber-200 bg-white"
+            )}
+          >
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg bg-amber-100 flex items-center justify-center text-amber-600 shrink-0">
+                <Briefcase className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wider">Order Gambar</p>
+                <p className="text-xl font-bold text-slate-800">{stats.total_order}</p>
+              </div>
+            </div>
+            {orderStatusFilter === 'has_order' && (
+              <span className="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-semibold animate-pulse">
+                Active
+              </span>
+            )}
+          </div>
+
+          {/* Tanpa Gambar */}
+          <div
+            onClick={() => handleOrderStatusFilterClick('tanpa_gambar')}
+            className={cn(
+              "flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-emerald-400 select-none",
+              orderStatusFilter === 'tanpa_gambar' 
+                ? "border-emerald-500 bg-emerald-50/50 ring-2 ring-emerald-500/20" 
+                : "border-emerald-200 bg-white"
+            )}
+          >
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
+                <ImageIcon className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Tanpa Gambar</p>
+                <p className="text-xl font-bold text-slate-800">{stats.tanpa_gambar}</p>
+              </div>
+            </div>
+            {orderStatusFilter === 'tanpa_gambar' && (
+              <span className="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-semibold animate-pulse">
+                Active
+              </span>
+            )}
+          </div>
+
+          {/* Belum Diorder */}
+          <div
+            onClick={() => handleOrderStatusFilterClick('belum_diorder')}
+            className={cn(
+              "flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-rose-400 select-none",
+              orderStatusFilter === 'belum_diorder' 
+                ? "border-rose-500 bg-rose-50/50 ring-2 ring-rose-500/20" 
+                : "border-rose-200 bg-white"
+            )}
+          >
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg bg-rose-100 flex items-center justify-center text-rose-600 shrink-0">
+                <Clock className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-rose-600 uppercase tracking-wider">Belum Diorder</p>
+                <p className="text-xl font-bold text-slate-800">{stats.belum_diorder}</p>
+              </div>
+            </div>
+            {orderStatusFilter === 'belum_diorder' && (
+              <span className="text-[10px] bg-rose-100 text-rose-700 px-2 py-0.5 rounded-full font-semibold animate-pulse">
+                Active
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
       {showPerencanaan && stats && (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4">
           {/* Total Project */}
@@ -677,7 +800,7 @@ export function ProjectsV2Table({
 
       <div className={cn(
         "w-full max-w-full overflow-hidden",
-        (showAllDashboard || showPerencanaan) && "bg-white rounded-xl shadow-sm border border-neutral-200"
+        (showAllDashboard || showPerencanaan || showEngineer) && "bg-white rounded-xl shadow-sm border border-neutral-200"
       )}>
         <div className='flex flex-col gap-4 p-4 w-full max-w-full overflow-hidden'>
       <div className='flex flex-col sm:flex-row justify-between gap-4 items-start sm:items-center'>
