@@ -84,6 +84,7 @@ import {
 } from '@/features/projects/services/project-v2-service';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Switch } from '@/components/ui/switch';
 
 export default function PerencanaanDetailPage() {
   const params = useParams();
@@ -369,16 +370,18 @@ export default function PerencanaanDetailPage() {
   const [isOrderGkDialogOpen, setIsOrderGkDialogOpen] = React.useState(false);
   const [orderGkFile, setOrderGkFile] = React.useState<File | null>(null);
   const [orderGkTarget, setOrderGkTarget] = React.useState<string>('');
+  const [pakaiGambar, setPakaiGambar] = React.useState<boolean>(true);
 
   const uploadOrderGkMutation = useMutation({
-    mutationFn: (payload: { file: File; target_selesai: string }) =>
-      projectV2Service.uploadOrderGambarKerja(projectId, payload.file, payload.target_selesai),
+    mutationFn: (payload: { file: File | null; target_selesai: string | null; pakai_gambar: number }) =>
+      projectV2Service.uploadOrderGambarKerja(projectId, payload.file, payload.target_selesai, payload.pakai_gambar),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects-v2', projectId] });
       toast.success('Order Gambar Kerja uploaded');
       setIsOrderGkDialogOpen(false);
       setOrderGkFile(null);
       setOrderGkTarget('');
+      setPakaiGambar(true);
     },
     onError: () => {
       toast.error('Failed to upload Order Gambar Kerja');
@@ -386,10 +389,11 @@ export default function PerencanaanDetailPage() {
   });
 
   const handleOrderGkUpload = () => {
-    if (!orderGkFile || !orderGkTarget) return;
+    if (pakaiGambar && (!orderGkFile || !orderGkTarget)) return;
     uploadOrderGkMutation.mutate({
-      file: orderGkFile,
-      target_selesai: orderGkTarget,
+      file: pakaiGambar ? orderGkFile : null,
+      target_selesai: pakaiGambar ? orderGkTarget : null,
+      pakai_gambar: pakaiGambar ? 1 : 0,
     });
   };
 
@@ -579,6 +583,8 @@ export default function PerencanaanDetailPage() {
   const totalQtySetting = items?.reduce((sum, i) => sum + (i.setting?.reduce((s, st) => s + st.jumlah, 0) || 0), 0) || 0;
   const totalQtyBelumSetting = totalQtyKeluar - totalQtySetting;
   const orderGk = project?.order_gambar_kerja?.[0];
+  const isGkCompleted = (totalItems > 0 && gambarKerjaCount === totalItems) || orderGk?.pakai_gambar === 0;
+  const gkProgress = isGkCompleted ? 100 : (totalItems ? (gambarKerjaCount / totalItems) * 100 : 0);
 
   const flowSteps = [
     {
@@ -853,15 +859,15 @@ export default function PerencanaanDetailPage() {
         </Card>
 
         {/* 3. Order Gambar Kerja */}
-        <Card className={`relative border shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md ${gambarKerjaCount === totalItems && totalItems > 0 ? 'border-orange-200 bg-white ring-1 ring-orange-100' : 'border-neutral-200 bg-white'}`}>
-          {gambarKerjaCount === totalItems && totalItems > 0 && (
+        <Card className={`relative border shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md ${isGkCompleted ? 'border-orange-200 bg-white ring-1 ring-orange-100' : 'border-neutral-200 bg-white'}`}>
+          {isGkCompleted && (
             <div className="absolute -top-1.5 -right-1.5 h-5 w-5 bg-emerald-500 rounded-full flex items-center justify-center shadow-sm z-10 animate-in zoom-in duration-300">
               <Check className="h-3 w-3 text-white" strokeWidth={3} />
             </div>
           )}
           <CardHeader className='pb-2 flex flex-row items-center justify-between gap-3 min-w-0'>
             <button className='flex items-center gap-3 flex-1 text-left min-w-0' onClick={() => setIsGkCollapsed(!isGkCollapsed)}>
-              <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold shrink-0 ${gambarKerjaCount > 0 ? 'bg-orange-100 text-orange-600' : 'bg-neutral-100 text-neutral-500'}`}>3</div>
+              <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold shrink-0 ${gambarKerjaCount > 0 || isGkCompleted ? 'bg-orange-100 text-orange-600' : 'bg-neutral-100 text-neutral-500'}`}>3</div>
               <div className='flex-1 min-w-0'>
                 <CardTitle className='text-sm text-neutral-800 font-bold truncate'>Gambar Kerja</CardTitle>
                 <p className='text-[10px] text-muted-foreground uppercase tracking-wider font-semibold truncate'>Technical Drawing</p>
@@ -873,11 +879,15 @@ export default function PerencanaanDetailPage() {
             <CardContent className='pt-0'>
                   <div className='space-y-2 border-t border-neutral-100 pt-2.5'>
                     <div className='h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden'>
-                      <div className='h-full bg-orange-500 transition-all duration-500' style={{ width: `${totalItems ? (gambarKerjaCount / totalItems) * 100 : 0}%` }} />
+                      <div className='h-full bg-orange-500 transition-all duration-500' style={{ width: `${gkProgress}%` }} />
                     </div>
                     <div className='flex justify-between items-center mt-1'>
-                      <p className='text-[10px] font-bold text-neutral-700'>{gambarKerjaCount} / {totalItems} Drawings Uploaded</p>
-                      <p className='text-[10px] font-bold text-orange-600'>{Math.round(totalItems ? (gambarKerjaCount / totalItems) * 100 : 0)}%</p>
+                      <p className='text-[10px] font-bold text-neutral-700'>
+                        {orderGk?.pakai_gambar === 0 
+                          ? 'Tanpa Gambar' 
+                          : `${gambarKerjaCount} / ${totalItems} Drawings Uploaded`}
+                      </p>
+                      <p className='text-[10px] font-bold text-orange-600'>{Math.round(gkProgress)}%</p>
                     </div>
                   </div>
                   
@@ -887,8 +897,18 @@ export default function PerencanaanDetailPage() {
                         {project.order_gambar_kerja.map((order, idx) => (
                           <div key={idx} className='flex items-center justify-between text-[9px] bg-neutral-50 p-1.5 rounded border border-neutral-100'>
                             <div className='flex flex-col gap-0.5'>
-                              <span className='font-bold text-neutral-700'>Target: {format(new Date(order.target_selesai!), 'dd MMM')}</span>
+                              <span className='font-bold text-neutral-700'>
+                                Target: {order.target_selesai ? format(new Date(order.target_selesai), 'dd MMM') : '-'}
+                              </span>
                             </div>
+                            <span className={cn(
+                              'text-[8px] font-extrabold px-1 rounded',
+                              order.pakai_gambar === 0 
+                                ? 'bg-neutral-100 text-neutral-600 border border-neutral-200' 
+                                : 'bg-orange-50 text-orange-600 border border-orange-100'
+                            )}>
+                              {order.pakai_gambar === 0 ? 'Tanpa Gambar' : 'Pakai Gambar'}
+                            </span>
                           </div>
                         ))}
                       </div>
@@ -896,23 +916,37 @@ export default function PerencanaanDetailPage() {
                       <p className='text-[9px] text-muted-foreground italic text-center py-1'>No orders yet</p>
                     )}
                     
-                    {orderGk?.file && (
-                      <div className='p-2 rounded bg-orange-50/80 border border-orange-100 flex items-center justify-between gap-1 min-w-0'>
-                        <div className='flex items-center gap-2 overflow-hidden text-left min-w-0 flex-1 mr-1'>
-                          <div className='h-6 w-6 rounded bg-white border border-orange-100 flex items-center justify-center text-orange-600 shrink-0'>
-                            <FileText className='h-3 w-3' />
+                    {orderGk && (
+                      orderGk.file ? (
+                        <div className='p-2 rounded bg-orange-50/80 border border-orange-100 flex items-center justify-between gap-1 min-w-0'>
+                          <div className='flex items-center gap-2 overflow-hidden text-left min-w-0 flex-1 mr-1'>
+                            <div className='h-6 w-6 rounded bg-white border border-orange-100 flex items-center justify-center text-orange-600 shrink-0'>
+                              <FileText className='h-3 w-3' />
+                            </div>
+                            <div className='flex flex-col min-w-0 flex-1'>
+                              <span className='text-[9px] font-bold text-orange-900 leading-none truncate'>Order Drawing</span>
+                              <span className='text-[8px] text-orange-600/80 truncate' title={orderGk.file.split('/').pop()}>{orderGk.file.split('/').pop()}</span>
+                            </div>
                           </div>
-                          <div className='flex flex-col min-w-0 flex-1'>
-                            <span className='text-[9px] font-bold text-orange-900 leading-none truncate'>Order Drawing</span>
-                            <span className='text-[8px] text-orange-600/80 truncate' title={orderGk.file.split('/').pop()}>{orderGk.file.split('/').pop()}</span>
+                          <Button variant='ghost' size='icon' className='h-7 w-7 text-orange-600 hover:bg-orange-100 bg-white border border-orange-100 shadow-sm shrink-0' asChild>
+                            <a href={`${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '')}/storage/${orderGk.file}`} target='_blank' rel='noopener noreferrer'>
+                              <FileDown className='h-3.5 w-3.5' />
+                            </a>
+                          </Button>
+                        </div>
+                      ) : orderGk.pakai_gambar === 0 ? (
+                        <div className='p-2 rounded bg-neutral-50 border border-neutral-200 flex items-center justify-between gap-1 min-w-0'>
+                          <div className='flex items-center gap-2 overflow-hidden text-left min-w-0 flex-1 mr-1'>
+                            <div className='h-6 w-6 rounded bg-white border border-neutral-200 flex items-center justify-center text-neutral-500 shrink-0'>
+                              <ImageIcon className='h-3.5 w-3.5 text-neutral-400' />
+                            </div>
+                            <div className='flex flex-col min-w-0 flex-1'>
+                              <span className='text-[9px] font-bold text-neutral-700 leading-none'>Tanpa Gambar</span>
+                              <span className='text-[8px] text-neutral-500'>Order dikirim tanpa berkas gambar</span>
+                            </div>
                           </div>
                         </div>
-                        <Button variant='ghost' size='icon' className='h-7 w-7 text-orange-600 hover:bg-orange-100 bg-white border border-orange-100 shadow-sm shrink-0' asChild>
-                          <a href={`${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '')}/storage/${orderGk.file}`} target='_blank' rel='noopener noreferrer'>
-                            <FileDown className='h-3.5 w-3.5' />
-                          </a>
-                        </Button>
-                      </div>
+                      ) : null
                     )}
 
                     <Button 
@@ -2163,24 +2197,45 @@ export default function PerencanaanDetailPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className='grid gap-4 py-4'>
-            <div className='space-y-2'>
-              <Label>File Brief / Lampiran</Label>
-              <Input
-                type='file'
-                onChange={(e) => setOrderGkFile(e.target.files?.[0] || null)}
-                className='text-xs'
-              />
-              <p className='text-[10px] text-muted-foreground'>Format: PDF, JPG, PNG, DOC, XLS (Max 10MB)</p>
+            <div className="flex items-center justify-between p-2.5 rounded-lg border border-neutral-200 bg-neutral-50/50">
+              <div className="space-y-0.5">
+                <Label className="text-xs font-bold text-neutral-800">Metode Order</Label>
+                <p className="text-[10px] text-muted-foreground">
+                  {pakaiGambar ? 'Menggunakan file brief/desain' : 'Tanpa melampirkan berkas gambar'}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className={cn("text-[10px] font-bold transition-colors", !pakaiGambar ? "text-orange-600" : "text-neutral-400")}>Tanpa Gambar</span>
+                <Switch
+                  checked={pakaiGambar}
+                  onCheckedChange={setPakaiGambar}
+                />
+                <span className={cn("text-[10px] font-bold transition-colors", pakaiGambar ? "text-orange-600" : "text-neutral-400")}>Pakai Gambar</span>
+              </div>
             </div>
-            <div className='space-y-2'>
-              <Label>Target Selesai</Label>
-              <Input
-                type='date'
-                value={orderGkTarget}
-                onChange={(e) => setOrderGkTarget(e.target.value)}
-                className='text-xs'
-              />
-            </div>
+
+            {pakaiGambar && (
+              <>
+                <div className='space-y-2 animate-in fade-in slide-in-from-top-1 duration-200'>
+                  <Label>File Brief / Lampiran</Label>
+                  <Input
+                    type='file'
+                    onChange={(e) => setOrderGkFile(e.target.files?.[0] || null)}
+                    className='text-xs'
+                  />
+                  <p className='text-[10px] text-muted-foreground'>Format: PDF, JPG, PNG, DOC, XLS (Max 10MB)</p>
+                </div>
+                <div className='space-y-2 animate-in fade-in slide-in-from-top-1 duration-200'>
+                  <Label>Target Selesai</Label>
+                  <Input
+                    type='date'
+                    value={orderGkTarget}
+                    onChange={(e) => setOrderGkTarget(e.target.value)}
+                    className='text-xs'
+                  />
+                </div>
+              </>
+            )}
           </div>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setIsOrderGkDialogOpen(false)}>
@@ -2189,7 +2244,7 @@ export default function PerencanaanDetailPage() {
             <Button
               className='bg-orange-600 hover:bg-orange-700'
               onClick={handleOrderGkUpload}
-              disabled={uploadOrderGkMutation.isPending || !orderGkFile || !orderGkTarget}
+              disabled={uploadOrderGkMutation.isPending || (pakaiGambar && (!orderGkFile || !orderGkTarget))}
             >
               {uploadOrderGkMutation.isPending ? (
                 <Loader2 className='mr-2 h-4 w-4 animate-spin' />
