@@ -938,7 +938,7 @@ export function ProjectsV2Table({
               ) : (
                 <>
                   {!showEngineer && <TableHead>Marketing</TableHead>}
-                  {!showEngineer && <TableHead>Client</TableHead>}
+                  <TableHead>Client</TableHead>
                   <TableHead>Nomor SPK</TableHead>
                   {showPiutang && <TableHead>Nominal</TableHead>}
                   <TableHead
@@ -1172,7 +1172,7 @@ export function ProjectsV2Table({
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={showEngineer ? 16 : (showProduksi ? 15 : (showPiutang ? 13 : ((isMainProjectsV2Page || showPerencanaan) ? 20 : 18)))} className='h-32 text-center text-muted-foreground'>
+                <TableCell colSpan={showEngineer ? 17 : (showProduksi ? 15 : (showPiutang ? 13 : ((isMainProjectsV2Page || showPerencanaan) ? 20 : 18)))} className='h-32 text-center text-muted-foreground'>
                   <div className='flex items-center justify-center'>
                     <Loader2 className='h-6 w-6 animate-spin text-neutral-400' />
                   </div>
@@ -1181,7 +1181,7 @@ export function ProjectsV2Table({
             ) : projects.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={showEngineer ? 16 : (showProduksi ? 15 : (showPiutang ? 13 : ((isMainProjectsV2Page || showPerencanaan) ? 20 : 18)))}
+                  colSpan={showEngineer ? 17 : (showProduksi ? 15 : (showPiutang ? 13 : ((isMainProjectsV2Page || showPerencanaan) ? 20 : 18)))}
                   className='h-32 text-center text-muted-foreground'
                 >
                   No projects found.
@@ -1380,7 +1380,7 @@ export function ProjectsV2Table({
                    ) : (
                      <>
                         {!showAllDashboard && !showEngineer && <TableCell>{project.marketing?.name || '-'}</TableCell>}
-                        {!showAllDashboard && !showEngineer && <TableCell className="font-semibold">{project.client?.name || '-'}</TableCell>}
+                        {!showAllDashboard && <TableCell className="font-semibold">{project.client?.name || '-'}</TableCell>}
                         <TableCell className='font-medium text-blue-600'>
                           {project.spk_number || project.spk?.nomor_spk || '-'}
                         </TableCell>
