@@ -1224,7 +1224,7 @@ export function ProjectsV2Table({
                 </>
               ) : (
                 <>
-                  {!showEngineer && <TableHead>Mkt</TableHead>}
+                  {!showEngineer && !showProduksi && <TableHead>Mkt</TableHead>}
                   <TableHead>Client</TableHead>
                   <TableHead>Nomor SPK</TableHead>
                   {showPiutang && <TableHead>Nominal</TableHead>}
@@ -1253,7 +1253,7 @@ export function ProjectsV2Table({
                       )}
                     </div>
                   </TableHead>
-                  {!showSPD && <TableHead>Nomor SPH</TableHead>}
+                  {!showSPD && !showProduksi && <TableHead>Nomor SPH</TableHead>}
                   <TableHead
                     className='cursor-pointer hover:bg-neutral-100 transition-colors group'
                     onClick={() => {
@@ -1459,7 +1459,7 @@ export function ProjectsV2Table({
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={showAllDashboard ? 12 : (showEngineer ? 17 : (showProduksi ? 15 : (showPiutang ? 13 : ((isMainProjectsV2Page || showPerencanaan) ? 20 : 18))))} className='h-32 text-center text-muted-foreground'>
+                <TableCell colSpan={showAllDashboard ? 12 : (showEngineer ? 17 : (showProduksi ? 13 : (showPiutang ? 13 : ((isMainProjectsV2Page || showPerencanaan) ? 20 : 18))))} className='h-32 text-center text-muted-foreground'>
                   <div className='flex items-center justify-center'>
                     <Loader2 className='h-6 w-6 animate-spin text-neutral-400' />
                   </div>
@@ -1468,7 +1468,7 @@ export function ProjectsV2Table({
             ) : projects.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={showAllDashboard ? 12 : (showEngineer ? 17 : (showProduksi ? 15 : (showPiutang ? 13 : ((isMainProjectsV2Page || showPerencanaan) ? 20 : 18))))}
+                  colSpan={showAllDashboard ? 12 : (showEngineer ? 17 : (showProduksi ? 13 : (showPiutang ? 13 : ((isMainProjectsV2Page || showPerencanaan) ? 20 : 18))))}
                   className='h-32 text-center text-muted-foreground'
                 >
                   No projects found.
@@ -1662,7 +1662,7 @@ export function ProjectsV2Table({
                      </>
                    ) : (
                      <>
-                        {!showAllDashboard && !showEngineer && <TableCell>{project.marketing?.name || '-'}</TableCell>}
+                        {!showAllDashboard && !showEngineer && !showProduksi && <TableCell>{project.marketing?.name || '-'}</TableCell>}
                         {!showAllDashboard && <TableCell className="font-semibold">{project.client?.name || '-'}</TableCell>}
                         <TableCell className='font-medium text-blue-600'>
                           {project.spk_number || project.spk?.nomor_spk || '-'}
@@ -1677,7 +1677,7 @@ export function ProjectsV2Table({
                              ? format(new Date(project.spk.tanggal_masuk), 'dd MMM yyyy')
                              : '-'}
                          </TableCell>
-                        {!showSPD && (
+                        {!showSPD && !showProduksi && (
                           <TableCell>
                             {project.sph?.nomor_sph || '-'}
                           </TableCell>
