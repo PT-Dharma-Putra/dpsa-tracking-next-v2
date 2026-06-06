@@ -175,6 +175,7 @@ export interface ProjectV2Stats {
     overdue: number;
     urgent: number;
     po_divisi_completed: number;
+    po_divisi_not_completed: number;
     gambar_kerja_completed: number;
     dokubah_completed: number;
     stok_material_completed: number;

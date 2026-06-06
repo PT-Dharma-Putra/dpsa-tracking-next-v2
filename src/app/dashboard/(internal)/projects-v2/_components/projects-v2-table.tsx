@@ -157,7 +157,7 @@ export function ProjectsV2Table({
   const [sortOrder, setSortOrder] = React.useState<'asc' | 'desc'>('desc');
   const [selectedMonth, setSelectedMonth] = React.useState<string>('all');
   const [selectedYear, setSelectedYear] = React.useState<string>('all');
-  const [poDivisiFilterActive, setPoDivisiFilterActive] = React.useState(false);
+  const [poDivisiFilter, setPoDivisiFilter] = React.useState<'completed' | 'not_completed' | null>(null);
   const [spkFilterActive, setSpkFilterActive] = React.useState(false);
   const [gambarKerjaFilterActive, setGambarKerjaFilterActive] = React.useState(false);
   const [dokubahFilterActive, setDokubahFilterActive] = React.useState(false);
@@ -173,7 +173,7 @@ export function ProjectsV2Table({
       setDashboardFilter(prev => prev === filter ? null : filter);
     }
     setSpkFilterActive(false);
-    setPoDivisiFilterActive(false);
+    setPoDivisiFilter(null);
     setGambarKerjaFilterActive(false);
     setDokubahFilterActive(false);
     setStokMaterialFilterActive(false);
@@ -182,9 +182,9 @@ export function ProjectsV2Table({
     setPage(1);
   };
 
-  const handleFilterClick = (filterType: 'spk' | 'po_divisi' | 'gambar_kerja' | 'dokubah' | 'stok_material' | 'produksi') => {
+  const handleFilterClick = (filterType: 'spk' | 'gambar_kerja' | 'dokubah' | 'stok_material' | 'produksi') => {
     setSpkFilterActive(filterType === 'spk' ? !spkFilterActive : false);
-    setPoDivisiFilterActive(filterType === 'po_divisi' ? !poDivisiFilterActive : false);
+    setPoDivisiFilter(null);
     setGambarKerjaFilterActive(filterType === 'gambar_kerja' ? !gambarKerjaFilterActive : false);
     setDokubahFilterActive(filterType === 'dokubah' ? !dokubahFilterActive : false);
     setStokMaterialFilterActive(filterType === 'stok_material' ? !stokMaterialFilterActive : false);
@@ -194,10 +194,22 @@ export function ProjectsV2Table({
     setPage(1);
   };
 
+  const handlePoDivisiFilterClick = (type: 'completed' | 'not_completed') => {
+    setPoDivisiFilter(poDivisiFilter === type ? null : type);
+    setSpkFilterActive(false);
+    setGambarKerjaFilterActive(false);
+    setDokubahFilterActive(false);
+    setStokMaterialFilterActive(false);
+    setProduksiFilterActive(false);
+    setOrderStatusFilter(null);
+    setDashboardFilter(null);
+    setPage(1);
+  };
+
   const handleOrderStatusFilterClick = (type: 'has_order' | 'tanpa_gambar' | 'belum_diorder') => {
     setOrderStatusFilter(orderStatusFilter === type ? null : type);
     setSpkFilterActive(false);
-    setPoDivisiFilterActive(false);
+    setPoDivisiFilter(null);
     setGambarKerjaFilterActive(false);
     setDokubahFilterActive(false);
     setStokMaterialFilterActive(false);
@@ -244,7 +256,7 @@ export function ProjectsV2Table({
       selectedYear,
       sortBy,
       sortOrder,
-      poDivisiFilterActive,
+      poDivisiFilter,
       spkFilterActive,
       gambarKerjaFilterActive,
       dokubahFilterActive,
@@ -262,7 +274,7 @@ export function ProjectsV2Table({
         year: selectedYear !== 'all' ? selectedYear : undefined,
         sort_by: sortBy,
         sort_order: sortOrder,
-        po_divisi_status: poDivisiFilterActive ? 'not_completed' : undefined,
+        po_divisi_status: poDivisiFilter || undefined,
         spk_status: spkFilterActive ? 'has_spk' : undefined,
         gambar_kerja_status: gambarKerjaFilterActive ? 'not_completed' : undefined,
         dokubah_status: dokubahFilterActive ? 'not_completed' : undefined,
@@ -570,34 +582,43 @@ export function ProjectsV2Table({
           </div>
 
           {/* PO Divisi */}
-          <div
-            onClick={() => handleFilterClick('po_divisi')}
-            className={cn(
-              "flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-emerald-400 select-none",
-              poDivisiFilterActive 
-                ? "border-emerald-500 bg-emerald-50/50 ring-2 ring-emerald-500/20" 
-                : "border-emerald-200 bg-white"
-            )}
-          >
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
-                <CheckCircle2 className="h-5 w-5" />
+          <div className="flex flex-col gap-2 p-4 rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md">
+            <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
+              <div className="h-6 w-6 rounded bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
+                <CheckCircle2 className="h-3.5 w-3.5" />
               </div>
-              <div>
-                <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">PO Divisi</p>
-                <div className="flex items-baseline gap-1.5">
-                  <p className="text-xl font-bold text-slate-800">{stats.po_divisi_completed}</p>
-                  <p className="text-xs text-muted-foreground">
-                    ({stats.total_project > 0 ? Math.round((stats.po_divisi_completed / stats.total_project) * 100) : 0}%)
-                  </p>
-                </div>
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">PO Divisi</p>
+            </div>
+            
+            <div className="flex flex-row gap-1.5 mt-auto">
+              {/* Sudah ter PO */}
+              <div 
+                onClick={() => handlePoDivisiFilterClick('completed')}
+                className={cn(
+                  "flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all",
+                  poDivisiFilter === 'completed'
+                    ? "border-emerald-500 bg-emerald-50 text-emerald-700 font-semibold"
+                    : "border-slate-100 hover:border-slate-300 text-slate-600"
+                )}
+              >
+                <span className="truncate mr-1">Sudah ter PO</span>
+                <span className="font-bold">{stats.po_divisi_completed}</span>
+              </div>
+
+              {/* Belum ter PO */}
+              <div 
+                onClick={() => handlePoDivisiFilterClick('not_completed')}
+                className={cn(
+                  "flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all",
+                  poDivisiFilter === 'not_completed'
+                    ? "border-amber-500 bg-amber-50 text-amber-700 font-semibold"
+                    : "border-slate-100 hover:border-slate-300 text-slate-600"
+                )}
+              >
+                <span className="truncate mr-1">Belum ter PO</span>
+                <span className="font-bold">{stats.po_divisi_not_completed}</span>
               </div>
             </div>
-            {poDivisiFilterActive && (
-              <span className="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-semibold animate-pulse">
-                Belum 100%
-              </span>
-            )}
           </div>
 
           {/* Gambar Kerja */}
