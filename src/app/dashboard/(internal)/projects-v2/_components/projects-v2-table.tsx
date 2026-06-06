@@ -1108,7 +1108,6 @@ export function ProjectsV2Table({
               <TableHead className='w-[50px]'>#</TableHead>
               {showAllDashboard ? (
                 <>
-                  <TableHead>Mkt</TableHead>
                   <TableHead>Client</TableHead>
                   <TableHead>Description</TableHead>
                   <TableHead>Nomor SPK</TableHead>
@@ -1137,7 +1136,6 @@ export function ProjectsV2Table({
                       )}
                     </div>
                   </TableHead>
-                  <TableHead>Nomor SPH</TableHead>
                   <TableHead
                     className='cursor-pointer hover:bg-neutral-100 transition-colors group'
                     onClick={() => {
@@ -1334,11 +1332,11 @@ export function ProjectsV2Table({
                 </>
               )}
               {!showAllDashboard && !showProduksi && !showPiutang && <TableHead>Pakai Desain</TableHead>}
-              {!showAllDashboard && !showSPD && <TableHead>Jadwal Pengiriman</TableHead>}
+              {!showAllDashboard && !showSPD && <TableHead>Jadwal Kirim</TableHead>}
               
               {showAllDashboard && (
                 <>
-                  <TableHead>Jadwal Pengiriman</TableHead>
+                  <TableHead>Jadwal Kirim</TableHead>
                   <TableHead
                     className='cursor-pointer hover:bg-neutral-100 transition-colors group'
                     onClick={() => {
@@ -1352,7 +1350,7 @@ export function ProjectsV2Table({
                     }}
                   >
                     <div className='flex items-center gap-1'>
-                      Persentase Kerja
+                      Progres Kerja
                       {sortBy === 'persentase_kerja' ? (
                         sortOrder === 'asc' ? (
                           <ArrowUp className='h-3 w-3' />
@@ -1364,7 +1362,7 @@ export function ProjectsV2Table({
                       )}
                     </div>
                   </TableHead>
-                  <TableHead>Progres Terakhir</TableHead>
+                  <TableHead>Progres Akhir</TableHead>
                 </>
               )}
               {!showAllDashboard && showSPD && (
@@ -1430,7 +1428,7 @@ export function ProjectsV2Table({
                     }}
                   >
                     <div className='flex items-center gap-1'>
-                      Persentase Kerja
+                      Progres Kerja
                       {sortBy === 'persentase_kerja' ? (
                         sortOrder === 'asc' ? (
                           <ArrowUp className='h-3 w-3' />
@@ -1442,7 +1440,7 @@ export function ProjectsV2Table({
                       )}
                     </div>
                   </TableHead>
-                  <TableHead>Progres Terakhir</TableHead>
+                  <TableHead>Progres Akhir</TableHead>
                  </>
               )}
               <TableHead className='w-[100px] text-right'>Actions</TableHead>
@@ -1451,7 +1449,7 @@ export function ProjectsV2Table({
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={showEngineer ? 17 : (showProduksi ? 15 : (showPiutang ? 13 : ((isMainProjectsV2Page || showPerencanaan) ? 20 : 18)))} className='h-32 text-center text-muted-foreground'>
+                <TableCell colSpan={showAllDashboard ? 12 : (showEngineer ? 17 : (showProduksi ? 15 : (showPiutang ? 13 : ((isMainProjectsV2Page || showPerencanaan) ? 20 : 18))))} className='h-32 text-center text-muted-foreground'>
                   <div className='flex items-center justify-center'>
                     <Loader2 className='h-6 w-6 animate-spin text-neutral-400' />
                   </div>
@@ -1460,7 +1458,7 @@ export function ProjectsV2Table({
             ) : projects.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={showEngineer ? 17 : (showProduksi ? 15 : (showPiutang ? 13 : ((isMainProjectsV2Page || showPerencanaan) ? 20 : 18)))}
+                  colSpan={showAllDashboard ? 12 : (showEngineer ? 17 : (showProduksi ? 15 : (showPiutang ? 13 : ((isMainProjectsV2Page || showPerencanaan) ? 20 : 18))))}
                   className='h-32 text-center text-muted-foreground'
                 >
                   No projects found.
@@ -1474,7 +1472,6 @@ export function ProjectsV2Table({
                   </TableCell>
                    {showAllDashboard ? (
                      <>
-                        <TableCell>{project.marketing?.name || '-'}</TableCell>
                         <TableCell>{project.client?.name || '-'}</TableCell>
                         <TableCell className='max-w-[200px] truncate'>
                           {project.description || (
@@ -1489,9 +1486,6 @@ export function ProjectsV2Table({
                              ? format(new Date(project.spk.tanggal_masuk), 'dd MMM yyyy')
                              : '-'}
                          </TableCell>
-                        <TableCell>
-                          {project.sph?.nomor_sph || '-'}
-                        </TableCell>
                         <TableCell>
                           {project.prioritas === 'Urgent' ? (
                             <Badge className='bg-red-100 text-red-700 border border-red-200 hover:bg-red-100 font-semibold text-[11px]'>
