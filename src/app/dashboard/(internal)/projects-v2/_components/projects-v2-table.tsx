@@ -157,12 +157,12 @@ export function ProjectsV2Table({
   const [sortOrder, setSortOrder] = React.useState<'asc' | 'desc'>('desc');
   const [selectedMonth, setSelectedMonth] = React.useState<string>('all');
   const [selectedYear, setSelectedYear] = React.useState<string>('all');
-  const [poDivisiFilterActive, setPoDivisiFilterActive] = React.useState(false);
+  const [poDivisiFilter, setPoDivisiFilter] = React.useState<'completed' | 'not_completed' | null>(null);
   const [spkFilterActive, setSpkFilterActive] = React.useState(false);
-  const [gambarKerjaFilterActive, setGambarKerjaFilterActive] = React.useState(false);
-  const [dokubahFilterActive, setDokubahFilterActive] = React.useState(false);
-  const [stokMaterialFilterActive, setStokMaterialFilterActive] = React.useState(false);
-  const [produksiFilterActive, setProduksiFilterActive] = React.useState(false);
+  const [gambarKerjaFilter, setGambarKerjaFilter] = React.useState<'completed' | 'not_completed' | null>(null);
+  const [dokubahFilter, setDokubahFilter] = React.useState<'completed' | 'not_completed' | null>(null);
+  const [stokMaterialFilter, setStokMaterialFilter] = React.useState<'completed' | 'not_completed' | null>(null);
+  const [produksiFilter, setProduksiFilter] = React.useState<'completed' | 'not_completed' | null>(null);
   const [orderStatusFilter, setOrderStatusFilter] = React.useState<'has_order' | 'tanpa_gambar' | 'belum_diorder' | null>(null);
   const [dashboardFilter, setDashboardFilter] = React.useState<'spk' | 'sph' | 'selesai' | 'on_progress' | 'belum_produksi' | 'deadline_dekat' | 'overdue' | 'urgent' | null>(null);
 
@@ -173,22 +173,82 @@ export function ProjectsV2Table({
       setDashboardFilter(prev => prev === filter ? null : filter);
     }
     setSpkFilterActive(false);
-    setPoDivisiFilterActive(false);
-    setGambarKerjaFilterActive(false);
-    setDokubahFilterActive(false);
-    setStokMaterialFilterActive(false);
-    setProduksiFilterActive(false);
+    setPoDivisiFilter(null);
+    setGambarKerjaFilter(null);
+    setDokubahFilter(null);
+    setStokMaterialFilter(null);
+    setProduksiFilter(null);
     setOrderStatusFilter(null);
     setPage(1);
   };
 
-  const handleFilterClick = (filterType: 'spk' | 'po_divisi' | 'gambar_kerja' | 'dokubah' | 'stok_material' | 'produksi') => {
-    setSpkFilterActive(filterType === 'spk' ? !spkFilterActive : false);
-    setPoDivisiFilterActive(filterType === 'po_divisi' ? !poDivisiFilterActive : false);
-    setGambarKerjaFilterActive(filterType === 'gambar_kerja' ? !gambarKerjaFilterActive : false);
-    setDokubahFilterActive(filterType === 'dokubah' ? !dokubahFilterActive : false);
-    setStokMaterialFilterActive(filterType === 'stok_material' ? !stokMaterialFilterActive : false);
-    setProduksiFilterActive(filterType === 'produksi' ? !produksiFilterActive : false);
+  const handleFilterClick = (filterType: 'spk') => {
+    setSpkFilterActive(!spkFilterActive);
+    setPoDivisiFilter(null);
+    setGambarKerjaFilter(null);
+    setDokubahFilter(null);
+    setStokMaterialFilter(null);
+    setProduksiFilter(null);
+    setOrderStatusFilter(null);
+    setDashboardFilter(null);
+    setPage(1);
+  };
+
+  const handlePoDivisiFilterClick = (type: 'completed' | 'not_completed') => {
+    setPoDivisiFilter(poDivisiFilter === type ? null : type);
+    setSpkFilterActive(false);
+    setGambarKerjaFilter(null);
+    setDokubahFilter(null);
+    setStokMaterialFilter(null);
+    setProduksiFilter(null);
+    setOrderStatusFilter(null);
+    setDashboardFilter(null);
+    setPage(1);
+  };
+
+  const handleGambarKerjaFilterClick = (type: 'completed' | 'not_completed') => {
+    setGambarKerjaFilter(gambarKerjaFilter === type ? null : type);
+    setSpkFilterActive(false);
+    setPoDivisiFilter(null);
+    setDokubahFilter(null);
+    setStokMaterialFilter(null);
+    setProduksiFilter(null);
+    setOrderStatusFilter(null);
+    setDashboardFilter(null);
+    setPage(1);
+  };
+
+  const handleDokubahFilterClick = (type: 'completed' | 'not_completed') => {
+    setDokubahFilter(dokubahFilter === type ? null : type);
+    setSpkFilterActive(false);
+    setPoDivisiFilter(null);
+    setGambarKerjaFilter(null);
+    setStokMaterialFilter(null);
+    setProduksiFilter(null);
+    setOrderStatusFilter(null);
+    setDashboardFilter(null);
+    setPage(1);
+  };
+
+  const handleStokMaterialFilterClick = (type: 'completed' | 'not_completed') => {
+    setStokMaterialFilter(stokMaterialFilter === type ? null : type);
+    setSpkFilterActive(false);
+    setPoDivisiFilter(null);
+    setGambarKerjaFilter(null);
+    setDokubahFilter(null);
+    setProduksiFilter(null);
+    setOrderStatusFilter(null);
+    setDashboardFilter(null);
+    setPage(1);
+  };
+
+  const handleProduksiFilterClick = (type: 'completed' | 'not_completed') => {
+    setProduksiFilter(produksiFilter === type ? null : type);
+    setSpkFilterActive(false);
+    setPoDivisiFilter(null);
+    setGambarKerjaFilter(null);
+    setDokubahFilter(null);
+    setStokMaterialFilter(null);
     setOrderStatusFilter(null);
     setDashboardFilter(null);
     setPage(1);
@@ -197,11 +257,11 @@ export function ProjectsV2Table({
   const handleOrderStatusFilterClick = (type: 'has_order' | 'tanpa_gambar' | 'belum_diorder') => {
     setOrderStatusFilter(orderStatusFilter === type ? null : type);
     setSpkFilterActive(false);
-    setPoDivisiFilterActive(false);
-    setGambarKerjaFilterActive(false);
-    setDokubahFilterActive(false);
-    setStokMaterialFilterActive(false);
-    setProduksiFilterActive(false);
+    setPoDivisiFilter(null);
+    setGambarKerjaFilter(null);
+    setDokubahFilter(null);
+    setStokMaterialFilter(null);
+    setProduksiFilter(null);
     setDashboardFilter(null);
     setPage(1);
   };
@@ -244,12 +304,12 @@ export function ProjectsV2Table({
       selectedYear,
       sortBy,
       sortOrder,
-      poDivisiFilterActive,
+      poDivisiFilter,
       spkFilterActive,
-      gambarKerjaFilterActive,
-      dokubahFilterActive,
-      stokMaterialFilterActive,
-      produksiFilterActive,
+      gambarKerjaFilter,
+      dokubahFilter,
+      stokMaterialFilter,
+      produksiFilter,
       orderStatusFilter,
       dashboardFilter,
     ],
@@ -262,12 +322,12 @@ export function ProjectsV2Table({
         year: selectedYear !== 'all' ? selectedYear : undefined,
         sort_by: sortBy,
         sort_order: sortOrder,
-        po_divisi_status: poDivisiFilterActive ? 'not_completed' : undefined,
+        po_divisi_status: poDivisiFilter || undefined,
         spk_status: spkFilterActive ? 'has_spk' : undefined,
-        gambar_kerja_status: gambarKerjaFilterActive ? 'not_completed' : undefined,
-        dokubah_status: dokubahFilterActive ? 'not_completed' : undefined,
-        stok_material_status: stokMaterialFilterActive ? 'not_completed' : undefined,
-        produksi_status: produksiFilterActive ? 'not_completed' : undefined,
+        gambar_kerja_status: gambarKerjaFilter || undefined,
+        dokubah_status: dokubahFilter || undefined,
+        stok_material_status: stokMaterialFilter || undefined,
+        produksi_status: produksiFilter || undefined,
         order_status: orderStatusFilter || undefined,
         dashboard_filter: dashboardFilter || undefined,
       }),
@@ -570,158 +630,203 @@ export function ProjectsV2Table({
           </div>
 
           {/* PO Divisi */}
-          <div
-            onClick={() => handleFilterClick('po_divisi')}
-            className={cn(
-              "flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-emerald-400 select-none",
-              poDivisiFilterActive 
-                ? "border-emerald-500 bg-emerald-50/50 ring-2 ring-emerald-500/20" 
-                : "border-emerald-200 bg-white"
-            )}
-          >
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
-                <CheckCircle2 className="h-5 w-5" />
+          <div className="flex flex-col gap-2 p-4 rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md">
+            <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
+              <div className="h-6 w-6 rounded bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
+                <CheckCircle2 className="h-3.5 w-3.5" />
               </div>
-              <div>
-                <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">PO Divisi</p>
-                <div className="flex items-baseline gap-1.5">
-                  <p className="text-xl font-bold text-slate-800">{stats.po_divisi_completed}</p>
-                  <p className="text-xs text-muted-foreground">
-                    ({stats.total_project > 0 ? Math.round((stats.po_divisi_completed / stats.total_project) * 100) : 0}%)
-                  </p>
-                </div>
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">PO Divisi</p>
+            </div>
+            
+            <div className="flex flex-row gap-1.5 mt-auto">
+              {/* Sudah ter PO */}
+              <div 
+                onClick={() => handlePoDivisiFilterClick('completed')}
+                className={cn(
+                  "flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all",
+                  poDivisiFilter === 'completed'
+                    ? "border-emerald-500 bg-emerald-50 text-emerald-700 font-semibold"
+                    : "border-slate-100 hover:border-slate-300 text-slate-600"
+                )}
+              >
+                <span className="truncate mr-1">Sudah ter PO</span>
+                <span className="font-bold">{stats.po_divisi_completed}</span>
+              </div>
+
+              {/* Belum ter PO */}
+              <div 
+                onClick={() => handlePoDivisiFilterClick('not_completed')}
+                className={cn(
+                  "flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all",
+                  poDivisiFilter === 'not_completed'
+                    ? "border-amber-500 bg-amber-50 text-amber-700 font-semibold"
+                    : "border-slate-100 hover:border-slate-300 text-slate-600"
+                )}
+              >
+                <span className="truncate mr-1">Belum ter PO</span>
+                <span className="font-bold">{stats.po_divisi_not_completed}</span>
               </div>
             </div>
-            {poDivisiFilterActive && (
-              <span className="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-semibold animate-pulse">
-                Belum 100%
-              </span>
-            )}
           </div>
 
           {/* Gambar Kerja */}
-          <div
-            onClick={() => handleFilterClick('gambar_kerja')}
-            className={cn(
-              "flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-blue-400 select-none",
-              gambarKerjaFilterActive 
-                ? "border-blue-500 bg-blue-50/50 ring-2 ring-blue-500/20" 
-                : "border-blue-200 bg-white"
-            )}
-          >
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 shrink-0">
-                <ImageIcon className="h-5 w-5" />
+          <div className="flex flex-col gap-2 p-4 rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md">
+            <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
+              <div className="h-6 w-6 rounded bg-blue-100 flex items-center justify-center text-blue-600 shrink-0">
+                <ImageIcon className="h-3.5 w-3.5" />
               </div>
-              <div>
-                <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">Gambar Kerja</p>
-                <div className="flex items-baseline gap-1.5">
-                  <p className="text-xl font-bold text-slate-800">{stats.gambar_kerja_completed}</p>
-                  <p className="text-xs text-muted-foreground">
-                    ({stats.total_project > 0 ? Math.round((stats.gambar_kerja_completed / stats.total_project) * 100) : 0}%)
-                  </p>
-                </div>
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Gambar Kerja</p>
+            </div>
+            
+            <div className="flex flex-row gap-1.5 mt-auto">
+              {/* Sudah */}
+              <div 
+                onClick={() => handleGambarKerjaFilterClick('completed')}
+                className={cn(
+                  "flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all",
+                  gambarKerjaFilter === 'completed'
+                    ? "border-blue-500 bg-blue-55 text-blue-700 font-semibold animate-none"
+                    : "border-slate-100 hover:border-slate-300 text-slate-600"
+                )}
+              >
+                <span className="truncate mr-1">Lengkap</span>
+                <span className="font-bold">{stats.gambar_kerja_completed}</span>
+              </div>
+
+              {/* Belum */}
+              <div 
+                onClick={() => handleGambarKerjaFilterClick('not_completed')}
+                className={cn(
+                  "flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all",
+                  gambarKerjaFilter === 'not_completed'
+                    ? "border-blue-500 bg-blue-50 text-blue-700 font-semibold"
+                    : "border-slate-100 hover:border-slate-300 text-slate-600"
+                )}
+              >
+                <span className="truncate mr-1">Belum Lengkap</span>
+                <span className="font-bold">{stats.gambar_kerja_not_completed}</span>
               </div>
             </div>
-            {gambarKerjaFilterActive && (
-              <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-semibold animate-pulse">
-                Belum 100%
-              </span>
-            )}
           </div>
 
           {/* Dokubah */}
-          <div
-            onClick={() => handleFilterClick('dokubah')}
-            className={cn(
-              "flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-amber-400 select-none",
-              dokubahFilterActive 
-                ? "border-amber-500 bg-amber-50/50 ring-2 ring-amber-500/20" 
-                : "border-amber-200 bg-white"
-            )}
-          >
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-amber-100 flex items-center justify-center text-amber-600 shrink-0">
-                <FileEdit className="h-5 w-5" />
+          <div className="flex flex-col gap-2 p-4 rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md">
+            <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
+              <div className="h-6 w-6 rounded bg-amber-100 flex items-center justify-center text-amber-600 shrink-0">
+                <FileEdit className="h-3.5 w-3.5" />
               </div>
-              <div>
-                <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wider">Dokubah</p>
-                <div className="flex items-baseline gap-1.5">
-                  <p className="text-xl font-bold text-slate-800">{stats.dokubah_completed}</p>
-                  <p className="text-xs text-muted-foreground">
-                    ({stats.total_project > 0 ? Math.round((stats.dokubah_completed / stats.total_project) * 100) : 0}%)
-                  </p>
-                </div>
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Dokubah</p>
+            </div>
+            
+            <div className="flex flex-row gap-1.5 mt-auto">
+              {/* Sudah */}
+              <div 
+                onClick={() => handleDokubahFilterClick('completed')}
+                className={cn(
+                  "flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all",
+                  dokubahFilter === 'completed'
+                    ? "border-amber-500 bg-amber-50 text-amber-700 font-semibold"
+                    : "border-slate-100 hover:border-slate-300 text-slate-600"
+                )}
+              >
+                <span className="truncate mr-1">Selesai</span>
+                <span className="font-bold">{stats.dokubah_completed}</span>
+              </div>
+
+              {/* Belum */}
+              <div 
+                onClick={() => handleDokubahFilterClick('not_completed')}
+                className={cn(
+                  "flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all",
+                  dokubahFilter === 'not_completed'
+                    ? "border-amber-500 bg-amber-50 text-amber-700 font-semibold"
+                    : "border-slate-100 hover:border-slate-300 text-slate-600"
+                )}
+              >
+                <span className="truncate mr-1">Belum Selesai</span>
+                <span className="font-bold">{stats.dokubah_not_completed}</span>
               </div>
             </div>
-            {dokubahFilterActive && (
-              <span className="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-semibold animate-pulse">
-                Belum 100%
-              </span>
-            )}
           </div>
 
           {/* Stok Material */}
-          <div
-            onClick={() => handleFilterClick('stok_material')}
-            className={cn(
-              "flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-violet-400 select-none",
-              stokMaterialFilterActive 
-                ? "border-violet-500 bg-violet-50/50 ring-2 ring-violet-500/20" 
-                : "border-violet-200 bg-white"
-            )}
-          >
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-violet-100 flex items-center justify-center text-violet-600 shrink-0">
-                <Package className="h-5 w-5" />
+          <div className="flex flex-col gap-2 p-4 rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md">
+            <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
+              <div className="h-6 w-6 rounded bg-violet-100 flex items-center justify-center text-violet-600 shrink-0">
+                <Package className="h-3.5 w-3.5" />
               </div>
-              <div>
-                <p className="text-[10px] font-bold text-violet-600 uppercase tracking-wider">Stok Material</p>
-                <div className="flex items-baseline gap-1.5">
-                  <p className="text-xl font-bold text-slate-800">{stats.stok_material_completed}</p>
-                  <p className="text-xs text-muted-foreground">
-                    ({stats.total_project > 0 ? Math.round((stats.stok_material_completed / stats.total_project) * 100) : 0}%)
-                  </p>
-                </div>
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Stok Material</p>
+            </div>
+            
+            <div className="flex flex-row gap-1.5 mt-auto">
+              {/* Sudah */}
+              <div 
+                onClick={() => handleStokMaterialFilterClick('completed')}
+                className={cn(
+                  "flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all",
+                  stokMaterialFilter === 'completed'
+                    ? "border-violet-500 bg-violet-50 text-violet-700 font-semibold"
+                    : "border-slate-100 hover:border-slate-300 text-slate-600"
+                )}
+              >
+                <span className="truncate mr-1">Sudah Update</span>
+                <span className="font-bold">{stats.stok_material_completed}</span>
+              </div>
+
+              {/* Belum */}
+              <div 
+                onClick={() => handleStokMaterialFilterClick('not_completed')}
+                className={cn(
+                  "flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all",
+                  stokMaterialFilter === 'not_completed'
+                    ? "border-violet-500 bg-violet-55 text-violet-700 font-semibold"
+                    : "border-slate-100 hover:border-slate-300 text-slate-600"
+                )}
+              >
+                <span className="truncate mr-1">Belum Update</span>
+                <span className="font-bold">{stats.stok_material_not_completed}</span>
               </div>
             </div>
-            {stokMaterialFilterActive && (
-              <span className="text-[10px] bg-violet-100 text-violet-700 px-2 py-0.5 rounded-full font-semibold animate-pulse">
-                Belum 100%
-              </span>
-            )}
           </div>
 
           {/* Perintah Produksi */}
-          <div
-            onClick={() => handleFilterClick('produksi')}
-            className={cn(
-              "flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-rose-400 select-none",
-              produksiFilterActive 
-                ? "border-rose-500 bg-rose-50/50 ring-2 ring-rose-500/20" 
-                : "border-rose-200 bg-white"
-            )}
-          >
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-rose-100 flex items-center justify-center text-rose-600 shrink-0">
-                <Hammer className="h-5 w-5" />
+          <div className="flex flex-col gap-2 p-4 rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md">
+            <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
+              <div className="h-6 w-6 rounded bg-rose-100 flex items-center justify-center text-rose-600 shrink-0">
+                <Hammer className="h-3.5 w-3.5" />
               </div>
-              <div>
-                <p className="text-[10px] font-bold text-rose-600 uppercase tracking-wider">P. Produksi</p>
-                <div className="flex items-baseline gap-1.5">
-                  <p className="text-xl font-bold text-slate-800">{stats.produksi_completed}</p>
-                  <p className="text-xs text-muted-foreground">
-                    ({stats.total_project > 0 ? Math.round((stats.produksi_completed / stats.total_project) * 100) : 0}%)
-                  </p>
-                </div>
+              <p className="text-[10px] font-bold text-rose-600 uppercase tracking-wider">Perintah Produksi</p>
+            </div>
+            
+            <div className="flex flex-row gap-1.5 mt-auto">
+              {/* Sudah */}
+              <div 
+                onClick={() => handleProduksiFilterClick('completed')}
+                className={cn(
+                  "flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all",
+                  produksiFilter === 'completed'
+                    ? "border-rose-500 bg-rose-50 text-rose-700 font-semibold"
+                    : "border-slate-100 hover:border-slate-300 text-slate-600"
+                )}
+              >
+                <span className="truncate mr-1">Sudah Diupload</span>
+                <span className="font-bold">{stats.produksi_completed}</span>
+              </div>
+
+              {/* Belum */}
+              <div 
+                onClick={() => handleProduksiFilterClick('not_completed')}
+                className={cn(
+                  "flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all",
+                  produksiFilter === 'not_completed'
+                    ? "border-rose-55 bg-rose-50 text-rose-700 font-semibold"
+                    : "border-slate-100 hover:border-slate-300 text-slate-600"
+                )}
+              >
+                <span className="truncate mr-1">Belum Diupload</span>
+                <span className="font-bold">{stats.produksi_not_completed}</span>
               </div>
             </div>
-            {produksiFilterActive && (
-              <span className="text-[10px] bg-rose-100 text-rose-700 px-2 py-0.5 rounded-full font-semibold animate-pulse">
-                Belum 100%
-              </span>
-            )}
           </div>
         </div>
       )}
