@@ -96,6 +96,7 @@ import {
 import { ClientService } from '@/features/clients/services/client-service';
 import { ProjectFormDialog } from './project-form-dialog';
 import { ScheduleDeliveryDialog } from './schedule-delivery-dialog';
+import { DeadlineDialog } from './deadline-dialog';
 const formatRupiah = (value: string | number) => {
   if (value === null || value === undefined || value === '') return '';
   
@@ -215,6 +216,10 @@ export function ProjectsV2Table({
 
   const [isScheduleOpen, setIsScheduleOpen] = React.useState(false);
   const [projectToSchedule, setProjectToSchedule] =
+    React.useState<ProjectV2 | null>(null);
+
+  const [isDeadlineOpen, setIsDeadlineOpen] = React.useState(false);
+  const [projectToEditDeadline, setProjectToEditDeadline] =
     React.useState<ProjectV2 | null>(null);
 
   const isJadwalEditable = showPerencanaan;
@@ -400,6 +405,11 @@ export function ProjectsV2Table({
   const handleScheduleClick = (project: ProjectV2) => {
     setProjectToSchedule(project);
     setIsScheduleOpen(true);
+  };
+
+  const handleDeadlineClick = (project: ProjectV2) => {
+    setProjectToEditDeadline(project);
+    setIsDeadlineOpen(true);
   };
 
   const confirmDelete = () => {
@@ -1214,7 +1224,7 @@ export function ProjectsV2Table({
                 </>
               ) : (
                 <>
-                  {!showEngineer && <TableHead>Marketing</TableHead>}
+                  {!showEngineer && <TableHead>Mkt</TableHead>}
                   <TableHead>Client</TableHead>
                   <TableHead>Nomor SPK</TableHead>
                   {showPiutang && <TableHead>Nominal</TableHead>}
@@ -1730,9 +1740,23 @@ export function ProjectsV2Table({
                   {!showAllDashboard && !showSPD && (
                     <>
                       <TableCell>
-                        {project.deadline
-                          ? format(new Date(project.deadline), 'MMM d, yyyy')
-                          : '-'}
+                        {showPerencanaan ? (
+                          <div
+                            className='group flex items-center gap-1.5 cursor-pointer hover:text-orange-600 transition-colors font-medium'
+                            onClick={() => handleDeadlineClick(project)}
+                          >
+                            <span>
+                              {project.deadline
+                                ? format(new Date(project.deadline), 'MMM d, yyyy')
+                                : '-'}
+                            </span>
+                            <Pencil className='h-3.5 w-3.5 opacity-40 group-hover:opacity-100 transition-opacity text-neutral-400 group-hover:text-orange-600' />
+                          </div>
+                        ) : (
+                          project.deadline
+                            ? format(new Date(project.deadline), 'MMM d, yyyy')
+                            : '-'
+                        )}
                       </TableCell>
 
                       {!showProduksi && !showPiutang && (
@@ -2581,6 +2605,12 @@ export function ProjectsV2Table({
         open={isScheduleOpen}
         onOpenChange={setIsScheduleOpen}
         project={projectToSchedule}
+      />
+
+      <DeadlineDialog
+        open={isDeadlineOpen}
+        onOpenChange={setIsDeadlineOpen}
+        project={projectToEditDeadline}
       />
 
       <AlertDialog
