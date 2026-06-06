@@ -643,7 +643,7 @@ export default function EngineerDetailPage() {
                                                     Order Drawing
                                                 </p>
                                                 <p className='text-[10px] text-orange-600/80'>
-                                                    Target:{" "}
+                                                    Tanggal Order:{" "}
                                                     {format(
                                                         new Date(orderGk.created_at),
                                                         'MMM d, yyyy'
