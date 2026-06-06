@@ -643,7 +643,7 @@ export default function EngineerDetailPage() {
                                                     Order Drawing
                                                 </p>
                                                 <p className='text-[10px] text-orange-600/80'>
-                                                    Target:{" "}
+                                                    Tanggal Order:{" "}
                                                     {format(
                                                         new Date(orderGk.created_at),
                                                         'MMM d, yyyy'
@@ -788,6 +788,7 @@ export default function EngineerDetailPage() {
                                     <TableHead className='w-[60px] text-center'>#</TableHead>
                                     <TableHead>Kode Barang</TableHead>
                                     <TableHead>Item Name</TableHead>
+                                    <TableHead>Spesifikasi</TableHead>
                                     <TableHead>Location / Floor</TableHead>
                                     <TableHead className='text-center'>Ukuran</TableHead>
                                     <TableHead className='text-center'>Volume</TableHead>
@@ -835,6 +836,13 @@ export default function EngineerDetailPage() {
                                                     </div>
                                                     <span className='text-[10px] text-muted-foreground uppercase tracking-tight'>{item.material_utama}</span>
                                                 </div>
+                                            </TableCell>
+                                            <TableCell className='text-xs text-neutral-600 max-w-[160px]'>
+                                                {item.keterangan ? (
+                                                    <span className='line-clamp-2' title={item.keterangan}>{item.keterangan}</span>
+                                                ) : (
+                                                    <span className='text-muted-foreground italic'>-</span>
+                                                )}
                                             </TableCell>
                                             <TableCell>
                                                 <div className='flex flex-col gap-0.5'>
