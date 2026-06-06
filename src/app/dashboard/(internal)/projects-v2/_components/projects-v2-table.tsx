@@ -163,6 +163,23 @@ export function ProjectsV2Table({
   const [stokMaterialFilterActive, setStokMaterialFilterActive] = React.useState(false);
   const [produksiFilterActive, setProduksiFilterActive] = React.useState(false);
   const [orderStatusFilter, setOrderStatusFilter] = React.useState<'has_order' | 'tanpa_gambar' | 'belum_diorder' | null>(null);
+  const [dashboardFilter, setDashboardFilter] = React.useState<'spk' | 'sph' | 'selesai' | 'on_progress' | 'belum_produksi' | 'deadline_dekat' | 'overdue' | 'urgent' | null>(null);
+
+  const handleDashboardFilterClick = (filter: 'spk' | 'sph' | 'selesai' | 'on_progress' | 'belum_produksi' | 'deadline_dekat' | 'overdue' | 'urgent' | null) => {
+    if (filter === null) {
+      setDashboardFilter(null);
+    } else {
+      setDashboardFilter(prev => prev === filter ? null : filter);
+    }
+    setSpkFilterActive(false);
+    setPoDivisiFilterActive(false);
+    setGambarKerjaFilterActive(false);
+    setDokubahFilterActive(false);
+    setStokMaterialFilterActive(false);
+    setProduksiFilterActive(false);
+    setOrderStatusFilter(null);
+    setPage(1);
+  };
 
   const handleFilterClick = (filterType: 'spk' | 'po_divisi' | 'gambar_kerja' | 'dokubah' | 'stok_material' | 'produksi') => {
     setSpkFilterActive(filterType === 'spk' ? !spkFilterActive : false);
@@ -172,6 +189,7 @@ export function ProjectsV2Table({
     setStokMaterialFilterActive(filterType === 'stok_material' ? !stokMaterialFilterActive : false);
     setProduksiFilterActive(filterType === 'produksi' ? !produksiFilterActive : false);
     setOrderStatusFilter(null);
+    setDashboardFilter(null);
     setPage(1);
   };
 
@@ -183,6 +201,7 @@ export function ProjectsV2Table({
     setDokubahFilterActive(false);
     setStokMaterialFilterActive(false);
     setProduksiFilterActive(false);
+    setDashboardFilter(null);
     setPage(1);
   };
 
@@ -227,6 +246,7 @@ export function ProjectsV2Table({
       stokMaterialFilterActive,
       produksiFilterActive,
       orderStatusFilter,
+      dashboardFilter,
     ],
     queryFn: () =>
       projectV2Service.getProjects({
@@ -244,6 +264,7 @@ export function ProjectsV2Table({
         stok_material_status: stokMaterialFilterActive ? 'not_completed' : undefined,
         produksi_status: produksiFilterActive ? 'not_completed' : undefined,
         order_status: orderStatusFilter || undefined,
+        dashboard_filter: dashboardFilter || undefined,
       }),
   });
 
@@ -698,102 +719,237 @@ export function ProjectsV2Table({
       {showAllDashboard && stats && (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-9 gap-4 w-full">
           {/* Total Project */}
-          <div className="flex items-center gap-3 p-4 rounded-xl border border-slate-100 bg-slate-50/30 shadow-sm transition-all duration-300 hover:shadow-md">
-            <div className="h-10 w-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 shrink-0">
-              <Briefcase className="h-5 w-5" />
+          <div
+            onClick={() => handleDashboardFilterClick(null)}
+            className={cn(
+              "flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-slate-400 select-none",
+              dashboardFilter === null 
+                ? "border-slate-500 bg-slate-50 ring-2 ring-slate-500/20" 
+                : "border-slate-200 bg-white"
+            )}
+          >
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 shrink-0">
+                <Briefcase className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Total Project</p>
+                <p className="text-xl font-bold text-slate-800">{stats.total_project}</p>
+              </div>
             </div>
-            <div>
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Total Project</p>
-              <p className="text-xl font-bold text-slate-800">{stats.total_project}</p>
-            </div>
+            {dashboardFilter === null && (
+              <span className="text-[10px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full font-semibold animate-pulse">
+                Active
+              </span>
+            )}
           </div>
 
           {/* Total SPK */}
-          <div className="flex items-center gap-3 p-4 rounded-xl border border-indigo-100 bg-indigo-50/20 shadow-sm transition-all duration-300 hover:shadow-md">
-            <div className="h-10 w-10 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600 shrink-0">
-              <FileText className="h-5 w-5" />
+          <div
+            onClick={() => handleDashboardFilterClick('spk')}
+            className={cn(
+              "flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-indigo-400 select-none",
+              dashboardFilter === 'spk' 
+                ? "border-indigo-500 bg-indigo-50/50 ring-2 ring-indigo-500/20" 
+                : "border-indigo-200 bg-white"
+            )}
+          >
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600 shrink-0">
+                <FileText className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider">Total SPK</p>
+                <p className="text-xl font-bold text-slate-800">{stats.total_spk}</p>
+              </div>
             </div>
-            <div>
-              <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider">Total SPK</p>
-              <p className="text-xl font-bold text-slate-800">{stats.total_spk}</p>
-            </div>
+            {dashboardFilter === 'spk' && (
+              <span className="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-semibold animate-pulse">
+                Active
+              </span>
+            )}
           </div>
 
           {/* Total SPH */}
-          <div className="flex items-center gap-3 p-4 rounded-xl border border-orange-100 bg-orange-50/20 shadow-sm transition-all duration-300 hover:shadow-md">
-            <div className="h-10 w-10 rounded-lg bg-orange-100 flex items-center justify-center text-orange-600 shrink-0">
-              <FileText className="h-5 w-5" />
+          <div
+            onClick={() => handleDashboardFilterClick('sph')}
+            className={cn(
+              "flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-orange-400 select-none",
+              dashboardFilter === 'sph' 
+                ? "border-orange-500 bg-orange-50/50 ring-2 ring-orange-500/20" 
+                : "border-orange-200 bg-white"
+            )}
+          >
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg bg-orange-100 flex items-center justify-center text-orange-600 shrink-0">
+                <FileText className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-orange-600 uppercase tracking-wider">Total SPH</p>
+                <p className="text-xl font-bold text-orange-800">{stats.total_sph}</p>
+              </div>
             </div>
-            <div>
-              <p className="text-[10px] font-bold text-orange-600 uppercase tracking-wider">Total SPH</p>
-              <p className="text-xl font-bold text-orange-800">{stats.total_sph}</p>
-            </div>
+            {dashboardFilter === 'sph' && (
+              <span className="text-[10px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-semibold animate-pulse">
+                Active
+              </span>
+            )}
           </div>
 
           {/* Selesai */}
-          <div className="flex items-center gap-3 p-4 rounded-xl border border-emerald-100 bg-emerald-50/20 shadow-sm transition-all duration-300 hover:shadow-md">
-            <div className="h-10 w-10 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
-              <CheckCircle2 className="h-5 w-5" />
+          <div
+            onClick={() => handleDashboardFilterClick('selesai')}
+            className={cn(
+              "flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-emerald-400 select-none",
+              dashboardFilter === 'selesai' 
+                ? "border-emerald-500 bg-emerald-50/50 ring-2 ring-emerald-500/20" 
+                : "border-emerald-200 bg-white"
+            )}
+          >
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
+                <CheckCircle2 className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Selesai</p>
+                <p className="text-xl font-bold text-emerald-800">{stats.selesai}</p>
+              </div>
             </div>
-            <div>
-              <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Selesai</p>
-              <p className="text-xl font-bold text-emerald-800">{stats.selesai}</p>
-            </div>
+            {dashboardFilter === 'selesai' && (
+              <span className="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-semibold animate-pulse">
+                Active
+              </span>
+            )}
           </div>
 
           {/* On Progress */}
-          <div className="flex items-center gap-3 p-4 rounded-xl border border-blue-100 bg-blue-50/20 shadow-sm transition-all duration-300 hover:shadow-md">
-            <div className="h-10 w-10 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 shrink-0">
-              <Activity className="h-5 w-5" />
+          <div
+            onClick={() => handleDashboardFilterClick('on_progress')}
+            className={cn(
+              "flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-blue-400 select-none",
+              dashboardFilter === 'on_progress' 
+                ? "border-blue-500 bg-blue-50/50 ring-2 ring-blue-500/20" 
+                : "border-blue-200 bg-white"
+            )}
+          >
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 shrink-0">
+                <Activity className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">On Progress</p>
+                <p className="text-xl font-bold text-blue-800">{stats.on_progress}</p>
+              </div>
             </div>
-            <div>
-              <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">On Progress</p>
-              <p className="text-xl font-bold text-blue-800">{stats.on_progress}</p>
-            </div>
+            {dashboardFilter === 'on_progress' && (
+              <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-semibold animate-pulse">
+                Active
+              </span>
+            )}
           </div>
 
           {/* SPK Belum Produksi */}
-          <div className="flex items-center gap-3 p-4 rounded-xl border border-amber-100 bg-amber-50/20 shadow-sm transition-all duration-300 hover:shadow-md">
-            <div className="h-10 w-10 rounded-lg bg-amber-100 flex items-center justify-center text-amber-600 shrink-0">
-              <Clock className="h-5 w-5" />
+          <div
+            onClick={() => handleDashboardFilterClick('belum_produksi')}
+            className={cn(
+              "flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-amber-400 select-none",
+              dashboardFilter === 'belum_produksi' 
+                ? "border-amber-500 bg-amber-50/50 ring-2 ring-amber-500/20" 
+                : "border-amber-200 bg-white"
+            )}
+          >
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg bg-amber-100 flex items-center justify-center text-amber-600 shrink-0">
+                <Clock className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wider">SPK Belum Produksi</p>
+                <p className="text-xl font-bold text-amber-800">{stats.belum_produksi}</p>
+              </div>
             </div>
-            <div>
-              <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wider">SPK Belum Produksi</p>
-              <p className="text-xl font-bold text-amber-800">{stats.belum_produksi}</p>
-            </div>
+            {dashboardFilter === 'belum_produksi' && (
+              <span className="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-semibold animate-pulse">
+                Active
+              </span>
+            )}
           </div>
 
           {/* Deadline Dekat */}
-          <div className="flex items-center gap-3 p-4 rounded-xl border border-orange-100 bg-orange-50/20 shadow-sm transition-all duration-300 hover:shadow-md">
-            <div className="h-10 w-10 rounded-lg bg-orange-100 flex items-center justify-center text-orange-600 shrink-0">
-              <AlertTriangle className="h-5 w-5" />
+          <div
+            onClick={() => handleDashboardFilterClick('deadline_dekat')}
+            className={cn(
+              "flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-orange-400 select-none",
+              dashboardFilter === 'deadline_dekat' 
+                ? "border-orange-500 bg-orange-50/50 ring-2 ring-orange-500/20" 
+                : "border-orange-200 bg-white"
+            )}
+          >
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg bg-orange-100 flex items-center justify-center text-orange-600 shrink-0">
+                <AlertTriangle className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-orange-600 uppercase tracking-wider">Deadline Dekat</p>
+                <p className="text-xl font-bold text-orange-800">{stats.deadline_dekat}</p>
+              </div>
             </div>
-            <div>
-              <p className="text-[10px] font-bold text-orange-600 uppercase tracking-wider">Deadline Dekat</p>
-              <p className="text-xl font-bold text-orange-800">{stats.deadline_dekat}</p>
-            </div>
+            {dashboardFilter === 'deadline_dekat' && (
+              <span className="text-[10px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-semibold animate-pulse">
+                Active
+              </span>
+            )}
           </div>
 
           {/* Overdue */}
-          <div className="flex items-center gap-3 p-4 rounded-xl border border-red-100 bg-red-50/20 shadow-sm transition-all duration-300 hover:shadow-md">
-            <div className="h-10 w-10 rounded-lg bg-red-100 flex items-center justify-center text-red-600 shrink-0">
-              <AlertCircle className="h-5 w-5" />
+          <div
+            onClick={() => handleDashboardFilterClick('overdue')}
+            className={cn(
+              "flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-red-400 select-none",
+              dashboardFilter === 'overdue' 
+                ? "border-red-500 bg-red-50/50 ring-2 ring-red-500/20" 
+                : "border-red-200 bg-white"
+            )}
+          >
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg bg-red-100 flex items-center justify-center text-red-600 shrink-0">
+                <AlertCircle className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-red-600 uppercase tracking-wider">Overdue</p>
+                <p className="text-xl font-bold text-red-800">{stats.overdue}</p>
+              </div>
             </div>
-            <div>
-              <p className="text-[10px] font-bold text-red-600 uppercase tracking-wider">Overdue</p>
-              <p className="text-xl font-bold text-red-800">{stats.overdue}</p>
-            </div>
+            {dashboardFilter === 'overdue' && (
+              <span className="text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-semibold animate-pulse">
+                Active
+              </span>
+            )}
           </div>
 
           {/* Urgent */}
-          <div className="flex items-center gap-3 p-4 rounded-xl border border-rose-100 bg-rose-50/20 shadow-sm transition-all duration-300 hover:shadow-md">
-            <div className="h-10 w-10 rounded-lg bg-rose-100 flex items-center justify-center text-rose-600 shrink-0">
-              <Zap className="h-5 w-5" />
+          <div
+            onClick={() => handleDashboardFilterClick('urgent')}
+            className={cn(
+              "flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-rose-400 select-none",
+              dashboardFilter === 'urgent' 
+                ? "border-rose-500 bg-rose-50/50 ring-2 ring-rose-500/20" 
+                : "border-rose-200 bg-white"
+            )}
+          >
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg bg-rose-100 flex items-center justify-center text-rose-600 shrink-0">
+                <Zap className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-rose-600 uppercase tracking-wider">Urgent</p>
+                <p className="text-xl font-bold text-rose-800">{stats.urgent}</p>
+              </div>
             </div>
-            <div>
-              <p className="text-[10px] font-bold text-rose-600 uppercase tracking-wider">Urgent</p>
-              <p className="text-xl font-bold text-rose-800">{stats.urgent}</p>
-            </div>
+            {dashboardFilter === 'urgent' && (
+              <span className="text-[10px] bg-rose-100 text-rose-700 px-2 py-0.5 rounded-full font-semibold animate-pulse">
+                Active
+              </span>
+            )}
           </div>
         </div>
       )}
