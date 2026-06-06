@@ -163,7 +163,7 @@ export function ProjectsV2Table({
   const [dokubahFilter, setDokubahFilter] = React.useState<'completed' | 'not_completed' | null>(null);
   const [stokMaterialFilter, setStokMaterialFilter] = React.useState<'completed' | 'not_completed' | null>(null);
   const [produksiFilter, setProduksiFilter] = React.useState<'completed' | 'not_completed' | null>(null);
-  const [orderStatusFilter, setOrderStatusFilter] = React.useState<'has_order' | 'tanpa_gambar' | 'belum_diorder' | null>(null);
+  const [orderStatusFilter, setOrderStatusFilter] = React.useState<'has_order' | 'tanpa_gambar' | 'sudah_diorder' | 'belum_diorder' | null>(null);
   const [dashboardFilter, setDashboardFilter] = React.useState<'spk' | 'sph' | 'selesai' | 'on_progress' | 'belum_produksi' | 'deadline_dekat' | 'overdue' | 'urgent' | null>(null);
 
   const handleDashboardFilterClick = (filter: 'spk' | 'sph' | 'selesai' | 'on_progress' | 'belum_produksi' | 'deadline_dekat' | 'overdue' | 'urgent' | null) => {
@@ -254,7 +254,7 @@ export function ProjectsV2Table({
     setPage(1);
   };
 
-  const handleOrderStatusFilterClick = (type: 'has_order' | 'tanpa_gambar' | 'belum_diorder') => {
+  const handleOrderStatusFilterClick = (type: 'has_order' | 'tanpa_gambar' | 'sudah_diorder' | 'belum_diorder') => {
     setOrderStatusFilter(orderStatusFilter === type ? null : type);
     setSpkFilterActive(false);
     setPoDivisiFilter(null);
@@ -483,7 +483,7 @@ export function ProjectsV2Table({
   return (
     <div className="space-y-6 w-full max-w-full overflow-hidden">
       {showEngineer && stats && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           {/* Total SPK */}
           <div
             onClick={() => handleFilterClick('spk')}
@@ -511,81 +511,43 @@ export function ProjectsV2Table({
           </div>
 
           {/* Order Gambar */}
-          <div
-            onClick={() => handleOrderStatusFilterClick('has_order')}
-            className={cn(
-              "flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-amber-400 select-none",
-              orderStatusFilter === 'has_order' 
-                ? "border-amber-500 bg-amber-50/50 ring-2 ring-amber-500/20" 
-                : "border-amber-200 bg-white"
-            )}
-          >
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-amber-100 flex items-center justify-center text-amber-600 shrink-0">
-                <Briefcase className="h-5 w-5" />
+          <div className="flex flex-col gap-2 p-4 rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md">
+            <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
+              <div className="h-6 w-6 rounded bg-amber-100 flex items-center justify-center text-amber-600 shrink-0">
+                <Briefcase className="h-3.5 w-3.5" />
               </div>
-              <div>
-                <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wider">Order Gambar</p>
-                <p className="text-xl font-bold text-slate-800">{stats.total_order}</p>
-              </div>
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Order Gambar</p>
             </div>
-            {orderStatusFilter === 'has_order' && (
-              <span className="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-semibold animate-pulse">
-                Active
-              </span>
-            )}
-          </div>
 
-          {/* Tanpa Gambar */}
-          <div
-            onClick={() => handleOrderStatusFilterClick('tanpa_gambar')}
-            className={cn(
-              "flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-emerald-400 select-none",
-              orderStatusFilter === 'tanpa_gambar' 
-                ? "border-emerald-500 bg-emerald-50/50 ring-2 ring-emerald-500/20" 
-                : "border-emerald-200 bg-white"
-            )}
-          >
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
-                <ImageIcon className="h-5 w-5" />
+            <div className="flex flex-row gap-1.5 mt-auto">
+              {/* Lengkap */}
+              <div
+                onClick={() => handleOrderStatusFilterClick('sudah_diorder')}
+                className={cn(
+                  "flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all",
+                  orderStatusFilter === 'sudah_diorder'
+                    ? "border-amber-500 bg-amber-50 text-amber-700 font-semibold"
+                    : "border-slate-100 hover:border-slate-300 text-slate-600"
+                )}
+              >
+                <span className="truncate mr-1">Lengkap</span>
+                <span className="font-bold">{(stats.total_order ?? 0) + (stats.tanpa_gambar ?? 0)}</span>
               </div>
-              <div>
-                <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Tanpa Gambar</p>
-                <p className="text-xl font-bold text-slate-800">{stats.tanpa_gambar}</p>
-              </div>
-            </div>
-            {orderStatusFilter === 'tanpa_gambar' && (
-              <span className="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-semibold animate-pulse">
-                Active
-              </span>
-            )}
-          </div>
 
-          {/* Belum Diorder */}
-          <div
-            onClick={() => handleOrderStatusFilterClick('belum_diorder')}
-            className={cn(
-              "flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-rose-400 select-none",
-              orderStatusFilter === 'belum_diorder' 
-                ? "border-rose-500 bg-rose-50/50 ring-2 ring-rose-500/20" 
-                : "border-rose-200 bg-white"
-            )}
-          >
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-rose-100 flex items-center justify-center text-rose-600 shrink-0">
-                <Clock className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-[10px] font-bold text-rose-600 uppercase tracking-wider">Belum Diorder</p>
-                <p className="text-xl font-bold text-slate-800">{stats.belum_diorder}</p>
+              {/* Belum Lengkap */}
+              <div
+                onClick={() => handleOrderStatusFilterClick('belum_diorder')}
+                className={cn(
+                  "flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all",
+                  orderStatusFilter === 'belum_diorder'
+                    ? "border-rose-500 bg-rose-50 text-rose-700 font-semibold"
+                    : "border-slate-100 hover:border-slate-300 text-slate-600"
+                )}
+              >
+                <span className="truncate mr-1">Belum</span>
+                <span className="font-bold">{stats.belum_diorder}</span>
               </div>
             </div>
-            {orderStatusFilter === 'belum_diorder' && (
-              <span className="text-[10px] bg-rose-100 text-rose-700 px-2 py-0.5 rounded-full font-semibold animate-pulse">
-                Active
-              </span>
-            )}
           </div>
         </div>
       )}
