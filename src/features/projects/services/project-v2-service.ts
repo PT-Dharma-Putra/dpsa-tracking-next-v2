@@ -177,9 +177,13 @@ export interface ProjectV2Stats {
     po_divisi_completed: number;
     po_divisi_not_completed: number;
     gambar_kerja_completed: number;
+    gambar_kerja_not_completed: number;
     dokubah_completed: number;
+    dokubah_not_completed: number;
     stok_material_completed: number;
+    stok_material_not_completed: number;
     produksi_completed: number;
+    produksi_not_completed: number;
     total_order: number;
     tanpa_gambar: number;
     belum_diorder: number;
