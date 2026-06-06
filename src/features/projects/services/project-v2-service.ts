@@ -199,6 +199,7 @@ interface GetProjectsV2Params {
     stok_material_status?: string;
     produksi_status?: string;
     order_status?: string;
+    dashboard_filter?: string;
 }
 
 export const projectV2Service = {
