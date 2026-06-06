@@ -726,6 +726,166 @@ export function ProjectsV2Table({
         </div>
       )}
 
+      {showProduksi && stats && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 w-full">
+          {/* Total Project */}
+          <div
+            onClick={() => handleDashboardFilterClick(null)}
+            className={cn(
+              "flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-slate-400 select-none",
+              dashboardFilter === null 
+                ? "border-slate-500 bg-slate-50 ring-2 ring-slate-500/20" 
+                : "border-slate-200 bg-white"
+            )}
+          >
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 shrink-0">
+                <Briefcase className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Total Project</p>
+                <p className="text-xl font-bold text-slate-800">{stats.total_project}</p>
+              </div>
+            </div>
+            {dashboardFilter === null && (
+              <span className="text-[10px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full font-semibold animate-pulse">
+                Active
+              </span>
+            )}
+          </div>
+
+          {/* Total SPK */}
+          <div
+            onClick={() => handleDashboardFilterClick('spk')}
+            className={cn(
+              "flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-indigo-400 select-none",
+              dashboardFilter === 'spk' 
+                ? "border-indigo-500 bg-indigo-50/50 ring-2 ring-indigo-500/20" 
+                : "border-indigo-200 bg-white"
+            )}
+          >
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600 shrink-0">
+                <FileText className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider">Total SPK</p>
+                <p className="text-xl font-bold text-slate-800">{stats.total_spk}</p>
+              </div>
+            </div>
+            {dashboardFilter === 'spk' && (
+              <span className="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-semibold animate-pulse">
+                Active
+              </span>
+            )}
+          </div>
+
+          {/* Deadline Terdekat */}
+          <div
+            onClick={() => handleDashboardFilterClick('deadline_dekat')}
+            className={cn(
+              "flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-amber-400 select-none",
+              dashboardFilter === 'deadline_dekat' 
+                ? "border-amber-500 bg-amber-50/50 ring-2 ring-amber-500/20" 
+                : "border-amber-200 bg-white"
+            )}
+          >
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg bg-amber-100 flex items-center justify-center text-amber-600 shrink-0">
+                <Clock className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wider">Deadline Dekat</p>
+                <p className="text-xl font-bold text-slate-800">{stats.deadline_dekat}</p>
+              </div>
+            </div>
+            {dashboardFilter === 'deadline_dekat' && (
+              <span className="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-semibold animate-pulse">
+                Active
+              </span>
+            )}
+          </div>
+
+          {/* Produksi Selesai */}
+          <div
+            onClick={() => handleDashboardFilterClick('selesai')}
+            className={cn(
+              "flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-emerald-400 select-none",
+              dashboardFilter === 'selesai' 
+                ? "border-emerald-500 bg-emerald-50/50 ring-2 ring-emerald-500/20" 
+                : "border-emerald-200 bg-white"
+            )}
+          >
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
+                <CheckCircle2 className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Produksi Selesai</p>
+                <p className="text-xl font-bold text-slate-800">{stats.selesai}</p>
+              </div>
+            </div>
+            {dashboardFilter === 'selesai' && (
+              <span className="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-semibold animate-pulse">
+                Active
+              </span>
+            )}
+          </div>
+
+          {/* In Progress */}
+          <div
+            onClick={() => handleDashboardFilterClick('on_progress')}
+            className={cn(
+              "flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-blue-400 select-none",
+              dashboardFilter === 'on_progress' 
+                ? "border-blue-500 bg-blue-50/50 ring-2 ring-blue-500/20" 
+                : "border-blue-200 bg-white"
+            )}
+          >
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 shrink-0">
+                <Activity className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">In Progress</p>
+                <p className="text-xl font-bold text-slate-800">{stats.on_progress}</p>
+              </div>
+            </div>
+            {dashboardFilter === 'on_progress' && (
+              <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-semibold animate-pulse">
+                Active
+              </span>
+            )}
+          </div>
+
+          {/* Belum Produksi */}
+          <div
+            onClick={() => handleDashboardFilterClick('belum_produksi')}
+            className={cn(
+              "flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-rose-400 select-none",
+              dashboardFilter === 'belum_produksi' 
+                ? "border-rose-500 bg-rose-50/50 ring-2 ring-rose-500/20" 
+                : "border-rose-200 bg-white"
+            )}
+          >
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg bg-rose-100 flex items-center justify-center text-rose-600 shrink-0">
+                <Hammer className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-rose-600 uppercase tracking-wider">Belum Produksi</p>
+                <p className="text-xl font-bold text-slate-800">{stats.belum_produksi}</p>
+              </div>
+            </div>
+            {dashboardFilter === 'belum_produksi' && (
+              <span className="text-[10px] bg-rose-100 text-rose-700 px-2 py-0.5 rounded-full font-semibold animate-pulse">
+                Active
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
       {showAllDashboard && stats && (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-9 gap-4 w-full">
           {/* Total Project */}
@@ -966,7 +1126,7 @@ export function ProjectsV2Table({
 
       <div className={cn(
         "w-full max-w-full overflow-hidden",
-        (showAllDashboard || showPerencanaan || showEngineer) && "bg-white rounded-xl shadow-sm border border-neutral-200"
+        (showAllDashboard || showPerencanaan || showEngineer || showProduksi) && "bg-white rounded-xl shadow-sm border border-neutral-200"
       )}>
         <div className='flex flex-col gap-4 p-4 w-full max-w-full overflow-hidden'>
       <div className='flex flex-col sm:flex-row justify-between gap-4 items-start sm:items-center'>
@@ -1224,7 +1384,7 @@ export function ProjectsV2Table({
                 </>
               ) : (
                 <>
-                  {!showEngineer && <TableHead>Mkt</TableHead>}
+                  {!showEngineer && !showProduksi && <TableHead>Mkt</TableHead>}
                   <TableHead>Client</TableHead>
                   <TableHead>Nomor SPK</TableHead>
                   {showPiutang && <TableHead>Nominal</TableHead>}
@@ -1253,7 +1413,7 @@ export function ProjectsV2Table({
                       )}
                     </div>
                   </TableHead>
-                  {!showSPD && <TableHead>Nomor SPH</TableHead>}
+                  {!showSPD && !showProduksi && <TableHead>Nomor SPH</TableHead>}
                   <TableHead
                     className='cursor-pointer hover:bg-neutral-100 transition-colors group'
                     onClick={() => {
@@ -1459,7 +1619,7 @@ export function ProjectsV2Table({
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={showAllDashboard ? 12 : (showEngineer ? 17 : (showProduksi ? 15 : (showPiutang ? 13 : ((isMainProjectsV2Page || showPerencanaan) ? 20 : 18))))} className='h-32 text-center text-muted-foreground'>
+                <TableCell colSpan={showAllDashboard ? 12 : (showEngineer ? 17 : (showProduksi ? 13 : (showPiutang ? 13 : ((isMainProjectsV2Page || showPerencanaan) ? 20 : 18))))} className='h-32 text-center text-muted-foreground'>
                   <div className='flex items-center justify-center'>
                     <Loader2 className='h-6 w-6 animate-spin text-neutral-400' />
                   </div>
@@ -1468,7 +1628,7 @@ export function ProjectsV2Table({
             ) : projects.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={showAllDashboard ? 12 : (showEngineer ? 17 : (showProduksi ? 15 : (showPiutang ? 13 : ((isMainProjectsV2Page || showPerencanaan) ? 20 : 18))))}
+                  colSpan={showAllDashboard ? 12 : (showEngineer ? 17 : (showProduksi ? 13 : (showPiutang ? 13 : ((isMainProjectsV2Page || showPerencanaan) ? 20 : 18))))}
                   className='h-32 text-center text-muted-foreground'
                 >
                   No projects found.
@@ -1662,7 +1822,7 @@ export function ProjectsV2Table({
                      </>
                    ) : (
                      <>
-                        {!showAllDashboard && !showEngineer && <TableCell>{project.marketing?.name || '-'}</TableCell>}
+                        {!showAllDashboard && !showEngineer && !showProduksi && <TableCell>{project.marketing?.name || '-'}</TableCell>}
                         {!showAllDashboard && <TableCell className="font-semibold">{project.client?.name || '-'}</TableCell>}
                         <TableCell className='font-medium text-blue-600'>
                           {project.spk_number || project.spk?.nomor_spk || '-'}
@@ -1677,7 +1837,7 @@ export function ProjectsV2Table({
                              ? format(new Date(project.spk.tanggal_masuk), 'dd MMM yyyy')
                              : '-'}
                          </TableCell>
-                        {!showSPD && (
+                        {!showSPD && !showProduksi && (
                           <TableCell>
                             {project.sph?.nomor_sph || '-'}
                           </TableCell>
