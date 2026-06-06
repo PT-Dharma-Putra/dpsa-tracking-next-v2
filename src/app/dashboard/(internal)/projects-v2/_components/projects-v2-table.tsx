@@ -522,30 +522,30 @@ export function ProjectsV2Table({
             <div className="flex flex-row gap-1.5 mt-auto">
               {/* Lengkap */}
               <div
-                onClick={() => handleOrderStatusFilterClick('sudah_diorder')}
+                onClick={() => handleGambarKerjaFilterClick('completed')}
                 className={cn(
                   "flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all",
-                  orderStatusFilter === 'sudah_diorder'
+                  gambarKerjaFilter === 'completed'
                     ? "border-amber-500 bg-amber-50 text-amber-700 font-semibold"
                     : "border-slate-100 hover:border-slate-300 text-slate-600"
                 )}
               >
                 <span className="truncate mr-1">Lengkap</span>
-                <span className="font-bold">{(stats.total_order ?? 0) + (stats.tanpa_gambar ?? 0)}</span>
+                <span className="font-bold">{stats.gambar_kerja_completed}</span>
               </div>
 
               {/* Belum Lengkap */}
               <div
-                onClick={() => handleOrderStatusFilterClick('belum_diorder')}
+                onClick={() => handleGambarKerjaFilterClick('not_completed')}
                 className={cn(
                   "flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all",
-                  orderStatusFilter === 'belum_diorder'
+                  gambarKerjaFilter === 'not_completed'
                     ? "border-rose-500 bg-rose-50 text-rose-700 font-semibold"
                     : "border-slate-100 hover:border-slate-300 text-slate-600"
                 )}
               >
-                <span className="truncate mr-1">Belum</span>
-                <span className="font-bold">{stats.belum_diorder}</span>
+                <span className="truncate mr-1">Belum Lengkap</span>
+                <span className="font-bold">{stats.gambar_kerja_not_completed}</span>
               </div>
             </div>
           </div>
