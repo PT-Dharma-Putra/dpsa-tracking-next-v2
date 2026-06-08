@@ -438,19 +438,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild
-                    tooltip='User Management'
-                    isActive={isActive('/dashboard/master-data/kategori-barang')}
-                  >
-                    <Link href='/dashboard/master-data/kategori-barang'>  
-                      <Users />
-                      <span>Kategori Barang</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    asChild
                     tooltip='Kategori MDL'
                     isActive={isActive('/dashboard/master-data/kategori-mdl')}
                   >
