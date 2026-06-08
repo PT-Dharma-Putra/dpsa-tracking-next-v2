@@ -1,0 +1,345 @@
+"use client"
+
+import * as React from "react"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { Plus, Pencil, Trash2, Loader2, Tags, Search, ChevronLeft, ChevronRight, Download, Upload } from "lucide-react"
+import { toast } from "sonner"
+import * as XLSX from "xlsx"
+
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+
+import { KategoriBarangService, KategoriBarang } from "@/features/kategori-barang/services/kategori-service"
+import { KategoriFormDialog } from "./kategori-form-dialog"
+import { KategoriImportDialog } from "./kategori-import-dialog"
+
+export function KategoriTable() {
+    const queryClient = useQueryClient()
+    const [page, setPage] = React.useState(1)
+    const [search, setSearch] = React.useState("")
+    const [isFormOpen, setIsFormOpen] = React.useState(false)
+    const [isImportOpen, setIsImportOpen] = React.useState(false)
+    const [selectedKategori, setSelectedKategori] = React.useState<KategoriBarang | null>(null)
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false)
+    const [kategoriToDelete, setKategoriToDelete] = React.useState<KategoriBarang | null>(null)
+
+    const { data: kategoriResponse, isLoading } = useQuery({
+        queryKey: ["kategori-barang", page, search],
+        queryFn: () => KategoriBarangService.getKategori({ page, search }),
+    })
+
+    const kategoriList = kategoriResponse?.data || []
+    const meta = kategoriResponse?.meta || { current_page: 1, last_page: 1, total: 0 }
+
+    const deleteMutation = useMutation({
+        mutationFn: (id: number) => KategoriBarangService.deleteKategori(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["kategori-barang"] })
+            toast.success("Kategori barang berhasil dihapus")
+            setIsDeleteDialogOpen(false)
+            setKategoriToDelete(null)
+        },
+        onError: () => {
+            toast.error("Gagal menghapus kategori barang")
+        }
+    })
+
+    const handleEdit = (kategori: KategoriBarang) => {
+        setSelectedKategori(kategori)
+        setIsFormOpen(true)
+    }
+
+    const handleDelete = (kategori: KategoriBarang) => {
+        setKategoriToDelete(kategori)
+        setIsDeleteDialogOpen(true)
+    }
+
+    const handleCreate = () => {
+        setSelectedKategori(null)
+        setIsFormOpen(true)
+    }
+
+    const [isExporting, setIsExporting] = React.useState(false)
+
+    const handleExportExcel = async () => {
+        if (isExporting) return
+        setIsExporting(true)
+        try {
+            // Fetch all items from the database (per_page = -1 ignores limit)
+            const response = await KategoriBarangService.getKategori({ per_page: -1, search })
+            const allData = response.data || []
+            
+            if (allData.length === 0) {
+                toast.error("Tidak ada data untuk diexport")
+                setIsExporting(false)
+                return
+            }
+
+            // Sort by ID ascending (id terkecil)
+            const sortedData = [...allData].sort((a, b) => a.id - b.id);
+
+            // Map data to a clean object structure for Excel headers
+            const excelData = sortedData.map((kategori, index) => ({
+                "No": index + 1,
+                "ID": kategori.id,
+                "Nama Kategori": kategori.nama,
+                "Kode Kategori": kategori.kode
+            }))
+
+            // Create Worksheet & Workbook
+            const worksheet = XLSX.utils.json_to_sheet(excelData)
+            const workbook = XLSX.utils.book_new()
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Kategori Barang")
+
+            // Adjust column widths for professional look
+            const maxNameLen = Math.max(...excelData.map(d => d["Nama Kategori"].length), 15)
+            const maxCodeLen = Math.max(...excelData.map(d => d["Kode Kategori"].length), 15)
+            worksheet["!cols"] = [
+                { wch: 6 },  // No
+                { wch: 6 },  // ID
+                { wch: maxNameLen + 4 }, // Nama Kategori
+                { wch: maxCodeLen + 4 }, // Kode Kategori
+            ]
+
+            // Write and download
+            XLSX.writeFile(workbook, "Data_Kategori_Barang.xlsx")
+            toast.success("Excel berhasil didownload")
+        } catch (error) {
+            console.error("Failed to export excel:", error)
+            toast.error("Gagal mengexport data Excel")
+        } finally {
+            setIsExporting(false)
+        }
+    }
+
+    return (
+        <div className="p-6 space-y-4">
+            {/* Header */}
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <div className="h-9 w-9 rounded-lg bg-orange-100 flex items-center justify-center">
+                        <Tags className="h-5 w-5 text-orange-600" />
+                    </div>
+                    <div>
+                        <p className="text-sm font-semibold text-neutral-800">Daftar Kategori Barang</p>
+                        <p className="text-xs text-muted-foreground">{meta.total} kategori terdaftar</p>
+                    </div>
+                </div>
+                <div className="flex items-center gap-2">
+                    <Button onClick={handleCreate} className="bg-orange-600 hover:bg-orange-700 text-white">
+                        <Plus className="mr-2 h-4 w-4" />
+                        Tambah Kategori
+                    </Button>
+                    <Button 
+                        onClick={handleExportExcel} 
+                        variant="outline" 
+                        disabled={isExporting}
+                        className="border-orange-200 text-orange-700 hover:bg-orange-50 hover:text-orange-800"
+                    >
+                        {isExporting ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                            <Download className="mr-2 h-4 w-4" />
+                        )}
+                        Export Excel
+                    </Button>
+                    <Button 
+                        onClick={() => setIsImportOpen(true)} 
+                        variant="outline" 
+                        className="border-orange-200 text-orange-700 hover:bg-orange-50 hover:text-orange-800"
+                    >
+                        <Upload className="mr-2 h-4 w-4" />
+                        Import Excel
+                    </Button>
+                </div>
+            </div>
+
+            {/* Search */}
+            <div className="relative max-w-sm">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                    placeholder="Cari kategori..."
+                    value={search}
+                    onChange={e => {
+                        setSearch(e.target.value)
+                        setPage(1) // Reset to first page on search
+                    }}
+                    className="pl-9 bg-neutral-50 border-neutral-200 focus:bg-white"
+                />
+            </div>
+
+            {/* Table */}
+            <div className="rounded-xl border border-neutral-200 overflow-hidden shadow-sm">
+                <Table>
+                    <TableHeader className="bg-neutral-50/80">
+                        <TableRow>
+                            <TableHead className="w-[50px]">#</TableHead>
+                            <TableHead>Nama Kategori</TableHead>
+                            <TableHead>Kode</TableHead>
+                            <TableHead>Tanggal Dibuat</TableHead>
+                            <TableHead className="w-[120px] text-right">Aksi</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {isLoading ? (
+                            <TableRow>
+                                <TableCell colSpan={5} className="h-32 text-center">
+                                    <Loader2 className="h-6 w-6 animate-spin mx-auto text-neutral-400" />
+                                </TableCell>
+                            </TableRow>
+                        ) : kategoriList.length === 0 ? (
+                            <TableRow>
+                                <TableCell colSpan={5} className="h-32 text-center text-muted-foreground text-sm">
+                                    {search ? "Tidak ada kategori yang cocok." : "Belum ada kategori. Klik 'Tambah Kategori' untuk memulai."}
+                                </TableCell>
+                            </TableRow>
+                        ) : (
+                            kategoriList.map((kategori: KategoriBarang, index: number) => (
+                                <TableRow key={kategori.id} className="hover:bg-neutral-50/50 transition-colors">
+                                    <TableCell className="font-medium text-muted-foreground">{(meta.current_page - 1) * 10 + index + 1}</TableCell>
+                                    <TableCell>
+                                        <span className="font-semibold text-neutral-900">{kategori.nama}</span>
+                                    </TableCell>
+                                    <TableCell>
+                                        <span className="font-mono bg-neutral-100 text-neutral-700 px-2 py-1 rounded text-xs">
+                                            {kategori.kode}
+                                        </span>
+                                    </TableCell>
+                                    <TableCell className="text-xs text-neutral-600">
+                                        {kategori.created_at ? new Date(kategori.created_at).toLocaleDateString("id-ID", {
+                                            day: "numeric",
+                                            month: "long",
+                                            year: "numeric",
+                                            hour: "2-digit",
+                                            minute: "2-digit"
+                                        }) : "-"}
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        <div className="flex items-center justify-end gap-1">
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-8 w-8 hover:bg-blue-50 hover:text-blue-600"
+                                                onClick={() => handleEdit(kategori)}
+                                            >
+                                                <Pencil className="h-4 w-4" />
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-8 w-8 hover:bg-red-50 hover:text-red-600"
+                                                onClick={() => handleDelete(kategori)}
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    </TableCell>
+                                </TableRow>
+                            ))
+                        )}
+                    </TableBody>
+                </Table>
+            </div>
+
+            {/* Pagination */}
+            <div className="flex items-center justify-between pt-2">
+                <p className="text-xs text-muted-foreground">
+                    Menampilkan {(meta.current_page - 1) * 10 + 1} sampai {Math.min(meta.current_page * 10, meta.total)} dari {meta.total} data
+                </p>
+                <div className="flex items-center gap-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPage(p => Math.max(1, p - 1))}
+                        disabled={meta.current_page === 1 || isLoading}
+                        className="h-8 w-8 p-0"
+                    >
+                        <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <div className="flex items-center gap-1">
+                        {Array.from({ length: meta.last_page }, (_, i) => i + 1)
+                            .filter(p => p === 1 || p === meta.last_page || Math.abs(p - meta.current_page) <= 1)
+                            .map((p, i, arr) => (
+                                <React.Fragment key={p}>
+                                    {i > 0 && arr[i-1] !== p - 1 && <span className="text-neutral-300">...</span>}
+                                    <Button
+                                        variant={p === meta.current_page ? "default" : "outline"}
+                                        size="sm"
+                                        onClick={() => setPage(p)}
+                                        className={`h-8 w-8 p-0 text-xs ${p === meta.current_page ? "bg-orange-600 hover:bg-orange-700" : ""}`}
+                                    >
+                                        {p}
+                                    </Button>
+                                </React.Fragment>
+                            ))}
+                    </div>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPage(p => Math.min(meta.last_page, p + 1))}
+                        disabled={meta.current_page === meta.last_page || isLoading}
+                        className="h-8 w-8 p-0"
+                    >
+                        <ChevronRight className="h-4 w-4" />
+                    </Button>
+                </div>
+            </div>
+
+            {/* Form Dialog */}
+            <KategoriFormDialog
+                open={isFormOpen}
+                onOpenChange={(open) => {
+                    setIsFormOpen(open)
+                    if (!open) setSelectedKategori(null)
+                }}
+                kategori={selectedKategori}
+            />
+
+            {/* Import Dialog */}
+            <KategoriImportDialog
+                open={isImportOpen}
+                onOpenChange={setIsImportOpen}
+            />
+
+            {/* Delete Confirm Dialog */}
+            <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Hapus Kategori Barang</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Apakah Anda yakin ingin menghapus kategori barang <strong>"{kategoriToDelete?.nama}"</strong>? Tindakan ini tidak dapat dibatalkan.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Batal</AlertDialogCancel>
+                        <AlertDialogAction
+                            className="bg-red-600 hover:bg-red-700 text-white"
+                            onClick={() => kategoriToDelete && deleteMutation.mutate(kategoriToDelete.id)}
+                        >
+                            {deleteMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                            Hapus
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        </div>
+    )
+}
