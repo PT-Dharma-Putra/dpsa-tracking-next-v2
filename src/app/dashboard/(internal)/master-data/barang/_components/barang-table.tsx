@@ -36,10 +36,11 @@ export function BarangTable() {
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false)
     const [barangToDelete, setBarangToDelete] = React.useState<Barang | null>(null)
     const [isExporting, setIsExporting] = React.useState(false)
+    const [showDuplicates, setShowDuplicates] = React.useState(false)
 
     const { data: barangResponse, isLoading } = useQuery({
-        queryKey: ["barang", page, search],
-        queryFn: () => BarangService.getBarang({ page, search }),
+        queryKey: ["barang", page, search, showDuplicates],
+        queryFn: () => BarangService.getBarang({ page, search, show_duplicates: showDuplicates }),
     })
 
     const barangList = barangResponse?.data || []
@@ -54,6 +55,17 @@ export function BarangTable() {
             setBarangToDelete(null)
         },
         onError: () => toast.error("Gagal menghapus barang"),
+    })
+
+    const deduplicateMutation = useMutation({
+        mutationFn: () => BarangService.deduplicateBarang(),
+        onSuccess: (res: any) => {
+            queryClient.invalidateQueries({ queryKey: ["barang"] })
+            toast.success(res.message || "Item duplikat berhasil dibersihkan")
+        },
+        onError: (err: any) => {
+            toast.error(err.response?.data?.message || "Gagal membersihkan item duplikat")
+        }
     })
 
     const handleEdit = (b: Barang) => { setSelectedBarang(b); setIsFormOpen(true) }
@@ -133,13 +145,35 @@ export function BarangTable() {
                 </div>
             </div>
 
-            {/* Search */}
-            <div className="relative max-w-sm">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Cari nama, kode, spesifikasi..."
-                    value={search}
-                    onChange={(e) => { setSearch(e.target.value); setPage(1) }}
-                    className="pl-9" />
+            {/* Search and Duplicate Actions */}
+            <div className="flex items-center gap-2 flex-wrap">
+                <div className="relative max-w-sm flex-1 min-w-[240px]">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input placeholder="Cari nama, kode, spesifikasi..."
+                        value={search}
+                        onChange={(e) => { setSearch(e.target.value); setPage(1) }}
+                        className="pl-9" />
+                </div>
+                <Button 
+                    variant={showDuplicates ? "default" : "outline"}
+                    onClick={() => { setShowDuplicates(!showDuplicates); setPage(1) }}
+                    className={showDuplicates ? "bg-orange-600 hover:bg-orange-700 text-white" : "border-neutral-200 text-neutral-700 hover:bg-neutral-50"}
+                >
+                    Item Duplikat
+                </Button>
+                <Button 
+                    variant="outline"
+                    onClick={() => {
+                        if (confirm("Apakah Anda yakin ingin menghapus salinan duplikat? Aksi ini akan menyisakan satu item unik untuk setiap nama barang yang sama.")) {
+                            deduplicateMutation.mutate();
+                        }
+                    }}
+                    disabled={deduplicateMutation.isPending}
+                    className="border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800"
+                >
+                    {deduplicateMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Hapus Item Duplikat
+                </Button>
             </div>
 
             {/* Table - scrollable horizontally */}

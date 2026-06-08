@@ -21,6 +21,7 @@ export const BarangService = {
         page?: number;
         search?: string;
         per_page?: number;
+        show_duplicates?: boolean;
     }): Promise<{ data: Barang[]; meta: any }> => {
         const response = await apiClient.get("/barang", { params });
         return response.data;
@@ -41,6 +42,10 @@ export const BarangService = {
         items: Partial<Omit<Barang, "id" | "created_at" | "updated_at">>[]
     ) => {
         const response = await apiClient.post("/barang/bulk", { items });
+        return response.data;
+    },
+    deduplicateBarang: async () => {
+        const response = await apiClient.post("/barang/deduplicate");
         return response.data;
     },
 };
