@@ -443,6 +443,19 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   >
                     <Link href='/dashboard/master-data/kategori-barang'>  
                       <Users />
+                      <span>Kategori Barang</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    tooltip='Kategori MDL'
+                    isActive={isActive('/dashboard/master-data/kategori-mdl')}
+                  >
+                    <Link href='/dashboard/master-data/kategori-mdl'>  
+                      <Users />
                       <span>Kategori MDL</span>
                     </Link>
                   </SidebarMenuButton>
@@ -486,6 +499,20 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
+
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    tooltip='MDL V2'
+                    isActive={isActive('/dashboard/master-data/mdl-v2')}
+                  >
+                    <Link href='/dashboard/master-data/mdl-v2'>  
+                      <Users />
+                      <span>MDL V2</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
