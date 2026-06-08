@@ -987,7 +987,7 @@ export default function DesignerDetailPage() {
                                         <TableCell className='font-bold text-blue-600 text-xs'>
                                             {item.volume || '-'}
                                         </TableCell>
-                                        <TableCell className='text-[10px] text-muted-foreground whitespace-nowrap'>
+                                        <TableCell className='text-xs text-muted-foreground whitespace-nowrap'>
                                             {item.panjang || '-'}x{item.lebar || '-'}x
                                             {item.tinggi || '-'} {item.satuan}
                                         </TableCell>

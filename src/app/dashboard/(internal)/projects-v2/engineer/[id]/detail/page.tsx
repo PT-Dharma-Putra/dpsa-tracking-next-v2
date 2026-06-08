@@ -837,7 +837,7 @@ export default function EngineerDetailPage() {
                                                     <span className='text-[10px] text-muted-foreground uppercase tracking-tight'>{item.material_utama}</span>
                                                 </div>
                                             </TableCell>
-                                            <TableCell className='text-xs text-neutral-600 max-w-[160px]'>
+                                            <TableCell className='text-sm text-neutral-600 max-w-[160px]'>
                                                 {item.keterangan ? (
                                                     <span className='line-clamp-2' title={item.keterangan}>{item.keterangan}</span>
                                                 ) : (
@@ -854,10 +854,10 @@ export default function EngineerDetailPage() {
                                                     )}
                                                 </div>
                                             </TableCell>
-                                            <TableCell className='text-center text-[10px] tabular-nums text-neutral-600'>
+                                            <TableCell className='text-center text-sm tabular-nums text-neutral-600'>
                                                 {item.panjang || 0}x{item.lebar || 0}x{item.tinggi || 0}
                                             </TableCell>
-                                            <TableCell className='text-center text-[10px] tabular-nums text-neutral-600'>
+                                            <TableCell className='text-center text-sm tabular-nums text-neutral-600'>
                                                 {item.volume || 0}
                                             </TableCell>
                                             <TableCell className='text-center'>
