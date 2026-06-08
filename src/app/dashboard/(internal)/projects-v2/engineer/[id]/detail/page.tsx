@@ -855,7 +855,7 @@ export default function EngineerDetailPage() {
                                                 </div>
                                             </TableCell>
                                             <TableCell className='text-center text-sm tabular-nums text-neutral-600'>
-                                                {item.panjang || 0}x{item.lebar || 0}x{item.tinggi || 0}
+                                                {item.panjang || 0} x {item.lebar || 0} x {item.tinggi || 0}
                                             </TableCell>
                                             <TableCell className='text-center text-sm tabular-nums text-neutral-600'>
                                                 {item.volume || 0}
