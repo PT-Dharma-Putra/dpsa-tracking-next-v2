@@ -69,6 +69,7 @@ import { toast } from "sonner"
 
 import { projectV2Service, ProjectItemV2, TahapDesign, DesignProgres } from "@/features/projects/services/project-v2-service"
 import { ProjectItemFormDialog } from "../../../_components/project-item-form-dialog"
+import { MdlCatalogModal } from "../../../_components/mdl-catalog-modal"
 import { Badge } from "@/components/ui/badge"
 
 export default function DesignerDetailPage() {
@@ -81,6 +82,7 @@ export default function DesignerDetailPage() {
     const [selectedItem, setSelectedItem] = React.useState<ProjectItemV2 | null>(null)
     const [isItemDeleteDialogOpen, setIsItemDeleteDialogOpen] = React.useState(false)
     const [itemToDelete, setItemToDelete] = React.useState<ProjectItemV2 | null>(null)
+    const [isMdlCatalogOpen, setIsMdlCatalogOpen] = React.useState(false)
 
     // Data Queries
     const { data: project, isLoading: isLoadingProject } = useQuery({
@@ -928,6 +930,14 @@ export default function DesignerDetailPage() {
                         <Package className='h-5 w-5 text-neutral-400' />
                         Project Items
                     </h2>
+                    <Button
+                        onClick={() => setIsMdlCatalogOpen(true)}
+                        className='bg-orange-600 hover:bg-orange-700 text-white h-8 text-xs px-3'
+                        size='sm'
+                    >
+                        <Plus className='mr-1.5 h-3.5 w-3.5' />
+                        Add Item V2
+                    </Button>
                 </div>
 
                 <div className='rounded-xl border border-neutral-200 bg-white overflow-hidden shadow-sm'>
@@ -1008,6 +1018,13 @@ export default function DesignerDetailPage() {
                 onOpenChange={setIsItemFormOpen} 
                 projectId={projectId}
                 item={selectedItem}
+            />
+
+            {/* MDL Catalog Modal */}
+            <MdlCatalogModal
+                isOpen={isMdlCatalogOpen}
+                onClose={() => setIsMdlCatalogOpen(false)}
+                projectId={projectId}
             />
 
             {/* Same Delete Dialog as before */}

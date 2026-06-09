@@ -17,7 +17,15 @@ export interface Mdl {
 }
 
 export const MdlService = {
-    getMdl: async (params?: { page?: number; search?: string; per_page?: number }): Promise<{ data: Mdl[]; meta: any }> => {
+    getMdl: async (params?: {
+        page?: number;
+        search?: string;
+        per_page?: number;
+        lantai?: string;
+        kategori_mdl_id?: number;
+        sub_kategori_mdl_id?: number;
+        lokasi_mdl_id?: number;
+    }): Promise<{ data: Mdl[]; meta: any }> => {
         const response = await apiClient.get("/mdl-v2", { params });
         return response.data;
     },
