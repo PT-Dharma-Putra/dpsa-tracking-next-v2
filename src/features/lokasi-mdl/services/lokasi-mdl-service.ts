@@ -9,7 +9,7 @@ export interface LokasiMDL {
 }
 
 export const LokasiMDLService = {
-    getLokasi: async (params?: { page?: number; search?: string; per_page?: number }): Promise<{ data: LokasiMDL[]; meta: any }> => {
+    getLokasi: async (params?: { page?: number; search?: string; per_page?: number; show_duplicates?: boolean }): Promise<{ data: LokasiMDL[]; meta: any }> => {
         const response = await apiClient.get("/lokasi-mdl", { params });
         return response.data;
     },
@@ -27,6 +27,10 @@ export const LokasiMDLService = {
     },
     importLokasi: async (items: { nama: string; kode: string }[]) => {
         const response = await apiClient.post("/lokasi-mdl/bulk", { items });
+        return response.data;
+    },
+    deduplicateLokasi: async () => {
+        const response = await apiClient.post("/lokasi-mdl/deduplicate");
         return response.data;
     },
 };

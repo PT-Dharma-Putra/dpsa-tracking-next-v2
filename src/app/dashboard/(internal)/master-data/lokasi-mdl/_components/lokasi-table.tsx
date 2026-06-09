@@ -40,10 +40,11 @@ export function LokasiTable() {
     const [selectedLokasi, setSelectedLokasi] = React.useState<LokasiMDL | null>(null)
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false)
     const [lokasiToDelete, setLokasiToDelete] = React.useState<LokasiMDL | null>(null)
+    const [showDuplicates, setShowDuplicates] = React.useState(false)
 
     const { data: lokasiResponse, isLoading } = useQuery({
-        queryKey: ["lokasi-mdl", page, search],
-        queryFn: () => LokasiMDLService.getLokasi({ page, search }),
+        queryKey: ["lokasi-mdl", page, search, showDuplicates],
+        queryFn: () => LokasiMDLService.getLokasi({ page, search, show_duplicates: showDuplicates }),
     })
 
     const lokasiList = lokasiResponse?.data || []
@@ -76,6 +77,17 @@ export function LokasiTable() {
         setSelectedLokasi(null)
         setIsFormOpen(true)
     }
+
+    const deduplicateMutation = useMutation({
+        mutationFn: () => LokasiMDLService.deduplicateLokasi(),
+        onSuccess: (res: any) => {
+            queryClient.invalidateQueries({ queryKey: ["lokasi-mdl"] })
+            toast.success(res.message || "Item duplikat berhasil dibersihkan")
+        },
+        onError: (err: any) => {
+            toast.error(err.response?.data?.message || "Gagal membersihkan item duplikat")
+        },
+    })
 
     const [isExporting, setIsExporting] = React.useState(false)
 
@@ -174,9 +186,9 @@ export function LokasiTable() {
                 </div>
             </div>
 
-            {/* Filter / Search */}
-            <div className="flex items-center gap-2 max-w-sm">
-                <div className="relative flex-1">
+            {/* Filter / Search + Duplicate Actions */}
+            <div className="flex items-center gap-2 flex-wrap">
+                <div className="relative flex-1 min-w-[240px] max-w-sm">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
                         placeholder="Cari nama atau kode..."
@@ -188,6 +200,26 @@ export function LokasiTable() {
                         className="pl-9"
                     />
                 </div>
+                <Button
+                    variant={showDuplicates ? "default" : "outline"}
+                    onClick={() => { setShowDuplicates(!showDuplicates); setPage(1) }}
+                    className={showDuplicates ? "bg-orange-600 hover:bg-orange-700 text-white" : "border-neutral-200 text-neutral-700 hover:bg-neutral-50"}
+                >
+                    Item Duplikat
+                </Button>
+                <Button
+                    variant="outline"
+                    onClick={() => {
+                        if (confirm("Apakah Anda yakin ingin menghapus salinan duplikat? Aksi ini akan menyisakan satu item unik untuk setiap nama lokasi yang sama.")) {
+                            deduplicateMutation.mutate()
+                        }
+                    }}
+                    disabled={deduplicateMutation.isPending}
+                    className="border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800"
+                >
+                    {deduplicateMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Hapus Item Duplikat
+                </Button>
             </div>
 
             {/* Table */}

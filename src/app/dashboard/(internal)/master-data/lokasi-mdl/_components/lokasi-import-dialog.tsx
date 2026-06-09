@@ -36,8 +36,17 @@ export function LokasiImportDialog({ open, onOpenChange }: LokasiImportDialogPro
         }
     }, [open])
 
+    const generateKodeFromNama = (nama: string): string => {
+        // Generate kode from initials of each word in nama, uppercased
+        return nama
+            .trim()
+            .split(/\s+/)
+            .map(word => word.charAt(0).toUpperCase())
+            .join("")
+    }
+
     const handleDownloadTemplate = () => {
-        const headers = [["nama", "kode"]]
+        const headers = [["nama", "kode (opsional, jika kosong akan digenerate otomatis)"]]
         const worksheet = XLSX.utils.aoa_to_sheet(headers)
         const workbook = XLSX.utils.book_new()
         XLSX.utils.book_append_sheet(workbook, worksheet, "Template Lokasi")
@@ -90,15 +99,21 @@ export function LokasiImportDialog({ open, onOpenChange }: LokasiImportDialogPro
                 // Normalisasi nama kolom dan ambil datanya
                 const items = json.map((row) => {
                     const namaVal = row.nama || row.Nama || row["nama lokasi"] || row["Nama Lokasi"] || ""
-                    const kodeVal = row.kode || row.Kode || row["kode lokasi"] || row["Kode Lokasi"] || ""
+                    const rawKode = row.kode || row.Kode || row["kode lokasi"] || row["Kode Lokasi"] || ""
+                    const namaStr = String(namaVal).trim()
+                    const kodeStr = String(rawKode).trim()
+
+                    // Auto-generate kode dari inisial nama jika kosong
+                    const finalKode = kodeStr !== "" ? kodeStr : generateKodeFromNama(namaStr)
+
                     return {
-                        nama: String(namaVal).trim(),
-                        kode: String(kodeVal).trim(),
+                        nama: namaStr,
+                        kode: finalKode,
                     }
-                }).filter(item => item.nama && item.kode)
+                }).filter(item => item.nama)
 
                 if (items.length === 0) {
-                    toast.error("Format data di dalam Excel tidak sesuai (pastikan kolom 'nama' dan 'kode' terisi)")
+                    toast.error("Format data di dalam Excel tidak sesuai (pastikan kolom 'nama' terisi)")
                     setIsLoadingFile(false)
                     return
                 }
@@ -122,7 +137,7 @@ export function LokasiImportDialog({ open, onOpenChange }: LokasiImportDialogPro
                     <DialogHeader>
                         <DialogTitle>Import Lokasi MDL</DialogTitle>
                         <DialogDescription>
-                            Import data lokasi MDL secara massal menggunakan file Excel (.xlsx atau .xls).
+                            Import data lokasi MDL secara massal menggunakan file Excel (.xlsx atau .xls). Kolom <strong>kode</strong> bersifat opsional — jika kosong akan digenerate otomatis dari inisial nama.
                         </DialogDescription>
                     </DialogHeader>
                     
