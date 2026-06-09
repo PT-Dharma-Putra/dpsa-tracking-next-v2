@@ -109,6 +109,7 @@ export function MdlTable() {
                 "Lokasi MDL Kode": item.lokasi_mdl?.kode || "-",
                 "Nama Barang": item.barang?.nama || "-",
                 "Kode Barang": item.barang?.kode || "-",
+                "Harga Barang": item.barang?.harga || "-",
                 "Kode MDL": item.kode_mdl || "-"
             }))
 

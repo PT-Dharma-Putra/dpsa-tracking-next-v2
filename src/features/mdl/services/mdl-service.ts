@@ -11,7 +11,7 @@ export interface Mdl {
     kategori_mdl?: { id: number; nama: string; kode: string } | null;
     sub_kategori_mdl?: { id: number; nama: string; kode: string } | null;
     lokasi_mdl?: { id: number; nama: string; kode: string } | null;
-    barang?: { id: number; nama: string; kode: string } | null;
+    barang?: { id: number; nama: string; kode: string; harga?: number } | null;
     created_at?: string;
     updated_at?: string;
 }
