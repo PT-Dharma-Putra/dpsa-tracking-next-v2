@@ -4,6 +4,8 @@ export interface KategoriMDL {
     id: number;
     nama: string;
     kode: string;
+    spesifikasi?: string | null;
+    dimensi?: string | null;
     created_at?: string;
     updated_at?: string;
 }
