@@ -17,6 +17,10 @@ export interface Mdl {
 }
 
 export const MdlService = {
+    getMdlById: async (id: number): Promise<Mdl> => {
+        const response = await apiClient.get(`/mdl-v2/${id}`);
+        return response.data;
+    },
     getMdl: async (params?: {
         page?: number;
         search?: string;
