@@ -99,6 +99,11 @@ export default function PrintSPHPage() {
     queryFn: () => projectV2Service.getProjectItems(projectId),
   });
 
+  const { data: profileRes } = useQuery({
+    queryKey: ['auth-profile'],
+    queryFn: () => authService.getProfile(),
+  });
+
   const isLoading = isLoadingProject || isLoadingItems;
 
   React.useEffect(() => {
@@ -155,6 +160,7 @@ export default function PrintSPHPage() {
   const nomorSPH = project.sph?.nomor_sph || '-';
   const tanggalDoc = format(new Date(), 'd MMMM yyyy', { locale: idLocale });
   const grandTotalWords = terbilang(grandTotal) + ' Rupiah';
+  const marketingName = project.marketing?.name || profileRes?.data?.name || '-';
 
   return (
     <div
@@ -385,7 +391,7 @@ export default function PrintSPHPage() {
               {(
                 [
                   ['Nomor', nomorSPH],
-                  ['Marketing', project.marketing?.name || '-'],
+                  ['Marketing', marketingName],
                   ['Perihal', `Surat Penawaran Harga ${project.name}`],
                   ['Tanggal', tanggalDoc],
                 ] as [string, string][]
