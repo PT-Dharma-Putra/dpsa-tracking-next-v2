@@ -99,12 +99,12 @@ import { ScheduleDeliveryDialog } from './schedule-delivery-dialog';
 import { DeadlineDialog } from './deadline-dialog';
 const formatRupiah = (value: string | number) => {
   if (value === null || value === undefined || value === '') return '';
-  
+
   if (typeof value === 'number') {
     const rounded = Math.round(value);
     return 'Rp ' + new Intl.NumberFormat('id-ID').format(rounded);
   }
-  
+
   if (/^-?\d+(\.\d+)?$/.test(value)) {
     const num = parseFloat(value);
     if (!isNaN(num)) {
@@ -157,20 +157,53 @@ export function ProjectsV2Table({
   const [sortOrder, setSortOrder] = React.useState<'asc' | 'desc'>('desc');
   const [selectedMonth, setSelectedMonth] = React.useState<string>('all');
   const [selectedYear, setSelectedYear] = React.useState<string>('all');
-  const [poDivisiFilter, setPoDivisiFilter] = React.useState<'completed' | 'not_completed' | null>(null);
+  const [poDivisiFilter, setPoDivisiFilter] = React.useState<
+    'completed' | 'not_completed' | null
+  >(null);
   const [spkFilterActive, setSpkFilterActive] = React.useState(false);
-  const [gambarKerjaFilter, setGambarKerjaFilter] = React.useState<'completed' | 'not_completed' | null>(null);
-  const [dokubahFilter, setDokubahFilter] = React.useState<'completed' | 'not_completed' | null>(null);
-  const [stokMaterialFilter, setStokMaterialFilter] = React.useState<'completed' | 'not_completed' | null>(null);
-  const [produksiFilter, setProduksiFilter] = React.useState<'completed' | 'not_completed' | null>(null);
-  const [orderStatusFilter, setOrderStatusFilter] = React.useState<'has_order' | 'tanpa_gambar' | 'sudah_diorder' | 'belum_diorder' | null>(null);
-  const [dashboardFilter, setDashboardFilter] = React.useState<'spk' | 'sph' | 'selesai' | 'on_progress' | 'belum_produksi' | 'deadline_dekat' | 'overdue' | 'urgent' | null>(null);
+  const [gambarKerjaFilter, setGambarKerjaFilter] = React.useState<
+    'completed' | 'not_completed' | null
+  >(null);
+  const [dokubahFilter, setDokubahFilter] = React.useState<
+    'completed' | 'not_completed' | null
+  >(null);
+  const [stokMaterialFilter, setStokMaterialFilter] = React.useState<
+    'completed' | 'not_completed' | null
+  >(null);
+  const [produksiFilter, setProduksiFilter] = React.useState<
+    'completed' | 'not_completed' | null
+  >(null);
+  const [orderStatusFilter, setOrderStatusFilter] = React.useState<
+    'has_order' | 'tanpa_gambar' | 'sudah_diorder' | 'belum_diorder' | null
+  >(null);
+  const [dashboardFilter, setDashboardFilter] = React.useState<
+    | 'spk'
+    | 'sph'
+    | 'selesai'
+    | 'on_progress'
+    | 'belum_produksi'
+    | 'deadline_dekat'
+    | 'overdue'
+    | 'urgent'
+    | null
+  >(null);
 
-  const handleDashboardFilterClick = (filter: 'spk' | 'sph' | 'selesai' | 'on_progress' | 'belum_produksi' | 'deadline_dekat' | 'overdue' | 'urgent' | null) => {
+  const handleDashboardFilterClick = (
+    filter:
+      | 'spk'
+      | 'sph'
+      | 'selesai'
+      | 'on_progress'
+      | 'belum_produksi'
+      | 'deadline_dekat'
+      | 'overdue'
+      | 'urgent'
+      | null
+  ) => {
     if (filter === null) {
       setDashboardFilter(null);
     } else {
-      setDashboardFilter(prev => prev === filter ? null : filter);
+      setDashboardFilter((prev) => (prev === filter ? null : filter));
     }
     setSpkFilterActive(false);
     setPoDivisiFilter(null);
@@ -206,7 +239,9 @@ export function ProjectsV2Table({
     setPage(1);
   };
 
-  const handleGambarKerjaFilterClick = (type: 'completed' | 'not_completed') => {
+  const handleGambarKerjaFilterClick = (
+    type: 'completed' | 'not_completed'
+  ) => {
     setGambarKerjaFilter(gambarKerjaFilter === type ? null : type);
     setSpkFilterActive(false);
     setPoDivisiFilter(null);
@@ -230,7 +265,9 @@ export function ProjectsV2Table({
     setPage(1);
   };
 
-  const handleStokMaterialFilterClick = (type: 'completed' | 'not_completed') => {
+  const handleStokMaterialFilterClick = (
+    type: 'completed' | 'not_completed'
+  ) => {
     setStokMaterialFilter(stokMaterialFilter === type ? null : type);
     setSpkFilterActive(false);
     setPoDivisiFilter(null);
@@ -254,7 +291,9 @@ export function ProjectsV2Table({
     setPage(1);
   };
 
-  const handleOrderStatusFilterClick = (type: 'has_order' | 'tanpa_gambar' | 'sudah_diorder' | 'belum_diorder') => {
+  const handleOrderStatusFilterClick = (
+    type: 'has_order' | 'tanpa_gambar' | 'sudah_diorder' | 'belum_diorder'
+  ) => {
     setOrderStatusFilter(orderStatusFilter === type ? null : type);
     setSpkFilterActive(false);
     setPoDivisiFilter(null);
@@ -283,7 +322,14 @@ export function ProjectsV2Table({
     React.useState<ProjectV2 | null>(null);
 
   const isJadwalEditable = showPerencanaan;
-  const isMainProjectsV2Page = !showSPD && !showPerencanaan && !showProduksi && !showEngineer && !showPiutang && !showQC && !showAllDashboard;
+  const isMainProjectsV2Page =
+    !showSPD &&
+    !showPerencanaan &&
+    !showProduksi &&
+    !showEngineer &&
+    !showPiutang &&
+    !showQC &&
+    !showAllDashboard;
 
   // Debounce search
   React.useEffect(() => {
@@ -334,7 +380,13 @@ export function ProjectsV2Table({
   });
 
   const { data: stats } = useQuery({
-    queryKey: ['projects-v2-stats', search, clientId, selectedMonth, selectedYear],
+    queryKey: [
+      'projects-v2-stats',
+      search,
+      clientId,
+      selectedMonth,
+      selectedYear,
+    ],
     queryFn: () =>
       projectV2Service.getProjectStats({
         search,
@@ -416,8 +468,13 @@ export function ProjectsV2Table({
   });
 
   const updatePicMutation = useMutation({
-    mutationFn: ({ projectId, studioId }: { projectId: number; studioId: number }) =>
-      projectV2Service.updatePic(projectId, studioId),
+    mutationFn: ({
+      projectId,
+      studioId,
+    }: {
+      projectId: number;
+      studioId: number;
+    }) => projectV2Service.updatePic(projectId, studioId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects-v2'] });
       toast.success('PIC updated successfully');
@@ -481,71 +538,81 @@ export function ProjectsV2Table({
   const projects = data?.data || [];
 
   return (
-    <div className="space-y-6 w-full max-w-full overflow-hidden">
+    <div className='space-y-6 w-full max-w-full overflow-hidden'>
       {showEngineer && stats && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4'>
           {/* Total SPK */}
           <div
             onClick={() => handleFilterClick('spk')}
             className={cn(
-              "flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-indigo-400 select-none",
-              spkFilterActive 
-                ? "border-indigo-500 bg-indigo-50/50 ring-2 ring-indigo-500/20" 
-                : "border-indigo-200 bg-white"
+              'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-indigo-400 select-none',
+              spkFilterActive
+                ? 'border-indigo-500 bg-indigo-50/50 ring-2 ring-indigo-500/20'
+                : 'border-indigo-200 bg-white'
             )}
           >
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600 shrink-0">
-                <FileText className="h-5 w-5" />
+            <div className='flex items-center gap-3'>
+              <div className='h-10 w-10 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600 shrink-0'>
+                <FileText className='h-5 w-5' />
               </div>
               <div>
-                <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider">Total SPK</p>
-                <p className="text-xl font-bold text-slate-800">{stats.total_spk}</p>
+                <p className='text-[10px] font-bold text-indigo-600 uppercase tracking-wider'>
+                  Total SPK
+                </p>
+                <p className='text-xl font-bold text-slate-800'>
+                  {stats.total_spk}
+                </p>
               </div>
             </div>
             {spkFilterActive && (
-              <span className="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-semibold animate-pulse">
+              <span className='text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
                 Active
               </span>
             )}
           </div>
 
           {/* Order Gambar */}
-          <div className="flex flex-col gap-2 p-4 rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md">
-            <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
-              <div className="h-6 w-6 rounded bg-amber-100 flex items-center justify-center text-amber-600 shrink-0">
-                <Briefcase className="h-3.5 w-3.5" />
+          <div className='flex flex-col gap-2 p-4 rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md'>
+            <div className='flex items-center gap-2 border-b border-slate-100 pb-2'>
+              <div className='h-6 w-6 rounded bg-amber-100 flex items-center justify-center text-amber-600 shrink-0'>
+                <Briefcase className='h-3.5 w-3.5' />
               </div>
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Order Gambar</p>
+              <p className='text-[10px] font-bold text-slate-500 uppercase tracking-wider'>
+                Order Gambar
+              </p>
             </div>
 
-            <div className="flex flex-row gap-1.5 mt-auto">
+            <div className='flex flex-row gap-1.5 mt-auto'>
               {/* Lengkap */}
               <div
                 onClick={() => handleGambarKerjaFilterClick('completed')}
                 className={cn(
-                  "flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all",
+                  'flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
                   gambarKerjaFilter === 'completed'
-                    ? "border-amber-500 bg-amber-50 text-amber-700 font-semibold"
-                    : "border-slate-100 hover:border-slate-300 text-slate-600"
+                    ? 'border-amber-500 bg-amber-50 text-amber-700 font-semibold'
+                    : 'border-slate-100 hover:border-slate-300 text-slate-600'
                 )}
               >
-                <span className="truncate mr-1">Lengkap</span>
-                <span className="font-bold">{stats.gambar_kerja_completed}</span>
+                <span className='truncate mr-1'>Lengkap</span>
+                <span className='font-bold'>
+                  {stats.gambar_kerja_completed}
+                </span>
               </div>
 
               {/* Belum Lengkap */}
               <div
                 onClick={() => handleGambarKerjaFilterClick('not_completed')}
                 className={cn(
-                  "flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all",
+                  'flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
                   gambarKerjaFilter === 'not_completed'
-                    ? "border-rose-500 bg-rose-50 text-rose-700 font-semibold"
-                    : "border-slate-100 hover:border-slate-300 text-slate-600"
+                    ? 'border-rose-500 bg-rose-50 text-rose-700 font-semibold'
+                    : 'border-slate-100 hover:border-slate-300 text-slate-600'
                 )}
               >
-                <span className="truncate mr-1">Belum Lengkap</span>
-                <span className="font-bold">{stats.gambar_kerja_not_completed}</span>
+                <span className='truncate mr-1'>Belum Lengkap</span>
+                <span className='font-bold'>
+                  {stats.gambar_kerja_not_completed}
+                </span>
               </div>
             </div>
           </div>
@@ -553,15 +620,19 @@ export function ProjectsV2Table({
       )}
 
       {showPerencanaan && stats && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4">
+        <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4'>
           {/* Total Project */}
-          <div className="flex items-center gap-3 p-4 rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md">
-            <div className="h-10 w-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 shrink-0">
-              <Briefcase className="h-5 w-5" />
+          <div className='flex items-center gap-3 p-4 rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md'>
+            <div className='h-10 w-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 shrink-0'>
+              <Briefcase className='h-5 w-5' />
             </div>
             <div>
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Total Projek</p>
-              <p className="text-xl font-bold text-slate-800">{stats.total_project}</p>
+              <p className='text-[10px] font-bold text-slate-500 uppercase tracking-wider'>
+                Total Projek
+              </p>
+              <p className='text-xl font-bold text-slate-800'>
+                {stats.total_project}
+              </p>
             </div>
           </div>
 
@@ -569,224 +640,250 @@ export function ProjectsV2Table({
           <div
             onClick={() => handleFilterClick('spk')}
             className={cn(
-              "flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-indigo-400 select-none",
-              spkFilterActive 
-                ? "border-indigo-500 bg-indigo-50/50 ring-2 ring-indigo-500/20" 
-                : "border-indigo-200 bg-white"
+              'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-indigo-400 select-none',
+              spkFilterActive
+                ? 'border-indigo-500 bg-indigo-50/50 ring-2 ring-indigo-500/20'
+                : 'border-indigo-200 bg-white'
             )}
           >
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600 shrink-0">
-                <FileText className="h-5 w-5" />
+            <div className='flex items-center gap-3'>
+              <div className='h-10 w-10 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600 shrink-0'>
+                <FileText className='h-5 w-5' />
               </div>
               <div>
-                <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider">Total SPK</p>
-                <p className="text-xl font-bold text-slate-800">{stats.total_spk}</p>
+                <p className='text-[10px] font-bold text-indigo-600 uppercase tracking-wider'>
+                  Total SPK
+                </p>
+                <p className='text-xl font-bold text-slate-800'>
+                  {stats.total_spk}
+                </p>
               </div>
             </div>
             {spkFilterActive && (
-              <span className="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-semibold animate-pulse">
+              <span className='text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
                 Ada SPK
               </span>
             )}
           </div>
 
           {/* PO Divisi */}
-          <div className="flex flex-col gap-2 p-4 rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md">
-            <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
-              <div className="h-6 w-6 rounded bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
-                <CheckCircle2 className="h-3.5 w-3.5" />
+          <div className='flex flex-col gap-2 p-4 rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md'>
+            <div className='flex items-center gap-2 border-b border-slate-100 pb-2'>
+              <div className='h-6 w-6 rounded bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0'>
+                <CheckCircle2 className='h-3.5 w-3.5' />
               </div>
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">PO Divisi</p>
+              <p className='text-[10px] font-bold text-slate-500 uppercase tracking-wider'>
+                PO Divisi
+              </p>
             </div>
-            
-            <div className="flex flex-row gap-1.5 mt-auto">
+
+            <div className='flex flex-row gap-1.5 mt-auto'>
               {/* Sudah ter PO */}
-              <div 
+              <div
                 onClick={() => handlePoDivisiFilterClick('completed')}
                 className={cn(
-                  "flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all",
+                  'flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
                   poDivisiFilter === 'completed'
-                    ? "border-emerald-500 bg-emerald-50 text-emerald-700 font-semibold"
-                    : "border-slate-100 hover:border-slate-300 text-slate-600"
+                    ? 'border-emerald-500 bg-emerald-50 text-emerald-700 font-semibold'
+                    : 'border-slate-100 hover:border-slate-300 text-slate-600'
                 )}
               >
-                <span className="truncate mr-1">Sudah ter PO</span>
-                <span className="font-bold">{stats.po_divisi_completed}</span>
+                <span className='truncate mr-1'>Sudah ter PO</span>
+                <span className='font-bold'>{stats.po_divisi_completed}</span>
               </div>
 
               {/* Belum ter PO */}
-              <div 
+              <div
                 onClick={() => handlePoDivisiFilterClick('not_completed')}
                 className={cn(
-                  "flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all",
+                  'flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
                   poDivisiFilter === 'not_completed'
-                    ? "border-amber-500 bg-amber-50 text-amber-700 font-semibold"
-                    : "border-slate-100 hover:border-slate-300 text-slate-600"
+                    ? 'border-amber-500 bg-amber-50 text-amber-700 font-semibold'
+                    : 'border-slate-100 hover:border-slate-300 text-slate-600'
                 )}
               >
-                <span className="truncate mr-1">Belum ter PO</span>
-                <span className="font-bold">{stats.po_divisi_not_completed}</span>
+                <span className='truncate mr-1'>Belum ter PO</span>
+                <span className='font-bold'>
+                  {stats.po_divisi_not_completed}
+                </span>
               </div>
             </div>
           </div>
 
           {/* Gambar Kerja */}
-          <div className="flex flex-col gap-2 p-4 rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md">
-            <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
-              <div className="h-6 w-6 rounded bg-blue-100 flex items-center justify-center text-blue-600 shrink-0">
-                <ImageIcon className="h-3.5 w-3.5" />
+          <div className='flex flex-col gap-2 p-4 rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md'>
+            <div className='flex items-center gap-2 border-b border-slate-100 pb-2'>
+              <div className='h-6 w-6 rounded bg-blue-100 flex items-center justify-center text-blue-600 shrink-0'>
+                <ImageIcon className='h-3.5 w-3.5' />
               </div>
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Gambar Kerja</p>
+              <p className='text-[10px] font-bold text-slate-500 uppercase tracking-wider'>
+                Gambar Kerja
+              </p>
             </div>
-            
-            <div className="flex flex-row gap-1.5 mt-auto">
+
+            <div className='flex flex-row gap-1.5 mt-auto'>
               {/* Sudah */}
-              <div 
+              <div
                 onClick={() => handleGambarKerjaFilterClick('completed')}
                 className={cn(
-                  "flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all",
+                  'flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
                   gambarKerjaFilter === 'completed'
-                    ? "border-blue-500 bg-blue-55 text-blue-700 font-semibold animate-none"
-                    : "border-slate-100 hover:border-slate-300 text-slate-600"
+                    ? 'border-blue-500 bg-blue-55 text-blue-700 font-semibold animate-none'
+                    : 'border-slate-100 hover:border-slate-300 text-slate-600'
                 )}
               >
-                <span className="truncate mr-1">Lengkap</span>
-                <span className="font-bold">{stats.gambar_kerja_completed}</span>
+                <span className='truncate mr-1'>Lengkap</span>
+                <span className='font-bold'>
+                  {stats.gambar_kerja_completed}
+                </span>
               </div>
 
               {/* Belum */}
-              <div 
+              <div
                 onClick={() => handleGambarKerjaFilterClick('not_completed')}
                 className={cn(
-                  "flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all",
+                  'flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
                   gambarKerjaFilter === 'not_completed'
-                    ? "border-blue-500 bg-blue-50 text-blue-700 font-semibold"
-                    : "border-slate-100 hover:border-slate-300 text-slate-600"
+                    ? 'border-blue-500 bg-blue-50 text-blue-700 font-semibold'
+                    : 'border-slate-100 hover:border-slate-300 text-slate-600'
                 )}
               >
-                <span className="truncate mr-1">Belum Lengkap</span>
-                <span className="font-bold">{stats.gambar_kerja_not_completed}</span>
+                <span className='truncate mr-1'>Belum Lengkap</span>
+                <span className='font-bold'>
+                  {stats.gambar_kerja_not_completed}
+                </span>
               </div>
             </div>
           </div>
 
           {/* Dokubah */}
-          <div className="flex flex-col gap-2 p-4 rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md">
-            <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
-              <div className="h-6 w-6 rounded bg-amber-100 flex items-center justify-center text-amber-600 shrink-0">
-                <FileEdit className="h-3.5 w-3.5" />
+          <div className='flex flex-col gap-2 p-4 rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md'>
+            <div className='flex items-center gap-2 border-b border-slate-100 pb-2'>
+              <div className='h-6 w-6 rounded bg-amber-100 flex items-center justify-center text-amber-600 shrink-0'>
+                <FileEdit className='h-3.5 w-3.5' />
               </div>
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Dokubah</p>
+              <p className='text-[10px] font-bold text-slate-500 uppercase tracking-wider'>
+                Dokubah
+              </p>
             </div>
-            
-            <div className="flex flex-row gap-1.5 mt-auto">
+
+            <div className='flex flex-row gap-1.5 mt-auto'>
               {/* Sudah */}
-              <div 
+              <div
                 onClick={() => handleDokubahFilterClick('completed')}
                 className={cn(
-                  "flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all",
+                  'flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
                   dokubahFilter === 'completed'
-                    ? "border-amber-500 bg-amber-50 text-amber-700 font-semibold"
-                    : "border-slate-100 hover:border-slate-300 text-slate-600"
+                    ? 'border-amber-500 bg-amber-50 text-amber-700 font-semibold'
+                    : 'border-slate-100 hover:border-slate-300 text-slate-600'
                 )}
               >
-                <span className="truncate mr-1">Selesai</span>
-                <span className="font-bold">{stats.dokubah_completed}</span>
+                <span className='truncate mr-1'>Selesai</span>
+                <span className='font-bold'>{stats.dokubah_completed}</span>
               </div>
 
               {/* Belum */}
-              <div 
+              <div
                 onClick={() => handleDokubahFilterClick('not_completed')}
                 className={cn(
-                  "flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all",
+                  'flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
                   dokubahFilter === 'not_completed'
-                    ? "border-amber-500 bg-amber-50 text-amber-700 font-semibold"
-                    : "border-slate-100 hover:border-slate-300 text-slate-600"
+                    ? 'border-amber-500 bg-amber-50 text-amber-700 font-semibold'
+                    : 'border-slate-100 hover:border-slate-300 text-slate-600'
                 )}
               >
-                <span className="truncate mr-1">Belum Selesai</span>
-                <span className="font-bold">{stats.dokubah_not_completed}</span>
+                <span className='truncate mr-1'>Belum Selesai</span>
+                <span className='font-bold'>{stats.dokubah_not_completed}</span>
               </div>
             </div>
           </div>
 
           {/* Stok Material */}
-          <div className="flex flex-col gap-2 p-4 rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md">
-            <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
-              <div className="h-6 w-6 rounded bg-violet-100 flex items-center justify-center text-violet-600 shrink-0">
-                <Package className="h-3.5 w-3.5" />
+          <div className='flex flex-col gap-2 p-4 rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md'>
+            <div className='flex items-center gap-2 border-b border-slate-100 pb-2'>
+              <div className='h-6 w-6 rounded bg-violet-100 flex items-center justify-center text-violet-600 shrink-0'>
+                <Package className='h-3.5 w-3.5' />
               </div>
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Stok Material</p>
+              <p className='text-[10px] font-bold text-slate-500 uppercase tracking-wider'>
+                Stok Material
+              </p>
             </div>
-            
-            <div className="flex flex-row gap-1.5 mt-auto">
+
+            <div className='flex flex-row gap-1.5 mt-auto'>
               {/* Sudah */}
-              <div 
+              <div
                 onClick={() => handleStokMaterialFilterClick('completed')}
                 className={cn(
-                  "flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all",
+                  'flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
                   stokMaterialFilter === 'completed'
-                    ? "border-violet-500 bg-violet-50 text-violet-700 font-semibold"
-                    : "border-slate-100 hover:border-slate-300 text-slate-600"
+                    ? 'border-violet-500 bg-violet-50 text-violet-700 font-semibold'
+                    : 'border-slate-100 hover:border-slate-300 text-slate-600'
                 )}
               >
-                <span className="truncate mr-1">Sudah Update</span>
-                <span className="font-bold">{stats.stok_material_completed}</span>
+                <span className='truncate mr-1'>Sudah Update</span>
+                <span className='font-bold'>
+                  {stats.stok_material_completed}
+                </span>
               </div>
 
               {/* Belum */}
-              <div 
+              <div
                 onClick={() => handleStokMaterialFilterClick('not_completed')}
                 className={cn(
-                  "flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all",
+                  'flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
                   stokMaterialFilter === 'not_completed'
-                    ? "border-violet-500 bg-violet-55 text-violet-700 font-semibold"
-                    : "border-slate-100 hover:border-slate-300 text-slate-600"
+                    ? 'border-violet-500 bg-violet-55 text-violet-700 font-semibold'
+                    : 'border-slate-100 hover:border-slate-300 text-slate-600'
                 )}
               >
-                <span className="truncate mr-1">Belum Update</span>
-                <span className="font-bold">{stats.stok_material_not_completed}</span>
+                <span className='truncate mr-1'>Belum Update</span>
+                <span className='font-bold'>
+                  {stats.stok_material_not_completed}
+                </span>
               </div>
             </div>
           </div>
 
           {/* Perintah Produksi */}
-          <div className="flex flex-col gap-2 p-4 rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md">
-            <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
-              <div className="h-6 w-6 rounded bg-rose-100 flex items-center justify-center text-rose-600 shrink-0">
-                <Hammer className="h-3.5 w-3.5" />
+          <div className='flex flex-col gap-2 p-4 rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md'>
+            <div className='flex items-center gap-2 border-b border-slate-100 pb-2'>
+              <div className='h-6 w-6 rounded bg-rose-100 flex items-center justify-center text-rose-600 shrink-0'>
+                <Hammer className='h-3.5 w-3.5' />
               </div>
-              <p className="text-[10px] font-bold text-rose-600 uppercase tracking-wider">Perintah Produksi</p>
+              <p className='text-[10px] font-bold text-rose-600 uppercase tracking-wider'>
+                Perintah Produksi
+              </p>
             </div>
-            
-            <div className="flex flex-row gap-1.5 mt-auto">
+
+            <div className='flex flex-row gap-1.5 mt-auto'>
               {/* Sudah */}
-              <div 
+              <div
                 onClick={() => handleProduksiFilterClick('completed')}
                 className={cn(
-                  "flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all",
+                  'flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
                   produksiFilter === 'completed'
-                    ? "border-rose-500 bg-rose-50 text-rose-700 font-semibold"
-                    : "border-slate-100 hover:border-slate-300 text-slate-600"
+                    ? 'border-rose-500 bg-rose-50 text-rose-700 font-semibold'
+                    : 'border-slate-100 hover:border-slate-300 text-slate-600'
                 )}
               >
-                <span className="truncate mr-1">Sudah Diupload</span>
-                <span className="font-bold">{stats.produksi_completed}</span>
+                <span className='truncate mr-1'>Sudah Diupload</span>
+                <span className='font-bold'>{stats.produksi_completed}</span>
               </div>
 
               {/* Belum */}
-              <div 
+              <div
                 onClick={() => handleProduksiFilterClick('not_completed')}
                 className={cn(
-                  "flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all",
+                  'flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
                   produksiFilter === 'not_completed'
-                    ? "border-rose-55 bg-rose-50 text-rose-700 font-semibold"
-                    : "border-slate-100 hover:border-slate-300 text-slate-600"
+                    ? 'border-rose-55 bg-rose-50 text-rose-700 font-semibold'
+                    : 'border-slate-100 hover:border-slate-300 text-slate-600'
                 )}
               >
-                <span className="truncate mr-1">Belum Diupload</span>
-                <span className="font-bold">{stats.produksi_not_completed}</span>
+                <span className='truncate mr-1'>Belum Diupload</span>
+                <span className='font-bold'>
+                  {stats.produksi_not_completed}
+                </span>
               </div>
             </div>
           </div>
@@ -794,28 +891,32 @@ export function ProjectsV2Table({
       )}
 
       {showProduksi && stats && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 w-full">
+        <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 w-full'>
           {/* Total Project */}
           <div
             onClick={() => handleDashboardFilterClick(null)}
             className={cn(
-              "flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-slate-400 select-none",
-              dashboardFilter === null 
-                ? "border-slate-500 bg-slate-50 ring-2 ring-slate-500/20" 
-                : "border-slate-200 bg-white"
+              'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-slate-400 select-none',
+              dashboardFilter === null
+                ? 'border-slate-500 bg-slate-50 ring-2 ring-slate-500/20'
+                : 'border-slate-200 bg-white'
             )}
           >
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 shrink-0">
-                <Briefcase className="h-5 w-5" />
+            <div className='flex items-center gap-3'>
+              <div className='h-10 w-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 shrink-0'>
+                <Briefcase className='h-5 w-5' />
               </div>
               <div>
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Total Project</p>
-                <p className="text-xl font-bold text-slate-800">{stats.total_project}</p>
+                <p className='text-[10px] font-bold text-slate-500 uppercase tracking-wider'>
+                  Total Project
+                </p>
+                <p className='text-xl font-bold text-slate-800'>
+                  {stats.total_project}
+                </p>
               </div>
             </div>
             {dashboardFilter === null && (
-              <span className="text-[10px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full font-semibold animate-pulse">
+              <span className='text-[10px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
                 Active
               </span>
             )}
@@ -825,23 +926,27 @@ export function ProjectsV2Table({
           <div
             onClick={() => handleDashboardFilterClick('spk')}
             className={cn(
-              "flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-indigo-400 select-none",
-              dashboardFilter === 'spk' 
-                ? "border-indigo-500 bg-indigo-50/50 ring-2 ring-indigo-500/20" 
-                : "border-indigo-200 bg-white"
+              'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-indigo-400 select-none',
+              dashboardFilter === 'spk'
+                ? 'border-indigo-500 bg-indigo-50/50 ring-2 ring-indigo-500/20'
+                : 'border-indigo-200 bg-white'
             )}
           >
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600 shrink-0">
-                <FileText className="h-5 w-5" />
+            <div className='flex items-center gap-3'>
+              <div className='h-10 w-10 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600 shrink-0'>
+                <FileText className='h-5 w-5' />
               </div>
               <div>
-                <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider">Total SPK</p>
-                <p className="text-xl font-bold text-slate-800">{stats.total_spk}</p>
+                <p className='text-[10px] font-bold text-indigo-600 uppercase tracking-wider'>
+                  Total SPK
+                </p>
+                <p className='text-xl font-bold text-slate-800'>
+                  {stats.total_spk}
+                </p>
               </div>
             </div>
             {dashboardFilter === 'spk' && (
-              <span className="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-semibold animate-pulse">
+              <span className='text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
                 Active
               </span>
             )}
@@ -851,23 +956,27 @@ export function ProjectsV2Table({
           <div
             onClick={() => handleDashboardFilterClick('deadline_dekat')}
             className={cn(
-              "flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-amber-400 select-none",
-              dashboardFilter === 'deadline_dekat' 
-                ? "border-amber-500 bg-amber-50/50 ring-2 ring-amber-500/20" 
-                : "border-amber-200 bg-white"
+              'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-amber-400 select-none',
+              dashboardFilter === 'deadline_dekat'
+                ? 'border-amber-500 bg-amber-50/50 ring-2 ring-amber-500/20'
+                : 'border-amber-200 bg-white'
             )}
           >
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-amber-100 flex items-center justify-center text-amber-600 shrink-0">
-                <Clock className="h-5 w-5" />
+            <div className='flex items-center gap-3'>
+              <div className='h-10 w-10 rounded-lg bg-amber-100 flex items-center justify-center text-amber-600 shrink-0'>
+                <Clock className='h-5 w-5' />
               </div>
               <div>
-                <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wider">Deadline Dekat</p>
-                <p className="text-xl font-bold text-slate-800">{stats.deadline_dekat}</p>
+                <p className='text-[10px] font-bold text-amber-600 uppercase tracking-wider'>
+                  Deadline Dekat
+                </p>
+                <p className='text-xl font-bold text-slate-800'>
+                  {stats.deadline_dekat}
+                </p>
               </div>
             </div>
             {dashboardFilter === 'deadline_dekat' && (
-              <span className="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-semibold animate-pulse">
+              <span className='text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
                 Active
               </span>
             )}
@@ -877,23 +986,27 @@ export function ProjectsV2Table({
           <div
             onClick={() => handleDashboardFilterClick('selesai')}
             className={cn(
-              "flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-emerald-400 select-none",
-              dashboardFilter === 'selesai' 
-                ? "border-emerald-500 bg-emerald-50/50 ring-2 ring-emerald-500/20" 
-                : "border-emerald-200 bg-white"
+              'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-emerald-400 select-none',
+              dashboardFilter === 'selesai'
+                ? 'border-emerald-500 bg-emerald-50/50 ring-2 ring-emerald-500/20'
+                : 'border-emerald-200 bg-white'
             )}
           >
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
-                <CheckCircle2 className="h-5 w-5" />
+            <div className='flex items-center gap-3'>
+              <div className='h-10 w-10 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0'>
+                <CheckCircle2 className='h-5 w-5' />
               </div>
               <div>
-                <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Produksi Selesai</p>
-                <p className="text-xl font-bold text-slate-800">{stats.selesai}</p>
+                <p className='text-[10px] font-bold text-emerald-600 uppercase tracking-wider'>
+                  Produksi Selesai
+                </p>
+                <p className='text-xl font-bold text-slate-800'>
+                  {stats.selesai}
+                </p>
               </div>
             </div>
             {dashboardFilter === 'selesai' && (
-              <span className="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-semibold animate-pulse">
+              <span className='text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
                 Active
               </span>
             )}
@@ -903,23 +1016,27 @@ export function ProjectsV2Table({
           <div
             onClick={() => handleDashboardFilterClick('on_progress')}
             className={cn(
-              "flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-blue-400 select-none",
-              dashboardFilter === 'on_progress' 
-                ? "border-blue-500 bg-blue-50/50 ring-2 ring-blue-500/20" 
-                : "border-blue-200 bg-white"
+              'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-blue-400 select-none',
+              dashboardFilter === 'on_progress'
+                ? 'border-blue-500 bg-blue-50/50 ring-2 ring-blue-500/20'
+                : 'border-blue-200 bg-white'
             )}
           >
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 shrink-0">
-                <Activity className="h-5 w-5" />
+            <div className='flex items-center gap-3'>
+              <div className='h-10 w-10 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 shrink-0'>
+                <Activity className='h-5 w-5' />
               </div>
               <div>
-                <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">In Progress</p>
-                <p className="text-xl font-bold text-slate-800">{stats.on_progress}</p>
+                <p className='text-[10px] font-bold text-blue-600 uppercase tracking-wider'>
+                  In Progress
+                </p>
+                <p className='text-xl font-bold text-slate-800'>
+                  {stats.on_progress}
+                </p>
               </div>
             </div>
             {dashboardFilter === 'on_progress' && (
-              <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-semibold animate-pulse">
+              <span className='text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
                 Active
               </span>
             )}
@@ -929,23 +1046,27 @@ export function ProjectsV2Table({
           <div
             onClick={() => handleDashboardFilterClick('belum_produksi')}
             className={cn(
-              "flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-rose-400 select-none",
-              dashboardFilter === 'belum_produksi' 
-                ? "border-rose-500 bg-rose-50/50 ring-2 ring-rose-500/20" 
-                : "border-rose-200 bg-white"
+              'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-rose-400 select-none',
+              dashboardFilter === 'belum_produksi'
+                ? 'border-rose-500 bg-rose-50/50 ring-2 ring-rose-500/20'
+                : 'border-rose-200 bg-white'
             )}
           >
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-rose-100 flex items-center justify-center text-rose-600 shrink-0">
-                <Hammer className="h-5 w-5" />
+            <div className='flex items-center gap-3'>
+              <div className='h-10 w-10 rounded-lg bg-rose-100 flex items-center justify-center text-rose-600 shrink-0'>
+                <Hammer className='h-5 w-5' />
               </div>
               <div>
-                <p className="text-[10px] font-bold text-rose-600 uppercase tracking-wider">Belum Produksi</p>
-                <p className="text-xl font-bold text-slate-800">{stats.belum_produksi}</p>
+                <p className='text-[10px] font-bold text-rose-600 uppercase tracking-wider'>
+                  Belum Produksi
+                </p>
+                <p className='text-xl font-bold text-slate-800'>
+                  {stats.belum_produksi}
+                </p>
               </div>
             </div>
             {dashboardFilter === 'belum_produksi' && (
-              <span className="text-[10px] bg-rose-100 text-rose-700 px-2 py-0.5 rounded-full font-semibold animate-pulse">
+              <span className='text-[10px] bg-rose-100 text-rose-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
                 Active
               </span>
             )}
@@ -954,28 +1075,32 @@ export function ProjectsV2Table({
       )}
 
       {showAllDashboard && stats && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-9 gap-4 w-full">
+        <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-9 gap-4 w-full'>
           {/* Total Project */}
           <div
             onClick={() => handleDashboardFilterClick(null)}
             className={cn(
-              "flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-slate-400 select-none",
-              dashboardFilter === null 
-                ? "border-slate-500 bg-slate-50 ring-2 ring-slate-500/20" 
-                : "border-slate-200 bg-white"
+              'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-slate-400 select-none',
+              dashboardFilter === null
+                ? 'border-slate-500 bg-slate-50 ring-2 ring-slate-500/20'
+                : 'border-slate-200 bg-white'
             )}
           >
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 shrink-0">
-                <Briefcase className="h-5 w-5" />
+            <div className='flex items-center gap-3'>
+              <div className='h-10 w-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 shrink-0'>
+                <Briefcase className='h-5 w-5' />
               </div>
               <div>
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Total Project</p>
-                <p className="text-xl font-bold text-slate-800">{stats.total_project}</p>
+                <p className='text-[10px] font-bold text-slate-500 uppercase tracking-wider'>
+                  Total Project
+                </p>
+                <p className='text-xl font-bold text-slate-800'>
+                  {stats.total_project}
+                </p>
               </div>
             </div>
             {dashboardFilter === null && (
-              <span className="text-[10px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full font-semibold animate-pulse">
+              <span className='text-[10px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
                 Active
               </span>
             )}
@@ -985,23 +1110,27 @@ export function ProjectsV2Table({
           <div
             onClick={() => handleDashboardFilterClick('spk')}
             className={cn(
-              "flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-indigo-400 select-none",
-              dashboardFilter === 'spk' 
-                ? "border-indigo-500 bg-indigo-50/50 ring-2 ring-indigo-500/20" 
-                : "border-indigo-200 bg-white"
+              'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-indigo-400 select-none',
+              dashboardFilter === 'spk'
+                ? 'border-indigo-500 bg-indigo-50/50 ring-2 ring-indigo-500/20'
+                : 'border-indigo-200 bg-white'
             )}
           >
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600 shrink-0">
-                <FileText className="h-5 w-5" />
+            <div className='flex items-center gap-3'>
+              <div className='h-10 w-10 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600 shrink-0'>
+                <FileText className='h-5 w-5' />
               </div>
               <div>
-                <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider">Total SPK</p>
-                <p className="text-xl font-bold text-slate-800">{stats.total_spk}</p>
+                <p className='text-[10px] font-bold text-indigo-600 uppercase tracking-wider'>
+                  Total SPK
+                </p>
+                <p className='text-xl font-bold text-slate-800'>
+                  {stats.total_spk}
+                </p>
               </div>
             </div>
             {dashboardFilter === 'spk' && (
-              <span className="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-semibold animate-pulse">
+              <span className='text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
                 Active
               </span>
             )}
@@ -1011,23 +1140,27 @@ export function ProjectsV2Table({
           <div
             onClick={() => handleDashboardFilterClick('sph')}
             className={cn(
-              "flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-orange-400 select-none",
-              dashboardFilter === 'sph' 
-                ? "border-orange-500 bg-orange-50/50 ring-2 ring-orange-500/20" 
-                : "border-orange-200 bg-white"
+              'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-orange-400 select-none',
+              dashboardFilter === 'sph'
+                ? 'border-orange-500 bg-orange-50/50 ring-2 ring-orange-500/20'
+                : 'border-orange-200 bg-white'
             )}
           >
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-orange-100 flex items-center justify-center text-orange-600 shrink-0">
-                <FileText className="h-5 w-5" />
+            <div className='flex items-center gap-3'>
+              <div className='h-10 w-10 rounded-lg bg-orange-100 flex items-center justify-center text-orange-600 shrink-0'>
+                <FileText className='h-5 w-5' />
               </div>
               <div>
-                <p className="text-[10px] font-bold text-orange-600 uppercase tracking-wider">Total SPH</p>
-                <p className="text-xl font-bold text-orange-800">{stats.total_sph}</p>
+                <p className='text-[10px] font-bold text-orange-600 uppercase tracking-wider'>
+                  Total SPH
+                </p>
+                <p className='text-xl font-bold text-orange-800'>
+                  {stats.total_sph}
+                </p>
               </div>
             </div>
             {dashboardFilter === 'sph' && (
-              <span className="text-[10px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-semibold animate-pulse">
+              <span className='text-[10px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
                 Active
               </span>
             )}
@@ -1037,23 +1170,27 @@ export function ProjectsV2Table({
           <div
             onClick={() => handleDashboardFilterClick('selesai')}
             className={cn(
-              "flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-emerald-400 select-none",
-              dashboardFilter === 'selesai' 
-                ? "border-emerald-500 bg-emerald-50/50 ring-2 ring-emerald-500/20" 
-                : "border-emerald-200 bg-white"
+              'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-emerald-400 select-none',
+              dashboardFilter === 'selesai'
+                ? 'border-emerald-500 bg-emerald-50/50 ring-2 ring-emerald-500/20'
+                : 'border-emerald-200 bg-white'
             )}
           >
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
-                <CheckCircle2 className="h-5 w-5" />
+            <div className='flex items-center gap-3'>
+              <div className='h-10 w-10 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0'>
+                <CheckCircle2 className='h-5 w-5' />
               </div>
               <div>
-                <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Selesai</p>
-                <p className="text-xl font-bold text-emerald-800">{stats.selesai}</p>
+                <p className='text-[10px] font-bold text-emerald-600 uppercase tracking-wider'>
+                  Selesai
+                </p>
+                <p className='text-xl font-bold text-emerald-800'>
+                  {stats.selesai}
+                </p>
               </div>
             </div>
             {dashboardFilter === 'selesai' && (
-              <span className="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-semibold animate-pulse">
+              <span className='text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
                 Active
               </span>
             )}
@@ -1063,23 +1200,27 @@ export function ProjectsV2Table({
           <div
             onClick={() => handleDashboardFilterClick('on_progress')}
             className={cn(
-              "flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-blue-400 select-none",
-              dashboardFilter === 'on_progress' 
-                ? "border-blue-500 bg-blue-50/50 ring-2 ring-blue-500/20" 
-                : "border-blue-200 bg-white"
+              'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-blue-400 select-none',
+              dashboardFilter === 'on_progress'
+                ? 'border-blue-500 bg-blue-50/50 ring-2 ring-blue-500/20'
+                : 'border-blue-200 bg-white'
             )}
           >
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 shrink-0">
-                <Activity className="h-5 w-5" />
+            <div className='flex items-center gap-3'>
+              <div className='h-10 w-10 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 shrink-0'>
+                <Activity className='h-5 w-5' />
               </div>
               <div>
-                <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">On Progress</p>
-                <p className="text-xl font-bold text-blue-800">{stats.on_progress}</p>
+                <p className='text-[10px] font-bold text-blue-600 uppercase tracking-wider'>
+                  On Progress
+                </p>
+                <p className='text-xl font-bold text-blue-800'>
+                  {stats.on_progress}
+                </p>
               </div>
             </div>
             {dashboardFilter === 'on_progress' && (
-              <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-semibold animate-pulse">
+              <span className='text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
                 Active
               </span>
             )}
@@ -1089,23 +1230,27 @@ export function ProjectsV2Table({
           <div
             onClick={() => handleDashboardFilterClick('belum_produksi')}
             className={cn(
-              "flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-amber-400 select-none",
-              dashboardFilter === 'belum_produksi' 
-                ? "border-amber-500 bg-amber-50/50 ring-2 ring-amber-500/20" 
-                : "border-amber-200 bg-white"
+              'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-amber-400 select-none',
+              dashboardFilter === 'belum_produksi'
+                ? 'border-amber-500 bg-amber-50/50 ring-2 ring-amber-500/20'
+                : 'border-amber-200 bg-white'
             )}
           >
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-amber-100 flex items-center justify-center text-amber-600 shrink-0">
-                <Clock className="h-5 w-5" />
+            <div className='flex items-center gap-3'>
+              <div className='h-10 w-10 rounded-lg bg-amber-100 flex items-center justify-center text-amber-600 shrink-0'>
+                <Clock className='h-5 w-5' />
               </div>
               <div>
-                <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wider">SPK Belum Produksi</p>
-                <p className="text-xl font-bold text-amber-800">{stats.belum_produksi}</p>
+                <p className='text-[10px] font-bold text-amber-600 uppercase tracking-wider'>
+                  SPK Belum Produksi
+                </p>
+                <p className='text-xl font-bold text-amber-800'>
+                  {stats.belum_produksi}
+                </p>
               </div>
             </div>
             {dashboardFilter === 'belum_produksi' && (
-              <span className="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-semibold animate-pulse">
+              <span className='text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
                 Active
               </span>
             )}
@@ -1115,23 +1260,27 @@ export function ProjectsV2Table({
           <div
             onClick={() => handleDashboardFilterClick('deadline_dekat')}
             className={cn(
-              "flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-orange-400 select-none",
-              dashboardFilter === 'deadline_dekat' 
-                ? "border-orange-500 bg-orange-50/50 ring-2 ring-orange-500/20" 
-                : "border-orange-200 bg-white"
+              'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-orange-400 select-none',
+              dashboardFilter === 'deadline_dekat'
+                ? 'border-orange-500 bg-orange-50/50 ring-2 ring-orange-500/20'
+                : 'border-orange-200 bg-white'
             )}
           >
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-orange-100 flex items-center justify-center text-orange-600 shrink-0">
-                <AlertTriangle className="h-5 w-5" />
+            <div className='flex items-center gap-3'>
+              <div className='h-10 w-10 rounded-lg bg-orange-100 flex items-center justify-center text-orange-600 shrink-0'>
+                <AlertTriangle className='h-5 w-5' />
               </div>
               <div>
-                <p className="text-[10px] font-bold text-orange-600 uppercase tracking-wider">Deadline Dekat</p>
-                <p className="text-xl font-bold text-orange-800">{stats.deadline_dekat}</p>
+                <p className='text-[10px] font-bold text-orange-600 uppercase tracking-wider'>
+                  Deadline Dekat
+                </p>
+                <p className='text-xl font-bold text-orange-800'>
+                  {stats.deadline_dekat}
+                </p>
               </div>
             </div>
             {dashboardFilter === 'deadline_dekat' && (
-              <span className="text-[10px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-semibold animate-pulse">
+              <span className='text-[10px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
                 Active
               </span>
             )}
@@ -1141,23 +1290,27 @@ export function ProjectsV2Table({
           <div
             onClick={() => handleDashboardFilterClick('overdue')}
             className={cn(
-              "flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-red-400 select-none",
-              dashboardFilter === 'overdue' 
-                ? "border-red-500 bg-red-50/50 ring-2 ring-red-500/20" 
-                : "border-red-200 bg-white"
+              'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-red-400 select-none',
+              dashboardFilter === 'overdue'
+                ? 'border-red-500 bg-red-50/50 ring-2 ring-red-500/20'
+                : 'border-red-200 bg-white'
             )}
           >
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-red-100 flex items-center justify-center text-red-600 shrink-0">
-                <AlertCircle className="h-5 w-5" />
+            <div className='flex items-center gap-3'>
+              <div className='h-10 w-10 rounded-lg bg-red-100 flex items-center justify-center text-red-600 shrink-0'>
+                <AlertCircle className='h-5 w-5' />
               </div>
               <div>
-                <p className="text-[10px] font-bold text-red-600 uppercase tracking-wider">Overdue</p>
-                <p className="text-xl font-bold text-red-800">{stats.overdue}</p>
+                <p className='text-[10px] font-bold text-red-600 uppercase tracking-wider'>
+                  Overdue
+                </p>
+                <p className='text-xl font-bold text-red-800'>
+                  {stats.overdue}
+                </p>
               </div>
             </div>
             {dashboardFilter === 'overdue' && (
-              <span className="text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-semibold animate-pulse">
+              <span className='text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
                 Active
               </span>
             )}
@@ -1167,23 +1320,27 @@ export function ProjectsV2Table({
           <div
             onClick={() => handleDashboardFilterClick('urgent')}
             className={cn(
-              "flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-rose-400 select-none",
-              dashboardFilter === 'urgent' 
-                ? "border-rose-500 bg-rose-50/50 ring-2 ring-rose-500/20" 
-                : "border-rose-200 bg-white"
+              'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-rose-400 select-none',
+              dashboardFilter === 'urgent'
+                ? 'border-rose-500 bg-rose-50/50 ring-2 ring-rose-500/20'
+                : 'border-rose-200 bg-white'
             )}
           >
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-rose-100 flex items-center justify-center text-rose-600 shrink-0">
-                <Zap className="h-5 w-5" />
+            <div className='flex items-center gap-3'>
+              <div className='h-10 w-10 rounded-lg bg-rose-100 flex items-center justify-center text-rose-600 shrink-0'>
+                <Zap className='h-5 w-5' />
               </div>
               <div>
-                <p className="text-[10px] font-bold text-rose-600 uppercase tracking-wider">Urgent</p>
-                <p className="text-xl font-bold text-rose-800">{stats.urgent}</p>
+                <p className='text-[10px] font-bold text-rose-600 uppercase tracking-wider'>
+                  Urgent
+                </p>
+                <p className='text-xl font-bold text-rose-800'>
+                  {stats.urgent}
+                </p>
               </div>
             </div>
             {dashboardFilter === 'urgent' && (
-              <span className="text-[10px] bg-rose-100 text-rose-700 px-2 py-0.5 rounded-full font-semibold animate-pulse">
+              <span className='text-[10px] bg-rose-100 text-rose-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
                 Active
               </span>
             )}
@@ -1191,881 +1348,1160 @@ export function ProjectsV2Table({
         </div>
       )}
 
-      <div className={cn(
-        "w-full max-w-full overflow-hidden",
-        (showAllDashboard || showPerencanaan || showEngineer || showProduksi) && "bg-white rounded-xl shadow-sm border border-neutral-200"
-      )}>
+      <div
+        className={cn(
+          'w-full max-w-full overflow-hidden',
+          (showAllDashboard ||
+            showPerencanaan ||
+            showEngineer ||
+            showProduksi) &&
+            'bg-white rounded-xl shadow-sm border border-neutral-200'
+        )}
+      >
         <div className='flex flex-col gap-4 p-4 w-full max-w-full overflow-hidden'>
-      <div className='flex flex-col sm:flex-row justify-between gap-4 items-start sm:items-center'>
-        <div className='flex flex-1 gap-2 items-center w-full sm:max-w-md'>
-          <div className='relative flex-1'>
-            <Search className='absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground' />
-            <Input
-              placeholder='Search projects...'
-              className='pl-8'
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-            />
-          </div>
-          <Popover open={clientPopoverOpen} onOpenChange={setClientPopoverOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                variant='outline'
-                role='combobox'
-                className={cn(
-                  'w-[200px] justify-between',
-                  !clientId && 'text-muted-foreground'
-                )}
-              >
-                {clientId && clientId !== 'all'
-                  ? clients.find((client) => client.id.toString() === clientId)
-                      ?.name || 'Select a client'
-                  : 'All Clients'}
-                <ChevronsUpDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className='w-[300px] p-0' align='start'>
-              <Command shouldFilter={false}>
-                <CommandInput
-                  placeholder='Search clients...'
-                  value={clientSearch}
-                  onValueChange={setClientSearch}
+          <div className='flex flex-col sm:flex-row justify-between gap-4 items-start sm:items-center'>
+            <div className='flex flex-1 gap-2 items-center w-full sm:max-w-md'>
+              <div className='relative flex-1'>
+                <Search className='absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground' />
+                <Input
+                  placeholder='Search projects...'
+                  className='pl-8'
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
                 />
-                <CommandList>
-                  <CommandEmpty>
-                    {isLoadingClients
-                      ? 'Loading clients...'
-                      : 'No clients found.'}
-                  </CommandEmpty>
-                  <CommandGroup>
-                    <CommandItem
-                      value='all'
-                      onSelect={() => {
-                        setClientId('all');
-                        setPage(1);
-                        setClientPopoverOpen(false);
-                      }}
-                    >
-                      <Check
-                        className={cn(
-                          'mr-2 h-4 w-4',
-                          clientId === 'all' ? 'opacity-100' : 'opacity-0'
-                        )}
-                      />
-                      All Clients
-                    </CommandItem>
-                    {clients.map((client) => (
-                      <CommandItem
-                        value={client.id.toString()}
-                        key={client.id}
-                        onSelect={() => {
-                          setClientId(client.id.toString());
+              </div>
+              <Popover
+                open={clientPopoverOpen}
+                onOpenChange={setClientPopoverOpen}
+              >
+                <PopoverTrigger asChild>
+                  <Button
+                    variant='outline'
+                    role='combobox'
+                    className={cn(
+                      'w-[200px] justify-between',
+                      !clientId && 'text-muted-foreground'
+                    )}
+                  >
+                    {clientId && clientId !== 'all'
+                      ? clients.find(
+                          (client) => client.id.toString() === clientId
+                        )?.name || 'Select a client'
+                      : 'All Clients'}
+                    <ChevronsUpDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className='w-[300px] p-0' align='start'>
+                  <Command shouldFilter={false}>
+                    <CommandInput
+                      placeholder='Search clients...'
+                      value={clientSearch}
+                      onValueChange={setClientSearch}
+                    />
+                    <CommandList>
+                      <CommandEmpty>
+                        {isLoadingClients
+                          ? 'Loading clients...'
+                          : 'No clients found.'}
+                      </CommandEmpty>
+                      <CommandGroup>
+                        <CommandItem
+                          value='all'
+                          onSelect={() => {
+                            setClientId('all');
+                            setPage(1);
+                            setClientPopoverOpen(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              'mr-2 h-4 w-4',
+                              clientId === 'all' ? 'opacity-100' : 'opacity-0'
+                            )}
+                          />
+                          All Clients
+                        </CommandItem>
+                        {clients.map((client) => (
+                          <CommandItem
+                            value={client.id.toString()}
+                            key={client.id}
+                            onSelect={() => {
+                              setClientId(client.id.toString());
+                              setPage(1);
+                              setClientPopoverOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                'mr-2 h-4 w-4',
+                                clientId === client.id.toString()
+                                  ? 'opacity-100'
+                                  : 'opacity-0'
+                              )}
+                            />
+                            {client.name}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                      {hasNextPage && (
+                        <div
+                          ref={loadMoreRef}
+                          className='py-4 flex justify-center items-center'
+                        >
+                          <Loader2 className='h-4 w-4 animate-spin text-muted-foreground' />
+                          <span className='ml-2 text-xs text-muted-foreground'>
+                            Loading more...
+                          </span>
+                        </div>
+                      )}
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            <div className='flex flex-wrap gap-2 items-center'>
+              <Select
+                value={selectedMonth}
+                onValueChange={(v: string) => {
+                  setSelectedMonth(v);
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger className='w-[130px]'>
+                  <SelectValue placeholder='Month' />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='all'>All Months</SelectItem>
+                  <SelectItem value='1'>January</SelectItem>
+                  <SelectItem value='2'>February</SelectItem>
+                  <SelectItem value='3'>March</SelectItem>
+                  <SelectItem value='4'>April</SelectItem>
+                  <SelectItem value='5'>May</SelectItem>
+                  <SelectItem value='6'>June</SelectItem>
+                  <SelectItem value='7'>July</SelectItem>
+                  <SelectItem value='8'>August</SelectItem>
+                  <SelectItem value='9'>September</SelectItem>
+                  <SelectItem value='10'>October</SelectItem>
+                  <SelectItem value='11'>November</SelectItem>
+                  <SelectItem value='12'>December</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select
+                value={selectedYear}
+                onValueChange={(v: string) => {
+                  setSelectedYear(v);
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger className='w-[110px]'>
+                  <SelectValue placeholder='Year' />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='all'>All Years</SelectItem>
+                  {Array.from(
+                    { length: 5 },
+                    (_, i) => new Date().getFullYear() - i
+                  ).map((year) => (
+                    <SelectItem key={year} value={year.toString()}>
+                      {year}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {!onlyShowDetail && !showAllDashboard && (
+              <Button
+                onClick={handleCreate}
+                className='bg-orange-600 hover:bg-orange-700'
+              >
+                <Plus className='mr-2 h-4 w-4' />
+                New Project
+              </Button>
+            )}
+          </div>
+
+          <div className='rounded-md border overflow-x-auto w-full'>
+            <Table>
+              <TableHeader className='bg-neutral-50'>
+                <TableRow>
+                  <TableHead className='w-[50px]'>#</TableHead>
+                  {showAllDashboard ? (
+                    <>
+                      <TableHead>Client</TableHead>
+                      <TableHead>Nama Projek</TableHead>
+                      <TableHead>Nomor SPK</TableHead>
+                      <TableHead
+                        className='cursor-pointer hover:bg-neutral-100 transition-colors group'
+                        onClick={() => {
+                          if (sortBy === 'spk_masuk') {
+                            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                          } else {
+                            setSortBy('spk_masuk');
+                            setSortOrder('asc');
+                          }
                           setPage(1);
-                          setClientPopoverOpen(false);
                         }}
                       >
-                        <Check
-                          className={cn(
-                            'mr-2 h-4 w-4',
-                            clientId === client.id.toString()
-                              ? 'opacity-100'
-                              : 'opacity-0'
+                        <div className='flex items-center gap-1'>
+                          SPK Masuk
+                          {sortBy === 'spk_masuk' ? (
+                            sortOrder === 'asc' ? (
+                              <ArrowUp className='h-3 w-3' />
+                            ) : (
+                              <ArrowDown className='h-3 w-3' />
+                            )
+                          ) : (
+                            <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
                           )}
-                        />
-                        {client.name}
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                  {hasNextPage && (
-                    <div
-                      ref={loadMoreRef}
-                      className='py-4 flex justify-center items-center'
-                    >
-                      <Loader2 className='h-4 w-4 animate-spin text-muted-foreground' />
-                      <span className='ml-2 text-xs text-muted-foreground'>
-                        Loading more...
-                      </span>
-                    </div>
-                  )}
-                </CommandList>
-              </Command>
-            </PopoverContent>
-          </Popover>
-        </div>
-
-        <div className='flex flex-wrap gap-2 items-center'>
-          <Select value={selectedMonth} onValueChange={(v: string) => { setSelectedMonth(v); setPage(1); }}>
-            <SelectTrigger className="w-[130px]">
-              <SelectValue placeholder="Month" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Months</SelectItem>
-              <SelectItem value="1">January</SelectItem>
-              <SelectItem value="2">February</SelectItem>
-              <SelectItem value="3">March</SelectItem>
-              <SelectItem value="4">April</SelectItem>
-              <SelectItem value="5">May</SelectItem>
-              <SelectItem value="6">June</SelectItem>
-              <SelectItem value="7">July</SelectItem>
-              <SelectItem value="8">August</SelectItem>
-              <SelectItem value="9">September</SelectItem>
-              <SelectItem value="10">October</SelectItem>
-              <SelectItem value="11">November</SelectItem>
-              <SelectItem value="12">December</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select value={selectedYear} onValueChange={(v: string) => { setSelectedYear(v); setPage(1); }}>
-            <SelectTrigger className="w-[110px]">
-              <SelectValue placeholder="Year" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Years</SelectItem>
-              {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map(year => (
-                <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        {!onlyShowDetail && !showAllDashboard && (
-          <Button
-            onClick={handleCreate}
-            className='bg-orange-600 hover:bg-orange-700'
-          >
-            <Plus className='mr-2 h-4 w-4' />
-            New Project
-          </Button>
-        )}
-      </div>
-
-      <div className='rounded-md border overflow-x-auto w-full'>
-        <Table>
-          <TableHeader className='bg-neutral-50'>
-            <TableRow>
-              <TableHead className='w-[50px]'>#</TableHead>
-              {showAllDashboard ? (
-                <>
-                  <TableHead>Client</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Nomor SPK</TableHead>
-                  <TableHead
-                    className='cursor-pointer hover:bg-neutral-100 transition-colors group'
-                    onClick={() => {
-                      if (sortBy === 'spk_masuk') {
-                        setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                      } else {
-                        setSortBy('spk_masuk');
-                        setSortOrder('asc');
-                      }
-                      setPage(1);
-                    }}
-                  >
-                    <div className='flex items-center gap-1'>
-                      SPK Masuk
-                      {sortBy === 'spk_masuk' ? (
-                        sortOrder === 'asc' ? (
-                          <ArrowUp className='h-3 w-3' />
-                        ) : (
-                          <ArrowDown className='h-3 w-3' />
-                        )
-                      ) : (
-                        <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
-                      )}
-                    </div>
-                  </TableHead>
-                  <TableHead
-                    className='cursor-pointer hover:bg-neutral-100 transition-colors group'
-                    onClick={() => {
-                      if (sortBy === 'prioritas') {
-                        setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                      } else {
-                        setSortBy('prioritas');
-                        setSortOrder('asc');
-                      }
-                      setPage(1);
-                    }}
-                  >
-                    <div className='flex items-center gap-1'>
-                      Prioritas
-                      {sortBy === 'prioritas' ? (
-                        sortOrder === 'asc' ? (
-                          <ArrowUp className='h-3 w-3' />
-                        ) : (
-                          <ArrowDown className='h-3 w-3' />
-                        )
-                      ) : (
-                        <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
-                      )}
-                    </div>
-                  </TableHead>
-                  <TableHead
-                    className='cursor-pointer hover:bg-neutral-100 transition-colors group'
-                    onClick={() => {
-                      if (sortBy === 'deadline') {
-                        setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                      } else {
-                        setSortBy('deadline');
-                        setSortOrder('asc');
-                      }
-                      setPage(1);
-                    }}
-                  >
-                    <div className='flex items-center gap-1'>
-                      Deadline
-                      {sortBy === 'deadline' ? (
-                        sortOrder === 'asc' ? (
-                          <ArrowUp className='h-3 w-3' />
-                        ) : (
-                          <ArrowDown className='h-3 w-3' />
-                        )
-                      ) : (
-                        <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
-                      )}
-                    </div>
-                  </TableHead>
-                  <TableHead
-                    className='cursor-pointer hover:bg-neutral-100 transition-colors group'
-                    onClick={() => {
-                      if (sortBy === 'sisa_hari') {
-                        setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                      } else {
-                        setSortBy('sisa_hari');
-                        setSortOrder('asc');
-                      }
-                      setPage(1);
-                    }}
-                  >
-                    <div className='flex items-center gap-1'>
-                      Sisa Hari
-                      {sortBy === 'sisa_hari' ? (
-                        sortOrder === 'asc' ? (
-                          <ArrowUp className='h-3 w-3' />
-                        ) : (
-                          <ArrowDown className='h-3 w-3' />
-                        )
-                      ) : (
-                        <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
-                      )}
-                    </div>
-                  </TableHead>
-                </>
-              ) : (
-                <>
-                  {!showEngineer && !showProduksi && <TableHead>Mkt</TableHead>}
-                  <TableHead>Client</TableHead>
-                  {!showSPD && <TableHead>Nomor SPK</TableHead>}
-                  {showPiutang && <TableHead>Nominal</TableHead>}
-                  {!showSPD && (
-                    <TableHead
-                      className='cursor-pointer hover:bg-neutral-100 transition-colors group'
-                      onClick={() => {
-                        if (sortBy === 'spk_masuk') {
-                          setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                        } else {
-                          setSortBy('spk_masuk');
-                          setSortOrder('asc');
-                        }
-                        setPage(1);
-                      }}
-                    >
-                      <div className='flex items-center gap-1'>
-                        SPK Masuk
-                        {sortBy === 'spk_masuk' ? (
-                          sortOrder === 'asc' ? (
-                            <ArrowUp className='h-3 w-3' />
+                        </div>
+                      </TableHead>
+                      <TableHead
+                        className='cursor-pointer hover:bg-neutral-100 transition-colors group'
+                        onClick={() => {
+                          if (sortBy === 'prioritas') {
+                            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                          } else {
+                            setSortBy('prioritas');
+                            setSortOrder('asc');
+                          }
+                          setPage(1);
+                        }}
+                      >
+                        <div className='flex items-center gap-1'>
+                          Prioritas
+                          {sortBy === 'prioritas' ? (
+                            sortOrder === 'asc' ? (
+                              <ArrowUp className='h-3 w-3' />
+                            ) : (
+                              <ArrowDown className='h-3 w-3' />
+                            )
                           ) : (
-                            <ArrowDown className='h-3 w-3' />
-                          )
-                        ) : (
-                          <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
-                        )}
-                      </div>
-                    </TableHead>
-                  )}
-                  {!showSPD && !showProduksi && <TableHead>Nomor SPH</TableHead>}
-                  {!showSPD && (
-                    <TableHead
-                      className='cursor-pointer hover:bg-neutral-100 transition-colors group'
-                      onClick={() => {
-                        if (sortBy === 'prioritas') {
-                          setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                        } else {
-                          setSortBy('prioritas');
-                          setSortOrder('asc');
-                        }
-                        setPage(1);
-                      }}
-                    >
-                      <div className='flex items-center gap-1'>
-                        Prioritas
-                        {sortBy === 'prioritas' ? (
-                          sortOrder === 'asc' ? (
-                            <ArrowUp className='h-3 w-3' />
-                          ) : (
-                            <ArrowDown className='h-3 w-3' />
-                          )
-                        ) : (
-                          <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
-                        )}
-                      </div>
-                    </TableHead>
-                  )}
-                  {showPiutang && <TableHead>Progres Produksi</TableHead>}
-                  {showPiutang && <TableHead>Total Penagihan</TableHead>}
-                  {!showProduksi && !showPiutang && <TableHead>Description</TableHead>}
-                </>
-              )}
-              {!showAllDashboard && !showSPD && (
-                <>
-                  <TableHead
-                    className='cursor-pointer hover:bg-neutral-100 transition-colors group'
-                    onClick={() => {
-                      if (sortBy === 'deadline') {
-                        setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                      } else {
-                        setSortBy('deadline');
-                        setSortOrder('asc');
-                      }
-                      setPage(1);
-                    }}
-                  >
-                    <div className='flex items-center gap-1'>
-                      Deadline
-                      {sortBy === 'deadline' ? (
-                        sortOrder === 'asc' ? (
-                          <ArrowUp className='h-3 w-3' />
-                        ) : (
-                          <ArrowDown className='h-3 w-3' />
-                        )
-                      ) : (
-                        <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
-                      )}
-                    </div>
-                  </TableHead>
-
-                  {!showProduksi && !showPiutang && (
-                    <TableHead
-                      className='cursor-pointer hover:bg-neutral-100 transition-colors group'
-                      onClick={() => {
-                        if (sortBy === 'sisa_hari') {
-                          setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                        } else {
-                          setSortBy('sisa_hari');
-                          setSortOrder('asc');
-                        }
-                        setPage(1);
-                      }}
-                    >
-                      <div className='flex items-center gap-1'>
-                        Sisa Hari
-                        {sortBy === 'sisa_hari' ? (
-                          sortOrder === 'asc' ? (
-                            <ArrowUp className='h-3 w-3' />
-                          ) : (
-                            <ArrowDown className='h-3 w-3' />
-                          )
-                        ) : (
-                          <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
-                        )}
-                      </div>
-                    </TableHead>
-                  )}
-                </>
-              )}
-              {!showAllDashboard && !showProduksi && !showPiutang && <TableHead>Pakai Desain</TableHead>}
-              {!showAllDashboard && !showSPD && <TableHead>Jadwal Kirim</TableHead>}
-              
-              {showAllDashboard && (
-                <>
-                  <TableHead>Jadwal Kirim</TableHead>
-                  <TableHead
-                    className='cursor-pointer hover:bg-neutral-100 transition-colors group'
-                    onClick={() => {
-                      if (sortBy === 'persentase_kerja') {
-                        setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                      } else {
-                        setSortBy('persentase_kerja');
-                        setSortOrder('asc');
-                      }
-                      setPage(1);
-                    }}
-                  >
-                    <div className='flex items-center gap-1'>
-                      Progres Kerja
-                      {sortBy === 'persentase_kerja' ? (
-                        sortOrder === 'asc' ? (
-                          <ArrowUp className='h-3 w-3' />
-                        ) : (
-                          <ArrowDown className='h-3 w-3' />
-                        )
-                      ) : (
-                        <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
-                      )}
-                    </div>
-                  </TableHead>
-                  <TableHead>Progres Akhir</TableHead>
-                </>
-              )}
-              {!showAllDashboard && showSPD && (
-                <>
-                  {!showEngineer && <TableHead>SPD</TableHead>}
-                  {!showEngineer && <TableHead>Pic</TableHead>}
-                  {showEngineer ? <TableHead>Desainer</TableHead> : (!showEngineer && <TableHead>Desain</TableHead>)}
-                  {!showEngineer && <TableHead>Approval Status</TableHead>}
-                  {!showEngineer && <TableHead>Target Desain</TableHead>}
-                  {showEngineer && <TableHead>Target</TableHead>}
-                  {showEngineer && <TableHead>Persentase</TableHead>}
-                  {!showEngineer && <TableHead>Submit</TableHead>}
-                  {showEngineer && <TableHead>Submit</TableHead>}
-                  <TableHead>Tepat Waktu</TableHead>
-                  {showEngineer && <TableHead>Note</TableHead>}
-                  {!showEngineer && <TableHead>List Furnitur</TableHead>}
-                </>
-              )}
-              {showProduksi && (
-                <>
-                  <TableHead>Order Produksi</TableHead>
-                  <TableHead>Target Selesai</TableHead>
-                  <TableHead
-                    className='cursor-pointer hover:bg-neutral-100 transition-colors group'
-                    onClick={() => {
-                      if (sortBy === 'sisa_hari') {
-                        setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                      } else {
-                        setSortBy('sisa_hari');
-                        setSortOrder('asc');
-                      }
-                      setPage(1);
-                    }}
-                  >
-                    <div className='flex items-center gap-1'>
-                      Sisa Hari
-                      {sortBy === 'sisa_hari' ? (
-                        sortOrder === 'asc' ? (
-                          <ArrowUp className='h-3 w-3' />
-                        ) : (
-                          <ArrowDown className='h-3 w-3' />
-                        )
-                      ) : (
-                        <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
-                      )}
-                    </div>
-                  </TableHead>
-                </>
-              )}
-              {showProduksi && <TableHead>Progres Produksi</TableHead>}
-               {(isMainProjectsV2Page || showPerencanaan) && (
-                 <>
-                  <TableHead
-                    className='cursor-pointer hover:bg-neutral-100 transition-colors group'
-                    onClick={() => {
-                      if (sortBy === 'persentase_kerja') {
-                        setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                      } else {
-                        setSortBy('persentase_kerja');
-                        setSortOrder('asc');
-                      }
-                      setPage(1);
-                    }}
-                  >
-                    <div className='flex items-center gap-1'>
-                      Progres Kerja
-                      {sortBy === 'persentase_kerja' ? (
-                        sortOrder === 'asc' ? (
-                          <ArrowUp className='h-3 w-3' />
-                        ) : (
-                          <ArrowDown className='h-3 w-3' />
-                        )
-                      ) : (
-                        <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
-                      )}
-                    </div>
-                  </TableHead>
-                  <TableHead>Progres Akhir</TableHead>
-                 </>
-              )}
-              <TableHead className='w-[100px] text-right'>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={showAllDashboard ? 12 : (showEngineer ? 17 : (showProduksi ? 13 : (showPiutang ? 13 : ((isMainProjectsV2Page || showPerencanaan) ? 20 : 18))))} className='h-32 text-center text-muted-foreground'>
-                  <div className='flex items-center justify-center'>
-                    <Loader2 className='h-6 w-6 animate-spin text-neutral-400' />
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : projects.length === 0 ? (
-              <TableRow>
-                <TableCell
-                  colSpan={showAllDashboard ? 12 : (showEngineer ? 17 : (showProduksi ? 13 : (showPiutang ? 13 : ((isMainProjectsV2Page || showPerencanaan) ? 20 : 18))))}
-                  className='h-32 text-center text-muted-foreground'
-                >
-                  No projects found.
-                </TableCell>
-              </TableRow>
-            ) : (
-              projects.map((project, index) => (
-                <TableRow key={project.id}>
-                  <TableCell className='font-medium text-muted-foreground'>
-                    {(page - 1) * 10 + index + 1}
-                  </TableCell>
-                   {showAllDashboard ? (
-                     <>
-                        <TableCell>{project.client?.name || '-'}</TableCell>
-                        <TableCell className='max-w-[200px] truncate'>
-                          {project.description || (
-                            <span className='text-muted-foreground italic text-xs'>None</span>
+                            <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
                           )}
-                        </TableCell>
-                        <TableCell className='font-medium text-blue-600'>
-                          {project.spk_number || project.spk?.nomor_spk || '-'}
-                        </TableCell>
-                         <TableCell>
-                           {project.spk?.tanggal_masuk
-                             ? format(new Date(project.spk.tanggal_masuk), 'dd MMM yyyy')
-                             : '-'}
-                         </TableCell>
-                        <TableCell>
-                          {project.prioritas === 'Urgent' ? (
-                            <Badge className='bg-red-100 text-red-700 border border-red-200 hover:bg-red-100 font-semibold text-[11px]'>
-                              Urgent
-                            </Badge>
-                          ) : project.prioritas === 'Normal' ? (
-                            <Badge variant='secondary' className='font-normal text-[11px]'>
-                              Normal
-                            </Badge>
+                        </div>
+                      </TableHead>
+                      <TableHead
+                        className='cursor-pointer hover:bg-neutral-100 transition-colors group'
+                        onClick={() => {
+                          if (sortBy === 'deadline') {
+                            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                          } else {
+                            setSortBy('deadline');
+                            setSortOrder('asc');
+                          }
+                          setPage(1);
+                        }}
+                      >
+                        <div className='flex items-center gap-1'>
+                          Deadline
+                          {sortBy === 'deadline' ? (
+                            sortOrder === 'asc' ? (
+                              <ArrowUp className='h-3 w-3' />
+                            ) : (
+                              <ArrowDown className='h-3 w-3' />
+                            )
                           ) : (
-                            <span className='text-muted-foreground italic text-xs'>-</span>
+                            <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
                           )}
-                        </TableCell>
-                        <TableCell>
-                          {project.deadline
-                            ? format(new Date(project.deadline), 'MMM d, yyyy')
-                            : '-'}
-                        </TableCell>
-                        <TableCell>
-                          {project.tanggal_selesai ? (
-                            <div className='flex items-center gap-2'>
-                              <div className='flex items-center justify-center h-7 w-7 rounded-full bg-emerald-50 text-emerald-600 shrink-0'>
-                                <Check className='h-4 w-4 stroke-[3]' />
-                              </div>
-                              {project.tanggal_selesai && project.deadline && (
-                                (() => {
-                                  const diff = differenceInDays(
-                                    startOfDay(new Date(project.deadline)),
-                                    startOfDay(new Date(project.tanggal_selesai))
-                                  );
-                                  if (diff >= 4) {
-                                    return (
-                                      <Badge
-                                        variant='outline'
-                                        className='bg-emerald-50 text-emerald-700 border-emerald-200 font-bold whitespace-nowrap'
-                                      >
-                                        Cepat
-                                      </Badge>
-                                    );
-                                  } else if (diff >= 0) {
-                                    return (
-                                      <Badge
-                                        variant='outline'
-                                        className='bg-blue-50 text-blue-700 border-blue-200 font-bold whitespace-nowrap'
-                                      >
-                                        Normal
-                                      </Badge>
-                                    );
-                                  } else {
-                                    return (
-                                      <Badge
-                                        variant='outline'
-                                        className='bg-red-50 text-red-700 border-red-200 font-bold whitespace-nowrap'
-                                      >
-                                        Lambat
-                                      </Badge>
-                                    );
-                                  }
-                                })()
-                              )}
-                            </div>
-                          ) : project.deadline ? (
-                            (() => {
-                              const diff = differenceInDays(
-                                startOfDay(new Date(project.deadline)),
-                                startOfDay(new Date())
+                        </div>
+                      </TableHead>
+                      <TableHead
+                        className='cursor-pointer hover:bg-neutral-100 transition-colors group'
+                        onClick={() => {
+                          if (sortBy === 'sisa_hari') {
+                            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                          } else {
+                            setSortBy('sisa_hari');
+                            setSortOrder('asc');
+                          }
+                          setPage(1);
+                        }}
+                      >
+                        <div className='flex items-center gap-1'>
+                          Sisa Hari
+                          {sortBy === 'sisa_hari' ? (
+                            sortOrder === 'asc' ? (
+                              <ArrowUp className='h-3 w-3' />
+                            ) : (
+                              <ArrowDown className='h-3 w-3' />
+                            )
+                          ) : (
+                            <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
+                          )}
+                        </div>
+                      </TableHead>
+                    </>
+                  ) : (
+                    <>
+                      {!showEngineer && !showProduksi && (
+                        <TableHead>Mkt</TableHead>
+                      )}
+                      <TableHead>Client</TableHead>
+                      {!showSPD && <TableHead>Nomor SPK</TableHead>}
+                      {showPiutang && <TableHead>Nominal</TableHead>}
+                      {!showSPD && (
+                        <TableHead
+                          className='cursor-pointer hover:bg-neutral-100 transition-colors group'
+                          onClick={() => {
+                            if (sortBy === 'spk_masuk') {
+                              setSortOrder(
+                                sortOrder === 'asc' ? 'desc' : 'asc'
                               );
-                              return (
-                                <div className='flex items-center gap-1.5'>
-                                  <Badge
-                                    variant='outline'
-                                    className={cn(
-                                      'font-bold',
-                                      diff < 0
-                                        ? 'bg-red-50 text-red-700 border-red-200'
-                                        : diff < 8
-                                        ? 'bg-orange-50 text-orange-700 border-orange-200'
-                                        : 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                    )}
-                                  >
-                                    {diff < 0
-                                      ? `Lewat ${Math.abs(diff)} Hari`
-                                      : `${diff} Hari`}
-                                  </Badge>
-                                </div>
+                            } else {
+                              setSortBy('spk_masuk');
+                              setSortOrder('asc');
+                            }
+                            setPage(1);
+                          }}
+                        >
+                          <div className='flex items-center gap-1'>
+                            SPK Masuk
+                            {sortBy === 'spk_masuk' ? (
+                              sortOrder === 'asc' ? (
+                                <ArrowUp className='h-3 w-3' />
+                              ) : (
+                                <ArrowDown className='h-3 w-3' />
+                              )
+                            ) : (
+                              <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
+                            )}
+                          </div>
+                        </TableHead>
+                      )}
+                      {!showSPD && !showProduksi && (
+                        <TableHead>Nomor SPH</TableHead>
+                      )}
+                      {!showSPD && (
+                        <TableHead
+                          className='cursor-pointer hover:bg-neutral-100 transition-colors group'
+                          onClick={() => {
+                            if (sortBy === 'prioritas') {
+                              setSortOrder(
+                                sortOrder === 'asc' ? 'desc' : 'asc'
                               );
-                            })()
+                            } else {
+                              setSortBy('prioritas');
+                              setSortOrder('asc');
+                            }
+                            setPage(1);
+                          }}
+                        >
+                          <div className='flex items-center gap-1'>
+                            Prioritas
+                            {sortBy === 'prioritas' ? (
+                              sortOrder === 'asc' ? (
+                                <ArrowUp className='h-3 w-3' />
+                              ) : (
+                                <ArrowDown className='h-3 w-3' />
+                              )
+                            ) : (
+                              <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
+                            )}
+                          </div>
+                        </TableHead>
+                      )}
+                      {showPiutang && <TableHead>Progres Produksi</TableHead>}
+                      {showPiutang && <TableHead>Total Penagihan</TableHead>}
+                      {!showProduksi && !showPiutang && (
+                        <TableHead>Nama Projek</TableHead>
+                      )}
+                    </>
+                  )}
+                  {!showAllDashboard && !showSPD && (
+                    <>
+                      <TableHead
+                        className='cursor-pointer hover:bg-neutral-100 transition-colors group'
+                        onClick={() => {
+                          if (sortBy === 'deadline') {
+                            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                          } else {
+                            setSortBy('deadline');
+                            setSortOrder('asc');
+                          }
+                          setPage(1);
+                        }}
+                      >
+                        <div className='flex items-center gap-1'>
+                          Deadline
+                          {sortBy === 'deadline' ? (
+                            sortOrder === 'asc' ? (
+                              <ArrowUp className='h-3 w-3' />
+                            ) : (
+                              <ArrowDown className='h-3 w-3' />
+                            )
                           ) : (
-                            <span className='text-muted-foreground italic text-xs'>
-                              -
-                            </span>
+                            <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
                           )}
-                        </TableCell>
-                        <TableCell>
-                          {project.jadwal_pengiriman ? (
-                            <div className='flex items-center gap-1.5 text-xs font-medium text-neutral-900'>
-                              <Truck className='h-3 w-3 text-orange-500' />
-                              {format(
-                                new Date(
-                                  project.jadwal_pengiriman.tanggal_pengiriman
-                                    ?.tanggal || ''
-                                ),
-                                'MMM d, yyyy'
-                              )}
-                            </div>
+                        </div>
+                      </TableHead>
+
+                      {!showProduksi && !showPiutang && (
+                        <TableHead
+                          className='cursor-pointer hover:bg-neutral-100 transition-colors group'
+                          onClick={() => {
+                            if (sortBy === 'sisa_hari') {
+                              setSortOrder(
+                                sortOrder === 'asc' ? 'desc' : 'asc'
+                              );
+                            } else {
+                              setSortBy('sisa_hari');
+                              setSortOrder('asc');
+                            }
+                            setPage(1);
+                          }}
+                        >
+                          <div className='flex items-center gap-1'>
+                            Sisa Hari
+                            {sortBy === 'sisa_hari' ? (
+                              sortOrder === 'asc' ? (
+                                <ArrowUp className='h-3 w-3' />
+                              ) : (
+                                <ArrowDown className='h-3 w-3' />
+                              )
+                            ) : (
+                              <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
+                            )}
+                          </div>
+                        </TableHead>
+                      )}
+                    </>
+                  )}
+                  {!showAllDashboard && !showProduksi && !showPiutang && (
+                    <TableHead>Pakai Desain</TableHead>
+                  )}
+                  {!showAllDashboard && !showSPD && (
+                    <TableHead>Jadwal Kirim</TableHead>
+                  )}
+
+                  {showAllDashboard && (
+                    <>
+                      <TableHead>Jadwal Kirim</TableHead>
+                      <TableHead
+                        className='cursor-pointer hover:bg-neutral-100 transition-colors group'
+                        onClick={() => {
+                          if (sortBy === 'persentase_kerja') {
+                            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                          } else {
+                            setSortBy('persentase_kerja');
+                            setSortOrder('asc');
+                          }
+                          setPage(1);
+                        }}
+                      >
+                        <div className='flex items-center gap-1'>
+                          Progres Kerja
+                          {sortBy === 'persentase_kerja' ? (
+                            sortOrder === 'asc' ? (
+                              <ArrowUp className='h-3 w-3' />
+                            ) : (
+                              <ArrowDown className='h-3 w-3' />
+                            )
                           ) : (
-                            <span className='text-muted-foreground italic text-xs'>-</span>
+                            <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
                           )}
-                        </TableCell>
-                        <TableCell>
-                          {project.progres_kerja ? (
-                            <span className='text-sm font-black text-blue-600 tabular-nums'>
-                              {Math.round(project.progres_kerja.total)}%
-                            </span>
+                        </div>
+                      </TableHead>
+                      <TableHead>Progres Akhir</TableHead>
+                    </>
+                  )}
+                  {!showAllDashboard && showSPD && (
+                    <>
+                      {!showEngineer && <TableHead>SPD</TableHead>}
+                      {!showEngineer && <TableHead>Pic</TableHead>}
+                      {showEngineer ? (
+                        <TableHead>Desainer</TableHead>
+                      ) : (
+                        !showEngineer && <TableHead>Desain</TableHead>
+                      )}
+                      {!showEngineer && <TableHead>Approval Status</TableHead>}
+                      {!showEngineer && <TableHead>Target Desain</TableHead>}
+                      {showEngineer && <TableHead>Target</TableHead>}
+                      {showEngineer && <TableHead>Persentase</TableHead>}
+                      {!showEngineer && <TableHead>Submit</TableHead>}
+                      {showEngineer && <TableHead>Submit</TableHead>}
+                      <TableHead>Tepat Waktu</TableHead>
+                      {showEngineer && <TableHead>Note</TableHead>}
+                      {!showEngineer && <TableHead>List Furnitur</TableHead>}
+                    </>
+                  )}
+                  {showProduksi && (
+                    <>
+                      <TableHead>Order Produksi</TableHead>
+                      <TableHead>Target Selesai</TableHead>
+                      <TableHead
+                        className='cursor-pointer hover:bg-neutral-100 transition-colors group'
+                        onClick={() => {
+                          if (sortBy === 'sisa_hari') {
+                            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                          } else {
+                            setSortBy('sisa_hari');
+                            setSortOrder('asc');
+                          }
+                          setPage(1);
+                        }}
+                      >
+                        <div className='flex items-center gap-1'>
+                          Sisa Hari
+                          {sortBy === 'sisa_hari' ? (
+                            sortOrder === 'asc' ? (
+                              <ArrowUp className='h-3 w-3' />
+                            ) : (
+                              <ArrowDown className='h-3 w-3' />
+                            )
                           ) : (
-                            <span className='text-muted-foreground italic text-xs'>-</span>
+                            <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
                           )}
-                        </TableCell>
-                        <TableCell>
-                          {(() => {
-                            if (!project.progres_kerja) return <span className='text-muted-foreground italic text-xs'>-</span>;
-                            
-                            const stages = [
-                              { name: 'PO Divisi', date: project.progres_kerja.tanggal_update_po_divisi, color: 'blue' },
-                              { name: 'Gambar Kerja', date: project.progres_kerja.tanggal_update_gambar_kerja, color: 'orange' },
-                              { name: 'Dokubah', date: project.progres_kerja.tanggal_update_dokubah, color: 'purple' },
-                              { name: 'Stok Material', date: project.progres_kerja.tanggal_update_stok_material, color: 'emerald' },
-                              { name: 'Produksi', date: project.progres_kerja.tanggal_update_produksi, color: 'cyan' },
-                              { name: 'Gudang', date: project.progres_kerja.tanggal_update_gudang_barang_jadi, color: 'indigo' },
-                              { name: 'Pengiriman', date: project.progres_kerja.tanggal_update_pengiriman, color: 'rose' },
-                            ];
-
-                            const latest = stages
-                              .filter(s => s.date)
-                              .sort((a, b) => new Date(b.date!).getTime() - new Date(a.date!).getTime())[0];
-
-                            if (!latest) return <span className='text-muted-foreground italic text-xs'>-</span>;
-
-                            const getColor = (color: string) => {
-                              switch (color) {
-                                case 'blue': return 'bg-blue-50 text-blue-700 border-blue-200';
-                                case 'orange': return 'bg-orange-50 text-orange-700 border-orange-200';
-                                case 'purple': return 'bg-purple-50 text-purple-700 border-purple-200';
-                                case 'emerald': return 'bg-emerald-50 text-emerald-700 border-emerald-200';
-                                case 'cyan': return 'bg-cyan-50 text-cyan-700 border-cyan-200';
-                                case 'indigo': return 'bg-indigo-50 text-indigo-700 border-indigo-200';
-                                case 'rose': return 'bg-rose-50 text-rose-700 border-rose-200';
-                                default: return 'bg-neutral-50 text-neutral-700 border-neutral-200';
-                              }
-                            };
-
-                            return (
-                              <div className='flex flex-col gap-0.5'>
-                                <Badge variant='outline' className={cn("text-[9px] font-bold py-0 h-4 w-fit", getColor(latest.color))}>
-                                  {latest.name}
-                                </Badge>
-                                <span className='text-[8px] text-muted-foreground whitespace-nowrap'>
-                                  {format(new Date(latest.date!), 'MMM d, HH:mm')}
-                                </span>
-                              </div>
-                            );
-                          })()}
-                        </TableCell>
-                     </>
-                   ) : (
-                     <>
-                        {!showAllDashboard && !showEngineer && !showProduksi && <TableCell>{project.marketing?.name || '-'}</TableCell>}
-                        {!showAllDashboard && <TableCell className="font-semibold">{project.client?.name || '-'}</TableCell>}
-                        {!showSPD && (
+                        </div>
+                      </TableHead>
+                    </>
+                  )}
+                  {showProduksi && <TableHead>Progres Produksi</TableHead>}
+                  {(isMainProjectsV2Page || showPerencanaan) && (
+                    <>
+                      <TableHead
+                        className='cursor-pointer hover:bg-neutral-100 transition-colors group'
+                        onClick={() => {
+                          if (sortBy === 'persentase_kerja') {
+                            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                          } else {
+                            setSortBy('persentase_kerja');
+                            setSortOrder('asc');
+                          }
+                          setPage(1);
+                        }}
+                      >
+                        <div className='flex items-center gap-1'>
+                          Progres Kerja
+                          {sortBy === 'persentase_kerja' ? (
+                            sortOrder === 'asc' ? (
+                              <ArrowUp className='h-3 w-3' />
+                            ) : (
+                              <ArrowDown className='h-3 w-3' />
+                            )
+                          ) : (
+                            <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
+                          )}
+                        </div>
+                      </TableHead>
+                      <TableHead>Progres Akhir</TableHead>
+                    </>
+                  )}
+                  <TableHead className='w-[100px] text-right'>
+                    Actions
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={
+                        showAllDashboard
+                          ? 12
+                          : showEngineer
+                          ? 17
+                          : showProduksi
+                          ? 13
+                          : showPiutang
+                          ? 13
+                          : isMainProjectsV2Page || showPerencanaan
+                          ? 20
+                          : 18
+                      }
+                      className='h-32 text-center text-muted-foreground'
+                    >
+                      <div className='flex items-center justify-center'>
+                        <Loader2 className='h-6 w-6 animate-spin text-neutral-400' />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : projects.length === 0 ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={
+                        showAllDashboard
+                          ? 12
+                          : showEngineer
+                          ? 17
+                          : showProduksi
+                          ? 13
+                          : showPiutang
+                          ? 13
+                          : isMainProjectsV2Page || showPerencanaan
+                          ? 20
+                          : 18
+                      }
+                      className='h-32 text-center text-muted-foreground'
+                    >
+                      No projects found.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  projects.map((project, index) => (
+                    <TableRow key={project.id}>
+                      <TableCell className='font-medium text-muted-foreground'>
+                        {(page - 1) * 10 + index + 1}
+                      </TableCell>
+                      {showAllDashboard ? (
+                        <>
+                          <TableCell>{project.client?.name || '-'}</TableCell>
+                          <TableCell className='max-w-[200px] truncate'>
+                            {project.name || (
+                              <span className='text-muted-foreground italic text-xs'>
+                                None
+                              </span>
+                            )}
+                          </TableCell>
                           <TableCell className='font-medium text-blue-600'>
-                            {project.spk_number || project.spk?.nomor_spk || '-'}
+                            {project.spk_number ||
+                              project.spk?.nomor_spk ||
+                              '-'}
                           </TableCell>
-                        )}
-                        {showPiutang && (
-                          <TableCell className="font-semibold text-emerald-700">
-                            {project.spk?.nominal ? formatRupiah(project.spk.nominal) : '-'}
-                          </TableCell>
-                        )}
-                        {!showSPD && (
                           <TableCell>
                             {project.spk?.tanggal_masuk
-                              ? format(new Date(project.spk.tanggal_masuk), 'dd MMM yyyy')
+                              ? format(
+                                  new Date(project.spk.tanggal_masuk),
+                                  'dd MMM yyyy'
+                                )
                               : '-'}
                           </TableCell>
-                        )}
-                        {!showSPD && !showProduksi && (
-                          <TableCell>
-                            {project.sph?.nomor_sph || '-'}
-                          </TableCell>
-                        )}
-                        {!showSPD && (
                           <TableCell>
                             {project.prioritas === 'Urgent' ? (
                               <Badge className='bg-red-100 text-red-700 border border-red-200 hover:bg-red-100 font-semibold text-[11px]'>
                                 Urgent
                               </Badge>
                             ) : project.prioritas === 'Normal' ? (
-                              <Badge variant='secondary' className='font-normal text-[11px]'>
+                              <Badge
+                                variant='secondary'
+                                className='font-normal text-[11px]'
+                              >
                                 Normal
                               </Badge>
                             ) : (
-                              <span className='text-muted-foreground italic text-xs'>-</span>
+                              <span className='text-muted-foreground italic text-xs'>
+                                -
+                              </span>
                             )}
                           </TableCell>
-                        )}
-                     </>
-                   )}
-                   {showPiutang && (
-                     <TableCell>
-                       <div className='flex items-center gap-2'>
-                         <div className='flex-1 min-w-[60px]'>
-                           <div className='h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden'>
-                             <div
-                               className='h-full bg-blue-600 rounded-full transition-all duration-500'
-                               style={{
-                                 width: `${project.progres_produksi || 0}%`,
-                               }}
-                             />
-                           </div>
-                         </div>
-                         <span className='text-xs font-bold text-neutral-700'>
-                           {Math.round(project.progres_produksi || 0)}%
-                         </span>
-                       </div>
-                     </TableCell>
-                   )}
-                   {showAllDashboard && (
-                     <></>
-                   )}
-                   {!showAllDashboard && showPiutang && (
-                     <TableCell>
-                       <Badge 
-                         variant="outline" 
-                         className="bg-amber-50 text-amber-700 border-amber-200 font-bold"
-                       >
-                         {project.penagihans?.reduce((sum, p) => sum + Number(p.persentase || 0), 0)}%
-                       </Badge>
-                     </TableCell>
-                   )}
-
-                  {!showAllDashboard && !showProduksi && !showPiutang && (
-                    <TableCell className='max-w-[200px] truncate'>
-                      {project.description || (
-                        <span className='text-muted-foreground italic'>None</span>
-                      )}
-                    </TableCell>
-                  )}
-                  {!showAllDashboard && !showSPD && (
-                    <>
-                      <TableCell>
-                        {showPerencanaan ? (
-                          <div
-                            className='group flex items-center gap-1.5 cursor-pointer hover:text-orange-600 transition-colors font-medium'
-                            onClick={() => handleDeadlineClick(project)}
-                          >
-                            <span>
-                              {project.deadline
-                                ? format(new Date(project.deadline), 'MMM d, yyyy')
-                                : '-'}
-                            </span>
-                            <Pencil className='h-3.5 w-3.5 opacity-40 group-hover:opacity-100 transition-opacity text-neutral-400 group-hover:text-orange-600' />
-                          </div>
-                        ) : (
-                          project.deadline
-                            ? format(new Date(project.deadline), 'MMM d, yyyy')
-                            : '-'
-                        )}
-                      </TableCell>
-
-                      {!showProduksi && !showPiutang && (
-                        <TableCell>
-                          {project.tanggal_selesai ? (
-                            <div className='flex items-center gap-2'>
-                              <div className='flex items-center justify-center h-7 w-7 rounded-full bg-emerald-50 text-emerald-600 shrink-0'>
-                                <Check className='h-4 w-4 stroke-[3]' />
+                          <TableCell>
+                            {project.deadline
+                              ? format(
+                                  new Date(project.deadline),
+                                  'MMM d, yyyy'
+                                )
+                              : '-'}
+                          </TableCell>
+                          <TableCell>
+                            {project.tanggal_selesai ? (
+                              <div className='flex items-center gap-2'>
+                                <div className='flex items-center justify-center h-7 w-7 rounded-full bg-emerald-50 text-emerald-600 shrink-0'>
+                                  <Check className='h-4 w-4 stroke-[3]' />
+                                </div>
+                                {project.tanggal_selesai &&
+                                  project.deadline &&
+                                  (() => {
+                                    const diff = differenceInDays(
+                                      startOfDay(new Date(project.deadline)),
+                                      startOfDay(
+                                        new Date(project.tanggal_selesai)
+                                      )
+                                    );
+                                    if (diff >= 4) {
+                                      return (
+                                        <Badge
+                                          variant='outline'
+                                          className='bg-emerald-50 text-emerald-700 border-emerald-200 font-bold whitespace-nowrap'
+                                        >
+                                          Cepat
+                                        </Badge>
+                                      );
+                                    } else if (diff >= 0) {
+                                      return (
+                                        <Badge
+                                          variant='outline'
+                                          className='bg-blue-50 text-blue-700 border-blue-200 font-bold whitespace-nowrap'
+                                        >
+                                          Normal
+                                        </Badge>
+                                      );
+                                    } else {
+                                      return (
+                                        <Badge
+                                          variant='outline'
+                                          className='bg-red-50 text-red-700 border-red-200 font-bold whitespace-nowrap'
+                                        >
+                                          Lambat
+                                        </Badge>
+                                      );
+                                    }
+                                  })()}
                               </div>
-                              {project.tanggal_selesai && project.deadline && (
-                                (() => {
-                                  const diff = differenceInDays(
-                                    startOfDay(new Date(project.deadline)),
-                                    startOfDay(new Date(project.tanggal_selesai))
-                                  );
-                                  if (diff >= 4) {
-                                    return (
-                                      <Badge
-                                        variant='outline'
-                                        className='bg-emerald-50 text-emerald-700 border-emerald-200 font-bold whitespace-nowrap'
-                                      >
-                                        Cepat
-                                      </Badge>
-                                    );
-                                  } else if (diff >= 0) {
-                                    return (
-                                      <Badge
-                                        variant='outline'
-                                        className='bg-blue-50 text-blue-700 border-blue-200 font-bold whitespace-nowrap'
-                                      >
-                                        Normal
-                                      </Badge>
-                                    );
-                                  } else {
-                                    return (
-                                      <Badge
-                                        variant='outline'
-                                        className='bg-red-50 text-red-700 border-red-200 font-bold whitespace-nowrap'
-                                      >
-                                        Lambat
-                                      </Badge>
-                                    );
-                                  }
-                                })()
-                              )}
-                            </div>
-                          ) : project.deadline ? (
-                            (() => {
-                              const diff = differenceInDays(
-                                startOfDay(new Date(project.deadline)),
-                                startOfDay(new Date())
-                              );
+                            ) : project.deadline ? (
+                              (() => {
+                                const diff = differenceInDays(
+                                  startOfDay(new Date(project.deadline)),
+                                  startOfDay(new Date())
+                                );
+                                return (
+                                  <div className='flex items-center gap-1.5'>
+                                    <Badge
+                                      variant='outline'
+                                      className={cn(
+                                        'font-bold',
+                                        diff < 0
+                                          ? 'bg-red-50 text-red-700 border-red-200'
+                                          : diff < 8
+                                          ? 'bg-orange-50 text-orange-700 border-orange-200'
+                                          : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                      )}
+                                    >
+                                      {diff < 0
+                                        ? `Lewat ${Math.abs(diff)} Hari`
+                                        : `${diff} Hari`}
+                                    </Badge>
+                                  </div>
+                                );
+                              })()
+                            ) : (
+                              <span className='text-muted-foreground italic text-xs'>
+                                -
+                              </span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {project.jadwal_pengiriman ? (
+                              <div className='flex items-center gap-1.5 text-xs font-medium text-neutral-900'>
+                                <Truck className='h-3 w-3 text-orange-500' />
+                                {format(
+                                  new Date(
+                                    project.jadwal_pengiriman.tanggal_pengiriman
+                                      ?.tanggal || ''
+                                  ),
+                                  'MMM d, yyyy'
+                                )}
+                              </div>
+                            ) : (
+                              <span className='text-muted-foreground italic text-xs'>
+                                -
+                              </span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {project.progres_kerja ? (
+                              <span className='text-sm font-black text-blue-600 tabular-nums'>
+                                {Math.round(project.progres_kerja.total)}%
+                              </span>
+                            ) : (
+                              <span className='text-muted-foreground italic text-xs'>
+                                -
+                              </span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {(() => {
+                              if (!project.progres_kerja)
+                                return (
+                                  <span className='text-muted-foreground italic text-xs'>
+                                    -
+                                  </span>
+                                );
+
+                              const stages = [
+                                {
+                                  name: 'PO Divisi',
+                                  date: project.progres_kerja
+                                    .tanggal_update_po_divisi,
+                                  color: 'blue',
+                                },
+                                {
+                                  name: 'Gambar Kerja',
+                                  date: project.progres_kerja
+                                    .tanggal_update_gambar_kerja,
+                                  color: 'orange',
+                                },
+                                {
+                                  name: 'Dokubah',
+                                  date: project.progres_kerja
+                                    .tanggal_update_dokubah,
+                                  color: 'purple',
+                                },
+                                {
+                                  name: 'Stok Material',
+                                  date: project.progres_kerja
+                                    .tanggal_update_stok_material,
+                                  color: 'emerald',
+                                },
+                                {
+                                  name: 'Produksi',
+                                  date: project.progres_kerja
+                                    .tanggal_update_produksi,
+                                  color: 'cyan',
+                                },
+                                {
+                                  name: 'Gudang',
+                                  date: project.progres_kerja
+                                    .tanggal_update_gudang_barang_jadi,
+                                  color: 'indigo',
+                                },
+                                {
+                                  name: 'Pengiriman',
+                                  date: project.progres_kerja
+                                    .tanggal_update_pengiriman,
+                                  color: 'rose',
+                                },
+                              ];
+
+                              const latest = stages
+                                .filter((s) => s.date)
+                                .sort(
+                                  (a, b) =>
+                                    new Date(b.date!).getTime() -
+                                    new Date(a.date!).getTime()
+                                )[0];
+
+                              if (!latest)
+                                return (
+                                  <span className='text-muted-foreground italic text-xs'>
+                                    -
+                                  </span>
+                                );
+
+                              const getColor = (color: string) => {
+                                switch (color) {
+                                  case 'blue':
+                                    return 'bg-blue-50 text-blue-700 border-blue-200';
+                                  case 'orange':
+                                    return 'bg-orange-50 text-orange-700 border-orange-200';
+                                  case 'purple':
+                                    return 'bg-purple-50 text-purple-700 border-purple-200';
+                                  case 'emerald':
+                                    return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+                                  case 'cyan':
+                                    return 'bg-cyan-50 text-cyan-700 border-cyan-200';
+                                  case 'indigo':
+                                    return 'bg-indigo-50 text-indigo-700 border-indigo-200';
+                                  case 'rose':
+                                    return 'bg-rose-50 text-rose-700 border-rose-200';
+                                  default:
+                                    return 'bg-neutral-50 text-neutral-700 border-neutral-200';
+                                }
+                              };
+
                               return (
-                                <div className='flex items-center gap-1.5'>
+                                <div className='flex flex-col gap-0.5'>
                                   <Badge
                                     variant='outline'
                                     className={cn(
-                                      'font-bold',
+                                      'text-[9px] font-bold py-0 h-4 w-fit',
+                                      getColor(latest.color)
+                                    )}
+                                  >
+                                    {latest.name}
+                                  </Badge>
+                                  <span className='text-[8px] text-muted-foreground whitespace-nowrap'>
+                                    {format(
+                                      new Date(latest.date!),
+                                      'MMM d, HH:mm'
+                                    )}
+                                  </span>
+                                </div>
+                              );
+                            })()}
+                          </TableCell>
+                        </>
+                      ) : (
+                        <>
+                          {!showAllDashboard &&
+                            !showEngineer &&
+                            !showProduksi && (
+                              <TableCell>
+                                {project.marketing?.name || '-'}
+                              </TableCell>
+                            )}
+                          {!showAllDashboard && (
+                            <TableCell className='font-semibold'>
+                              {project.client?.name || '-'}
+                            </TableCell>
+                          )}
+                          {!showSPD && (
+                            <TableCell className='font-medium text-blue-600'>
+                              {project.spk_number ||
+                                project.spk?.nomor_spk ||
+                                '-'}
+                            </TableCell>
+                          )}
+                          {showPiutang && (
+                            <TableCell className='font-semibold text-emerald-700'>
+                              {project.spk?.nominal
+                                ? formatRupiah(project.spk.nominal)
+                                : '-'}
+                            </TableCell>
+                          )}
+                          {!showSPD && (
+                            <TableCell>
+                              {project.spk?.tanggal_masuk
+                                ? format(
+                                    new Date(project.spk.tanggal_masuk),
+                                    'dd MMM yyyy'
+                                  )
+                                : '-'}
+                            </TableCell>
+                          )}
+                          {!showSPD && !showProduksi && (
+                            <TableCell>
+                              {project.sph?.nomor_sph || '-'}
+                            </TableCell>
+                          )}
+                          {!showSPD && (
+                            <TableCell>
+                              {project.prioritas === 'Urgent' ? (
+                                <Badge className='bg-red-100 text-red-700 border border-red-200 hover:bg-red-100 font-semibold text-[11px]'>
+                                  Urgent
+                                </Badge>
+                              ) : project.prioritas === 'Normal' ? (
+                                <Badge
+                                  variant='secondary'
+                                  className='font-normal text-[11px]'
+                                >
+                                  Normal
+                                </Badge>
+                              ) : (
+                                <span className='text-muted-foreground italic text-xs'>
+                                  -
+                                </span>
+                              )}
+                            </TableCell>
+                          )}
+                        </>
+                      )}
+                      {showPiutang && (
+                        <TableCell>
+                          <div className='flex items-center gap-2'>
+                            <div className='flex-1 min-w-[60px]'>
+                              <div className='h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden'>
+                                <div
+                                  className='h-full bg-blue-600 rounded-full transition-all duration-500'
+                                  style={{
+                                    width: `${project.progres_produksi || 0}%`,
+                                  }}
+                                />
+                              </div>
+                            </div>
+                            <span className='text-xs font-bold text-neutral-700'>
+                              {Math.round(project.progres_produksi || 0)}%
+                            </span>
+                          </div>
+                        </TableCell>
+                      )}
+                      {showAllDashboard && <></>}
+                      {!showAllDashboard && showPiutang && (
+                        <TableCell>
+                          <Badge
+                            variant='outline'
+                            className='bg-amber-50 text-amber-700 border-amber-200 font-bold'
+                          >
+                            {project.penagihans?.reduce(
+                              (sum, p) => sum + Number(p.persentase || 0),
+                              0
+                            )}
+                            %
+                          </Badge>
+                        </TableCell>
+                      )}
+
+                      {!showAllDashboard && !showProduksi && !showPiutang && (
+                        <TableCell className='max-w-[200px] truncate'>
+                          {project.name || (
+                            <span className='text-muted-foreground italic'>
+                              None
+                            </span>
+                          )}
+                        </TableCell>
+                      )}
+                      {!showAllDashboard && !showSPD && (
+                        <>
+                          <TableCell>
+                            {showPerencanaan ? (
+                              <div
+                                className='group flex items-center gap-1.5 cursor-pointer hover:text-orange-600 transition-colors font-medium'
+                                onClick={() => handleDeadlineClick(project)}
+                              >
+                                <span>
+                                  {project.deadline
+                                    ? format(
+                                        new Date(project.deadline),
+                                        'MMM d, yyyy'
+                                      )
+                                    : '-'}
+                                </span>
+                                <Pencil className='h-3.5 w-3.5 opacity-40 group-hover:opacity-100 transition-opacity text-neutral-400 group-hover:text-orange-600' />
+                              </div>
+                            ) : project.deadline ? (
+                              format(new Date(project.deadline), 'MMM d, yyyy')
+                            ) : (
+                              '-'
+                            )}
+                          </TableCell>
+
+                          {!showProduksi && !showPiutang && (
+                            <TableCell>
+                              {project.tanggal_selesai ? (
+                                <div className='flex items-center gap-2'>
+                                  <div className='flex items-center justify-center h-7 w-7 rounded-full bg-emerald-50 text-emerald-600 shrink-0'>
+                                    <Check className='h-4 w-4 stroke-[3]' />
+                                  </div>
+                                  {project.tanggal_selesai &&
+                                    project.deadline &&
+                                    (() => {
+                                      const diff = differenceInDays(
+                                        startOfDay(new Date(project.deadline)),
+                                        startOfDay(
+                                          new Date(project.tanggal_selesai)
+                                        )
+                                      );
+                                      if (diff >= 4) {
+                                        return (
+                                          <Badge
+                                            variant='outline'
+                                            className='bg-emerald-50 text-emerald-700 border-emerald-200 font-bold whitespace-nowrap'
+                                          >
+                                            Cepat
+                                          </Badge>
+                                        );
+                                      } else if (diff >= 0) {
+                                        return (
+                                          <Badge
+                                            variant='outline'
+                                            className='bg-blue-50 text-blue-700 border-blue-200 font-bold whitespace-nowrap'
+                                          >
+                                            Normal
+                                          </Badge>
+                                        );
+                                      } else {
+                                        return (
+                                          <Badge
+                                            variant='outline'
+                                            className='bg-red-50 text-red-700 border-red-200 font-bold whitespace-nowrap'
+                                          >
+                                            Lambat
+                                          </Badge>
+                                        );
+                                      }
+                                    })()}
+                                </div>
+                              ) : project.deadline ? (
+                                (() => {
+                                  const diff = differenceInDays(
+                                    startOfDay(new Date(project.deadline)),
+                                    startOfDay(new Date())
+                                  );
+                                  return (
+                                    <div className='flex items-center gap-1.5'>
+                                      <Badge
+                                        variant='outline'
+                                        className={cn(
+                                          'font-bold',
+                                          diff < 0
+                                            ? 'bg-red-50 text-red-700 border-red-200'
+                                            : diff < 8
+                                            ? 'bg-orange-50 text-orange-700 border-orange-200'
+                                            : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                        )}
+                                      >
+                                        {diff < 0
+                                          ? `Lewat ${Math.abs(diff)} Hari`
+                                          : `${diff} Hari`}
+                                      </Badge>
+                                    </div>
+                                  );
+                                })()
+                              ) : (
+                                <span className='text-muted-foreground italic text-xs'>
+                                  -
+                                </span>
+                              )}
+                            </TableCell>
+                          )}
+                        </>
+                      )}
+                      {!showAllDashboard && !showProduksi && !showPiutang && (
+                        <TableCell>
+                          {project.need_design ? 'Ya' : 'Tidak'}
+                        </TableCell>
+                      )}
+                      {!showAllDashboard && !showSPD && (
+                        <TableCell>
+                          {project.jadwal_pengiriman ? (
+                            <div
+                              className={cn(
+                                'space-y-1 p-1 rounded-md',
+                                isJadwalEditable &&
+                                  'cursor-pointer hover:bg-neutral-50 transition-colors group'
+                              )}
+                              onClick={
+                                isJadwalEditable
+                                  ? () => handleScheduleClick(project)
+                                  : undefined
+                              }
+                            >
+                              <div className='flex items-center justify-between'>
+                                <div className='flex items-center gap-1.5 text-xs font-medium text-neutral-900'>
+                                  <Truck className='h-3 w-3 text-orange-500' />
+                                  {format(
+                                    new Date(
+                                      project.jadwal_pengiriman
+                                        .tanggal_pengiriman?.tanggal || ''
+                                    ),
+                                    'MMM d, yyyy'
+                                  )}
+                                </div>
+                                {isJadwalEditable && (
+                                  <Pencil className='h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity' />
+                                )}
+                              </div>
+                              {(() => {
+                                const jadwalTanggal =
+                                  project.jadwal_pengiriman.tanggal_pengiriman
+                                    ?.tanggal;
+                                if (!jadwalTanggal || !project.deadline)
+                                  return null;
+                                const diff = differenceInDays(
+                                  startOfDay(new Date(project.deadline)),
+                                  startOfDay(new Date(jadwalTanggal))
+                                );
+                                return (
+                                  <Badge
+                                    variant='secondary'
+                                    className={cn(
+                                      'text-[10px] h-4 px-1.5',
                                       diff < 0
-                                        ? 'bg-red-50 text-red-700 border-red-200'
-                                        : diff < 8
-                                        ? 'bg-orange-50 text-orange-700 border-orange-200'
-                                        : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                        ? 'bg-red-50 text-red-600'
+                                        : diff <= 2
+                                        ? 'bg-orange-50 text-orange-600'
+                                        : 'bg-emerald-50 text-emerald-600'
                                     )}
                                   >
                                     {diff < 0
-                                      ? `Lewat ${Math.abs(diff)} Hari`
-                                      : `${diff} Hari`}
+                                      ? `Lewat ${Math.abs(diff)} hari`
+                                      : diff === 0
+                                      ? 'Tepat Deadline'
+                                      : `${diff} hari sebelum deadline`}
                                   </Badge>
-                                </div>
-                              );
-                            })()
+                                );
+                              })()}
+                            </div>
+                          ) : isJadwalEditable ? (
+                            <Button
+                              variant='ghost'
+                              size='sm'
+                              className='h-8 text-xs text-muted-foreground hover:text-orange-600'
+                              onClick={() => handleScheduleClick(project)}
+                            >
+                              <CalendarDays className='mr-1.5 h-3.5 w-3.5' />
+                              Set Jadwal
+                            </Button>
                           ) : (
                             <span className='text-muted-foreground italic text-xs'>
                               -
@@ -2073,809 +2509,896 @@ export function ProjectsV2Table({
                           )}
                         </TableCell>
                       )}
-                    </>
-                  )}
-                  {!showAllDashboard && !showProduksi && !showPiutang && (
-                    <TableCell>
-                      {project.need_design ? 'Ya' : 'Tidak'}
-                    </TableCell>
-                  )}
-                  {!showAllDashboard && !showSPD && (
-                    <TableCell>
-                      {project.jadwal_pengiriman ? (
-                        <div
-                          className={cn(
-                            'space-y-1 p-1 rounded-md',
-                            isJadwalEditable &&
-                              'cursor-pointer hover:bg-neutral-50 transition-colors group'
-                          )}
-                          onClick={
-                            isJadwalEditable
-                              ? () => handleScheduleClick(project)
-                              : undefined
-                          }
-                        >
-                          <div className='flex items-center justify-between'>
-                            <div className='flex items-center gap-1.5 text-xs font-medium text-neutral-900'>
-                              <Truck className='h-3 w-3 text-orange-500' />
-                              {format(
-                                new Date(
-                                  project.jadwal_pengiriman.tanggal_pengiriman
-                                    ?.tanggal || ''
-                                ),
-                                'MMM d, yyyy'
-                              )}
-                            </div>
-                            {isJadwalEditable && (
-                              <Pencil className='h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity' />
-                            )}
-                          </div>
-                          {(() => {
-                            const jadwalTanggal =
-                              project.jadwal_pengiriman.tanggal_pengiriman
-                                ?.tanggal;
-                            if (!jadwalTanggal || !project.deadline) return null;
-                            const diff = differenceInDays(
-                              startOfDay(new Date(project.deadline)),
-                              startOfDay(new Date(jadwalTanggal))
-                            );
-                            return (
-                              <Badge
-                                variant='secondary'
-                                className={cn(
-                                  'text-[10px] h-4 px-1.5',
-                                  diff < 0
-                                    ? 'bg-red-50 text-red-600'
-                                    : diff <= 2
-                                    ? 'bg-orange-50 text-orange-600'
-                                    : 'bg-emerald-50 text-emerald-600'
-                                )}
-                              >
-                                {diff < 0
-                                  ? `Lewat ${Math.abs(diff)} hari`
-                                  : diff === 0
-                                  ? 'Tepat Deadline'
-                                  : `${diff} hari sebelum deadline`}
-                              </Badge>
-                            );
-                          })()}
-                        </div>
-                      ) : isJadwalEditable ? (
-                        <Button
-                          variant='ghost'
-                          size='sm'
-                          className='h-8 text-xs text-muted-foreground hover:text-orange-600'
-                          onClick={() => handleScheduleClick(project)}
-                        >
-                          <CalendarDays className='mr-1.5 h-3.5 w-3.5' />
-                          Set Jadwal
-                        </Button>
-                      ) : (
-                        <span className='text-muted-foreground italic text-xs'>
-                          -
-                        </span>
-                      )}
-                    </TableCell>
-                  )}
-                  {(isMainProjectsV2Page || showPerencanaan) && (
-                    <>
-                      <TableCell>
-                        {project.progres_kerja ? (
-                          <span className='text-sm font-black text-blue-600 tabular-nums'>
-                            {Math.round(project.progres_kerja.total)}%
-                          </span>
-                        ) : (
-                          <span className='text-muted-foreground italic text-xs'>-</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {(() => {
-                          if (!project.progres_kerja) return <span className='text-muted-foreground italic text-xs'>-</span>;
-                          
-                          const stages = [
-                            { name: 'PO Divisi', date: project.progres_kerja.tanggal_update_po_divisi, color: 'blue' },
-                            { name: 'Gambar Kerja', date: project.progres_kerja.tanggal_update_gambar_kerja, color: 'orange' },
-                            { name: 'Dokubah', date: project.progres_kerja.tanggal_update_dokubah, color: 'purple' },
-                            { name: 'Stok Material', date: project.progres_kerja.tanggal_update_stok_material, color: 'emerald' },
-                            { name: 'Produksi', date: project.progres_kerja.tanggal_update_produksi, color: 'cyan' },
-                            { name: 'Gudang', date: project.progres_kerja.tanggal_update_gudang_barang_jadi, color: 'indigo' },
-                            { name: 'Pengiriman', date: project.progres_kerja.tanggal_update_pengiriman, color: 'rose' },
-                          ];
-
-                          const latest = stages
-                            .filter(s => s.date)
-                            .sort((a, b) => new Date(b.date!).getTime() - new Date(a.date!).getTime())[0];
-
-                          if (!latest) return <span className='text-muted-foreground italic text-xs'>-</span>;
-
-                          const getColor = (color: string) => {
-                            switch (color) {
-                              case 'blue': return 'bg-blue-50 text-blue-700 border-blue-200';
-                              case 'orange': return 'bg-orange-50 text-orange-700 border-orange-200';
-                              case 'purple': return 'bg-purple-50 text-purple-700 border-purple-200';
-                              case 'emerald': return 'bg-emerald-50 text-emerald-700 border-emerald-200';
-                              case 'cyan': return 'bg-cyan-50 text-cyan-700 border-cyan-200';
-                              case 'indigo': return 'bg-indigo-50 text-indigo-700 border-indigo-200';
-                              case 'rose': return 'bg-rose-50 text-rose-700 border-rose-200';
-                              default: return 'bg-neutral-50 text-neutral-700 border-neutral-200';
-                            }
-                          };
-
-                          return (
-                            <div className='flex flex-col gap-0.5'>
-                              <Badge variant='outline' className={cn("text-[9px] font-bold py-0 h-4 w-fit", getColor(latest.color))}>
-                                {latest.name}
-                              </Badge>
-                              <span className='text-[8px] text-muted-foreground whitespace-nowrap'>
-                                {format(new Date(latest.date!), 'MMM d, HH:mm')}
+                      {(isMainProjectsV2Page || showPerencanaan) && (
+                        <>
+                          <TableCell>
+                            {project.progres_kerja ? (
+                              <span className='text-sm font-black text-blue-600 tabular-nums'>
+                                {Math.round(project.progres_kerja.total)}%
                               </span>
-                            </div>
-                          );
-                        })()}
-                      </TableCell>
-                    </>
-                  )}
-                  {!showAllDashboard && showSPD && (
-                    <>
-                      {!showEngineer && (
-                        <TableCell>
-                          {project.designs?.[0]?.spd_file ? (
-                            <div className='flex items-center gap-2'>
-                              <Badge
-                                variant='outline'
-                                className='bg-orange-50 text-orange-700 border-orange-200'
-                              >
-                                Uploaded
-                              </Badge>
-                              <Button
-                                variant='ghost'
-                                size='icon'
-                                className='h-7 w-7 text-orange-600'
-                                asChild
-                              >
-                                <a
-                                  href={`${(
-                                    process.env.NEXT_PUBLIC_API_URL ||
-                                    'http://localhost:8000'
-                                  ).replace('/api', '')}/storage/${
-                                    project.designs[0].spd_file
-                                  }`}
-                                  target='_blank'
-                                  rel='noopener noreferrer'
-                                >
-                                  <ArrowDown className='h-3 w-3' />
-                                </a>
-                              </Button>
-                            </div>
-                          ) : (
-                            <span className='text-muted-foreground italic text-[10px]'>
-                              Not Uploaded
-                            </span>
-                          )}
-                        </TableCell>
-                      )}
-                      {!showEngineer && (
-                        <TableCell>
-                          {project.need_design === 0 ? (
-                            <span className='text-muted-foreground italic text-xs'>-</span>
-                          ) : project.designs?.[0]?.spd_file ? (
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <Button
-                                  variant='ghost'
-                                  size='sm'
-                                  className={cn(
-                                    'h-8 px-2 font-medium flex items-center gap-1.5',
-                                    project.designs?.[0]?.studio?.name
-                                      ? 'text-neutral-900'
-                                      : 'text-muted-foreground italic'
-                                  )}
-                                >
-                                  {project.designs?.[0]?.studio?.name ||
-                                    (project.designs?.[0]?.studio_id
-                                      ? `ID: ${project.designs[0].studio_id}`
-                                      : 'Select Pic')}
-                                  <ChevronsUpDown className='h-3 w-3 opacity-50' />
-                                </Button>
-                              </PopoverTrigger>
-                              <PopoverContent
-                                className='w-[200px] p-0'
-                                align='start'
-                              >
-                                <Command>
-                                  <CommandInput placeholder='Search designer...' />
-                                  <CommandList>
-                                    <CommandEmpty>No designer found.</CommandEmpty>
-                                    <CommandGroup>
-                                      {designers.map((designer) => (
-                                        <CommandItem
-                                          key={designer.id}
-                                          value={designer.name}
-                                          onSelect={() => {
-                                            handlePicChange(
-                                              project.id,
-                                              designer.id
-                                            );
-                                          }}
-                                        >
-                                          <Check
-                                            className={cn(
-                                              'mr-2 h-4 w-4',
-                                              project.designs?.[0]?.studio_id ===
-                                                designer.id
-                                                ? 'opacity-100'
-                                                : 'opacity-0'
-                                            )}
-                                          />
-                                          {designer.name}
-                                        </CommandItem>
-                                      ))}
-                                    </CommandGroup>
-                                  </CommandList>
-                                </Command>
-                              </PopoverContent>
-                            </Popover>
-                          ) : (
-                            <div className='flex items-center gap-1.5 px-2 py-1 text-muted-foreground italic text-[10px] bg-neutral-50 rounded border border-dashed border-neutral-200 w-fit'>
-                              Menunggu SPD
-                            </div>
-                          )}
-                        </TableCell>
-                      )}
-                      {showEngineer && (
-                        <TableCell>
-                          <div className='flex flex-col gap-1'>
-                            <span className='text-xs font-medium'>{project.designs?.[0]?.studio?.name || '-'}</span>
-                            {project.designs?.[0]?.design_progres && project.designs[0].design_progres.length > 0 && (
-                                (() => {
-                                    const latest = project.designs[0].design_progres[project.designs[0].design_progres.length - 1];
-                                    return (
-                                        <div className='flex items-center gap-2'>
-                                            {latest.file && (
-                                                <Button variant='ghost' size='icon' className='h-5 w-5 text-blue-600' asChild>
-                                                    <a 
-                                                        href={`${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '')}/storage/${latest.file}`}
-                                                        target='_blank'
-                                                        rel='noopener noreferrer'
-                                                    >
-                                                        <Eye className='h-3 w-3' />
-                                                    </a>
-                                                </Button>
-                                            )}
-                                        </div>
-                                    );
-                                })()
+                            ) : (
+                              <span className='text-muted-foreground italic text-xs'>
+                                -
+                              </span>
                             )}
-                          </div>
-                        </TableCell>
-                      )}
-                      {!showEngineer && (
-                        <TableCell>
-                          {project.designs?.[0]?.design_progres &&
-                          project.designs[0].design_progres.length > 0 ? (
-                            <Badge
-                              variant='outline'
-                              className='bg-blue-50 text-blue-700 border-blue-200'
-                            >
-                              {
-                                project.designs[0].design_progres[
-                                  project.designs[0].design_progres.length - 1
-                                ].tahap_design?.nama
-                              }
-                            </Badge>
-                          ) : (
-                            <Badge
-                              variant='secondary'
-                              className='bg-neutral-100 text-neutral-500 border-none font-normal'
-                            >
-                              Belum
-                            </Badge>
-                          )}
-                        </TableCell>
-                      )}
+                          </TableCell>
+                          <TableCell>
+                            {(() => {
+                              if (!project.progres_kerja)
+                                return (
+                                  <span className='text-muted-foreground italic text-xs'>
+                                    -
+                                  </span>
+                                );
 
-                      {showEngineer && (
-                         <TableCell className='text-xs'>
-                            {project.order_gambar_kerja?.[0]?.target_selesai 
-                                ? format(new Date(project.order_gambar_kerja[0].target_selesai), 'MMM d, yyyy') 
-                                : '-'}
-                         </TableCell>
-                      )}
-                      {showEngineer && (
-                        <TableCell>
-                          <div className='flex items-center gap-2 min-w-[80px]'>
-                            <div className='h-1.5 flex-1 bg-neutral-100 rounded-full overflow-hidden'>
-                              <div 
-                                className='h-full bg-orange-500 transition-all duration-500' 
-                                style={{ width: `${project.drawing_progress ?? 0}%` }} 
-                              />
-                            </div>
-                            <span className='text-[10px] font-bold text-orange-600 tabular-nums'>{project.drawing_progress ?? 0}%</span>
-                          </div>
-                        </TableCell>
-                      )}
-                      {!showEngineer && (
-                        <TableCell>
-                          {project.designs?.[0]?.acc_design?.status ? (
-                            <Badge
-                              variant='outline'
-                              className={cn(
-                                'font-bold',
-                                project.designs[0].acc_design.status === 'Approved'
-                                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                  : 'bg-amber-50 text-amber-700 border-amber-200'
-                              )}
-                            >
-                              {project.designs[0].acc_design.status}
-                            </Badge>
-                          ) : (
-                            <span className='text-muted-foreground italic text-[10px]'>-</span>
-                          )}
-                        </TableCell>
-                      )}
-                      {!showEngineer && (
-                        <TableCell>
-                          {project.designs?.[0]?.target_selesai ? (
-                            <span className="text-xs">{format(new Date(project.designs[0].target_selesai), 'MMM d, yyyy')}</span>
-                          ) : (
-                            <span className='text-muted-foreground italic text-[10px]'>-</span>
-                          )}
-                        </TableCell>
-                      )}
-                      {!showEngineer && (
-                        <TableCell>
-                          {project.designs?.[0]?.design_progres && project.designs[0].design_progres.length > 0 ? (
-                            <span className="text-xs">
-                              {(() => {
-                                const latest = project.designs[0].design_progres[project.designs[0].design_progres.length - 1];
-                                return latest.tanggal_selesai ? format(new Date(latest.tanggal_selesai), 'MMM d, yyyy') : '-';
-                              })()}
-                            </span>
-                          ) : (
-                            <span className='text-muted-foreground italic text-[10px]'>-</span>
-                          )}
-                        </TableCell>
-                      )}
-                      {showEngineer && (
-                        <TableCell className='text-xs'>
-                           {project.latest_drawing_submit 
-                             ? format(new Date(project.latest_drawing_submit), 'MMM d, yyyy') 
-                             : '-'}
-                        </TableCell>
-                      )}
-                      <TableCell>
-                        {(() => {
-                           const design = project.designs?.[0];
-                           const target = showEngineer 
-                               ? project.order_gambar_kerja?.[0]?.target_selesai 
-                               : design?.target_selesai;
-                           
-                           const submit = showEngineer 
-                             ? project.latest_drawing_submit 
-                             : design?.design_progres?.[design.design_progres.length - 1]?.tanggal_selesai;
+                              const stages = [
+                                {
+                                  name: 'PO Divisi',
+                                  date: project.progres_kerja
+                                    .tanggal_update_po_divisi,
+                                  color: 'blue',
+                                },
+                                {
+                                  name: 'Gambar Kerja',
+                                  date: project.progres_kerja
+                                    .tanggal_update_gambar_kerja,
+                                  color: 'orange',
+                                },
+                                {
+                                  name: 'Dokubah',
+                                  date: project.progres_kerja
+                                    .tanggal_update_dokubah,
+                                  color: 'purple',
+                                },
+                                {
+                                  name: 'Stok Material',
+                                  date: project.progres_kerja
+                                    .tanggal_update_stok_material,
+                                  color: 'emerald',
+                                },
+                                {
+                                  name: 'Produksi',
+                                  date: project.progres_kerja
+                                    .tanggal_update_produksi,
+                                  color: 'cyan',
+                                },
+                                {
+                                  name: 'Gudang',
+                                  date: project.progres_kerja
+                                    .tanggal_update_gudang_barang_jadi,
+                                  color: 'indigo',
+                                },
+                                {
+                                  name: 'Pengiriman',
+                                  date: project.progres_kerja
+                                    .tanggal_update_pengiriman,
+                                  color: 'rose',
+                                },
+                              ];
 
-                           if (!target || !submit) return <span className='text-muted-foreground italic text-[10px]'>-</span>;
+                              const latest = stages
+                                .filter((s) => s.date)
+                                .sort(
+                                  (a, b) =>
+                                    new Date(b.date!).getTime() -
+                                    new Date(a.date!).getTime()
+                                )[0];
 
-                           const isOnTime = new Date(submit) <= new Date(target);
-                           return (
-                             <Badge variant="outline" className={cn(
-                               "font-bold",
-                               isOnTime ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-red-50 text-red-700 border-red-200"
-                             )}>
-                               {isOnTime ? "Ya" : "Tidak"}
-                             </Badge>
-                           );
-                        })()}
-                      </TableCell>
-                      {showEngineer && (
-                        <TableCell>
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <Button variant='ghost' size='sm' className='h-8 w-full justify-start font-normal text-xs px-2 truncate max-w-[120px]'>
-                                {project.note_engineer || (
-                                  <span className='text-muted-foreground italic text-[10px]'>Add note...</span>
-                                )}
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className='w-80 p-4' align="start">
-                              <div className='space-y-3'>
-                                <div className='flex items-center justify-between'>
-                                  <h4 className='font-medium text-sm'>Engineer Note</h4>
-                                  <span className='text-[10px] text-muted-foreground'>Auto-saves on blur</span>
+                              if (!latest)
+                                return (
+                                  <span className='text-muted-foreground italic text-xs'>
+                                    -
+                                  </span>
+                                );
+
+                              const getColor = (color: string) => {
+                                switch (color) {
+                                  case 'blue':
+                                    return 'bg-blue-50 text-blue-700 border-blue-200';
+                                  case 'orange':
+                                    return 'bg-orange-50 text-orange-700 border-orange-200';
+                                  case 'purple':
+                                    return 'bg-purple-50 text-purple-700 border-purple-200';
+                                  case 'emerald':
+                                    return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+                                  case 'cyan':
+                                    return 'bg-cyan-50 text-cyan-700 border-cyan-200';
+                                  case 'indigo':
+                                    return 'bg-indigo-50 text-indigo-700 border-indigo-200';
+                                  case 'rose':
+                                    return 'bg-rose-50 text-rose-700 border-rose-200';
+                                  default:
+                                    return 'bg-neutral-50 text-neutral-700 border-neutral-200';
+                                }
+                              };
+
+                              return (
+                                <div className='flex flex-col gap-0.5'>
+                                  <Badge
+                                    variant='outline'
+                                    className={cn(
+                                      'text-[9px] font-bold py-0 h-4 w-fit',
+                                      getColor(latest.color)
+                                    )}
+                                  >
+                                    {latest.name}
+                                  </Badge>
+                                  <span className='text-[8px] text-muted-foreground whitespace-nowrap'>
+                                    {format(
+                                      new Date(latest.date!),
+                                      'MMM d, HH:mm'
+                                    )}
+                                  </span>
                                 </div>
-                                <textarea
-                                  className='w-full min-h-[100px] text-xs p-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-orange-500'
-                                  placeholder='Type your note here...'
-                                  defaultValue={project.note_engineer || ''}
-                                  onBlur={(e) => {
-                                    if (e.target.value !== (project.note_engineer || '')) {
-                                      handleUpdateNote(project.id, e.target.value);
-                                    }
-                                  }}
-                                />
-                              </div>
-                            </PopoverContent>
-                          </Popover>
-                        </TableCell>
+                              );
+                            })()}
+                          </TableCell>
+                        </>
                       )}
-                      {!showEngineer && (
-                        <TableCell>
-                          {project.list_furnitur ? (
-                            <div className='flex items-center justify-center h-7 w-7 rounded-full bg-emerald-50 text-emerald-600 mx-auto'>
-                              <Check className='h-4 w-4' />
-                            </div>
-                          ) : (
-                            <Badge
-                              variant='secondary'
-                              className='bg-neutral-100 text-neutral-500 border-none font-normal'
-                            >
-                              Belum
-                            </Badge>
+                      {!showAllDashboard && showSPD && (
+                        <>
+                          {!showEngineer && (
+                            <TableCell>
+                              {project.designs?.[0]?.spd_file ? (
+                                <div className='flex items-center gap-2'>
+                                  <Badge
+                                    variant='outline'
+                                    className='bg-orange-50 text-orange-700 border-orange-200'
+                                  >
+                                    Uploaded
+                                  </Badge>
+                                  <Button
+                                    variant='ghost'
+                                    size='icon'
+                                    className='h-7 w-7 text-orange-600'
+                                    asChild
+                                  >
+                                    <a
+                                      href={`${(
+                                        process.env.NEXT_PUBLIC_API_URL ||
+                                        'http://localhost:8000'
+                                      ).replace('/api', '')}/storage/${
+                                        project.designs[0].spd_file
+                                      }`}
+                                      target='_blank'
+                                      rel='noopener noreferrer'
+                                    >
+                                      <ArrowDown className='h-3 w-3' />
+                                    </a>
+                                  </Button>
+                                </div>
+                              ) : (
+                                <span className='text-muted-foreground italic text-[10px]'>
+                                  Not Uploaded
+                                </span>
+                              )}
+                            </TableCell>
                           )}
-                        </TableCell>
-                      )}
-                    </>
-                  )}
-                  {showProduksi && (
-                    <>
-                      <TableCell>
-                        {project.order_produksi?.[0]?.file ? (
-                          <div className='flex items-center gap-2'>
-                            <Badge
-                              variant='outline'
-                              className='bg-emerald-50 text-emerald-700 border-emerald-200'
-                            >
-                              Uploaded
-                            </Badge>
-                            <Button
-                              variant='ghost'
-                              size='icon'
-                              className='h-7 w-7 text-emerald-600'
-                              asChild
-                            >
-                              <a
-                                href={`${(
-                                  process.env.NEXT_PUBLIC_API_URL ||
-                                  'http://localhost:8000'
-                                ).replace('/api', '')}/storage/${
-                                  project.order_produksi[0].file
-                                }`}
-                                target='_blank'
-                                rel='noopener noreferrer'
-                              >
-                                <ArrowDown className='h-3 w-3' />
-                              </a>
-                            </Button>
-                          </div>
-                        ) : (
-                          <span className='text-muted-foreground italic text-[10px]'>
-                            Not Uploaded
-                          </span>
-                        )}
-                      </TableCell>
-                      <TableCell className='text-xs'>
-                        {project.order_produksi?.[0]?.target_selesai
-                          ? format(
-                              new Date(project.order_produksi[0].target_selesai),
-                              'MMM d, yyyy'
-                            )
-                          : '-'}
-                      </TableCell>
-                       <TableCell>
-                        {project.order_produksi?.[0]?.target_selesai && !(Math.round(project.progres_produksi || 0) === 100) ? (
-                          (() => {
-                            const diff = differenceInDays(
-                              startOfDay(new Date(project.order_produksi[0].target_selesai)),
-                              startOfDay(new Date())
-                            );
-                            return (
-                              <div className='flex items-center gap-1.5'>
+                          {!showEngineer && (
+                            <TableCell>
+                              {project.need_design === 0 ? (
+                                <span className='text-muted-foreground italic text-xs'>
+                                  -
+                                </span>
+                              ) : project.designs?.[0]?.spd_file ? (
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <Button
+                                      variant='ghost'
+                                      size='sm'
+                                      className={cn(
+                                        'h-8 px-2 font-medium flex items-center gap-1.5',
+                                        project.designs?.[0]?.studio?.name
+                                          ? 'text-neutral-900'
+                                          : 'text-muted-foreground italic'
+                                      )}
+                                    >
+                                      {project.designs?.[0]?.studio?.name ||
+                                        (project.designs?.[0]?.studio_id
+                                          ? `ID: ${project.designs[0].studio_id}`
+                                          : 'Select Pic')}
+                                      <ChevronsUpDown className='h-3 w-3 opacity-50' />
+                                    </Button>
+                                  </PopoverTrigger>
+                                  <PopoverContent
+                                    className='w-[200px] p-0'
+                                    align='start'
+                                  >
+                                    <Command>
+                                      <CommandInput placeholder='Search designer...' />
+                                      <CommandList>
+                                        <CommandEmpty>
+                                          No designer found.
+                                        </CommandEmpty>
+                                        <CommandGroup>
+                                          {designers.map((designer) => (
+                                            <CommandItem
+                                              key={designer.id}
+                                              value={designer.name}
+                                              onSelect={() => {
+                                                handlePicChange(
+                                                  project.id,
+                                                  designer.id
+                                                );
+                                              }}
+                                            >
+                                              <Check
+                                                className={cn(
+                                                  'mr-2 h-4 w-4',
+                                                  project.designs?.[0]
+                                                    ?.studio_id === designer.id
+                                                    ? 'opacity-100'
+                                                    : 'opacity-0'
+                                                )}
+                                              />
+                                              {designer.name}
+                                            </CommandItem>
+                                          ))}
+                                        </CommandGroup>
+                                      </CommandList>
+                                    </Command>
+                                  </PopoverContent>
+                                </Popover>
+                              ) : (
+                                <div className='flex items-center gap-1.5 px-2 py-1 text-muted-foreground italic text-[10px] bg-neutral-50 rounded border border-dashed border-neutral-200 w-fit'>
+                                  Menunggu SPD
+                                </div>
+                              )}
+                            </TableCell>
+                          )}
+                          {showEngineer && (
+                            <TableCell>
+                              <div className='flex flex-col gap-1'>
+                                <span className='text-xs font-medium'>
+                                  {project.designs?.[0]?.studio?.name || '-'}
+                                </span>
+                                {project.designs?.[0]?.design_progres &&
+                                  project.designs[0].design_progres.length >
+                                    0 &&
+                                  (() => {
+                                    const latest =
+                                      project.designs[0].design_progres[
+                                        project.designs[0].design_progres
+                                          .length - 1
+                                      ];
+                                    return (
+                                      <div className='flex items-center gap-2'>
+                                        {latest.file && (
+                                          <Button
+                                            variant='ghost'
+                                            size='icon'
+                                            className='h-5 w-5 text-blue-600'
+                                            asChild
+                                          >
+                                            <a
+                                              href={`${(
+                                                process.env
+                                                  .NEXT_PUBLIC_API_URL ||
+                                                'http://localhost:8000'
+                                              ).replace('/api', '')}/storage/${
+                                                latest.file
+                                              }`}
+                                              target='_blank'
+                                              rel='noopener noreferrer'
+                                            >
+                                              <Eye className='h-3 w-3' />
+                                            </a>
+                                          </Button>
+                                        )}
+                                      </div>
+                                    );
+                                  })()}
+                              </div>
+                            </TableCell>
+                          )}
+                          {!showEngineer && (
+                            <TableCell>
+                              {project.designs?.[0]?.design_progres &&
+                              project.designs[0].design_progres.length > 0 ? (
+                                <Badge
+                                  variant='outline'
+                                  className='bg-blue-50 text-blue-700 border-blue-200'
+                                >
+                                  {
+                                    project.designs[0].design_progres[
+                                      project.designs[0].design_progres.length -
+                                        1
+                                    ].tahap_design?.nama
+                                  }
+                                </Badge>
+                              ) : (
+                                <Badge
+                                  variant='secondary'
+                                  className='bg-neutral-100 text-neutral-500 border-none font-normal'
+                                >
+                                  Belum
+                                </Badge>
+                              )}
+                            </TableCell>
+                          )}
+
+                          {showEngineer && (
+                            <TableCell className='text-xs'>
+                              {project.order_gambar_kerja?.[0]?.target_selesai
+                                ? format(
+                                    new Date(
+                                      project.order_gambar_kerja[0].target_selesai
+                                    ),
+                                    'MMM d, yyyy'
+                                  )
+                                : '-'}
+                            </TableCell>
+                          )}
+                          {showEngineer && (
+                            <TableCell>
+                              <div className='flex items-center gap-2 min-w-[80px]'>
+                                <div className='h-1.5 flex-1 bg-neutral-100 rounded-full overflow-hidden'>
+                                  <div
+                                    className='h-full bg-orange-500 transition-all duration-500'
+                                    style={{
+                                      width: `${
+                                        project.drawing_progress ?? 0
+                                      }%`,
+                                    }}
+                                  />
+                                </div>
+                                <span className='text-[10px] font-bold text-orange-600 tabular-nums'>
+                                  {project.drawing_progress ?? 0}%
+                                </span>
+                              </div>
+                            </TableCell>
+                          )}
+                          {!showEngineer && (
+                            <TableCell>
+                              {project.designs?.[0]?.acc_design?.status ? (
                                 <Badge
                                   variant='outline'
                                   className={cn(
                                     'font-bold',
-                                    diff < 0
-                                      ? 'bg-red-50 text-red-700 border-red-200'
-                                      : diff < 8
-                                      ? 'bg-orange-50 text-orange-700 border-orange-200'
-                                      : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                    project.designs[0].acc_design.status ===
+                                      'Approved'
+                                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                      : 'bg-amber-50 text-amber-700 border-amber-200'
                                   )}
                                 >
-                                  {diff < 0
-                                    ? `Lewat ${Math.abs(diff)} Hari`
-                                    : `${diff} Hari`}
+                                  {project.designs[0].acc_design.status}
                                 </Badge>
-                              </div>
-                            );
-                          })()
-                        ) : (
-                          <span className='text-muted-foreground italic text-xs'>
-                            -
-                          </span>
-                        )}
-                      </TableCell>
-                    </>
-                  )}
-                  {showProduksi && (
-                    <TableCell>
-                      <div className='flex items-center gap-2'>
-                        <div className='flex-1 min-w-[60px]'>
-                          <div className='h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden'>
-                            <div
-                              className='h-full bg-blue-600 rounded-full transition-all duration-500'
-                              style={{
-                                width: `${project.progres_produksi || 0}%`,
-                              }}
-                            />
-                          </div>
-                        </div>
-                        <span className='text-xs font-bold text-neutral-700'>
-                          {Math.round(project.progres_produksi || 0)}%
-                        </span>
-                      </div>
-                    </TableCell>
-                  )}
-                  {showAllDashboard ? (
-                    <TableCell className='text-right'>
-                      <Button
-                        variant='outline'
-                        size='sm'
-                        className='h-8 px-3 text-blue-600 border-blue-200 hover:bg-blue-50 hover:text-blue-700'
-                        onClick={() =>
-                          router.push(
-                            `/dashboard/projects-v2/monitoring/${project.id}/detail`
-                          )
-                        }
-                      >
-                        Detail
-                      </Button>
-                    </TableCell>
-                  ) : (
-                    <TableCell className='text-right'>
-                      {onlyShowDetail ? (
-                        <div className='flex justify-end'>
-                          {showSPD && (
-                            <Button
-                              variant='outline'
-                              size='sm'
-                              className='h-8 px-3 text-orange-600 border-orange-200 hover:bg-orange-50 hover:text-orange-700'
-                              onClick={() =>
-                                router.push(
-                                  showEngineer 
-                                    ? `/dashboard/projects-v2/engineer/${project.id}/detail`
-                                    : `/dashboard/projects-v2/perintah-kerja/${project.id}/detail`
-                                )
-                              }
-                            >
-                              Detail
-                            </Button>
+                              ) : (
+                                <span className='text-muted-foreground italic text-[10px]'>
+                                  -
+                                </span>
+                              )}
+                            </TableCell>
                           )}
-                          {showPerencanaan && (
-                            <Button
-                              variant='outline'
-                              size='sm'
-                              className='h-8 px-3 text-blue-600 border-blue-200 hover:bg-blue-50 hover:text-blue-700'
-                              onClick={() =>
-                                router.push(
-                                  `/dashboard/projects-v2/perencanaan/${project.id}/detail`
-                                )
-                              }
-                            >
-                              Detail
-                            </Button>
+                          {!showEngineer && (
+                            <TableCell>
+                              {project.designs?.[0]?.target_selesai ? (
+                                <span className='text-xs'>
+                                  {format(
+                                    new Date(project.designs[0].target_selesai),
+                                    'MMM d, yyyy'
+                                  )}
+                                </span>
+                              ) : (
+                                <span className='text-muted-foreground italic text-[10px]'>
+                                  -
+                                </span>
+                              )}
+                            </TableCell>
                           )}
-                          {showProduksi && (
-                            <Button
-                              variant='outline'
-                              size='sm'
-                              className='h-8 px-3 text-emerald-600 border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700'
-                              onClick={() =>
-                                router.push(
-                                  `/dashboard/projects-v2/produksi/${project.id}/detail`
-                                )
-                              }
-                            >
-                              Detail
-                            </Button>
+                          {!showEngineer && (
+                            <TableCell>
+                              {project.designs?.[0]?.design_progres &&
+                              project.designs[0].design_progres.length > 0 ? (
+                                <span className='text-xs'>
+                                  {(() => {
+                                    const latest =
+                                      project.designs[0].design_progres[
+                                        project.designs[0].design_progres
+                                          .length - 1
+                                      ];
+                                    return latest.tanggal_selesai
+                                      ? format(
+                                          new Date(latest.tanggal_selesai),
+                                          'MMM d, yyyy'
+                                        )
+                                      : '-';
+                                  })()}
+                                </span>
+                              ) : (
+                                <span className='text-muted-foreground italic text-[10px]'>
+                                  -
+                                </span>
+                              )}
+                            </TableCell>
                           )}
-                          {showQC && (
-                            <Button
-                              variant='outline'
-                              size='sm'
-                              className='h-8 px-3 text-orange-600 border-orange-200 hover:bg-orange-50 hover:text-orange-700'
-                              onClick={() =>
-                                router.push(
-                                  `/dashboard/projects-v2/qc/${project.id}/detail`
-                                )
-                              }
-                            >
-                              Detail
-                            </Button>
-                          )}
-                          {showPiutang && (
-                            <Button
-                              variant='outline'
-                              size='sm'
-                              className='h-8 px-3 text-blue-600 border-blue-200 hover:bg-blue-50 hover:text-blue-700'
-                              onClick={() =>
-                                router.push(
-                                  `/dashboard/projects-v2/piutang/${project.id}/detail`
-                                )
-                              }
-                            >
-                              Detail
-                            </Button>
-                          )}
-                        </div>
-                      ) : (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant='ghost' className='h-8 w-8 p-0'>
-                              <span className='sr-only'>Open menu</span>
-                              <MoreHorizontal className='h-4 w-4' />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align='end'>
-                            <DropdownMenuItem
-                              onClick={() =>
-                                router.push(
-                                  `/dashboard/projects-v2/marketing/${project.id}/items`
-                                )
-                              }
-                            >
-                              <Plus className='mr-2 h-4 w-4' />
-                              Item
-                            </DropdownMenuItem>
-                            {showSPD && (
-                              <DropdownMenuItem
-                                onClick={() =>
-                                  router.push(
-                                    `/dashboard/projects-v2/perintah-kerja/${project.id}/detail`
+                          {showEngineer && (
+                            <TableCell className='text-xs'>
+                              {project.latest_drawing_submit
+                                ? format(
+                                    new Date(project.latest_drawing_submit),
+                                    'MMM d, yyyy'
                                   )
-                                }
-                              >
-                                <Plus className='mr-2 h-4 w-4' />
-                                Detail
-                              </DropdownMenuItem>
-                            )}
-                            {showPerencanaan && (
-                              <DropdownMenuItem
-                                onClick={() =>
-                                  router.push(
-                                    `/dashboard/projects-v2/perencanaan/${project.id}/detail`
-                                  )
-                                }
-                              >
-                                <Plus className='mr-2 h-4 w-4' />
-                                Detail
-                              </DropdownMenuItem>
-                            )}
-                            {showQC && (
-                              <DropdownMenuItem
-                                onClick={() =>
-                                  router.push(
-                                    `/dashboard/projects-v2/qc/${project.id}/detail`
-                                  )
-                                }
-                              >
-                                <Plus className='mr-2 h-4 w-4' />
-                                Detail
-                              </DropdownMenuItem>
-                            )}
-                            {showProduksi && (
-                              <DropdownMenuItem
-                                onClick={() =>
-                                  router.push(
-                                    `/dashboard/projects-v2/produksi/${project.id}/detail`
-                                  )
-                                }
-                              >
-                                <Plus className='mr-2 h-4 w-4' />
-                                Detail
-                              </DropdownMenuItem>
-                            )}
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => handleEdit(project)}>
-                              <Pencil className='mr-2 h-4 w-4' />
-                              Edit
-                            </DropdownMenuItem>
-                            {isJadwalEditable && (
-                              <DropdownMenuItem
-                                onClick={() => handleScheduleClick(project)}
-                              >
-                                <Truck className='mr-2 h-4 w-4' />
-                                Jadwalkan Pengiriman
-                              </DropdownMenuItem>
-                            )}
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              className='text-red-600 focus:text-red-600'
-                              onClick={() => handleDeleteClick(project)}
-                            >
-                              <Trash2 className='mr-2 h-4 w-4' />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                                : '-'}
+                            </TableCell>
+                          )}
+                          <TableCell>
+                            {(() => {
+                              const design = project.designs?.[0];
+                              const target = showEngineer
+                                ? project.order_gambar_kerja?.[0]
+                                    ?.target_selesai
+                                : design?.target_selesai;
+
+                              const submit = showEngineer
+                                ? project.latest_drawing_submit
+                                : design?.design_progres?.[
+                                    design.design_progres.length - 1
+                                  ]?.tanggal_selesai;
+
+                              if (!target || !submit)
+                                return (
+                                  <span className='text-muted-foreground italic text-[10px]'>
+                                    -
+                                  </span>
+                                );
+
+                              const isOnTime =
+                                new Date(submit) <= new Date(target);
+                              return (
+                                <Badge
+                                  variant='outline'
+                                  className={cn(
+                                    'font-bold',
+                                    isOnTime
+                                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                      : 'bg-red-50 text-red-700 border-red-200'
+                                  )}
+                                >
+                                  {isOnTime ? 'Ya' : 'Tidak'}
+                                </Badge>
+                              );
+                            })()}
+                          </TableCell>
+                          {showEngineer && (
+                            <TableCell>
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <Button
+                                    variant='ghost'
+                                    size='sm'
+                                    className='h-8 w-full justify-start font-normal text-xs px-2 truncate max-w-[120px]'
+                                  >
+                                    {project.note_engineer || (
+                                      <span className='text-muted-foreground italic text-[10px]'>
+                                        Add note...
+                                      </span>
+                                    )}
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent
+                                  className='w-80 p-4'
+                                  align='start'
+                                >
+                                  <div className='space-y-3'>
+                                    <div className='flex items-center justify-between'>
+                                      <h4 className='font-medium text-sm'>
+                                        Engineer Note
+                                      </h4>
+                                      <span className='text-[10px] text-muted-foreground'>
+                                        Auto-saves on blur
+                                      </span>
+                                    </div>
+                                    <textarea
+                                      className='w-full min-h-[100px] text-xs p-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-orange-500'
+                                      placeholder='Type your note here...'
+                                      defaultValue={project.note_engineer || ''}
+                                      onBlur={(e) => {
+                                        if (
+                                          e.target.value !==
+                                          (project.note_engineer || '')
+                                        ) {
+                                          handleUpdateNote(
+                                            project.id,
+                                            e.target.value
+                                          );
+                                        }
+                                      }}
+                                    />
+                                  </div>
+                                </PopoverContent>
+                              </Popover>
+                            </TableCell>
+                          )}
+                          {!showEngineer && (
+                            <TableCell>
+                              {project.list_furnitur ? (
+                                <div className='flex items-center justify-center h-7 w-7 rounded-full bg-emerald-50 text-emerald-600 mx-auto'>
+                                  <Check className='h-4 w-4' />
+                                </div>
+                              ) : (
+                                <Badge
+                                  variant='secondary'
+                                  className='bg-neutral-100 text-neutral-500 border-none font-normal'
+                                >
+                                  Belum
+                                </Badge>
+                              )}
+                            </TableCell>
+                          )}
+                        </>
                       )}
-                    </TableCell>
-                  )}
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
-
-      {/* Pagination Controls */}
-      {data && data.last_page > 1 && (
-        <div className='flex items-center justify-end space-x-2 py-4'>
-          <Button
-            variant='outline'
-            size='sm'
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={page === 1}
-          >
-            Previous
-          </Button>
-          <div className='text-sm text-muted-foreground'>
-            Page {page} of {data.last_page}
+                      {showProduksi && (
+                        <>
+                          <TableCell>
+                            {project.order_produksi?.[0]?.file ? (
+                              <div className='flex items-center gap-2'>
+                                <Badge
+                                  variant='outline'
+                                  className='bg-emerald-50 text-emerald-700 border-emerald-200'
+                                >
+                                  Uploaded
+                                </Badge>
+                                <Button
+                                  variant='ghost'
+                                  size='icon'
+                                  className='h-7 w-7 text-emerald-600'
+                                  asChild
+                                >
+                                  <a
+                                    href={`${(
+                                      process.env.NEXT_PUBLIC_API_URL ||
+                                      'http://localhost:8000'
+                                    ).replace('/api', '')}/storage/${
+                                      project.order_produksi[0].file
+                                    }`}
+                                    target='_blank'
+                                    rel='noopener noreferrer'
+                                  >
+                                    <ArrowDown className='h-3 w-3' />
+                                  </a>
+                                </Button>
+                              </div>
+                            ) : (
+                              <span className='text-muted-foreground italic text-[10px]'>
+                                Not Uploaded
+                              </span>
+                            )}
+                          </TableCell>
+                          <TableCell className='text-xs'>
+                            {project.order_produksi?.[0]?.target_selesai
+                              ? format(
+                                  new Date(
+                                    project.order_produksi[0].target_selesai
+                                  ),
+                                  'MMM d, yyyy'
+                                )
+                              : '-'}
+                          </TableCell>
+                          <TableCell>
+                            {project.order_produksi?.[0]?.target_selesai &&
+                            !(
+                              Math.round(project.progres_produksi || 0) === 100
+                            ) ? (
+                              (() => {
+                                const diff = differenceInDays(
+                                  startOfDay(
+                                    new Date(
+                                      project.order_produksi[0].target_selesai
+                                    )
+                                  ),
+                                  startOfDay(new Date())
+                                );
+                                return (
+                                  <div className='flex items-center gap-1.5'>
+                                    <Badge
+                                      variant='outline'
+                                      className={cn(
+                                        'font-bold',
+                                        diff < 0
+                                          ? 'bg-red-50 text-red-700 border-red-200'
+                                          : diff < 8
+                                          ? 'bg-orange-50 text-orange-700 border-orange-200'
+                                          : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                      )}
+                                    >
+                                      {diff < 0
+                                        ? `Lewat ${Math.abs(diff)} Hari`
+                                        : `${diff} Hari`}
+                                    </Badge>
+                                  </div>
+                                );
+                              })()
+                            ) : (
+                              <span className='text-muted-foreground italic text-xs'>
+                                -
+                              </span>
+                            )}
+                          </TableCell>
+                        </>
+                      )}
+                      {showProduksi && (
+                        <TableCell>
+                          <div className='flex items-center gap-2'>
+                            <div className='flex-1 min-w-[60px]'>
+                              <div className='h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden'>
+                                <div
+                                  className='h-full bg-blue-600 rounded-full transition-all duration-500'
+                                  style={{
+                                    width: `${project.progres_produksi || 0}%`,
+                                  }}
+                                />
+                              </div>
+                            </div>
+                            <span className='text-xs font-bold text-neutral-700'>
+                              {Math.round(project.progres_produksi || 0)}%
+                            </span>
+                          </div>
+                        </TableCell>
+                      )}
+                      {showAllDashboard ? (
+                        <TableCell className='text-right'>
+                          <Button
+                            variant='outline'
+                            size='sm'
+                            className='h-8 px-3 text-blue-600 border-blue-200 hover:bg-blue-50 hover:text-blue-700'
+                            onClick={() =>
+                              router.push(
+                                `/dashboard/projects-v2/monitoring/${project.id}/detail`
+                              )
+                            }
+                          >
+                            Detail
+                          </Button>
+                        </TableCell>
+                      ) : (
+                        <TableCell className='text-right'>
+                          {onlyShowDetail ? (
+                            <div className='flex justify-end'>
+                              {showSPD && (
+                                <Button
+                                  variant='outline'
+                                  size='sm'
+                                  className='h-8 px-3 text-orange-600 border-orange-200 hover:bg-orange-50 hover:text-orange-700'
+                                  onClick={() =>
+                                    router.push(
+                                      showEngineer
+                                        ? `/dashboard/projects-v2/engineer/${project.id}/detail`
+                                        : `/dashboard/projects-v2/perintah-kerja/${project.id}/detail`
+                                    )
+                                  }
+                                >
+                                  Detail
+                                </Button>
+                              )}
+                              {showPerencanaan && (
+                                <Button
+                                  variant='outline'
+                                  size='sm'
+                                  className='h-8 px-3 text-blue-600 border-blue-200 hover:bg-blue-50 hover:text-blue-700'
+                                  onClick={() =>
+                                    router.push(
+                                      `/dashboard/projects-v2/perencanaan/${project.id}/detail`
+                                    )
+                                  }
+                                >
+                                  Detail
+                                </Button>
+                              )}
+                              {showProduksi && (
+                                <Button
+                                  variant='outline'
+                                  size='sm'
+                                  className='h-8 px-3 text-emerald-600 border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700'
+                                  onClick={() =>
+                                    router.push(
+                                      `/dashboard/projects-v2/produksi/${project.id}/detail`
+                                    )
+                                  }
+                                >
+                                  Detail
+                                </Button>
+                              )}
+                              {showQC && (
+                                <Button
+                                  variant='outline'
+                                  size='sm'
+                                  className='h-8 px-3 text-orange-600 border-orange-200 hover:bg-orange-50 hover:text-orange-700'
+                                  onClick={() =>
+                                    router.push(
+                                      `/dashboard/projects-v2/qc/${project.id}/detail`
+                                    )
+                                  }
+                                >
+                                  Detail
+                                </Button>
+                              )}
+                              {showPiutang && (
+                                <Button
+                                  variant='outline'
+                                  size='sm'
+                                  className='h-8 px-3 text-blue-600 border-blue-200 hover:bg-blue-50 hover:text-blue-700'
+                                  onClick={() =>
+                                    router.push(
+                                      `/dashboard/projects-v2/piutang/${project.id}/detail`
+                                    )
+                                  }
+                                >
+                                  Detail
+                                </Button>
+                              )}
+                            </div>
+                          ) : (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant='ghost' className='h-8 w-8 p-0'>
+                                  <span className='sr-only'>Open menu</span>
+                                  <MoreHorizontal className='h-4 w-4' />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align='end'>
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    router.push(
+                                      `/dashboard/projects-v2/marketing/${project.id}/items`
+                                    )
+                                  }
+                                >
+                                  <Plus className='mr-2 h-4 w-4' />
+                                  Item
+                                </DropdownMenuItem>
+                                {showSPD && (
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      router.push(
+                                        `/dashboard/projects-v2/perintah-kerja/${project.id}/detail`
+                                      )
+                                    }
+                                  >
+                                    <Plus className='mr-2 h-4 w-4' />
+                                    Detail
+                                  </DropdownMenuItem>
+                                )}
+                                {showPerencanaan && (
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      router.push(
+                                        `/dashboard/projects-v2/perencanaan/${project.id}/detail`
+                                      )
+                                    }
+                                  >
+                                    <Plus className='mr-2 h-4 w-4' />
+                                    Detail
+                                  </DropdownMenuItem>
+                                )}
+                                {showQC && (
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      router.push(
+                                        `/dashboard/projects-v2/qc/${project.id}/detail`
+                                      )
+                                    }
+                                  >
+                                    <Plus className='mr-2 h-4 w-4' />
+                                    Detail
+                                  </DropdownMenuItem>
+                                )}
+                                {showProduksi && (
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      router.push(
+                                        `/dashboard/projects-v2/produksi/${project.id}/detail`
+                                      )
+                                    }
+                                  >
+                                    <Plus className='mr-2 h-4 w-4' />
+                                    Detail
+                                  </DropdownMenuItem>
+                                )}
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  onClick={() => handleEdit(project)}
+                                >
+                                  <Pencil className='mr-2 h-4 w-4' />
+                                  Edit
+                                </DropdownMenuItem>
+                                {isJadwalEditable && (
+                                  <DropdownMenuItem
+                                    onClick={() => handleScheduleClick(project)}
+                                  >
+                                    <Truck className='mr-2 h-4 w-4' />
+                                    Jadwalkan Pengiriman
+                                  </DropdownMenuItem>
+                                )}
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  className='text-red-600 focus:text-red-600'
+                                  onClick={() => handleDeleteClick(project)}
+                                >
+                                  <Trash2 className='mr-2 h-4 w-4' />
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
           </div>
-          <Button
-            variant='outline'
-            size='sm'
-            onClick={() => setPage((p) => Math.min(data.last_page, p + 1))}
-            disabled={page === data.last_page}
+
+          {/* Pagination Controls */}
+          {data && data.last_page > 1 && (
+            <div className='flex items-center justify-end space-x-2 py-4'>
+              <Button
+                variant='outline'
+                size='sm'
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+              >
+                Previous
+              </Button>
+              <div className='text-sm text-muted-foreground'>
+                Page {page} of {data.last_page}
+              </div>
+              <Button
+                variant='outline'
+                size='sm'
+                onClick={() => setPage((p) => Math.min(data.last_page, p + 1))}
+                disabled={page === data.last_page}
+              >
+                Next
+              </Button>
+            </div>
+          )}
+
+          <ProjectFormDialog
+            open={isFormOpen}
+            onOpenChange={setIsFormOpen}
+            project={selectedProject}
+          />
+
+          <ScheduleDeliveryDialog
+            open={isScheduleOpen}
+            onOpenChange={setIsScheduleOpen}
+            project={projectToSchedule}
+          />
+
+          <DeadlineDialog
+            open={isDeadlineOpen}
+            onOpenChange={setIsDeadlineOpen}
+            project={projectToEditDeadline}
+          />
+
+          <AlertDialog
+            open={isDeleteDialogOpen}
+            onOpenChange={setIsDeleteDialogOpen}
           >
-            Next
-          </Button>
-        </div>
-      )}
-
-      <ProjectFormDialog
-        open={isFormOpen}
-        onOpenChange={setIsFormOpen}
-        project={selectedProject}
-      />
-
-      <ScheduleDeliveryDialog
-        open={isScheduleOpen}
-        onOpenChange={setIsScheduleOpen}
-        project={projectToSchedule}
-      />
-
-      <DeadlineDialog
-        open={isDeadlineOpen}
-        onOpenChange={setIsDeadlineOpen}
-        project={projectToEditDeadline}
-      />
-
-      <AlertDialog
-        open={isDeleteDialogOpen}
-        onOpenChange={setIsDeleteDialogOpen}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete the project {projectToDelete?.name}.
-              This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDelete}
-              className='bg-red-600 hover:bg-red-700 focus:ring-red-600'
-            >
-              {deleteMutation.isPending && (
-                <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-              )}
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will permanently delete the project{' '}
+                  {projectToDelete?.name}. This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={confirmDelete}
+                  className='bg-red-600 hover:bg-red-700 focus:ring-red-600'
+                >
+                  {deleteMutation.isPending && (
+                    <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                  )}
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
     </div>

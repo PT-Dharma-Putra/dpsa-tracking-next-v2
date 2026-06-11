@@ -866,7 +866,7 @@ export default function ProjectItemsPage() {
                       </a>
                     </Button>
                   </div>
-                  {project.file_pendukung_spd &&
+                  {/* {project.file_pendukung_spd &&
                     project.file_pendukung_spd.length > 0 && (
                       <div className='mt-3 pt-3 border-t border-orange-100 space-y-2'>
                         <p className='text-[10px] font-bold text-orange-700 uppercase tracking-wider'>
@@ -908,7 +908,7 @@ export default function ProjectItemsPage() {
                           ))}
                         </div>
                       </div>
-                    )}
+                    )} */}
                   <Button
                     size='sm'
                     variant='outline'
