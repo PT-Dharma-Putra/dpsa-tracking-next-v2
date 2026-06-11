@@ -22,9 +22,7 @@ export const PPICService = {
     uploadDokubah: async (projectId: string | number, file: File) => {
         const formData = new FormData();
         formData.append('dokubah_file', file);
-        const response = await apiClient.post(`/ppic/dokubah/${projectId}/upload`, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        const response = await apiClient.post(`/ppic/dokubah/${projectId}/upload`, formData);
         return response.data;
     }
 };

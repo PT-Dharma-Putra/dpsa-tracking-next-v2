@@ -18,9 +18,7 @@ export const DocumentService = {
             formData.append('sph_item_id', itemId.toString());
         }
 
-        const response = await apiClient.post(`/projects/${projectId}/documents`, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        const response = await apiClient.post(`/projects/${projectId}/documents`, formData);
         return response.data;
     },
 
@@ -34,9 +32,7 @@ export const DocumentService = {
         const formData = new FormData();
         formData.append('file', file);
 
-        const response = await apiClient.post(`/projects/${projectId}/engineering/handover`, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        const response = await apiClient.post(`/projects/${projectId}/engineering/handover`, formData);
         return response.data;
     },
 
@@ -74,9 +70,7 @@ export const DocumentService = {
     uploadSignedSPH: async (projectId: number | string, file: File) => {
         const formData = new FormData();
         formData.append('file', file);
-        const response = await apiClient.post(`/projects/${projectId}/sph/upload-file`, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        const response = await apiClient.post(`/projects/${projectId}/sph/upload-file`, formData);
         return response.data;
     },
 
@@ -85,9 +79,7 @@ export const DocumentService = {
         const formData = new FormData();
         formData.append('file', file);
         formData.append('reason', reason);
-        const response = await apiClient.post(`/projects/${projectId}/sph/revise`, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        const response = await apiClient.post(`/projects/${projectId}/sph/revise`, formData);
         return response.data;
     },
 
@@ -96,9 +88,7 @@ export const DocumentService = {
         const formData = new FormData();
         formData.append('file', file);
         formData.append('reason', reason);
-        const response = await apiClient.post(`/projects/${projectId}/spk/revise`, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        const response = await apiClient.post(`/projects/${projectId}/spk/revise`, formData);
         return response.data;
     },
 
@@ -107,9 +97,7 @@ export const DocumentService = {
         if (signedFile) {
             const formData = new FormData();
             formData.append('spk_signed_file', signedFile);
-            const response = await apiClient.post(`/projects/${projectId}/spk/approve`, formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            });
+            const response = await apiClient.post(`/projects/${projectId}/spk/approve`, formData);
             return response.data;
         }
         const response = await apiClient.post(`/projects/${projectId}/spk/approve`);
@@ -128,9 +116,7 @@ export const DocumentService = {
         formData.append('spk_file', file);
         // spk_number required by validation but we can omit if already exists. Controller check needed.
         // Assuming controller allows update if number exists.
-        const response = await apiClient.post(`/projects/${projectId}/spk/upload-file`, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        const response = await apiClient.post(`/projects/${projectId}/spk/upload-file`, formData);
         return response.data;
     },
 
@@ -142,9 +128,7 @@ export const DocumentService = {
             formData.append('deadline', data.deadline);
         }
         formData.append('spk_file', data.file);
-        const response = await apiClient.post(`/projects/${projectId}/spk`, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        const response = await apiClient.post(`/projects/${projectId}/spk`, formData);
         return response.data;
     },
 };

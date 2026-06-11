@@ -8,9 +8,8 @@ const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
 export const axiosInstance = axios.create({
   baseURL: BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  // No default Content-Type — Axios transformRequest auto-sets application/json for
+  // plain objects, and the browser auto-sets multipart/form-data (with boundary) for FormData.
 });
 
 // Request Interceptor (Add Token)

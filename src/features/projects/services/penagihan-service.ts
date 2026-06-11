@@ -87,9 +87,7 @@ export const penagihanService = {
         if (payload.nominal_dibayar !== undefined) formData.append('nominal_dibayar', payload.nominal_dibayar.toString());
         if (payload.file) formData.append('file', payload.file);
 
-        const { data } = await apiClient.post<Penagihan>('/penagihan', formData, {
-            headers: { 'Content-Type': 'multipart/form-data' },
-        });
+        const { data } = await apiClient.post<Penagihan>('/penagihan', formData);
         return data;
     },
 
@@ -110,9 +108,7 @@ export const penagihanService = {
         if (payload.file) formData.append('file', payload.file);
         formData.append('_method', 'PUT');
 
-        const { data } = await apiClient.post<Penagihan>(`/penagihan/${id}`, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' },
-        });
+        const { data } = await apiClient.post<Penagihan>(`/penagihan/${id}`, formData);
         return data;
     },
 

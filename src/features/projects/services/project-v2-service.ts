@@ -314,9 +314,7 @@ export const projectV2Service = {
                 formData.append('file_pendukung[]', f);
             });
         }
-        const { data } = await apiClient.post(`/projects-v2/${projectId}/upload-spd`, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        const { data } = await apiClient.post(`/projects-v2/${projectId}/upload-spd`, formData);
         return data;
     },
 
@@ -325,9 +323,7 @@ export const projectV2Service = {
         formData.append('file', file);
         formData.append('nomor_sph', nomor_sph);
         if (nominal) formData.append('nominal', nominal.toString());
-        const { data } = await apiClient.post(`/projects-v2/${projectId}/upload-sph`, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        const { data } = await apiClient.post(`/projects-v2/${projectId}/upload-sph`, formData);
         return data;
     },
 
@@ -348,9 +344,7 @@ export const projectV2Service = {
         formData.append('status', payload.status);
         if (payload.bukti_acc) formData.append('bukti_acc', payload.bukti_acc);
 
-        const { data } = await apiClient.post(`/projects-v2/${projectId}/update-acc-design`, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        const { data } = await apiClient.post(`/projects-v2/${projectId}/update-acc-design`, formData);
         return data;
     },
 
@@ -360,9 +354,7 @@ export const projectV2Service = {
         if (payload.file) formData.append('file', payload.file);
         if (payload.nominal) formData.append('nominal', payload.nominal);
         formData.append('_method', 'PUT');
-        const { data } = await apiClient.post(`/projects-v2/${projectId}/update-sph`, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' },
-        });
+        const { data } = await apiClient.post(`/projects-v2/${projectId}/update-sph`, formData);
         return data;
     },
 
@@ -376,9 +368,7 @@ export const projectV2Service = {
         if (payload.tanggal_masuk) formData.append('tanggal_masuk', payload.tanggal_masuk);
         if (payload.nominal) formData.append('nominal', payload.nominal);
         formData.append('_method', 'PUT');
-        const { data } = await apiClient.post(`/projects-v2/${projectId}/update-spk`, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' },
-        });
+        const { data } = await apiClient.post(`/projects-v2/${projectId}/update-spk`, formData);
         return data;
     },
 
@@ -391,9 +381,7 @@ export const projectV2Service = {
         if (tanggal_masuk) formData.append('tanggal_masuk', tanggal_masuk);
         if (nominal) formData.append('nominal', nominal);
         if (tanggal_spk) formData.append('tanggal_spk', tanggal_spk);
-        const { data } = await apiClient.post(`/projects-v2/${projectId}/upload-spk`, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        const { data } = await apiClient.post(`/projects-v2/${projectId}/upload-spk`, formData);
         return data;
     },
 
@@ -403,9 +391,7 @@ export const projectV2Service = {
         if (deadline) formData.append('deadline', deadline);
         if (tanggal_masuk) formData.append('tanggal_masuk', tanggal_masuk);
         if (nominal) formData.append('nominal', nominal);
-        const { data } = await apiClient.post(`/projects-v2/${projectId}/approve-spk`, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        const { data } = await apiClient.post(`/projects-v2/${projectId}/approve-spk`, formData);
         return data;
     },
 
@@ -414,18 +400,14 @@ export const projectV2Service = {
         if (file) formData.append('file', file);
         if (target_selesai) formData.append('target_selesai', target_selesai);
         formData.append('pakai_gambar', pakaiGambar.toString());
-        const { data } = await apiClient.post(`/projects-v2/${projectId}/upload-order-gambar-kerja`, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        const { data } = await apiClient.post(`/projects-v2/${projectId}/upload-order-gambar-kerja`, formData);
         return data;
     },
 
     uploadSignedOrderGambarKerja: async (projectId: number, file: File) => {
         const formData = new FormData();
         formData.append('file', file);
-        const { data } = await apiClient.post(`/projects-v2/${projectId}/upload-signed-order-gambar-kerja`, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        const { data } = await apiClient.post(`/projects-v2/${projectId}/upload-signed-order-gambar-kerja`, formData);
         return data;
     },
 
@@ -433,9 +415,7 @@ export const projectV2Service = {
         const formData = new FormData();
         formData.append('file', file);
         formData.append('target_selesai', target_selesai);
-        const { data } = await apiClient.post(`/projects-v2/${projectId}/upload-order-produksi`, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        const { data } = await apiClient.post(`/projects-v2/${projectId}/upload-order-produksi`, formData);
         return data;
     },
 
@@ -468,9 +448,7 @@ export const projectV2Service = {
         if (payload.catatan) formData.append('catatan', payload.catatan);
         if (payload.file) formData.append('file', payload.file);
 
-        const { data } = await apiClient.post<DesignProgres>(`/designs/${designId}/progress`, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        const { data } = await apiClient.post<DesignProgres>(`/designs/${designId}/progress`, formData);
         return data;
     },
 
@@ -485,9 +463,7 @@ export const projectV2Service = {
         if (payload.tanggal_mulai) formData.append('tanggal_mulai', payload.tanggal_mulai);
         if (payload.tanggal_selesai) formData.append('tanggal_selesai', payload.tanggal_selesai);
 
-        const { data } = await apiClient.post(`/projects-v2/${projectId}/upload-list-furnitur`, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        const { data } = await apiClient.post(`/projects-v2/${projectId}/upload-list-furnitur`, formData);
         return data;
     },
 
@@ -497,9 +473,7 @@ export const projectV2Service = {
         if (payload.tanggal_mulai) formData.append('tanggal_mulai', payload.tanggal_mulai);
         if (payload.tanggal_selesai) formData.append('tanggal_selesai', payload.tanggal_selesai);
 
-        const { data } = await apiClient.post(`/projects-v2-items/${itemId}/upload-gambar-kerja`, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        const { data } = await apiClient.post(`/projects-v2-items/${itemId}/upload-gambar-kerja`, formData);
         return data;
     },
 
@@ -537,9 +511,7 @@ export const projectV2Service = {
         if (payload.file_rekap_dokubah) formData.append('file_rekap_dokubah', payload.file_rekap_dokubah);
         if (payload.tanggal_mulai) formData.append('tanggal_mulai', payload.tanggal_mulai);
         if (payload.tanggal_selesai) formData.append('tanggal_selesai', payload.tanggal_selesai);
-        const { data } = await apiClient.post(`/projects-v2/${projectId}/upload-dokubah`, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        const { data } = await apiClient.post(`/projects-v2/${projectId}/upload-dokubah`, formData);
         return data;
     },
 
@@ -580,9 +552,7 @@ export const projectV2Service = {
         formData.append('jumlah', payload.jumlah.toString());
         if (payload.file) formData.append('file_setrim', payload.file);
 
-        const { data } = await apiClient.post(`/projects-v2-items/${itemId}/barang-jadi-masuk`, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        const { data } = await apiClient.post(`/projects-v2-items/${itemId}/barang-jadi-masuk`, formData);
         return data;
     },
 
@@ -600,9 +570,7 @@ export const projectV2Service = {
         formData.append('status', payload.status);
         if (payload.file) formData.append('file', payload.file);
 
-        const { data } = await apiClient.post(`/projects-v2-items/${itemId}/qc-cek`, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        const { data } = await apiClient.post(`/projects-v2-items/${itemId}/qc-cek`, formData);
         return data;
     },
 
@@ -642,15 +610,11 @@ export const projectV2Service = {
         return data;
     },
     storeSuratJalan: async (itemId: number, payload: FormData) => {
-        const { data } = await apiClient.post(`/project-item/${itemId}/surat-jalan`, payload, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        const { data } = await apiClient.post(`/project-item/${itemId}/surat-jalan`, payload);
         return data;
     },
     updateSuratJalan: async (id: number, payload: FormData) => {
-        const { data } = await apiClient.post(`/surat-jalan/${id}`, payload, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        const { data } = await apiClient.post(`/surat-jalan/${id}`, payload);
         return data;
     },
     deleteSuratJalan: async (id: number) => {
@@ -658,15 +622,11 @@ export const projectV2Service = {
         return data;
     },
     storeSetrimKembali: async (itemId: number, payload: FormData) => {
-        const { data } = await apiClient.post(`/project-item/${itemId}/setrim-kembali`, payload, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        const { data } = await apiClient.post(`/project-item/${itemId}/setrim-kembali`, payload);
         return data;
     },
     updateSetrimKembali: async (id: number, payload: FormData) => {
-        const { data } = await apiClient.post(`/setrim-kembali/${id}`, payload, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        const { data } = await apiClient.post(`/setrim-kembali/${id}`, payload);
         return data;
     },
     deleteSetrimKembali: async (id: number) => {
