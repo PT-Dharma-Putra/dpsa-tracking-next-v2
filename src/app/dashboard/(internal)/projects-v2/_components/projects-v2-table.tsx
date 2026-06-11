@@ -1453,59 +1453,63 @@ export function ProjectsV2Table({
                 <>
                   {!showEngineer && !showProduksi && <TableHead>Mkt</TableHead>}
                   <TableHead>Client</TableHead>
-                  <TableHead>Nomor SPK</TableHead>
+                  {!showSPD && <TableHead>Nomor SPK</TableHead>}
                   {showPiutang && <TableHead>Nominal</TableHead>}
-                  <TableHead
-                    className='cursor-pointer hover:bg-neutral-100 transition-colors group'
-                    onClick={() => {
-                      if (sortBy === 'spk_masuk') {
-                        setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                      } else {
-                        setSortBy('spk_masuk');
-                        setSortOrder('asc');
-                      }
-                      setPage(1);
-                    }}
-                  >
-                    <div className='flex items-center gap-1'>
-                      SPK Masuk
-                      {sortBy === 'spk_masuk' ? (
-                        sortOrder === 'asc' ? (
-                          <ArrowUp className='h-3 w-3' />
+                  {!showSPD && (
+                    <TableHead
+                      className='cursor-pointer hover:bg-neutral-100 transition-colors group'
+                      onClick={() => {
+                        if (sortBy === 'spk_masuk') {
+                          setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                        } else {
+                          setSortBy('spk_masuk');
+                          setSortOrder('asc');
+                        }
+                        setPage(1);
+                      }}
+                    >
+                      <div className='flex items-center gap-1'>
+                        SPK Masuk
+                        {sortBy === 'spk_masuk' ? (
+                          sortOrder === 'asc' ? (
+                            <ArrowUp className='h-3 w-3' />
+                          ) : (
+                            <ArrowDown className='h-3 w-3' />
+                          )
                         ) : (
-                          <ArrowDown className='h-3 w-3' />
-                        )
-                      ) : (
-                        <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
-                      )}
-                    </div>
-                  </TableHead>
+                          <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
+                        )}
+                      </div>
+                    </TableHead>
+                  )}
                   {!showSPD && !showProduksi && <TableHead>Nomor SPH</TableHead>}
-                  <TableHead
-                    className='cursor-pointer hover:bg-neutral-100 transition-colors group'
-                    onClick={() => {
-                      if (sortBy === 'prioritas') {
-                        setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                      } else {
-                        setSortBy('prioritas');
-                        setSortOrder('asc');
-                      }
-                      setPage(1);
-                    }}
-                  >
-                    <div className='flex items-center gap-1'>
-                      Prioritas
-                      {sortBy === 'prioritas' ? (
-                        sortOrder === 'asc' ? (
-                          <ArrowUp className='h-3 w-3' />
+                  {!showSPD && (
+                    <TableHead
+                      className='cursor-pointer hover:bg-neutral-100 transition-colors group'
+                      onClick={() => {
+                        if (sortBy === 'prioritas') {
+                          setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                        } else {
+                          setSortBy('prioritas');
+                          setSortOrder('asc');
+                        }
+                        setPage(1);
+                      }}
+                    >
+                      <div className='flex items-center gap-1'>
+                        Prioritas
+                        {sortBy === 'prioritas' ? (
+                          sortOrder === 'asc' ? (
+                            <ArrowUp className='h-3 w-3' />
+                          ) : (
+                            <ArrowDown className='h-3 w-3' />
+                          )
                         ) : (
-                          <ArrowDown className='h-3 w-3' />
-                        )
-                      ) : (
-                        <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
-                      )}
-                    </div>
-                  </TableHead>
+                          <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
+                        )}
+                      </div>
+                    </TableHead>
+                  )}
                   {showPiutang && <TableHead>Progres Produksi</TableHead>}
                   {showPiutang && <TableHead>Total Penagihan</TableHead>}
                   {!showProduksi && !showPiutang && <TableHead>Description</TableHead>}
@@ -1891,37 +1895,43 @@ export function ProjectsV2Table({
                      <>
                         {!showAllDashboard && !showEngineer && !showProduksi && <TableCell>{project.marketing?.name || '-'}</TableCell>}
                         {!showAllDashboard && <TableCell className="font-semibold">{project.client?.name || '-'}</TableCell>}
-                        <TableCell className='font-medium text-blue-600'>
-                          {project.spk_number || project.spk?.nomor_spk || '-'}
-                        </TableCell>
+                        {!showSPD && (
+                          <TableCell className='font-medium text-blue-600'>
+                            {project.spk_number || project.spk?.nomor_spk || '-'}
+                          </TableCell>
+                        )}
                         {showPiutang && (
                           <TableCell className="font-semibold text-emerald-700">
                             {project.spk?.nominal ? formatRupiah(project.spk.nominal) : '-'}
                           </TableCell>
                         )}
-                         <TableCell>
-                           {project.spk?.tanggal_masuk
-                             ? format(new Date(project.spk.tanggal_masuk), 'dd MMM yyyy')
-                             : '-'}
-                         </TableCell>
+                        {!showSPD && (
+                          <TableCell>
+                            {project.spk?.tanggal_masuk
+                              ? format(new Date(project.spk.tanggal_masuk), 'dd MMM yyyy')
+                              : '-'}
+                          </TableCell>
+                        )}
                         {!showSPD && !showProduksi && (
                           <TableCell>
                             {project.sph?.nomor_sph || '-'}
                           </TableCell>
                         )}
-                        <TableCell>
-                          {project.prioritas === 'Urgent' ? (
-                            <Badge className='bg-red-100 text-red-700 border border-red-200 hover:bg-red-100 font-semibold text-[11px]'>
-                              Urgent
-                            </Badge>
-                          ) : project.prioritas === 'Normal' ? (
-                            <Badge variant='secondary' className='font-normal text-[11px]'>
-                              Normal
-                            </Badge>
-                          ) : (
-                            <span className='text-muted-foreground italic text-xs'>-</span>
-                          )}
-                        </TableCell>
+                        {!showSPD && (
+                          <TableCell>
+                            {project.prioritas === 'Urgent' ? (
+                              <Badge className='bg-red-100 text-red-700 border border-red-200 hover:bg-red-100 font-semibold text-[11px]'>
+                                Urgent
+                              </Badge>
+                            ) : project.prioritas === 'Normal' ? (
+                              <Badge variant='secondary' className='font-normal text-[11px]'>
+                                Normal
+                              </Badge>
+                            ) : (
+                              <span className='text-muted-foreground italic text-xs'>-</span>
+                            )}
+                          </TableCell>
+                        )}
                      </>
                    )}
                    {showPiutang && (
