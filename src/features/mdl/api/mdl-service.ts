@@ -78,9 +78,7 @@ export const mdlService = {
     uploadPhoto: async (id: number, file: File) => {
         const formData = new FormData();
         formData.append('foto', file);
-        const { data } = await axiosInstance.post(`/mdl/items/${id}/photo`, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        const { data } = await axiosInstance.post(`/mdl/items/${id}/photo`, formData);
         return data;
     },
 

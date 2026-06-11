@@ -35,9 +35,7 @@ export function UpdateProgressModal({ open, onOpenChange, item, onSuccess }: Upd
             if (file) formData.append('photo', file)
             formData.append('notes', notes)
 
-            await axiosInstance.post('/production/update-progress', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            })
+            await axiosInstance.post('/production/update-progress', formData)
 
             toast.success("Progress Updated", { description: "Item moved to next stage." })
             onSuccess()

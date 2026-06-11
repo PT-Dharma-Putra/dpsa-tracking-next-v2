@@ -77,18 +77,14 @@ export const DesignService = {
     uploadProjectBrief: async (projectId: string | number, file: File) => {
         const formData = new FormData();
         formData.append('file', file);
-        const response = await axiosInstance.post(`/projects/${projectId}/upload-design-brief`, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        const response = await axiosInstance.post(`/projects/${projectId}/upload-design-brief`, formData);
         return response.data;
     },
 
     uploadBrief: async (itemId: number | string, file: File) => {
         const formData = new FormData();
         formData.append('file', file);
-        const response = await axiosInstance.post(`/design-items/${itemId}/upload-brief`, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        const response = await axiosInstance.post(`/design-items/${itemId}/upload-brief`, formData);
         return response.data;
     },
 
@@ -100,9 +96,7 @@ export const DesignService = {
     uploadDesign: async (itemId: number | string, file: File) => {
         const formData = new FormData();
         formData.append('file', file);
-        const response = await axiosInstance.post(`/design-items/${itemId}/upload-design`, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        const response = await axiosInstance.post(`/design-items/${itemId}/upload-design`, formData);
         return response.data;
     }
 };

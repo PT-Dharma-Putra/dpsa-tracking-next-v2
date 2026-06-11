@@ -26,9 +26,7 @@ export const taskItService = {
     },
 
     createTask: async (payload: FormData) => {
-        const { data } = await apiClient.post<TaskIt>('/task-it', payload, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        const { data } = await apiClient.post<TaskIt>('/task-it', payload);
         return data;
     },
 
@@ -36,9 +34,7 @@ export const taskItService = {
         if (!payload.has('_method')) {
             payload.append('_method', 'PUT');
         }
-        const { data } = await apiClient.post<TaskIt>(`/task-it/${id}`, payload, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        const { data } = await apiClient.post<TaskIt>(`/task-it/${id}`, payload);
         return data;
     },
 
