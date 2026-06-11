@@ -4,8 +4,8 @@ import * as React from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useMutation, useQuery, useInfiniteQuery, useQueryClient } from "@tanstack/react-query"
-import { CalendarIcon, Loader2, Check, ChevronsUpDown } from "lucide-react"
+import { useMutation, useInfiniteQuery, useQueryClient } from "@tanstack/react-query"
+import { Loader2, Check, ChevronsUpDown } from "lucide-react"
 import { format } from "date-fns"
 import { Label } from "@/components/ui/label"
 
@@ -27,9 +27,7 @@ import {
     FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Calendar } from "@/components/ui/calendar"
 import {
     Command,
     CommandEmpty,
@@ -51,8 +49,6 @@ import { ClientService } from "@/features/clients/services/client-service"
 const formSchema = z.object({
     name: z.string().min(1, "Project name is required"),
     client_id: z.string().min(1, "Client is required"),
-    description: z.string().optional(),
-    deadline: z.date().optional().nullable(),
     tanggal_selesai: z.date().optional().nullable(),
     need_design: z.number(),
 })
@@ -120,8 +116,6 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
         defaultValues: {
             name: "",
             client_id: "",
-            description: "",
-            deadline: null,
             tanggal_selesai: null,
             need_design: 1,
         },
@@ -133,8 +127,6 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
                 form.reset({
                     name: project.name,
                     client_id: project.client_id.toString(),
-                    description: project.description || "",
-                    deadline: project.deadline ? new Date(project.deadline) : null,
                     tanggal_selesai: project.tanggal_selesai ? new Date(project.tanggal_selesai) : null,
                     need_design: project.need_design ?? 1,
                 })
@@ -142,8 +134,6 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
                 form.reset({
                     name: "",
                     client_id: "",
-                    description: "",
-                    deadline: null,
                     tanggal_selesai: null,
                     need_design: 1,
                 })
@@ -156,8 +146,6 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
             const payload = {
                 name: values.name,
                 client_id: parseInt(values.client_id),
-                description: values.description,
-                deadline: values.deadline ? format(values.deadline, "yyyy-MM-dd") : undefined,
                 tanggal_selesai: values.tanggal_selesai ? format(values.tanggal_selesai, "yyyy-MM-dd") : null,
                 need_design: values.need_design,
             }
@@ -275,59 +263,6 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
                                                     )}
                                                 </CommandList>
                                             </Command>
-                                        </PopoverContent>
-                                    </Popover>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        <FormField
-                            control={form.control}
-                            name="description"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Description</FormLabel>
-                                    <FormControl>
-                                        <Textarea placeholder="Optional description" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        <FormField
-                            control={form.control}
-                            name="deadline"
-                            render={({ field }) => (
-                                <FormItem className="flex flex-col">
-                                    <FormLabel>Deadline</FormLabel>
-                                    <Popover>
-                                        <PopoverTrigger asChild>
-                                            <FormControl>
-                                                <Button
-                                                    variant={"outline"}
-                                                    className={cn(
-                                                        "w-full pl-3 text-left font-normal",
-                                                        !field.value && "text-muted-foreground"
-                                                    )}
-                                                >
-                                                    {field.value ? (
-                                                        format(field.value, "PPP")
-                                                    ) : (
-                                                        <span>Pick a date</span>
-                                                    )}
-                                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                                </Button>
-                                            </FormControl>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0" align="start">
-                                            <Calendar
-                                                mode="single"
-                                                selected={field.value || undefined}
-                                                onSelect={field.onChange}
-                                                initialFocus
-                                            />
                                         </PopoverContent>
                                     </Popover>
                                     <FormMessage />

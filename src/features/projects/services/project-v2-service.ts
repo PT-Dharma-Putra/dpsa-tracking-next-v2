@@ -353,7 +353,6 @@ export const projectV2Service = {
         formData.append('nomor_sph', payload.nomor_sph);
         if (payload.file) formData.append('file', payload.file);
         if (payload.nominal) formData.append('nominal', payload.nominal);
-        formData.append('_method', 'PUT');
         const { data } = await apiClient.post(`/projects-v2/${projectId}/update-sph`, formData);
         return data;
     },
@@ -367,7 +366,6 @@ export const projectV2Service = {
         if (payload.prioritas) formData.append('prioritas', payload.prioritas);
         if (payload.tanggal_masuk) formData.append('tanggal_masuk', payload.tanggal_masuk);
         if (payload.nominal) formData.append('nominal', payload.nominal);
-        formData.append('_method', 'PUT');
         const { data } = await apiClient.post(`/projects-v2/${projectId}/update-spk`, formData);
         return data;
     },
