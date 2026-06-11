@@ -125,10 +125,7 @@ export const ProjectService = {
     formData.append('file', file);
     const response = await apiClient.post(
       `/projects/${id}/sph/upload-file`,
-      formData,
-      {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      }
+      formData
     );
     return response.data;
   },
@@ -158,10 +155,7 @@ export const ProjectService = {
     formData.append('spk_file', file);
     const response = await apiClient.post(
       `/projects/${id}/spk/upload-file`,
-      formData,
-      {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      }
+      formData
     );
     return response.data;
   },
