@@ -18,6 +18,8 @@ export interface ProjectV2 {
     client?: {
         id: number;
         name: string;
+        address?: string | null;
+        director_name?: string | null;
     };
     marketing?: {
         id: number;
@@ -698,6 +700,7 @@ export interface MDLItem {
 export interface ProjectItemV2 {
     id: number;
     project_id: number;
+    mdl_id?: number | null;
     mdl_item_id: number | null;
     mdl_item?: MDLItem;
     lantai: string | null;

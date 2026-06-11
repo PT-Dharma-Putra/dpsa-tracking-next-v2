@@ -674,7 +674,7 @@ export default function ProduksiDetailPage() {
                     <TableCell className='max-w-[150px] truncate text-xs text-muted-foreground'>
                       {item.keterangan || '-'}
                     </TableCell>
-                    <TableCell className='text-[10px] text-muted-foreground'>
+                    <TableCell className='text-xs text-muted-foreground'>
                       {item.panjang || '-'}x{item.lebar || '-'}x
                       {item.tinggi || '-'}
                     </TableCell>

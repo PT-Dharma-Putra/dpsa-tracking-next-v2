@@ -535,7 +535,7 @@ export default function QCDetailPage() {
                     <TableCell className='font-bold text-blue-600 text-xs'>
                       {item.volume || '-'}
                     </TableCell>
-                    <TableCell className='text-[10px] text-muted-foreground'>
+                    <TableCell className='text-xs text-muted-foreground'>
                       {item.panjang || '-'}x{item.lebar || '-'}x
                       {item.tinggi || '-'} {item.satuan}
                     </TableCell>

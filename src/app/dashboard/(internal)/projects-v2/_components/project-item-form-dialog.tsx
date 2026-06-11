@@ -4,7 +4,7 @@ import * as React from "react"
 import { useForm, useFieldArray, useWatch } from "react-hook-form"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query"
 import { Loader2, Plus, Trash2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -25,7 +25,6 @@ import {
     FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
 import {
     Select,
     SelectContent,
@@ -38,11 +37,20 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover"
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+} from "@/components/ui/command"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
 import { Check, ChevronsUpDown, X } from "lucide-react"
 import { toast } from "sonner"
 import { projectV2Service, ProjectItemV2, MDLItem } from "@/features/projects/services/project-v2-service"
+import { LokasiMDLService } from "@/features/lokasi-mdl/services/lokasi-mdl-service"
 import { cn } from "@/lib/utils"
 import { MDLItemSelectorDialog } from "./mdl-item-selector-dialog"
 
@@ -176,6 +184,13 @@ export function ProjectItemFormDialog({ open, onOpenChange, projectId, item }: P
             }
         });
     }, [watchedItems, form]);
+
+    const { data: lokasiRes } = useQuery({
+        queryKey: ['lokasi-mdl-options'],
+        queryFn: () => LokasiMDLService.getLokasi({ per_page: -1 }),
+        enabled: open,
+    })
+    const lokasiOptions = lokasiRes?.data || []
 
     const [selectorOpen, setSelectorOpen] = React.useState(false)
     const [activeIndex, setActiveIndex] = React.useState<number | null>(null)
@@ -373,13 +388,46 @@ export function ProjectItemFormDialog({ open, onOpenChange, projectId, item }: P
                                                 name={`items.${index}.ruang`}
                                                 render={({ field }) => (
                                                     <FormItem>
-                                                        <FormControl>
-                                                            <Textarea 
-                                                                placeholder="Ruang" 
-                                                                className="min-h-[32px] h-[32px] text-xs resize-none px-2 py-1" 
-                                                                {...field} 
-                                                            />
-                                                        </FormControl>
+                                                        <Popover>
+                                                            <PopoverTrigger asChild>
+                                                                <FormControl>
+                                                                    <Button
+                                                                        variant="outline"
+                                                                        role="combobox"
+                                                                        className={cn(
+                                                                            "h-8 w-full text-xs justify-between font-normal px-2 bg-white",
+                                                                            !field.value && "text-muted-foreground"
+                                                                        )}
+                                                                    >
+                                                                        <span className="truncate">{field.value || "Ruang..."}</span>
+                                                                        <ChevronsUpDown className="ml-1 h-3 w-3 shrink-0 opacity-50" />
+                                                                    </Button>
+                                                                </FormControl>
+                                                            </PopoverTrigger>
+                                                            <PopoverContent className="w-[220px] p-0" align="start">
+                                                                <Command>
+                                                                    <CommandInput placeholder="Cari ruang..." className="h-8 text-xs" />
+                                                                    <CommandList>
+                                                                        <CommandEmpty className="py-2 text-center text-xs text-muted-foreground">
+                                                                            Tidak ditemukan
+                                                                        </CommandEmpty>
+                                                                        <CommandGroup className="max-h-[200px] overflow-y-auto">
+                                                                            {lokasiOptions.map((lokasi) => (
+                                                                                <CommandItem
+                                                                                    key={lokasi.id}
+                                                                                    value={lokasi.nama}
+                                                                                    onSelect={() => field.onChange(lokasi.nama)}
+                                                                                    className="text-xs"
+                                                                                >
+                                                                                    <Check className={cn("mr-2 h-3 w-3", field.value === lokasi.nama ? "opacity-100" : "opacity-0")} />
+                                                                                    {lokasi.nama}
+                                                                                </CommandItem>
+                                                                            ))}
+                                                                        </CommandGroup>
+                                                                    </CommandList>
+                                                                </Command>
+                                                            </PopoverContent>
+                                                        </Popover>
                                                         <FormMessage />
                                                     </FormItem>
                                                 )}

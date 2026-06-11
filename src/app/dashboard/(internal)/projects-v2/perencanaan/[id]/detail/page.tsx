@@ -1397,7 +1397,7 @@ export default function PerencanaanDetailPage() {
                              </Button>
                           </div>
                         </div>
-                        <span className='text-[10px] text-muted-foreground'>
+                        <span className='text-xs text-muted-foreground'>
                           {item.panjang || '-'}x{item.lebar || '-'}x
                           {item.tinggi || '-'} {item.satuan}
                         </span>

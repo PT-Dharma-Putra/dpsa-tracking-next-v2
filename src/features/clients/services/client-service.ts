@@ -6,6 +6,7 @@ export interface Client {
     email: string;
     phone?: string;
     address?: string;
+    director_name?: string | null;
     hermina: number;
     created_at?: string;
     projects_count?: number;
