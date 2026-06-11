@@ -354,6 +354,34 @@ export const projectV2Service = {
         return data;
     },
 
+    updateSphMeta: async (projectId: number, payload: { nomor_sph: string; nominal?: string; file?: File | null }) => {
+        const formData = new FormData();
+        formData.append('nomor_sph', payload.nomor_sph);
+        if (payload.file) formData.append('file', payload.file);
+        if (payload.nominal) formData.append('nominal', payload.nominal);
+        formData.append('_method', 'PUT');
+        const { data } = await apiClient.post(`/projects-v2/${projectId}/update-sph`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        return data;
+    },
+
+    updateSpkMeta: async (projectId: number, payload: { nomor_spk: string; tanggal_spk?: string; deadline?: string; prioritas?: string; tanggal_masuk?: string; nominal?: string; file?: File | null }) => {
+        const formData = new FormData();
+        formData.append('nomor_spk', payload.nomor_spk);
+        if (payload.file) formData.append('file', payload.file);
+        if (payload.tanggal_spk) formData.append('tanggal_spk', payload.tanggal_spk);
+        if (payload.deadline) formData.append('deadline', payload.deadline);
+        if (payload.prioritas) formData.append('prioritas', payload.prioritas);
+        if (payload.tanggal_masuk) formData.append('tanggal_masuk', payload.tanggal_masuk);
+        if (payload.nominal) formData.append('nominal', payload.nominal);
+        formData.append('_method', 'PUT');
+        const { data } = await apiClient.post(`/projects-v2/${projectId}/update-spk`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        return data;
+    },
+
     uploadSPK: async (projectId: number, file: File, nomor_spk: string, deadline?: string, prioritas?: string, tanggal_masuk?: string, nominal?: string, tanggal_spk?: string) => {
         const formData = new FormData();
         formData.append('file', file);
