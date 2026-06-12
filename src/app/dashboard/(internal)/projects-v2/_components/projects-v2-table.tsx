@@ -1709,7 +1709,7 @@ export function ProjectsV2Table({
                       )}
                     </>
                   )}
-                  {!showAllDashboard && !showSPD && (
+                  {!showAllDashboard && !showSPD && !showPiutang && (
                     <>
                       <TableHead
                         className='cursor-pointer hover:bg-neutral-100 transition-colors group'
@@ -1771,7 +1771,7 @@ export function ProjectsV2Table({
                   {!showAllDashboard && !showProduksi && !showPiutang && (
                     <TableHead>Pakai Desain</TableHead>
                   )}
-                  {!showAllDashboard && !showSPD && (
+                  {!showAllDashboard && !showSPD && !showPiutang && (
                     <TableHead>Jadwal Kirim</TableHead>
                   )}
 
@@ -2320,7 +2320,7 @@ export function ProjectsV2Table({
                           )}
                         </TableCell>
                       )}
-                      {!showAllDashboard && !showSPD && (
+                      {!showAllDashboard && !showSPD && !showPiutang && (
                         <>
                           <TableCell>
                             {showPerencanaan ? (
@@ -2431,7 +2431,7 @@ export function ProjectsV2Table({
                           {project.need_design ? 'Ya' : 'Tidak'}
                         </TableCell>
                       )}
-                      {!showAllDashboard && !showSPD && (
+                      {!showAllDashboard && !showSPD && !showPiutang && (
                         <TableCell>
                           {project.jadwal_pengiriman ? (
                             <div

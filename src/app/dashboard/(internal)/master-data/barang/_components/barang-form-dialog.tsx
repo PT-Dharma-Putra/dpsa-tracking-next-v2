@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Loader2 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -25,6 +25,7 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { BarangService, Barang } from "@/features/barang/services/barang-service"
+import { JenisBarangService } from "@/features/barang/services/jenis-barang-service"
 
 interface BarangFormDialogProps {
     open: boolean
@@ -79,11 +80,17 @@ const emptyForm = {
     harga: "",
     garansi: "",
     link_gambar_kerja: "",
+    jenis_barang_id: "",
 }
 
 export function BarangFormDialog({ open, onOpenChange, barang }: BarangFormDialogProps) {
     const queryClient = useQueryClient()
     const [form, setForm] = React.useState(emptyForm)
+
+    const { data: jenisBarangList = [] } = useQuery({
+        queryKey: ["jenis-barang"],
+        queryFn: () => JenisBarangService.getAll(),
+    })
 
     React.useEffect(() => {
         if (barang) {
@@ -98,6 +105,7 @@ export function BarangFormDialog({ open, onOpenChange, barang }: BarangFormDialo
                 harga: barang.harga != null ? formatRupiah(barang.harga) : "",
                 garansi: barang.garansi ?? "",
                 link_gambar_kerja: barang.link_gambar_kerja ?? "",
+                jenis_barang_id: barang.jenis_barang_id != null ? String(barang.jenis_barang_id) : "",
             })
         } else {
             setForm(emptyForm)
@@ -153,6 +161,7 @@ export function BarangFormDialog({ open, onOpenChange, barang }: BarangFormDialo
             harga: form.harga !== "" ? parseRupiah(form.harga) : null,
             garansi: form.garansi || null,
             link_gambar_kerja: form.link_gambar_kerja || null,
+            jenis_barang_id: form.jenis_barang_id !== "" ? Number(form.jenis_barang_id) : null,
         })
     }
 
@@ -192,6 +201,24 @@ export function BarangFormDialog({ open, onOpenChange, barang }: BarangFormDialo
                                     required
                                 />
                             </div>
+                        </div>
+
+                        {/* Jenis */}
+                        <div className="grid gap-2">
+                            <Label htmlFor="jenis_barang_id">Jenis</Label>
+                            <Select
+                                value={form.jenis_barang_id}
+                                onValueChange={(val) => setForm(prev => ({ ...prev, jenis_barang_id: val }))}
+                            >
+                                <SelectTrigger id="jenis_barang_id">
+                                    <SelectValue placeholder="Pilih jenis..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {jenisBarangList.map((j) => (
+                                        <SelectItem key={j.id} value={String(j.id)}>{j.nama}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
 
                         {/* Spesifikasi */}
