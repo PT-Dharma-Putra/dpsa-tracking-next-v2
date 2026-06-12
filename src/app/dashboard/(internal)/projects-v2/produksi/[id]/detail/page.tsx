@@ -886,11 +886,11 @@ export default function ProduksiDetailPage() {
         open={isProduksiDialogOpen}
         onOpenChange={setIsProduksiDialogOpen}
       >
-        <AlertDialogContent className="mb-8 flex h-[calc(70vh-2rem)] min-w-[calc(70vw-2rem)] max-w-[calc(70vw-2rem)] flex-col justify-between gap-0 p-0">
+        <AlertDialogContent className="mb-4 flex h-[90dvh] sm:h-[calc(70vh-2rem)] w-[95vw] sm:min-w-[calc(70vw-2rem)] sm:max-w-[calc(70vw-2rem)] flex-col justify-between gap-0 p-0">
           {/* Header */}
-          <div className="bg-white border-b px-6 py-4 flex items-center justify-between shrink-0 shadow-sm z-10">
+          <div className="bg-white border-b px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between shrink-0 shadow-sm z-10">
             <div>
-              <AlertDialogTitle className="flex items-center gap-2 text-2xl font-bold tracking-tight text-neutral-800">
+              <AlertDialogTitle className="flex items-center gap-2 text-lg sm:text-2xl font-bold tracking-tight text-neutral-800">
                 <BarChart3 className="h-6 w-6 text-orange-500" />
                 Update Progress Produksi
               </AlertDialogTitle>
@@ -913,7 +913,7 @@ export default function ProduksiDetailPage() {
           <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6">
             {/* Jumlah Order - Top Center */}
             <div className="flex justify-center">
-              <div className="w-1/3 space-y-2 text-center">
+              <div className="w-1/2 sm:w-1/3 space-y-2 text-center">
                 <Label className="text-sm font-bold">Jumlah Order</Label>
                 <Input
                   type="number"
@@ -935,9 +935,9 @@ export default function ProduksiDetailPage() {
               <h4 className="font-semibold text-sm text-neutral-500 uppercase tracking-wider border-b pb-2">
                 Mesin
               </h4>
-              <div className="grid grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                     <Label>Cold Press</Label>
                     <Button
                       type="button"
@@ -965,7 +965,7 @@ export default function ProduksiDetailPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                     <Label>Running Saw</Label>
                     <Button
                       type="button"
@@ -993,7 +993,7 @@ export default function ProduksiDetailPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                     <Label>Edging</Label>
                     <Button
                       type="button"
@@ -1021,7 +1021,7 @@ export default function ProduksiDetailPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                     <Label>CNC</Label>
                     <Button
                       type="button"
@@ -1056,9 +1056,9 @@ export default function ProduksiDetailPage() {
               <h4 className="font-semibold text-sm text-neutral-500 uppercase tracking-wider border-b pb-2">
                 Manual
               </h4>
-              <div className="grid grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                     <Label>Tukang Kayu</Label>
                     <Button
                       type="button"
@@ -1086,7 +1086,7 @@ export default function ProduksiDetailPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                     <Label>Tukang Jok</Label>
                     <Button
                       type="button"
@@ -1114,7 +1114,7 @@ export default function ProduksiDetailPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                     <Label>Rakit</Label>
                     <Button
                       type="button"
@@ -1142,7 +1142,7 @@ export default function ProduksiDetailPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                     <Label>Finishing</Label>
                     <Button
                       type="button"
@@ -1173,8 +1173,8 @@ export default function ProduksiDetailPage() {
             </div>
 
             {/* Menggunakan Stok & Persen Section */}
-            <div className="pt-4 border-t flex justify-center gap-8">
-              <div className="space-y-2 w-[200px] text-center">
+            <div className="pt-4 border-t flex flex-col sm:flex-row justify-center gap-4 sm:gap-8">
+              <div className="space-y-2 w-full sm:w-[200px] text-center">
                 <Label className="text-sm font-bold">Menggunakan Stok</Label>
                 <Input
                   type="number"
@@ -1190,7 +1190,7 @@ export default function ProduksiDetailPage() {
                   className="font-bold text-center text-lg h-12"
                 />
               </div>
-              <div className="space-y-2 w-[200px] text-center">
+              <div className="space-y-2 w-full sm:w-[200px] text-center">
                 <Label className="text-sm font-bold">Persen (%)</Label>
                 <Input
                   type="text"
@@ -1206,7 +1206,7 @@ export default function ProduksiDetailPage() {
             </div>
           </div>
           
-          <div className="bg-white border-t px-6 py-4 flex items-center justify-end gap-4 shrink-0 shadow-[0_-4px_6px_-1px_rgb(0,0,0,0.05)] z-10">
+          <div className="bg-white border-t px-4 sm:px-6 py-3 sm:py-4 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-4 shrink-0 shadow-[0_-4px_6px_-1px_rgb(0,0,0,0.05)] z-10">
             <AlertDialogCancel
               onClick={() => setIsProduksiDialogOpen(false)}
               className="px-6 rounded-full font-medium"
