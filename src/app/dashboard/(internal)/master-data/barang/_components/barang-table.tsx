@@ -184,6 +184,7 @@ export function BarangTable() {
                             <TableHead className="w-[60px]">No</TableHead>
                             <TableHead className="min-w-[160px]">Nama</TableHead>
                             <TableHead className="min-w-[100px]">Kode</TableHead>
+                            <TableHead className="min-w-[120px]">Jenis</TableHead>
                             <TableHead className="min-w-[200px]">Spesifikasi</TableHead>
                             <TableHead className="min-w-[90px] text-right">Panjang</TableHead>
                             <TableHead className="min-w-[80px] text-right">Lebar</TableHead>
@@ -199,7 +200,7 @@ export function BarangTable() {
                     <TableBody>
                         {isLoading ? (
                             <TableRow>
-                                <TableCell colSpan={13} className="h-24 text-center">
+                                <TableCell colSpan={14} className="h-24 text-center">
                                     <div className="flex items-center justify-center gap-2 text-muted-foreground">
                                         <Loader2 className="h-4 w-4 animate-spin text-orange-600" />
                                         <span>Memuat data...</span>
@@ -221,6 +222,15 @@ export function BarangTable() {
                                     <TableCell className="font-semibold text-neutral-800">{b.nama}</TableCell>
                                     <TableCell>
                                         <span className="font-mono bg-neutral-100 text-neutral-700 px-2 py-0.5 rounded text-xs">{b.kode}</span>
+                                    </TableCell>
+                                    <TableCell className="text-sm">
+                                        {b.jenis_barang ? (
+                                            <span className="bg-orange-50 text-orange-700 border border-orange-200 px-2 py-0.5 rounded text-xs font-medium">
+                                                {b.jenis_barang.nama}
+                                            </span>
+                                        ) : (
+                                            <span className="text-muted-foreground text-xs">-</span>
+                                        )}
                                     </TableCell>
                                     <TableCell className="text-xs text-neutral-600 max-w-[200px] truncate" title={b.spesifikasi ?? ""}>
                                         {b.spesifikasi || "-"}
