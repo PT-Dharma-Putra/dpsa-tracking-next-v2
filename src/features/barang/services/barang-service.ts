@@ -12,6 +12,8 @@ export interface Barang {
     harga?: number | null;
     garansi?: string | null;
     link_gambar_kerja?: string | null;
+    jenis_barang_id?: number | null;
+    jenis_barang?: { id: number; nama: string } | null;
     created_at?: string;
     updated_at?: string;
 }

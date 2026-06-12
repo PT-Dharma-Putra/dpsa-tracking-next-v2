@@ -106,6 +106,32 @@ export default function PrintSPHPage() {
 
   const isLoading = isLoadingProject || isLoadingItems;
 
+  const [settingsOpen, setSettingsOpen] = React.useState(false);
+  const [popupPos, setPopupPos] = React.useState({ top: 0, right: 0 });
+  const settingsBtnRef = React.useRef<HTMLButtonElement>(null);
+  const [nomorDoc, setNomorDoc] = React.useState('');
+  const [tanggalInput, setTanggalInput] = React.useState(
+    format(new Date(), 'yyyy-MM-dd')
+  );
+  const [biayaKirimPct, setBiayaKirimPct] = React.useState(15);
+  const [ppnRate, setPpnRate] = React.useState(12);
+  const [revisi, setRevisi] = React.useState('00');
+
+  const handleSettingsToggle = () => {
+    if (!settingsOpen && settingsBtnRef.current) {
+      const rect = settingsBtnRef.current.getBoundingClientRect();
+      setPopupPos({
+        top: rect.bottom + 8,
+        right: window.innerWidth - rect.right,
+      });
+    }
+    setSettingsOpen((prev) => !prev);
+  };
+
+  React.useEffect(() => {
+    if (project?.sph?.nomor_sph) setNomorDoc(project.sph.nomor_sph);
+  }, [project]);
+
   React.useEffect(() => {
     if (project && items) {
       const timer = setTimeout(() => window.print(), 800);
@@ -141,10 +167,10 @@ export default function PrintSPHPage() {
   }));
 
   const total = itemsWithTotal.reduce((s, i) => s + i.hargaTotal, 0);
-  const biayaKirim = Math.round(total * 0.15);
+  const biayaKirim = Math.round((total * biayaKirimPct) / 100);
   const subTotal = total + biayaKirim;
   const dppLain = Math.round((subTotal * 11) / 12);
-  const ppn = Math.round(dppLain * 0.12);
+  const ppn = Math.round((dppLain * ppnRate) / 100);
   const grandTotal = subTotal + ppn;
 
   // Group by lantai
@@ -157,13 +183,19 @@ export default function PrintSPHPage() {
     lantaiMap[key].push(item);
   }
 
-  const nomorSPH = project.sph?.nomor_sph || '-';
-  const tanggalDoc = format(new Date(), 'd MMMM yyyy', { locale: idLocale });
+  const nomorSPH = (nomorDoc || project.sph?.nomor_sph || '-').toUpperCase();
+  const tanggalDoc = tanggalInput
+    ? format(new Date(tanggalInput + 'T00:00:00'), 'd MMMM yyyy', {
+        locale: idLocale,
+      })
+    : format(new Date(), 'd MMMM yyyy', { locale: idLocale });
   const grandTotalWords = terbilang(grandTotal) + ' Rupiah';
-  const marketingName = project.marketing?.name || profileRes?.data?.name || '-';
+  const marketingName =
+    project.marketing?.name || profileRes?.data?.name || '-';
 
   return (
     <div
+      id='print-wrapper'
       className='bg-white min-h-screen p-4 text-black'
       style={{ fontFamily: 'Arial, sans-serif' }}
     >
@@ -171,12 +203,11 @@ export default function PrintSPHPage() {
         dangerouslySetInnerHTML={{
           __html: `
           @media print {
-            body * { visibility: hidden; background-color: transparent !important; }
-            #sph-area, #sph-area * { visibility: visible; color: black !important; }
-            #sph-area { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; }
             .no-print { display: none !important; }
+            #print-wrapper { padding: 0 !important; margin: 0 !important; background: white !important; }
+            #sph-area { width: 100% !important; max-width: none !important; margin: 0 !important; padding: 0 !important; }
           }
-          @page { size: A4; margin: 10mm 12mm 10mm 12mm; }
+          @page { size: A4 landscape; margin: 10mm 12mm 10mm 12mm; }
         `,
         }}
       />
@@ -191,19 +222,225 @@ export default function PrintSPHPage() {
             Diformat untuk A4. Dialog cetak muncul otomatis.
           </p>
         </div>
-        <button
-          onClick={() => window.print()}
-          className='px-4 py-2 bg-neutral-800 text-white rounded text-sm font-medium hover:bg-neutral-900'
-        >
-          Cetak Manual
-        </button>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <div>
+            <button
+              ref={settingsBtnRef}
+              onClick={handleSettingsToggle}
+              className='px-4 py-2 bg-white border border-neutral-300 rounded text-sm font-medium hover:bg-neutral-50'
+            >
+              ⚙ Pengaturan
+            </button>
+            {settingsOpen && (
+              <div
+                style={{
+                  position: 'fixed',
+                  top: popupPos.top,
+                  right: popupPos.right,
+                  background: 'white',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: 8,
+                  padding: 16,
+                  width: 300,
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.14)',
+                  zIndex: 9999,
+                }}
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: 12,
+                  }}
+                >
+                  <div style={{ fontWeight: 600, fontSize: 13 }}>
+                    Pengaturan Dokumen
+                  </div>
+                  <button
+                    onClick={() => setSettingsOpen(false)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      padding: '2px 4px',
+                      lineHeight: 1,
+                      fontSize: 16,
+                      color: '#6b7280',
+                    }}
+                    title='Tutup'
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div
+                  style={{ display: 'flex', flexDirection: 'column', gap: 10 }}
+                >
+                  <div>
+                    <label
+                      style={{
+                        display: 'block',
+                        marginBottom: 3,
+                        color: '#555',
+                        fontSize: 11,
+                      }}
+                    >
+                      Nomor SPH
+                    </label>
+                    <input
+                      type='text'
+                      value={nomorDoc}
+                      onChange={(e) => setNomorDoc(e.target.value)}
+                      style={{
+                        width: '100%',
+                        border: '1px solid #d1d5db',
+                        borderRadius: 4,
+                        padding: '5px 8px',
+                        fontSize: 13,
+                        boxSizing: 'border-box',
+                        textTransform: 'uppercase',
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label
+                      style={{
+                        display: 'block',
+                        marginBottom: 3,
+                        color: '#555',
+                        fontSize: 11,
+                      }}
+                    >
+                      Revisi ke
+                    </label>
+                    <input
+                      type='text'
+                      value={revisi}
+                      onChange={(e) => setRevisi(e.target.value)}
+                      style={{
+                        width: '100%',
+                        border: '1px solid #d1d5db',
+                        borderRadius: 4,
+                        padding: '5px 8px',
+                        fontSize: 13,
+                        boxSizing: 'border-box',
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label
+                      style={{
+                        display: 'block',
+                        marginBottom: 3,
+                        color: '#555',
+                        fontSize: 11,
+                      }}
+                    >
+                      Tanggal
+                    </label>
+                    <input
+                      type='date'
+                      value={tanggalInput}
+                      onChange={(e) => setTanggalInput(e.target.value)}
+                      style={{
+                        width: '100%',
+                        border: '1px solid #d1d5db',
+                        borderRadius: 4,
+                        padding: '5px 8px',
+                        fontSize: 13,
+                        boxSizing: 'border-box',
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label
+                      style={{
+                        display: 'block',
+                        marginBottom: 3,
+                        color: '#555',
+                        fontSize: 11,
+                      }}
+                    >
+                      Biaya Kirim (%)
+                    </label>
+                    <input
+                      type='number'
+                      min={0}
+                      max={100}
+                      value={biayaKirimPct}
+                      onChange={(e) => setBiayaKirimPct(Number(e.target.value))}
+                      style={{
+                        width: '100%',
+                        border: '1px solid #d1d5db',
+                        borderRadius: 4,
+                        padding: '5px 8px',
+                        fontSize: 13,
+                        boxSizing: 'border-box',
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label
+                      style={{
+                        display: 'block',
+                        marginBottom: 3,
+                        color: '#555',
+                        fontSize: 11,
+                      }}
+                    >
+                      PPN (%)
+                    </label>
+                    <input
+                      type='number'
+                      min={0}
+                      max={100}
+                      value={ppnRate}
+                      onChange={(e) => setPpnRate(Number(e.target.value))}
+                      style={{
+                        width: '100%',
+                        border: '1px solid #d1d5db',
+                        borderRadius: 4,
+                        padding: '5px 8px',
+                        fontSize: 13,
+                        boxSizing: 'border-box',
+                      }}
+                    />
+                  </div>
+                </div>
+                <button
+                  onClick={() => setSettingsOpen(false)}
+                  style={{
+                    marginTop: 12,
+                    width: '100%',
+                    background: '#1f2937',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: 4,
+                    padding: '7px 0',
+                    fontSize: 13,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Terapkan
+                </button>
+              </div>
+            )}
+          </div>
+          <button
+            onClick={() => window.print()}
+            className='px-4 py-2 bg-neutral-800 text-white rounded text-sm font-medium hover:bg-neutral-900'
+          >
+            Cetak Manual
+          </button>
+        </div>
       </div>
 
       {/* Print content */}
       <div
         id='sph-area'
         style={{
-          maxWidth: 780,
+          width: '100%',
+          maxWidth: 1100,
           margin: '0 auto',
           backgroundColor: 'white',
           fontSize: 10,
@@ -313,7 +550,7 @@ export default function PrintSPHPage() {
         >
           {/* Left: Kepada Yth */}
           <div style={{ fontSize: 10.5, lineHeight: 1.8 }}>
-            <div>Kepada Yth.</div>
+            <div>Yth.</div>
             {project.client?.director_name && (
               <div
                 style={{
@@ -325,12 +562,28 @@ export default function PrintSPHPage() {
                 {project.client.director_name}
               </div>
             )}
-            <div>{project.client?.name || '-'}</div>
+
+            <div>Direktur Rs. {project.client?.name || '-'}</div>
+
             {project.client?.address
               ? project.client.address
                   .split('\n')
                   .map((line, i) => <div key={i}>{line}</div>)
               : null}
+
+            <div className='mt-4'>
+              {project.client?.nama_jangum && (
+                <div
+                  style={{
+                    fontWeight: 'bold',
+                    fontStyle: 'italic',
+                    textDecoration: 'underline',
+                  }}
+                >
+                  Up. {project.client.nama_jangum} (Manajer Jangum)
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Right: MKT box + doc meta */}
@@ -362,7 +615,7 @@ export default function PrintSPHPage() {
                       textAlign: 'center',
                     }}
                   >
-                    Rev : 00
+                    Rev : {revisi}
                   </td>
                 </tr>
                 <tr>
@@ -424,10 +677,10 @@ export default function PrintSPHPage() {
               <th rowSpan={2} style={th({ whiteSpace: 'nowrap', width: 24 })}>
                 No
               </th>
-              <th rowSpan={2} style={th({ minWidth: 70 })}>
+              <th rowSpan={2} style={th({ width: 130 })}>
                 Ruang
               </th>
-              <th rowSpan={2} style={th()}>
+              <th rowSpan={2} style={th({ width: 130 })}>
                 Item / Perabot
               </th>
               <th colSpan={3} style={th()}>
@@ -450,7 +703,7 @@ export default function PrintSPHPage() {
               <th rowSpan={2} style={th({ width: 72, whiteSpace: 'nowrap' })}>
                 Harga Total
               </th>
-              <th rowSpan={2} style={th({ minWidth: 60 })}>
+              <th rowSpan={2} style={th({ width: 300 })}>
                 Keterangan
               </th>
             </tr>
@@ -522,6 +775,7 @@ export default function PrintSPHPage() {
             <tr>
               <td style={td()} />
               <td
+                colSpan={10}
                 style={td({
                   fontWeight: 'bold',
                   textAlign: 'left',
@@ -530,7 +784,6 @@ export default function PrintSPHPage() {
               >
                 TOTAL
               </td>
-              <td colSpan={9} style={td()} />
               <td
                 style={td({
                   fontWeight: 'bold',
@@ -553,11 +806,15 @@ export default function PrintSPHPage() {
               >
                 BIAYA KIRIM
               </td>
+              <td colSpan={8} style={td()} />
               <td
-                colSpan={9}
-                style={td({ textAlign: 'right', fontSize: 8.5, color: '#555' })}
+                style={td({
+                  textAlign: 'center',
+                  fontSize: 8.5,
+                  color: '#555',
+                })}
               >
-                15%
+                {biayaKirimPct}%
               </td>
               <td
                 style={td({
@@ -573,6 +830,7 @@ export default function PrintSPHPage() {
             <tr>
               <td style={td()} />
               <td
+                colSpan={10}
                 style={td({
                   fontWeight: 'bold',
                   textAlign: 'left',
@@ -581,10 +839,6 @@ export default function PrintSPHPage() {
               >
                 SUBTOTAL
               </td>
-              <td
-                colSpan={9}
-                style={td({ textAlign: 'right', fontSize: 8.5, color: '#555' })}
-              ></td>
               <td
                 style={td({
                   fontWeight: 'bold',
@@ -599,16 +853,29 @@ export default function PrintSPHPage() {
             <tr>
               <td style={td()} />
               <td
-                colSpan={8}
+                colSpan={7}
                 style={td({
                   fontWeight: 'bold',
                   textAlign: 'left',
+                  fontStyle: 'italic',
                   whiteSpace: 'nowrap',
                 })}
               >
                 DPP LAIN ( {toRupiah(subTotal)} x 11/12 )
               </td>
-              <td style={td({ textAlign: 'right' })}>{toRupiah(dppLain)}</td>
+              <td style={td({ fontWeight: 'bold', textAlign: 'right' })}>
+                {toRupiah(dppLain)}
+              </td>
+              <td
+                style={td({
+                  fontWeight: 'bold',
+                  textAlign: 'center',
+                  fontStyle: 'italic',
+                  whiteSpace: 'nowrap',
+                })}
+              >
+                PPN
+              </td>
               <td
                 style={td({
                   textAlign: 'center',
@@ -616,17 +883,8 @@ export default function PrintSPHPage() {
                   color: '#555',
                 })}
               >
-                12%
+                {ppnRate}%
               </td>
-              <td
-                colSpan={2}
-                style={td({ textAlign: 'right', whiteSpace: 'nowrap' })}
-              >
-                {toRupiah(ppn)}
-              </td>
-            </tr>
-            <tr>
-              <td colSpan={10} style={td()} />
               <td
                 colSpan={2}
                 style={td({
@@ -635,7 +893,30 @@ export default function PrintSPHPage() {
                   whiteSpace: 'nowrap',
                 })}
               >
-                GRANDTOTAL&nbsp;&nbsp;&nbsp;&nbsp;{toRupiah(grandTotal)}
+                {toRupiah(ppn)}
+              </td>
+            </tr>
+            <tr>
+              <td style={td()} />
+              <td
+                colSpan={10}
+                style={td({
+                  fontWeight: 'bold',
+                  textAlign: 'left',
+                  whiteSpace: 'nowrap',
+                })}
+              >
+                GRAND TOTAL
+              </td>
+              <td
+                colSpan={2}
+                style={td({
+                  fontWeight: 'bold',
+                  textAlign: 'right',
+                  whiteSpace: 'nowrap',
+                })}
+              >
+                {toRupiah(grandTotal)}
               </td>
             </tr>
             <tr>
@@ -648,6 +929,71 @@ export default function PrintSPHPage() {
             </tr>
           </tbody>
         </table>
+
+        {/* ── Catatan ── */}
+        <div style={{ marginTop: 14, fontSize: 10, lineHeight: 1.7 }}>
+          <div style={{ fontWeight: 'bold' }}>Catatan :</div>
+          <div>Harga diatas sudah termasuk Biaya transport.</div>
+          <div>Harga diatas sudah termasuk Pajak PPN.</div>
+          <div>Harga diatas sudah termasuk Biaya setting dilokasi.</div>
+          <div>
+            Layanan desain disediakan secara gratis, tidak menambah nilai
+            penawaran.
+          </div>
+        </div>
+
+        {/* ── Tata cara pembayaran ── */}
+        <div style={{ marginTop: 12, fontSize: 10, lineHeight: 1.7 }}>
+          <div style={{ fontWeight: 'bold' }}>Tata cara pembayaran :</div>
+          <div>
+            Progres I (30%)&nbsp;&nbsp;&nbsp;: Alat Umum (Furniture) masih dalam
+            proses produksi dan masih berada di lokasi rekanan / Vendor JV.
+          </div>
+          <div>
+            Progres II (30%)&nbsp;&nbsp;: Alat Umum (Furniture) sebagian sudah
+            terkirim dan terpasang di lokasi milik RS. Hermina, dan sebagian
+            lainnya masih dalam proses produksi dan masih berada di lokasi
+            rekanan/Vendor JV.
+          </div>
+          <div>
+            Progres III (35%) : Alat Umum (Furniture) seluruhnya sudah terkirim
+            dan terpasang di lokasi RS. Hermina.
+          </div>
+          <div>
+            Retensi (5%)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: Tagihan setelah masa
+            retensi selesai, yaitu 3 bulan setelah Alat Umum (Furniture) selesai
+            terpasang 100% yang didasarkan oleh Berita Acara Serah Terima (BAST)
+            dan telah di tandatangani oleh perwakilan RS. Hermina dan rekanan /
+            Vendor JV.
+          </div>
+          <div style={{ marginTop: 8 }}>
+            Demikian kami sampaikan, atas perhatian dan kerjasama yang telah
+            terjalin dengan baik selama ini, kami ucapkan banyak terima kasih.
+          </div>
+        </div>
+
+        {/* ── Signature ── */}
+        <div
+          style={{
+            marginTop: 20,
+            marginLeft: 80,
+            display: 'flex',
+            justifyContent: 'flex-start',
+            fontSize: 10,
+          }}
+        >
+          <div style={{ textAlign: 'center', minWidth: 160 }}>
+            <div>Hormat kami,</div>
+            <div style={{ fontWeight: 'bold' }}>
+              PT. Dharma Putra Sejahtera Abadi
+            </div>
+            <div style={{ height: 64 }} />
+            <div style={{ textDecoration: 'underline' }}>
+              Fx Yosel Boyke Dharma, ST
+            </div>
+            <div>Direktur</div>
+          </div>
+        </div>
       </div>
     </div>
   );
