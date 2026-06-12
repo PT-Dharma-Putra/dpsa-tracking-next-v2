@@ -891,7 +891,7 @@ export function ProjectsV2Table({
       )}
 
       {showProduksi && stats && (
-        <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 w-full'>
+        <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-4 w-full'>
           {/* Total Project */}
           <div
             onClick={() => handleDashboardFilterClick(null)}
@@ -977,6 +977,36 @@ export function ProjectsV2Table({
             </div>
             {dashboardFilter === 'deadline_dekat' && (
               <span className='text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
+                Active
+              </span>
+            )}
+          </div>
+
+          {/* Overdue */}
+          <div
+            onClick={() => handleDashboardFilterClick('overdue')}
+            className={cn(
+              'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-red-400 select-none',
+              dashboardFilter === 'overdue'
+                ? 'border-red-500 bg-red-50/50 ring-2 ring-red-500/20'
+                : 'border-red-200 bg-white'
+            )}
+          >
+            <div className='flex items-center gap-3'>
+              <div className='h-10 w-10 rounded-lg bg-red-100 flex items-center justify-center text-red-600 shrink-0'>
+                <AlertCircle className='h-5 w-5' />
+              </div>
+              <div>
+                <p className='text-[10px] font-bold text-red-600 uppercase tracking-wider'>
+                  Overdue
+                </p>
+                <p className='text-xl font-bold text-red-800'>
+                  {stats.overdue}
+                </p>
+              </div>
+            </div>
+            {dashboardFilter === 'overdue' && (
+              <span className='text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
                 Active
               </span>
             )}
