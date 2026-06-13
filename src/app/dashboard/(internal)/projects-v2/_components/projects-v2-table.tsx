@@ -187,6 +187,7 @@ export function ProjectsV2Table({
     | 'deadline_dekat'
     | 'overdue'
     | 'urgent'
+    | 'po_supplier'
     | null
   >(null);
 
@@ -200,6 +201,7 @@ export function ProjectsV2Table({
       | 'deadline_dekat'
       | 'overdue'
       | 'urgent'
+      | 'po_supplier'
       | null
   ) => {
     if (filter === null) {
@@ -894,7 +896,7 @@ export function ProjectsV2Table({
       )}
 
       {(showProduksi || showPurchasing) && stats && (
-        <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-4 w-full'>
+        <div className={cn('grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 w-full', showPurchasing ? 'lg:grid-cols-8' : 'lg:grid-cols-7')}>
           {/* Total Project */}
           <div
             onClick={() => handleDashboardFilterClick(null)}
@@ -1104,6 +1106,38 @@ export function ProjectsV2Table({
               </span>
             )}
           </div>
+
+          {/* PO Supplier — hanya purchasing */}
+          {showPurchasing && (
+            <div
+              onClick={() => handleDashboardFilterClick('po_supplier')}
+              className={cn(
+                'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-violet-400 select-none',
+                dashboardFilter === 'po_supplier'
+                  ? 'border-violet-500 bg-violet-50/50 ring-2 ring-violet-500/20'
+                  : 'border-violet-200 bg-white'
+              )}
+            >
+              <div className='flex items-center gap-3'>
+                <div className='h-10 w-10 rounded-lg bg-violet-100 flex items-center justify-center text-violet-600 shrink-0'>
+                  <Truck className='h-5 w-5' />
+                </div>
+                <div>
+                  <p className='text-[10px] font-bold text-violet-600 uppercase tracking-wider'>
+                    PO Supplier
+                  </p>
+                  <p className='text-xl font-bold text-slate-800'>
+                    {stats.po_supplier ?? 0}
+                  </p>
+                </div>
+              </div>
+              {dashboardFilter === 'po_supplier' && (
+                <span className='text-[10px] bg-violet-100 text-violet-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
+                  Active
+                </span>
+              )}
+            </div>
+          )}
         </div>
       )}
 
