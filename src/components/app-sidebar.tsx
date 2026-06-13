@@ -90,6 +90,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             title: 'Projects V2',
             url: '/dashboard/projects-v2/marketing',
           },
+          // {
+          //   title: 'Mdl',
+          //   url: '/dashboard/mdl',
+          // },
         ],
       },
       {
@@ -441,7 +445,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       {
         title: 'Keuangan',
         url: '#',
-        allowedRoles: ['Super-Admin', 'Keuangan', 'Piutang'],
+        allowedRoles: ['Super-Admin', 'Keuangan', 'Piutang', 'Purchasing'],
         items: [
           {
             title: 'Project V2 | Keuangan',
@@ -568,7 +572,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
-              <SidebarMenuItem>
+              {/* <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
                   tooltip='MDL Catalog'
@@ -579,7 +583,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     <span>Master Data List</span>
                   </Link>
                 </SidebarMenuButton>
-              </SidebarMenuItem>
+              </SidebarMenuItem> */}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
