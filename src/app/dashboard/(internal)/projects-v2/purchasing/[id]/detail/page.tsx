@@ -53,7 +53,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 
-export default function ProduksiDetailPage() {
+export default function PurchasingDetailPage() {
   const params = useParams();
   const router = useRouter();
   const queryClient = useQueryClient();

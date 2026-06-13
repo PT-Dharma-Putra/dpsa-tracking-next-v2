@@ -819,6 +819,22 @@ export const projectV2Service = {
     return data;
   },
 
+  markAsSupplier: async (itemId: number) => {
+    const { data } = await apiClient.post(`/projects-v2-items/${itemId}/mark-supplier`);
+    return data;
+  },
+
+  updateBarangSupplier: async (
+    itemId: number,
+    payload: Partial<Omit<BarangSupplier, 'id' | 'project_item_id' | 'created_at' | 'updated_at'>>
+  ) => {
+    const { data } = await apiClient.post(
+      `/projects-v2-items/${itemId}/barang-supplier`,
+      payload
+    );
+    return data;
+  },
+
   // Shipment Methods
   getTahapPengiriman: async (projectId?: number) => {
     const { data } = await apiClient.get('/tahap-pengiriman', {
@@ -1007,6 +1023,22 @@ export interface ProjectItemV2 {
   history_count?: number;
   history_fields?: string[];
   qc_cek?: QcCek;
+  barang_supplier?: BarangSupplier;
+}
+
+export interface BarangSupplier {
+  id: number;
+  project_item_id: number;
+  jumlah_order: number;
+  barang_dipesan: number;
+  barang_tersedia: number;
+  rakit: number;
+  packing: number;
+  terkirim: number;
+  persen: number;
+  skipped_fields?: string[];
+  created_at: string;
+  updated_at: string;
 }
 
 export interface QcCek {
@@ -1065,6 +1097,7 @@ export interface Produksi {
   packing: number;
   persen: number;
   skipped_fields?: string[];
+  is_supplier?: boolean;
 }
 
 export interface BarangJadiMasuk {
