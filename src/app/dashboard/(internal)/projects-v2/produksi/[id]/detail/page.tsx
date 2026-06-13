@@ -17,6 +17,7 @@ import {
   Package,
   FileDown,
   X,
+  Truck,
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -47,6 +48,7 @@ import {
   projectV2Service,
   ProjectItemV2,
   Produksi,
+  BarangSupplier,
 } from '@/features/projects/services/project-v2-service';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -177,7 +179,79 @@ export default function ProduksiDetailPage() {
     updateProduksiMutation.mutate({ ...produksiData, skipped_fields: skippedList });
   };
 
+  // Supplier Confirm State
+  const [isSupplierConfirmOpen, setIsSupplierConfirmOpen] = React.useState(false);
+  const [supplierConfirmItem, setSupplierConfirmItem] = React.useState<ProjectItemV2 | null>(null);
+
+  const markAsSupplierMutation = useMutation({
+    mutationFn: (itemId: number) => projectV2Service.markAsSupplier(itemId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['project-v2-items', projectId] });
+      setIsSupplierConfirmOpen(false);
+      setIsProduksiDialogOpen(false);
+      if (supplierConfirmItem) openBarangSupplierDialog(supplierConfirmItem);
+    },
+    onError: () => {
+      toast.error('Gagal menandai sebagai barang supplier');
+    },
+  });
+
+  // Barang Supplier State
+  const [isBarangSupplierDialogOpen, setIsBarangSupplierDialogOpen] = React.useState(false);
+  const [barangSupplierItem, setBarangSupplierItem] = React.useState<ProjectItemV2 | null>(null);
+  const [barangSupplierData, setBarangSupplierData] = React.useState<Partial<BarangSupplier>>({});
+  const [bsSkippedFields, setBsSkippedFields] = React.useState<Record<string, boolean>>({});
+
+  const toggleBsSkipField = (field: string) => {
+    setBsSkippedFields((prev) => ({ ...prev, [field]: !prev[field] }));
+  };
+
+  const updateBarangSupplierMutation = useMutation({
+    mutationFn: (payload: Partial<BarangSupplier>) =>
+      projectV2Service.updateBarangSupplier(barangSupplierItem!.id, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['project-v2-items', projectId] });
+      queryClient.invalidateQueries({ queryKey: ['projects-v2', projectId] });
+      toast.success('Barang Supplier updated');
+      setIsBarangSupplierDialogOpen(false);
+    },
+    onError: () => {
+      toast.error('Failed to update Barang Supplier');
+    },
+  });
+
+  const openBarangSupplierDialog = (item: ProjectItemV2) => {
+    setBarangSupplierItem(item);
+    setBarangSupplierData(
+      item.barang_supplier || {
+        jumlah_order: item.jumlah,
+        barang_dipesan: 0,
+        barang_tersedia: 0,
+        rakit: 0,
+        packing: 0,
+        terkirim: 0,
+        persen: 0,
+      }
+    );
+    const saved = item.barang_supplier?.skipped_fields ?? [];
+    setBsSkippedFields(
+      saved.reduce<Record<string, boolean>>((acc, f) => { acc[f] = true; return acc; }, {})
+    );
+    setIsProduksiDialogOpen(false);
+    setIsBarangSupplierDialogOpen(true);
+  };
+
+  const handleBarangSupplierUpdate = () => {
+    if (!barangSupplierItem) return;
+    const skippedList = Object.keys(bsSkippedFields).filter((k) => bsSkippedFields[k]);
+    updateBarangSupplierMutation.mutate({ ...barangSupplierData, skipped_fields: skippedList });
+  };
+
   const openProduksiDialog = (item: ProjectItemV2) => {
+    if (item.produksi?.is_supplier) {
+      openBarangSupplierDialog(item);
+      return;
+    }
     setProduksiItem(item);
     setProduksiData(
       item.produksi || {
@@ -265,6 +339,32 @@ export default function ProduksiDetailPage() {
     produksiData.jumlah_order,
     produksiData.menggunakan_stok,
     skippedFields,
+  ]);
+
+  React.useEffect(() => {
+    if (!isBarangSupplierDialogOpen) return;
+
+    const allFields = ['barang_dipesan', 'barang_tersedia', 'rakit', 'packing', 'terkirim'] as const;
+    const activeFields = allFields.filter((f) => !bsSkippedFields[f]);
+    const order = Number(barangSupplierData.jumlah_order) || 1;
+    const totalSum = activeFields.reduce((sum, f) => sum + Number(barangSupplierData[f] || 0), 0);
+    const calculated = activeFields.length === 0
+      ? 0
+      : Math.min(Number(((totalSum * 100) / (activeFields.length * order)).toFixed(2)), 100);
+
+    setBarangSupplierData((prev) => {
+      if (prev.persen === calculated) return prev;
+      return { ...prev, persen: calculated };
+    });
+  }, [
+    isBarangSupplierDialogOpen,
+    barangSupplierData.barang_dipesan,
+    barangSupplierData.barang_tersedia,
+    barangSupplierData.rakit,
+    barangSupplierData.packing,
+    barangSupplierData.terkirim,
+    barangSupplierData.jumlah_order,
+    bsSkippedFields,
   ]);
 
   if (isLoadingProject) {
@@ -1206,24 +1306,192 @@ export default function ProduksiDetailPage() {
             </div>
           </div>
           
-          <div className="bg-white border-t px-4 sm:px-6 py-3 sm:py-4 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-4 shrink-0 shadow-[0_-4px_6px_-1px_rgb(0,0,0,0.05)] z-10">
-            <AlertDialogCancel
-              onClick={() => setIsProduksiDialogOpen(false)}
-              className="px-6 rounded-full font-medium"
+          <div className="bg-white border-t px-4 sm:px-6 py-3 sm:py-4 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2 sm:gap-4 shrink-0 shadow-[0_-4px_6px_-1px_rgb(0,0,0,0.05)] z-10">
+            <Button
+              variant="outline"
+              className="border-blue-200 text-blue-700 hover:bg-blue-50 rounded-full px-5 text-sm"
+              onClick={() => {
+                if (produksiItem) {
+                  setSupplierConfirmItem(produksiItem);
+                  setIsSupplierConfirmOpen(true);
+                }
+              }}
             >
-              Cancel
+              <Truck className="w-4 h-4 mr-2" />
+              Tandai sebagai barang supplier
+            </Button>
+            <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4">
+              <AlertDialogCancel
+                onClick={() => setIsProduksiDialogOpen(false)}
+                className="px-6 rounded-full font-medium"
+              >
+                Cancel
+              </AlertDialogCancel>
+              <Button
+                className="bg-orange-600 hover:bg-orange-700 text-white rounded-full px-6"
+                onClick={handleProduksiUpdate}
+                disabled={updateProduksiMutation.isPending}
+              >
+                {updateProduksiMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <CheckCircle2 className="w-4 h-4 mr-2" />
+                )}
+                Update Progress
+              </Button>
+            </div>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Supplier Confirmation Dialog */}
+      <AlertDialog open={isSupplierConfirmOpen} onOpenChange={setIsSupplierConfirmOpen}>
+        <AlertDialogContent className='max-w-sm'>
+          <AlertDialogHeader>
+            <AlertDialogTitle className='flex items-center gap-2'>
+              <Truck className='h-5 w-5 text-blue-500' />
+              Konfirmasi Barang Supplier
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Apakah benar <strong>{supplierConfirmItem?.item}</strong> adalah barang supplier?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setIsSupplierConfirmOpen(false)}>
+              Tidak
             </AlertDialogCancel>
             <Button
-              className="bg-orange-600 hover:bg-orange-700 text-white rounded-full px-6"
-              onClick={handleProduksiUpdate}
-              disabled={updateProduksiMutation.isPending}
+              className='bg-blue-600 hover:bg-blue-700 text-white'
+              onClick={() => supplierConfirmItem && markAsSupplierMutation.mutate(supplierConfirmItem.id)}
+              disabled={markAsSupplierMutation.isPending}
             >
-              {updateProduksiMutation.isPending ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              {markAsSupplierMutation.isPending && <Loader2 className='w-4 h-4 mr-2 animate-spin' />}
+              Ya
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Barang Supplier Dialog */}
+      <AlertDialog open={isBarangSupplierDialogOpen} onOpenChange={setIsBarangSupplierDialogOpen}>
+        <AlertDialogContent className='mb-4 flex h-[90dvh] sm:h-[calc(70vh-2rem)] w-[95vw] sm:min-w-[calc(60vw-2rem)] sm:max-w-[calc(60vw-2rem)] flex-col justify-between gap-0 p-0'>
+          {/* Header */}
+          <div className='bg-white border-b px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between shrink-0 shadow-sm z-10'>
+            <div>
+              <AlertDialogTitle className='flex items-center gap-2 text-lg sm:text-2xl font-bold tracking-tight text-neutral-800'>
+                <Truck className='h-6 w-6 text-blue-500' />
+                Barang Supplier
+              </AlertDialogTitle>
+              <AlertDialogDescription className='text-sm text-neutral-500 mt-1'>
+                Input progress untuk: <strong>{barangSupplierItem?.item}</strong>
+              </AlertDialogDescription>
+            </div>
+            <Button
+              variant='ghost'
+              size='icon'
+              onClick={() => setIsBarangSupplierDialogOpen(false)}
+              className='rounded-full text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700 shrink-0 h-10 w-10'
+            >
+              <X className='w-5 h-5' />
+            </Button>
+          </div>
+
+          {/* Body */}
+          <div className='flex-1 overflow-y-auto p-6 md:p-8 space-y-6'>
+            {/* Jumlah Order */}
+            <div className='flex justify-center'>
+              <div className='w-1/2 sm:w-1/3 space-y-2 text-center'>
+                <Label className='text-sm font-bold'>Jumlah Order</Label>
+                <Input
+                  type='number'
+                  value={barangSupplierData.jumlah_order || 0}
+                  disabled
+                  className='bg-neutral-50 font-bold text-center text-lg h-12'
+                />
+              </div>
+            </div>
+
+            {/* Fields */}
+            <div className='space-y-3'>
+              <h4 className='font-semibold text-sm text-neutral-500 uppercase tracking-wider border-b pb-2'>
+                Progress Supplier
+              </h4>
+              <div className='grid grid-cols-2 sm:grid-cols-3 gap-3'>
+                {(
+                  [
+                    { key: 'barang_dipesan', label: 'Barang Dipesan' },
+                    { key: 'barang_tersedia', label: 'Barang Tersedia' },
+                    { key: 'rakit', label: 'Rakit' },
+                    { key: 'packing', label: 'Packing' },
+                    { key: 'terkirim', label: 'Terkirim' },
+                  ] as const
+                ).map(({ key, label }) => (
+                  <div key={key} className='space-y-2'>
+                    <div className='flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between'>
+                      <Label>{label}</Label>
+                      <Button
+                        type='button'
+                        variant={bsSkippedFields[key] ? 'default' : 'outline'}
+                        size='sm'
+                        className={`h-6 px-2 text-xs ${bsSkippedFields[key] ? 'bg-neutral-500 hover:bg-neutral-600' : 'text-neutral-500'}`}
+                        onClick={() => toggleBsSkipField(key)}
+                      >
+                        {bsSkippedFields[key] ? 'Batalkan' : 'Lewati Proses'}
+                      </Button>
+                    </div>
+                    <Input
+                      type='number'
+                      min={0}
+                      max={barangSupplierData.jumlah_order}
+                      disabled={bsSkippedFields[key]}
+                      value={bsSkippedFields[key] ? '-' : barangSupplierData[key] === 0 ? '' : barangSupplierData[key] || ''}
+                      onChange={(e) =>
+                        setBarangSupplierData((p) => ({
+                          ...p,
+                          [key]: Math.min(Math.max(parseInt(e.target.value) || 0, 0), p.jumlah_order ?? 0),
+                        }))
+                      }
+                      className={bsSkippedFields[key] ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100' : ''}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Persen */}
+            <div className='pt-4 border-t flex justify-center'>
+              <div className='space-y-2 w-full sm:w-[200px] text-center'>
+                <Label className='text-sm font-bold'>Persen (%)</Label>
+                <Input
+                  type='text'
+                  value={
+                    typeof barangSupplierData.persen === 'number'
+                      ? barangSupplierData.persen.toFixed(2)
+                      : (Number(barangSupplierData.persen) || 0).toFixed(2)
+                  }
+                  disabled
+                  className='bg-blue-50 font-bold text-blue-700 text-center text-lg h-12 disabled:opacity-100'
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className='bg-white border-t px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-end gap-4 shrink-0 shadow-[0_-4px_6px_-1px_rgb(0,0,0,0.05)] z-10'>
+            <Button variant='outline' className='rounded-full px-6 font-medium' onClick={() => setIsBarangSupplierDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              className='bg-blue-600 hover:bg-blue-700 text-white rounded-full px-6'
+              onClick={handleBarangSupplierUpdate}
+              disabled={updateBarangSupplierMutation.isPending}
+            >
+              {updateBarangSupplierMutation.isPending ? (
+                <Loader2 className='w-4 h-4 mr-2 animate-spin' />
               ) : (
-                <CheckCircle2 className="w-4 h-4 mr-2" />
+                <CheckCircle2 className='w-4 h-4 mr-2' />
               )}
-              Update Progress
+              Simpan
             </Button>
           </div>
         </AlertDialogContent>
