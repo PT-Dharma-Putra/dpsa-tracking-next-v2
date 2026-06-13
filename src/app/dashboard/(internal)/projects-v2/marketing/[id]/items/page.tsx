@@ -7,6 +7,7 @@ import {
   Plus,
   Pencil,
   Trash2,
+  Ban,
   MoreHorizontal,
   Loader2,
   ArrowLeft,
@@ -130,6 +131,10 @@ export default function ProjectItemsPage() {
   const [itemToDelete, setItemToDelete] = React.useState<ProjectItemV2 | null>(
     null
   );
+  const [isCancelDialogOpen, setIsCancelDialogOpen] = React.useState(false);
+  const [itemToCancel, setItemToCancel] = React.useState<ProjectItemV2 | null>(
+    null
+  );
 
   const { data: project, isLoading: isLoadingProject } = useQuery({
     queryKey: ['projects-v2', projectId],
@@ -155,6 +160,20 @@ export default function ProjectItemsPage() {
     },
   });
 
+  const cancelMutation = useMutation({
+    mutationFn: (id: number) => projectV2Service.cancelProjectItem(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['project-v2-items', projectId],
+      });
+      toast.success('Item dibatalkan');
+      setIsCancelDialogOpen(false);
+    },
+    onError: () => {
+      toast.error('Gagal membatalkan item');
+    },
+  });
+
   const handleEdit = (item: ProjectItemV2) => {
     setSelectedItem(item);
     setIsFormOpen(true);
@@ -172,6 +191,17 @@ export default function ProjectItemsPage() {
   const confirmDelete = () => {
     if (itemToDelete) {
       deleteMutation.mutate(itemToDelete.id);
+    }
+  };
+
+  const handleCancelClick = (item: ProjectItemV2) => {
+    setItemToCancel(item);
+    setIsCancelDialogOpen(true);
+  };
+
+  const confirmCancel = () => {
+    if (itemToCancel) {
+      cancelMutation.mutate(itemToCancel.id);
     }
   };
 
@@ -1814,6 +1844,15 @@ export default function ProjectItemsPage() {
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
+                              className='text-orange-600 focus:text-orange-600 focus:bg-orange-50'
+                              onClick={() => handleCancelClick(item)}
+                              disabled={item.status === 'Cancelled'}
+                            >
+                              <Ban className='mr-2 h-4 w-4' />
+                              Cancel
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
                               className='text-red-600 focus:text-red-600 focus:bg-red-50'
                               onClick={() => handleDeleteClick(item)}
                             >
@@ -2611,6 +2650,32 @@ export default function ProjectItemsPage() {
         projectId={projectId}
         item={selectedItem}
       />
+
+      <AlertDialog
+        open={isCancelDialogOpen}
+        onOpenChange={setIsCancelDialogOpen}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Batalkan item ini?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Item <strong>{itemToCancel?.item}</strong> akan ditandai sebagai <strong>Cancelled</strong>. Anda dapat mengubah statusnya kembali melalui edit jika diperlukan.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmCancel}
+              className='bg-orange-600 hover:bg-orange-700'
+            >
+              {cancelMutation.isPending && (
+                <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+              )}
+              Ya, Batalkan
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog
         open={isDeleteDialogOpen}

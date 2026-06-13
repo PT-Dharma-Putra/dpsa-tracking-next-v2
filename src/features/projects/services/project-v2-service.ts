@@ -333,6 +333,11 @@ export const projectV2Service = {
     return data;
   },
 
+  cancelProjectItem: async (id: number) => {
+    const { data } = await apiClient.post(`/projects-v2-items/${id}/cancel`);
+    return data;
+  },
+
   getItemHistory: async (id: number) => {
     const { data } = await apiClient.get<any[]>(
       `/projects-v2-items/${id}/history`
@@ -958,6 +963,7 @@ export interface MDLItem {
 export interface ProjectItemV2 {
   id: number;
   project_id: number;
+  status?: string | null;
   mdl_id?: number | null;
   mdl_item_id: number | null;
   mdl_item?: MDLItem;
