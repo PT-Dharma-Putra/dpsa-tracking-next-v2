@@ -201,6 +201,7 @@ export function ProjectsV2Table({
       | 'deadline_dekat'
       | 'overdue'
       | 'urgent'
+      | 'po_supplier'
       | null
   ) => {
     if (filter === null) {
