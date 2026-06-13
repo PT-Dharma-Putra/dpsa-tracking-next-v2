@@ -132,6 +132,7 @@ export function ProjectsV2Table({
   showSPD = false,
   showPerencanaan = false,
   showProduksi = false,
+  showPurchasing = false,
   onlyShowDetail = false,
   showEngineer = false,
   showPiutang = false,
@@ -141,6 +142,7 @@ export function ProjectsV2Table({
   showSPD?: boolean;
   showPerencanaan?: boolean;
   showProduksi?: boolean;
+  showPurchasing?: boolean;
   onlyShowDetail?: boolean;
   showEngineer?: boolean;
   showPiutang?: boolean;
@@ -326,6 +328,7 @@ export function ProjectsV2Table({
     !showSPD &&
     !showPerencanaan &&
     !showProduksi &&
+    !showPurchasing &&
     !showEngineer &&
     !showPiutang &&
     !showQC &&
@@ -890,7 +893,7 @@ export function ProjectsV2Table({
         </div>
       )}
 
-      {showProduksi && stats && (
+      {(showProduksi || showPurchasing) && stats && (
         <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-4 w-full'>
           {/* Total Project */}
           <div
@@ -1384,7 +1387,8 @@ export function ProjectsV2Table({
           (showAllDashboard ||
             showPerencanaan ||
             showEngineer ||
-            showProduksi) &&
+            showProduksi ||
+            showPurchasing) &&
             'bg-white rounded-xl shadow-sm border border-neutral-200'
         )}
       >
@@ -1665,7 +1669,7 @@ export function ProjectsV2Table({
                     </>
                   ) : (
                     <>
-                      {!showEngineer && !showProduksi && (
+                      {!showEngineer && !showProduksi && !showPurchasing && (
                         <TableHead>Mkt</TableHead>
                       )}
                       <TableHead>Client</TableHead>
@@ -1700,7 +1704,7 @@ export function ProjectsV2Table({
                           </div>
                         </TableHead>
                       )}
-                      {!showSPD && !showProduksi && (
+                      {!showSPD && !showProduksi && !showPurchasing && (
                         <TableHead>Nomor SPH</TableHead>
                       )}
                       {!showSPD && (
@@ -1734,7 +1738,7 @@ export function ProjectsV2Table({
                       )}
                       {showPiutang && <TableHead>Progres Produksi</TableHead>}
                       {showPiutang && <TableHead>Total Penagihan</TableHead>}
-                      {!showProduksi && !showPiutang && (
+                      {!showProduksi && !showPurchasing && !showPiutang && (
                         <TableHead>Nama Projek</TableHead>
                       )}
                     </>
@@ -1767,7 +1771,7 @@ export function ProjectsV2Table({
                         </div>
                       </TableHead>
 
-                      {!showProduksi && !showPiutang && (
+                      {!showProduksi && !showPurchasing && !showPiutang && (
                         <TableHead
                           className='cursor-pointer hover:bg-neutral-100 transition-colors group'
                           onClick={() => {
@@ -1798,7 +1802,7 @@ export function ProjectsV2Table({
                       )}
                     </>
                   )}
-                  {!showAllDashboard && !showProduksi && !showPiutang && (
+                  {!showAllDashboard && !showProduksi && !showPurchasing && !showPiutang && (
                     <TableHead>Pakai Desain</TableHead>
                   )}
                   {!showAllDashboard && !showSPD && !showPiutang && (
@@ -1856,7 +1860,7 @@ export function ProjectsV2Table({
                       {!showEngineer && <TableHead>List Furnitur</TableHead>}
                     </>
                   )}
-                  {showProduksi && (
+                  {(showProduksi || showPurchasing) && (
                     <>
                       <TableHead>Order Produksi</TableHead>
                       <TableHead>Target Selesai</TableHead>
@@ -1887,7 +1891,7 @@ export function ProjectsV2Table({
                       </TableHead>
                     </>
                   )}
-                  {showProduksi && <TableHead>Progres Produksi</TableHead>}
+                  {(showProduksi || showPurchasing) && <TableHead>Progres Produksi</TableHead>}
                   {(isMainProjectsV2Page || showPerencanaan) && (
                     <>
                       <TableHead
@@ -1932,7 +1936,7 @@ export function ProjectsV2Table({
                           ? 12
                           : showEngineer
                           ? 17
-                          : showProduksi
+                          : showProduksi || showPurchasing
                           ? 13
                           : showPiutang
                           ? 13
@@ -1955,7 +1959,7 @@ export function ProjectsV2Table({
                           ? 12
                           : showEngineer
                           ? 17
-                          : showProduksi
+                          : showProduksi || showPurchasing
                           ? 13
                           : showPiutang
                           ? 13
@@ -2245,7 +2249,8 @@ export function ProjectsV2Table({
                         <>
                           {!showAllDashboard &&
                             !showEngineer &&
-                            !showProduksi && (
+                            !showProduksi &&
+                            !showPurchasing && (
                               <TableCell>
                                 {project.marketing?.name || '-'}
                               </TableCell>
@@ -2279,7 +2284,7 @@ export function ProjectsV2Table({
                                 : '-'}
                             </TableCell>
                           )}
-                          {!showSPD && !showProduksi && (
+                          {!showSPD && !showProduksi && !showPurchasing && (
                             <TableCell>
                               {project.sph?.nomor_sph || '-'}
                             </TableCell>
@@ -2341,7 +2346,7 @@ export function ProjectsV2Table({
                         </TableCell>
                       )}
 
-                      {!showAllDashboard && !showProduksi && !showPiutang && (
+                      {!showAllDashboard && !showProduksi && !showPurchasing && !showPiutang && (
                         <TableCell className='max-w-[200px] truncate'>
                           {project.name || (
                             <span className='text-muted-foreground italic'>
@@ -2375,7 +2380,7 @@ export function ProjectsV2Table({
                             )}
                           </TableCell>
 
-                          {!showProduksi && !showPiutang && (
+                          {!showProduksi && !showPurchasing && !showPiutang && (
                             <TableCell>
                               {project.tanggal_selesai ? (
                                 <div className='flex items-center gap-2'>
@@ -2456,7 +2461,7 @@ export function ProjectsV2Table({
                           )}
                         </>
                       )}
-                      {!showAllDashboard && !showProduksi && !showPiutang && (
+                      {!showAllDashboard && !showProduksi && !showPurchasing && !showPiutang && (
                         <TableCell>
                           {project.need_design ? 'Ya' : 'Tidak'}
                         </TableCell>
@@ -3058,7 +3063,7 @@ export function ProjectsV2Table({
                           )}
                         </>
                       )}
-                      {showProduksi && (
+                      {(showProduksi || showPurchasing) && (
                         <>
                           <TableCell>
                             {project.order_produksi?.[0]?.file ? (
@@ -3147,7 +3152,7 @@ export function ProjectsV2Table({
                           </TableCell>
                         </>
                       )}
-                      {showProduksi && (
+                      {(showProduksi || showPurchasing) && (
                         <TableCell>
                           <div className='flex items-center gap-2'>
                             <div className='flex-1 min-w-[60px]'>
@@ -3223,6 +3228,20 @@ export function ProjectsV2Table({
                                   onClick={() =>
                                     router.push(
                                       `/dashboard/projects-v2/produksi/${project.id}/detail`
+                                    )
+                                  }
+                                >
+                                  Detail
+                                </Button>
+                              )}
+                              {showPurchasing && (
+                                <Button
+                                  variant='outline'
+                                  size='sm'
+                                  className='h-8 px-3 text-blue-600 border-blue-200 hover:bg-blue-50 hover:text-blue-700'
+                                  onClick={() =>
+                                    router.push(
+                                      `/dashboard/projects-v2/purchasing/${project.id}/detail`
                                     )
                                   }
                                 >
@@ -3318,6 +3337,18 @@ export function ProjectsV2Table({
                                     onClick={() =>
                                       router.push(
                                         `/dashboard/projects-v2/produksi/${project.id}/detail`
+                                      )
+                                    }
+                                  >
+                                    <Plus className='mr-2 h-4 w-4' />
+                                    Detail
+                                  </DropdownMenuItem>
+                                )}
+                                {showPurchasing && (
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      router.push(
+                                        `/dashboard/projects-v2/purchasing/${project.id}/detail`
                                       )
                                     }
                                   >
