@@ -1,0 +1,18 @@
+"use client"
+
+import { ProjectsV2Table } from "../_components/projects-v2-table"
+
+export default function PurchasingPage() {
+    return (
+        <div className="space-y-6">
+            <div>
+                <h1 className="text-2xl font-semibold tracking-tight pt-4">Purchasing</h1>
+                <p className="text-sm text-muted-foreground">
+                    Project purchasing and supplier tracking dashboard.
+                </p>
+            </div>
+
+            <ProjectsV2Table showSPD={false} showPurchasing={true} onlyShowDetail={true} />
+        </div>
+    )
+}
