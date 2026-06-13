@@ -190,6 +190,7 @@ export interface ProjectV2Stats {
   total_order: number;
   tanpa_gambar: number;
   belum_diorder: number;
+  po_supplier: number;
 }
 
 interface GetProjectsV2Params {
