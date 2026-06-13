@@ -1352,7 +1352,15 @@ export default function PerencanaanDetailPage() {
                   </TableCell>
                 </TableRow>
               ) : (
-                items?.map((item, index) => (
+                [...(items ?? [])].sort((a, b) => {
+                  const lantaiA = a.lantai ?? '';
+                  const lantaiB = b.lantai ?? '';
+                  const lantaiCmp = lantaiA.localeCompare(lantaiB, undefined, { numeric: true, sensitivity: 'base' });
+                  if (lantaiCmp !== 0) return lantaiCmp;
+                  const ruangA = a.ruang ?? '';
+                  const ruangB = b.ruang ?? '';
+                  return ruangA.localeCompare(ruangB, undefined, { numeric: true, sensitivity: 'base' });
+                }).map((item, index) => (
                   <TableRow
                     key={item.id}
                     className='hover:bg-neutral-50/50 transition-colors group'
