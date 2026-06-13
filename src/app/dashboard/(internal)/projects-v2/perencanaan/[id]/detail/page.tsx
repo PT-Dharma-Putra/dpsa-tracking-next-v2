@@ -28,6 +28,7 @@ import {
   Truck,
   BarChart3,
   History,
+  Search,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import Link from 'next/link';
@@ -112,6 +113,9 @@ export default function PerencanaanDetailPage() {
     queryKey: ['pics'],
     queryFn: () => projectV2Service.getPics(),
   });
+
+  // Items Search State
+  const [searchQuery, setSearchQuery] = React.useState('');
 
   // Gambar Kerja State
   const [isGkDialogOpen, setIsGkDialogOpen] = React.useState(false);
@@ -1305,12 +1309,21 @@ export default function PerencanaanDetailPage() {
 
       {/* Items Table Section */}
       <div className='space-y-4 pt-4 border-t'>
-        <div className='flex justify-between items-center'>
-          <h2 className='text-lg font-bold flex items-center gap-2 text-neutral-800'>
+        <div className='flex justify-between items-center gap-4'>
+          <h2 className='text-lg font-bold flex items-center gap-2 text-neutral-800 shrink-0'>
             <ListChecks className='h-5 w-5 text-neutral-400' />
             Project Items List
             <Badge variant='outline' className='ml-2 bg-neutral-50 text-neutral-600 border-neutral-200'>{totalItems} Items</Badge>
           </h2>
+          <div className='relative w-64'>
+            <Search className='absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-neutral-400 pointer-events-none' />
+            <Input
+              placeholder='Cari item, lantai, ruang...'
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className='pl-8 h-8 text-xs'
+            />
+          </div>
         </div>
 
         <div className='rounded-xl border border-neutral-200 bg-white overflow-hidden shadow-sm'>
@@ -1352,7 +1365,19 @@ export default function PerencanaanDetailPage() {
                   </TableCell>
                 </TableRow>
               ) : (
-                [...(items ?? [])].sort((a, b) => {
+                [...(items ?? [])]
+                .filter((item) => {
+                  if (!searchQuery.trim()) return true;
+                  const q = searchQuery.toLowerCase();
+                  return (
+                    item.item?.toLowerCase().includes(q) ||
+                    (item.lantai ?? '').toLowerCase().includes(q) ||
+                    (item.ruang ?? '').toLowerCase().includes(q) ||
+                    (item.keterangan ?? '').toLowerCase().includes(q) ||
+                    (item.material_utama ?? '').toLowerCase().includes(q)
+                  );
+                })
+                .sort((a, b) => {
                   const lantaiA = a.lantai ?? '';
                   const lantaiB = b.lantai ?? '';
                   const lantaiCmp = lantaiA.localeCompare(lantaiB, undefined, { numeric: true, sensitivity: 'base' });
