@@ -37,9 +37,12 @@ function generateKode(nama: string): string {
 
 function parseExcelHarga(val: any): number | null {
     if (val === null || val === undefined || val === "") return null
-    if (typeof val === "number") return val
+    if (val instanceof Date) return null
+    if (typeof val === "number") return isNaN(val) ? null : val
 
-    let str = String(val).trim()
+    // Strip currency symbols, spaces, and other non-numeric characters
+    let str = String(val).trim().replace(/[^\d.,-]/g, "")
+    if (!str) return null
 
     if (str.includes(",") && str.includes(".")) {
         // Indonesian format: dots=thousand, comma=decimal (e.g. 1.500.000,50)
@@ -48,20 +51,16 @@ function parseExcelHarga(val: any): number | null {
         const parts = str.split(",")
         const lastPart = parts[parts.length - 1]
         if (parts.length > 2 || lastPart.length === 3) {
-            // Comma as thousand separator (e.g. 1,500,000 or 1,500)
             str = str.replace(/,/g, "")
         } else {
-            // Comma as decimal separator (e.g. 1,5)
             str = str.replace(",", ".")
         }
     } else if (str.includes(".")) {
         const parts = str.split(".")
         const lastPart = parts[parts.length - 1]
         if (parts.length > 2 || lastPart.length === 3) {
-            // Dot as thousand separator (e.g. 1.500.000 or 1.500)
             str = str.replace(/\./g, "")
         }
-        // else: single dot as decimal separator (e.g. 1500.50) → keep as-is
     }
 
     const num = Number(str)
@@ -112,8 +111,9 @@ export function BarangImportDialog({ open, onOpenChange }: BarangImportDialogPro
         const reader = new FileReader()
         reader.onload = (evt) => {
             try {
-                const workbook = XLSX.read(evt.target?.result, { type: "binary" })
-                const json = XLSX.utils.sheet_to_json<any>(workbook.Sheets[workbook.SheetNames[0]])
+                const data = new Uint8Array(evt.target?.result as ArrayBuffer)
+                const workbook = XLSX.read(data, { type: "array" })
+                const json = XLSX.utils.sheet_to_json<any>(workbook.Sheets[workbook.SheetNames[0]], { raw: true, rawNumbers: true })
 
                 if (!json.length) { toast.error("File Excel kosong atau tidak valid"); setIsLoadingFile(false); return }
 
@@ -144,7 +144,7 @@ export function BarangImportDialog({ open, onOpenChange }: BarangImportDialogPro
                 setIsLoadingFile(false)
             }
         }
-        reader.readAsBinaryString(file)
+        reader.readAsArrayBuffer(file)
     }
 
     return (
