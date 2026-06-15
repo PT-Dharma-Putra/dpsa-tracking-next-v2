@@ -38,23 +38,32 @@ function generateKode(nama: string): string {
 function parseExcelHarga(val: any): number | null {
     if (val === null || val === undefined || val === "") return null
     if (typeof val === "number") return val
-    
+
     let str = String(val).trim()
-    // Replace comma with dot
-    str = str.replace(/,/g, ".")
-    
-    const dotCount = (str.match(/\./g) || []).length
-    if (dotCount > 1) {
+
+    if (str.includes(",") && str.includes(".")) {
+        // Indonesian format: dots=thousand, comma=decimal (e.g. 1.500.000,50)
+        str = str.replace(/\./g, "").replace(",", ".")
+    } else if (str.includes(",")) {
+        const parts = str.split(",")
+        const lastPart = parts[parts.length - 1]
+        if (parts.length > 2 || lastPart.length === 3) {
+            // Comma as thousand separator (e.g. 1,500,000 or 1,500)
+            str = str.replace(/,/g, "")
+        } else {
+            // Comma as decimal separator (e.g. 1,5)
+            str = str.replace(",", ".")
+        }
+    } else if (str.includes(".")) {
         const parts = str.split(".")
         const lastPart = parts[parts.length - 1]
-        if (lastPart.length !== 3) {
-            const decimal = parts.pop()
-            str = parts.join("") + "." + decimal
-        } else {
-            str = parts.join("")
+        if (parts.length > 2 || lastPart.length === 3) {
+            // Dot as thousand separator (e.g. 1.500.000 or 1.500)
+            str = str.replace(/\./g, "")
         }
+        // else: single dot as decimal separator (e.g. 1500.50) → keep as-is
     }
-    
+
     const num = Number(str)
     return isNaN(num) ? null : num
 }

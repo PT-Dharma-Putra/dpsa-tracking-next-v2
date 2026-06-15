@@ -104,16 +104,44 @@ export function BarangTable() {
         onError: () => toast.error("Gagal menghapus barang"),
     })
 
-    const deduplicateMutation = useMutation({
-        mutationFn: () => BarangService.deduplicateBarang(),
-        onSuccess: (res: any) => {
+    const [isDeduplicating, setIsDeduplicating] = React.useState(false)
+
+    const handleDeduplicateByAllColumns = async () => {
+        if (!confirm("Apakah Anda yakin ingin menghapus salinan duplikat? Aksi ini akan menyisakan satu item untuk setiap barang yang benar-benar identik di semua kolom.")) return
+        try {
+            setIsDeduplicating(true)
+            const response = await BarangService.getBarang({ per_page: -1 })
+            const all = response.data || []
+
+            const groups = new Map<string, Barang[]>()
+            for (const b of all) {
+                const key = getFingerprint(b)
+                if (!groups.has(key)) groups.set(key, [])
+                groups.get(key)!.push(b)
+            }
+
+            const toDelete: number[] = []
+            for (const group of groups.values()) {
+                if (group.length <= 1) continue
+                const sorted = [...group].sort((a, b) => a.id - b.id)
+                toDelete.push(...sorted.slice(1).map(b => b.id))
+            }
+
+            if (!toDelete.length) {
+                toast.info("Tidak ada item duplikat yang ditemukan")
+                return
+            }
+
+            await Promise.all(toDelete.map(id => BarangService.deleteBarang(id)))
             queryClient.invalidateQueries({ queryKey: ["barang"] })
-            toast.success(res.message || "Item duplikat berhasil dibersihkan")
-        },
-        onError: (err: any) => {
-            toast.error(err.response?.data?.message || "Gagal membersihkan item duplikat")
+            queryClient.invalidateQueries({ queryKey: ["barang-all"] })
+            toast.success(`${toDelete.length} item duplikat berhasil dihapus`)
+        } catch {
+            toast.error("Gagal menghapus item duplikat")
+        } finally {
+            setIsDeduplicating(false)
         }
-    })
+    }
 
     const handleEdit = (b: Barang) => { setSelectedBarang(b); setIsFormOpen(true) }
     const handleDelete = (b: Barang) => { setBarangToDelete(b); setIsDeleteDialogOpen(true) }
@@ -210,17 +238,13 @@ export function BarangTable() {
                         ? `Item Duplikat (${isLoadingAll ? "..." : duplicateItems.length})`
                         : "Item Duplikat"}
                 </Button>
-                <Button 
+                <Button
                     variant="outline"
-                    onClick={() => {
-                        if (confirm("Apakah Anda yakin ingin menghapus salinan duplikat? Aksi ini akan menyisakan satu item unik untuk setiap nama barang yang sama.")) {
-                            deduplicateMutation.mutate();
-                        }
-                    }}
-                    disabled={deduplicateMutation.isPending}
+                    onClick={handleDeduplicateByAllColumns}
+                    disabled={isDeduplicating}
                     className="border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800"
                 >
-                    {deduplicateMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    {isDeduplicating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Hapus Item Duplikat
                 </Button>
             </div>
