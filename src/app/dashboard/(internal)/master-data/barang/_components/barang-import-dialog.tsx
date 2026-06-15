@@ -70,7 +70,7 @@ export function BarangImportDialog({ open, onOpenChange }: BarangImportDialogPro
     const handleDownloadTemplate = () => {
         const headers = [[
             "nama", "spesifikasi", "panjang", "lebar",
-            "tinggi", "satuan", "harga", "garansi", "link_gambar_kerja"
+            "tinggi", "satuan", "harga", "garansi", "link_gambar_kerja", "jenis_barang_id"
         ]]
         const worksheet = XLSX.utils.aoa_to_sheet(headers)
         const workbook = XLSX.utils.book_new()
@@ -121,6 +121,7 @@ export function BarangImportDialog({ open, onOpenChange }: BarangImportDialogPro
                         harga: parseExcelHarga(row.harga ?? row.Harga),
                         garansi: row.garansi != null ? String(row.garansi) : null,
                         link_gambar_kerja: row.link_gambar_kerja ?? null,
+                        jenis_barang_id: row.jenis_barang_id != null ? Number(row.jenis_barang_id) : null,
                     }
                 }).filter(item => item.nama)
 
