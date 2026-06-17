@@ -31,6 +31,15 @@ import { SubKategoriMDLService, SubKategoriMDL } from "@/features/sub-kategori-m
 import { SubKategoriFormDialog } from "./sub-kategori-form-dialog"
 import { SubKategoriImportDialog } from "./sub-kategori-import-dialog"
 
+const PAGE_SIZE = 10
+
+function getFingerprint(s: SubKategoriMDL): string {
+    return [
+        s.nama?.trim().toUpperCase() ?? "",
+        s.kode?.trim().toUpperCase() ?? "",
+    ].join("|")
+}
+
 export function SubKategoriTable() {
     const queryClient = useQueryClient()
     const [page, setPage] = React.useState(1)
@@ -40,14 +49,45 @@ export function SubKategoriTable() {
     const [selectedSubKategori, setSelectedSubKategori] = React.useState<SubKategoriMDL | null>(null)
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false)
     const [subKategoriToDelete, setSubKategoriToDelete] = React.useState<SubKategoriMDL | null>(null)
+    const [showDuplicates, setShowDuplicates] = React.useState(false)
+    const [isDeduplicating, setIsDeduplicating] = React.useState(false)
 
     const { data: subKategoriResponse, isLoading } = useQuery({
         queryKey: ["sub-kategori-mdl", page, search],
         queryFn: () => SubKategoriMDLService.getSubKategori({ page, search }),
+        enabled: !showDuplicates,
     })
 
-    const subKategoriList = subKategoriResponse?.data || []
-    const meta = subKategoriResponse?.meta || { current_page: 1, last_page: 1, total: 0 }
+    const { data: allSubKategoriResponse, isLoading: isLoadingAll } = useQuery({
+        queryKey: ["sub-kategori-mdl-all", search],
+        queryFn: () => SubKategoriMDLService.getSubKategori({ per_page: -1, search }),
+        enabled: showDuplicates,
+    })
+
+    const duplicateItems = React.useMemo(() => {
+        if (!showDuplicates || !allSubKategoriResponse?.data) return []
+        const groups = new Map<string, SubKategoriMDL[]>()
+        for (const s of allSubKategoriResponse.data) {
+            const key = getFingerprint(s)
+            if (!groups.has(key)) groups.set(key, [])
+            groups.get(key)!.push(s)
+        }
+        return Array.from(groups.values()).filter(g => g.length > 1).flat()
+    }, [showDuplicates, allSubKategoriResponse])
+
+    const isLoadingData = showDuplicates ? isLoadingAll : isLoading
+
+    const subKategoriList = showDuplicates
+        ? duplicateItems.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+        : (subKategoriResponse?.data || [])
+
+    const meta = showDuplicates
+        ? {
+            current_page: page,
+            last_page: Math.max(1, Math.ceil(duplicateItems.length / PAGE_SIZE)),
+            total: duplicateItems.length,
+        }
+        : (subKategoriResponse?.meta || { current_page: 1, last_page: 1, total: 0 })
 
     const deleteMutation = useMutation({
         mutationFn: (id: number) => SubKategoriMDLService.deleteSubKategori(id),
@@ -75,6 +115,43 @@ export function SubKategoriTable() {
     const handleCreate = () => {
         setSelectedSubKategori(null)
         setIsFormOpen(true)
+    }
+
+    const handleDeduplicateByAllColumns = async () => {
+        if (!confirm("Apakah Anda yakin ingin menghapus salinan duplikat? Aksi ini akan menyisakan satu item untuk setiap sub kategori yang benar-benar identik di semua kolom.")) return
+        try {
+            setIsDeduplicating(true)
+            const response = await SubKategoriMDLService.getSubKategori({ per_page: -1 })
+            const all = response.data || []
+
+            const groups = new Map<string, SubKategoriMDL[]>()
+            for (const s of all) {
+                const key = getFingerprint(s)
+                if (!groups.has(key)) groups.set(key, [])
+                groups.get(key)!.push(s)
+            }
+
+            const toDelete: number[] = []
+            for (const group of groups.values()) {
+                if (group.length <= 1) continue
+                const sorted = [...group].sort((a, b) => a.id - b.id)
+                toDelete.push(...sorted.slice(1).map(s => s.id))
+            }
+
+            if (!toDelete.length) {
+                toast.info("Tidak ada item duplikat yang ditemukan")
+                return
+            }
+
+            await Promise.all(toDelete.map(id => SubKategoriMDLService.deleteSubKategori(id)))
+            queryClient.invalidateQueries({ queryKey: ["sub-kategori-mdl"] })
+            queryClient.invalidateQueries({ queryKey: ["sub-kategori-mdl-all"] })
+            toast.success(`${toDelete.length} item duplikat berhasil dihapus`)
+        } catch {
+            toast.error("Gagal menghapus item duplikat")
+        } finally {
+            setIsDeduplicating(false)
+        }
     }
 
     const [isExporting, setIsExporting] = React.useState(false)
@@ -174,9 +251,9 @@ export function SubKategoriTable() {
                 </div>
             </div>
 
-            {/* Filter / Search */}
-            <div className="flex items-center gap-2 max-w-sm">
-                <div className="relative flex-1">
+            {/* Filter / Search and Duplicate Actions */}
+            <div className="flex items-center gap-2 flex-wrap">
+                <div className="relative max-w-sm flex-1 min-w-[240px]">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
                         placeholder="Cari nama atau kode..."
@@ -188,6 +265,24 @@ export function SubKategoriTable() {
                         className="pl-9"
                     />
                 </div>
+                <Button
+                    variant={showDuplicates ? "default" : "outline"}
+                    onClick={() => { setShowDuplicates(!showDuplicates); setPage(1) }}
+                    className={showDuplicates ? "bg-orange-600 hover:bg-orange-700 text-white" : "border-neutral-200 text-neutral-700 hover:bg-neutral-50"}
+                >
+                    {showDuplicates
+                        ? `Item Duplikat (${isLoadingAll ? "..." : duplicateItems.length})`
+                        : "Item Duplikat"}
+                </Button>
+                <Button
+                    variant="outline"
+                    onClick={handleDeduplicateByAllColumns}
+                    disabled={isDeduplicating}
+                    className="border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800"
+                >
+                    {isDeduplicating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Hapus Item Duplikat
+                </Button>
             </div>
 
             {/* Table */}
@@ -203,7 +298,7 @@ export function SubKategoriTable() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {isLoading ? (
+                        {isLoadingData ? (
                             <TableRow>
                                 <TableCell colSpan={5} className="h-24 text-center">
                                     <div className="flex items-center justify-center gap-2 text-muted-foreground">
@@ -278,7 +373,7 @@ export function SubKategoriTable() {
                         variant="outline"
                         size="sm"
                         onClick={() => setPage(p => Math.max(1, p - 1))}
-                        disabled={meta.current_page === 1 || isLoading}
+                        disabled={meta.current_page === 1 || isLoadingData}
                         className="h-8 w-8 p-0"
                     >
                         <ChevronLeft className="h-4 w-4" />
@@ -304,7 +399,7 @@ export function SubKategoriTable() {
                         variant="outline"
                         size="sm"
                         onClick={() => setPage(p => Math.min(meta.last_page, p + 1))}
-                        disabled={meta.current_page === meta.last_page || isLoading}
+                        disabled={meta.current_page === meta.last_page || isLoadingData}
                         className="h-8 w-8 p-0"
                     >
                         <ChevronRight className="h-4 w-4" />
