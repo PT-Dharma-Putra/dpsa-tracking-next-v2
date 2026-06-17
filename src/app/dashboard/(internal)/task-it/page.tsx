@@ -1,11 +1,14 @@
 "use client"
 
+import { useState } from "react"
 import { TaskItTable } from "./_components/task-it-table"
 import { useQuery } from "@tanstack/react-query"
 import { ClipboardList, Loader2 } from "lucide-react"
 import { taskItService } from "@/features/projects/services/task-it-service"
 
 export default function TaskItPage() {
+    const [statusFilter, setStatusFilter] = useState<string | null>(null)
+
     const { data: tasks, isLoading } = useQuery({
         queryKey: ["task-its"],
         queryFn: () => taskItService.getTasks(),
@@ -52,16 +55,28 @@ export default function TaskItPage() {
                 </div>
 
                 {/* In Progress Tasks Card */}
-                <div className="bg-white border border-neutral-200 rounded-xl p-5 shadow-sm flex items-center justify-between hover:shadow-md transition-all duration-300 relative overflow-hidden group">
-                    <div className="absolute top-0 left-0 h-1 w-full bg-blue-400 group-hover:bg-blue-500 transition-colors" />
+                <button
+                    type="button"
+                    onClick={() => setStatusFilter(statusFilter === "inprogress" ? null : "inprogress")}
+                    className={`text-left bg-white border rounded-xl p-5 shadow-sm flex items-center justify-between transition-all duration-300 relative overflow-hidden group cursor-pointer w-full
+                        ${statusFilter === "inprogress"
+                            ? "border-blue-400 ring-2 ring-blue-300 shadow-blue-100"
+                            : "border-neutral-200 hover:shadow-md"
+                        }`}
+                >
+                    <div className={`absolute top-0 left-0 h-1 w-full transition-colors ${statusFilter === "inprogress" ? "bg-blue-500" : "bg-blue-400 group-hover:bg-blue-500"}`} />
                     <div>
                         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sedang Dikerjakan</p>
                         <p className="text-3xl font-black text-neutral-800 mt-1">{isLoading ? "..." : inProgressCount}</p>
+                        {statusFilter === "inprogress" && (
+                            <p className="text-xs text-blue-600 font-semibold mt-0.5">Filter aktif</p>
+                        )}
                     </div>
-                    <div className="h-10 w-10 rounded-lg bg-blue-50 flex items-center justify-center border border-blue-100 group-hover:scale-105 transition-transform">
+                    <div className={`h-10 w-10 rounded-lg flex items-center justify-center border transition-transform group-hover:scale-105
+                        ${statusFilter === "inprogress" ? "bg-blue-100 border-blue-200" : "bg-blue-50 border-blue-100"}`}>
                         <Loader2 className="h-5 w-5 text-blue-600 animate-spin" style={{ animationDuration: '3s' }} />
                     </div>
-                </div>
+                </button>
 
                 {/* Completed Tasks Card */}
                 <div className="bg-white border border-neutral-200 rounded-xl p-5 shadow-sm flex items-center justify-between hover:shadow-md transition-all duration-300 relative overflow-hidden group">
@@ -79,7 +94,7 @@ export default function TaskItPage() {
             </div>
 
             <div className="bg-white rounded-xl shadow-sm border border-neutral-200">
-                <TaskItTable />
+                <TaskItTable statusFilter={statusFilter} onClearFilter={() => setStatusFilter(null)} />
             </div>
         </div>
     )
