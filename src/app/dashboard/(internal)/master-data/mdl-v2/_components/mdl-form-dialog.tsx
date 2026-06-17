@@ -150,7 +150,13 @@ export function MdlFormDialog({ open, onOpenChange, mdl }: MdlFormDialogProps) {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["mdl-list"] })
             toast.success(mdl ? "Data MDL berhasil diperbarui" : "Data MDL berhasil ditambahkan")
-            onOpenChange(false)
+            if (mdl) {
+                onOpenChange(false)
+            } else {
+                // Tetap buka modal, reset pilihan barang untuk input berikutnya
+                setSelectedBarangIds([])
+                setBarangSearch("")
+            }
         },
         onError: (error: any) => {
             toast.error(error.response?.data?.message || "Terjadi kesalahan")
@@ -437,7 +443,10 @@ export function MdlFormDialog({ open, onOpenChange, mdl }: MdlFormDialogProps) {
                                         <tr>
                                             <th className="p-3">Kode Barang</th>
                                             <th className="p-3">Nama Barang</th>
+                                            <th className="p-3">Spesifikasi</th>
+                                            <th className="p-3">Ukuran (P×L×T)</th>
                                             <th className="p-3">Satuan</th>
+                                            <th className="p-3 text-right">Harga</th>
                                             <th className="p-3 text-center w-12">
                                                 {!mdl && (
                                                     <input
@@ -458,7 +467,7 @@ export function MdlFormDialog({ open, onOpenChange, mdl }: MdlFormDialogProps) {
                                     <tbody className="divide-y divide-neutral-100">
                                         {filteredBarangOptions.length === 0 ? (
                                             <tr>
-                                                <td colSpan={4} className="p-4 text-center text-neutral-400 text-xs">
+                                                <td colSpan={7} className="p-4 text-center text-neutral-400 text-xs">
                                                     Tidak ada barang yang cocok.
                                                 </td>
                                             </tr>
@@ -473,7 +482,18 @@ export function MdlFormDialog({ open, onOpenChange, mdl }: MdlFormDialogProps) {
                                                     >
                                                         <td className="p-3 font-mono font-medium text-neutral-600">{b.kode}</td>
                                                         <td className="p-3 font-semibold text-neutral-800">{b.nama}</td>
+                                                        <td className="p-3 text-neutral-600 max-w-[160px] truncate" title={b.spesifikasi ?? undefined}>
+                                                            {b.spesifikasi || "-"}
+                                                        </td>
+                                                        <td className="p-3 text-neutral-600 whitespace-nowrap">
+                                                            {(b.panjang != null || b.lebar != null || b.tinggi != null)
+                                                                ? [b.panjang ?? "-", b.lebar ?? "-", b.tinggi ?? "-"].join(" × ")
+                                                                : "-"}
+                                                        </td>
                                                         <td className="p-3 text-neutral-550">{b.satuan || "-"}</td>
+                                                        <td className="p-3 text-right text-neutral-600">
+                                                            {b.harga != null ? "Rp " + Number(b.harga).toLocaleString("id-ID") : "-"}
+                                                        </td>
                                                         <td className="p-3 text-center" onClick={(e) => e.stopPropagation()}>
                                                             <input
                                                                 type="checkbox"
