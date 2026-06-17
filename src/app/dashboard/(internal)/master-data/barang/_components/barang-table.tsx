@@ -20,11 +20,29 @@ import { BarangService, Barang } from "@/features/barang/services/barang-service
 import { BarangFormDialog } from "./barang-form-dialog"
 import { BarangImportDialog } from "./barang-import-dialog"
 
+const PAGE_SIZE = 10
+
 const fmt = (val: number | null | undefined) =>
     val != null ? val.toLocaleString("id-ID") : "-"
 
 const fmtCurrency = (val: number | null | undefined) =>
     val != null ? "Rp " + val.toLocaleString("id-ID") : "-"
+
+function getFingerprint(b: Barang): string {
+    return [
+        b.nama?.trim().toUpperCase() ?? "",
+        b.kode?.trim().toUpperCase() ?? "",
+        b.spesifikasi?.trim().toUpperCase() ?? "",
+        b.panjang ?? "",
+        b.lebar ?? "",
+        b.tinggi ?? "",
+        b.satuan ?? "",
+        b.harga ?? "",
+        b.garansi ?? "",
+        b.link_gambar_kerja?.trim() ?? "",
+        b.jenis_barang_id ?? "",
+    ].join("|")
+}
 
 export function BarangTable() {
     const queryClient = useQueryClient()
@@ -39,12 +57,41 @@ export function BarangTable() {
     const [showDuplicates, setShowDuplicates] = React.useState(false)
 
     const { data: barangResponse, isLoading } = useQuery({
-        queryKey: ["barang", page, search, showDuplicates],
-        queryFn: () => BarangService.getBarang({ page, search, show_duplicates: showDuplicates }),
+        queryKey: ["barang", page, search],
+        queryFn: () => BarangService.getBarang({ page, search }),
+        enabled: !showDuplicates,
     })
 
-    const barangList = barangResponse?.data || []
-    const meta = barangResponse?.meta || { current_page: 1, last_page: 1, total: 0 }
+    const { data: allBarangResponse, isLoading: isLoadingAll } = useQuery({
+        queryKey: ["barang-all", search],
+        queryFn: () => BarangService.getBarang({ per_page: -1, search }),
+        enabled: showDuplicates,
+    })
+
+    const duplicateItems = React.useMemo(() => {
+        if (!showDuplicates || !allBarangResponse?.data) return []
+        const groups = new Map<string, Barang[]>()
+        for (const b of allBarangResponse.data) {
+            const key = getFingerprint(b)
+            if (!groups.has(key)) groups.set(key, [])
+            groups.get(key)!.push(b)
+        }
+        return Array.from(groups.values()).filter(g => g.length > 1).flat()
+    }, [showDuplicates, allBarangResponse])
+
+    const isLoadingData = showDuplicates ? isLoadingAll : isLoading
+
+    const barangList = showDuplicates
+        ? duplicateItems.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+        : (barangResponse?.data || [])
+
+    const meta = showDuplicates
+        ? {
+            current_page: page,
+            last_page: Math.max(1, Math.ceil(duplicateItems.length / PAGE_SIZE)),
+            total: duplicateItems.length,
+        }
+        : (barangResponse?.meta || { current_page: 1, last_page: 1, total: 0 })
 
     const deleteMutation = useMutation({
         mutationFn: (id: number) => BarangService.deleteBarang(id),
@@ -57,16 +104,44 @@ export function BarangTable() {
         onError: () => toast.error("Gagal menghapus barang"),
     })
 
-    const deduplicateMutation = useMutation({
-        mutationFn: () => BarangService.deduplicateBarang(),
-        onSuccess: (res: any) => {
+    const [isDeduplicating, setIsDeduplicating] = React.useState(false)
+
+    const handleDeduplicateByAllColumns = async () => {
+        if (!confirm("Apakah Anda yakin ingin menghapus salinan duplikat? Aksi ini akan menyisakan satu item untuk setiap barang yang benar-benar identik di semua kolom.")) return
+        try {
+            setIsDeduplicating(true)
+            const response = await BarangService.getBarang({ per_page: -1 })
+            const all = response.data || []
+
+            const groups = new Map<string, Barang[]>()
+            for (const b of all) {
+                const key = getFingerprint(b)
+                if (!groups.has(key)) groups.set(key, [])
+                groups.get(key)!.push(b)
+            }
+
+            const toDelete: number[] = []
+            for (const group of groups.values()) {
+                if (group.length <= 1) continue
+                const sorted = [...group].sort((a, b) => a.id - b.id)
+                toDelete.push(...sorted.slice(1).map(b => b.id))
+            }
+
+            if (!toDelete.length) {
+                toast.info("Tidak ada item duplikat yang ditemukan")
+                return
+            }
+
+            await Promise.all(toDelete.map(id => BarangService.deleteBarang(id)))
             queryClient.invalidateQueries({ queryKey: ["barang"] })
-            toast.success(res.message || "Item duplikat berhasil dibersihkan")
-        },
-        onError: (err: any) => {
-            toast.error(err.response?.data?.message || "Gagal membersihkan item duplikat")
+            queryClient.invalidateQueries({ queryKey: ["barang-all"] })
+            toast.success(`${toDelete.length} item duplikat berhasil dihapus`)
+        } catch {
+            toast.error("Gagal menghapus item duplikat")
+        } finally {
+            setIsDeduplicating(false)
         }
-    })
+    }
 
     const handleEdit = (b: Barang) => { setSelectedBarang(b); setIsFormOpen(true) }
     const handleDelete = (b: Barang) => { setBarangToDelete(b); setIsDeleteDialogOpen(true) }
@@ -154,24 +229,22 @@ export function BarangTable() {
                         onChange={(e) => { setSearch(e.target.value); setPage(1) }}
                         className="pl-9" />
                 </div>
-                <Button 
+                <Button
                     variant={showDuplicates ? "default" : "outline"}
                     onClick={() => { setShowDuplicates(!showDuplicates); setPage(1) }}
                     className={showDuplicates ? "bg-orange-600 hover:bg-orange-700 text-white" : "border-neutral-200 text-neutral-700 hover:bg-neutral-50"}
                 >
-                    Item Duplikat
+                    {showDuplicates
+                        ? `Item Duplikat (${isLoadingAll ? "..." : duplicateItems.length})`
+                        : "Item Duplikat"}
                 </Button>
-                <Button 
+                <Button
                     variant="outline"
-                    onClick={() => {
-                        if (confirm("Apakah Anda yakin ingin menghapus salinan duplikat? Aksi ini akan menyisakan satu item unik untuk setiap nama barang yang sama.")) {
-                            deduplicateMutation.mutate();
-                        }
-                    }}
-                    disabled={deduplicateMutation.isPending}
+                    onClick={handleDeduplicateByAllColumns}
+                    disabled={isDeduplicating}
                     className="border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800"
                 >
-                    {deduplicateMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    {isDeduplicating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Hapus Item Duplikat
                 </Button>
             </div>
@@ -198,7 +271,7 @@ export function BarangTable() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {isLoading ? (
+                        {isLoadingData ? (
                             <TableRow>
                                 <TableCell colSpan={14} className="h-24 text-center">
                                     <div className="flex items-center justify-center gap-2 text-muted-foreground">
@@ -285,7 +358,7 @@ export function BarangTable() {
                 </p>
                 <div className="flex items-center gap-2">
                     <Button variant="outline" size="sm" onClick={() => setPage(p => Math.max(1, p - 1))}
-                        disabled={meta.current_page === 1 || isLoading} className="h-8 w-8 p-0">
+                        disabled={meta.current_page === 1 || isLoadingData} className="h-8 w-8 p-0">
                         <ChevronLeft className="h-4 w-4" />
                     </Button>
                     <div className="flex items-center gap-1">
@@ -303,7 +376,7 @@ export function BarangTable() {
                             ))}
                     </div>
                     <Button variant="outline" size="sm" onClick={() => setPage(p => Math.min(meta.last_page, p + 1))}
-                        disabled={meta.current_page === meta.last_page || isLoading} className="h-8 w-8 p-0">
+                        disabled={meta.current_page === meta.last_page || isLoadingData} className="h-8 w-8 p-0">
                         <ChevronRight className="h-4 w-4" />
                     </Button>
                 </div>

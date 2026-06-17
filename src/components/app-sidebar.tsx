@@ -90,10 +90,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             title: 'Projects V2',
             url: '/dashboard/projects-v2/marketing',
           },
-          // {
-          //   title: 'Mdl',
-          //   url: '/dashboard/mdl',
-          // },
+          {
+            title: 'Mdl',
+            url: '/dashboard/mdl',
+          },
         ],
       },
       {

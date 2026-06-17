@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { Plus, Pencil, Trash2, Loader2, Tags, Search, ChevronLeft, ChevronRight, Download, Upload } from "lucide-react"
+import { Plus, Pencil, Trash2, Loader2, Tags, Search, ChevronLeft, ChevronRight, Download, Upload, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react"
 import { toast } from "sonner"
 import * as XLSX from "xlsx"
 
@@ -31,6 +31,8 @@ import { LokasiMDLService, LokasiMDL } from "@/features/lokasi-mdl/services/loka
 import { LokasiFormDialog } from "./lokasi-form-dialog"
 import { LokasiImportDialog } from "./lokasi-import-dialog"
 
+const PAGE_SIZE = 10
+
 export function LokasiTable() {
     const queryClient = useQueryClient()
     const [page, setPage] = React.useState(1)
@@ -41,14 +43,43 @@ export function LokasiTable() {
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false)
     const [lokasiToDelete, setLokasiToDelete] = React.useState<LokasiMDL | null>(null)
     const [showDuplicates, setShowDuplicates] = React.useState(false)
+    const [kodeSortOrder, setKodeSortOrder] = React.useState<'asc' | 'desc' | null>(null)
+
+    React.useEffect(() => { setPage(1) }, [kodeSortOrder])
 
     const { data: lokasiResponse, isLoading } = useQuery({
         queryKey: ["lokasi-mdl", page, search, showDuplicates],
         queryFn: () => LokasiMDLService.getLokasi({ page, search, show_duplicates: showDuplicates }),
+        enabled: kodeSortOrder === null,
     })
 
-    const lokasiList = lokasiResponse?.data || []
-    const meta = lokasiResponse?.meta || { current_page: 1, last_page: 1, total: 0 }
+    const { data: allLokasiResponse, isLoading: isLoadingAll } = useQuery({
+        queryKey: ["lokasi-mdl-all", search, showDuplicates],
+        queryFn: () => LokasiMDLService.getLokasi({ per_page: -1, search, show_duplicates: showDuplicates }),
+        enabled: kodeSortOrder !== null,
+    })
+
+    const allSortedItems = React.useMemo(() => {
+        if (kodeSortOrder === null || !allLokasiResponse?.data) return []
+        return [...allLokasiResponse.data].sort((a, b) => {
+            const cmp = a.kode.localeCompare(b.kode, 'id', { sensitivity: 'base' })
+            return kodeSortOrder === 'asc' ? cmp : -cmp
+        })
+    }, [kodeSortOrder, allLokasiResponse])
+
+    const isLoadingData = kodeSortOrder !== null ? isLoadingAll : isLoading
+
+    const sortedLokasiList = kodeSortOrder !== null
+        ? allSortedItems.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+        : (lokasiResponse?.data || [])
+
+    const meta = kodeSortOrder !== null
+        ? {
+            current_page: page,
+            last_page: Math.max(1, Math.ceil(allSortedItems.length / PAGE_SIZE)),
+            total: allSortedItems.length,
+        }
+        : (lokasiResponse?.meta || { current_page: 1, last_page: 1, total: 0 })
 
     const deleteMutation = useMutation({
         mutationFn: (id: number) => LokasiMDLService.deleteLokasi(id),
@@ -229,13 +260,24 @@ export function LokasiTable() {
                         <TableRow>
                             <TableHead className="w-[80px]">No</TableHead>
                             <TableHead>Nama Lokasi</TableHead>
-                            <TableHead>Kode Lokasi</TableHead>
+                            <TableHead>
+                                <button
+                                    type="button"
+                                    className="flex items-center gap-1 hover:text-neutral-900 transition-colors focus:outline-none font-semibold text-neutral-600 text-xs"
+                                    onClick={() => setKodeSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+                                >
+                                    Kode Lokasi
+                                    {kodeSortOrder === null && <ArrowUpDown className="h-3.5 w-3.5 opacity-50" />}
+                                    {kodeSortOrder === 'asc' && <ArrowUp className="h-3.5 w-3.5 text-orange-600" />}
+                                    {kodeSortOrder === 'desc' && <ArrowDown className="h-3.5 w-3.5 text-orange-600" />}
+                                </button>
+                            </TableHead>
                             <TableHead className="w-[180px]">Tanggal Dibuat</TableHead>
                             <TableHead className="w-[100px] text-right">Aksi</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {isLoading ? (
+                        {isLoadingData ? (
                             <TableRow>
                                 <TableCell colSpan={5} className="h-24 text-center">
                                     <div className="flex items-center justify-center gap-2 text-muted-foreground">
@@ -244,14 +286,14 @@ export function LokasiTable() {
                                     </div>
                                 </TableCell>
                             </TableRow>
-                        ) : lokasiList.length === 0 ? (
+                        ) : sortedLokasiList.length === 0 ? (
                             <TableRow>
                                 <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
                                     Tidak ada data lokasi.
                                 </TableCell>
                             </TableRow>
                         ) : (
-                            lokasiList.map((lokasi, index) => (
+                            sortedLokasiList.map((lokasi, index) => (
                                 <TableRow key={lokasi.id} className="hover:bg-neutral-50/50">
                                     <TableCell className="font-medium text-muted-foreground">
                                         {(meta.current_page - 1) * 10 + index + 1}
@@ -310,7 +352,7 @@ export function LokasiTable() {
                         variant="outline"
                         size="sm"
                         onClick={() => setPage(p => Math.max(1, p - 1))}
-                        disabled={meta.current_page === 1 || isLoading}
+                        disabled={meta.current_page === 1 || isLoadingData}
                         className="h-8 w-8 p-0"
                     >
                         <ChevronLeft className="h-4 w-4" />
@@ -336,7 +378,7 @@ export function LokasiTable() {
                         variant="outline"
                         size="sm"
                         onClick={() => setPage(p => Math.min(meta.last_page, p + 1))}
-                        disabled={meta.current_page === meta.last_page || isLoading}
+                        disabled={meta.current_page === meta.last_page || isLoadingData}
                         className="h-8 w-8 p-0"
                     >
                         <ChevronRight className="h-4 w-4" />

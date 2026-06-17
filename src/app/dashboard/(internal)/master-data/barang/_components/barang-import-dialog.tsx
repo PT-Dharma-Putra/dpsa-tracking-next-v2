@@ -37,24 +37,32 @@ function generateKode(nama: string): string {
 
 function parseExcelHarga(val: any): number | null {
     if (val === null || val === undefined || val === "") return null
-    if (typeof val === "number") return val
-    
-    let str = String(val).trim()
-    // Replace comma with dot
-    str = str.replace(/,/g, ".")
-    
-    const dotCount = (str.match(/\./g) || []).length
-    if (dotCount > 1) {
+    if (val instanceof Date) return null
+    if (typeof val === "number") return isNaN(val) ? null : val
+
+    // Strip currency symbols, spaces, and other non-numeric characters
+    let str = String(val).trim().replace(/[^\d.,-]/g, "")
+    if (!str) return null
+
+    if (str.includes(",") && str.includes(".")) {
+        // Indonesian format: dots=thousand, comma=decimal (e.g. 1.500.000,50)
+        str = str.replace(/\./g, "").replace(",", ".")
+    } else if (str.includes(",")) {
+        const parts = str.split(",")
+        const lastPart = parts[parts.length - 1]
+        if (parts.length > 2 || lastPart.length === 3) {
+            str = str.replace(/,/g, "")
+        } else {
+            str = str.replace(",", ".")
+        }
+    } else if (str.includes(".")) {
         const parts = str.split(".")
         const lastPart = parts[parts.length - 1]
-        if (lastPart.length !== 3) {
-            const decimal = parts.pop()
-            str = parts.join("") + "." + decimal
-        } else {
-            str = parts.join("")
+        if (parts.length > 2 || lastPart.length === 3) {
+            str = str.replace(/\./g, "")
         }
     }
-    
+
     const num = Number(str)
     return isNaN(num) ? null : num
 }
@@ -70,7 +78,7 @@ export function BarangImportDialog({ open, onOpenChange }: BarangImportDialogPro
     const handleDownloadTemplate = () => {
         const headers = [[
             "nama", "spesifikasi", "panjang", "lebar",
-            "tinggi", "satuan", "harga", "garansi", "link_gambar_kerja"
+            "tinggi", "satuan", "harga", "garansi", "link_gambar_kerja", "jenis_barang_id"
         ]]
         const worksheet = XLSX.utils.aoa_to_sheet(headers)
         const workbook = XLSX.utils.book_new()
@@ -103,8 +111,9 @@ export function BarangImportDialog({ open, onOpenChange }: BarangImportDialogPro
         const reader = new FileReader()
         reader.onload = (evt) => {
             try {
-                const workbook = XLSX.read(evt.target?.result, { type: "binary" })
-                const json = XLSX.utils.sheet_to_json<any>(workbook.Sheets[workbook.SheetNames[0]])
+                const data = new Uint8Array(evt.target?.result as ArrayBuffer)
+                const workbook = XLSX.read(data, { type: "array" })
+                const json = XLSX.utils.sheet_to_json<any>(workbook.Sheets[workbook.SheetNames[0]], { raw: true, rawNumbers: true })
 
                 if (!json.length) { toast.error("File Excel kosong atau tidak valid"); setIsLoadingFile(false); return }
 
@@ -121,6 +130,7 @@ export function BarangImportDialog({ open, onOpenChange }: BarangImportDialogPro
                         harga: parseExcelHarga(row.harga ?? row.Harga),
                         garansi: row.garansi != null ? String(row.garansi) : null,
                         link_gambar_kerja: row.link_gambar_kerja ?? null,
+                        jenis_barang_id: row.jenis_barang_id != null ? Number(row.jenis_barang_id) : null,
                     }
                 }).filter(item => item.nama)
 
@@ -134,7 +144,7 @@ export function BarangImportDialog({ open, onOpenChange }: BarangImportDialogPro
                 setIsLoadingFile(false)
             }
         }
-        reader.readAsBinaryString(file)
+        reader.readAsArrayBuffer(file)
     }
 
     return (

@@ -38,7 +38,12 @@ import {
 import { taskItService, TaskIt } from "@/features/projects/services/task-it-service"
 import { TaskItFormDialog } from "./task-it-form-dialog"
 
-export function TaskItTable() {
+interface TaskItTableProps {
+    statusFilter?: string | null
+    onClearFilter?: () => void
+}
+
+export function TaskItTable({ statusFilter, onClearFilter }: TaskItTableProps = {}) {
     const queryClient = useQueryClient()
     const [search, setSearch] = React.useState("")
     const [isFormOpen, setIsFormOpen] = React.useState(false)
@@ -64,6 +69,10 @@ export function TaskItTable() {
     React.useEffect(() => {
         setPage(1)
     }, [search])
+
+    React.useEffect(() => {
+        setPage(1)
+    }, [statusFilter])
 
     const { data: tasks, isLoading } = useQuery({
         queryKey: ["task-its"],
@@ -119,11 +128,18 @@ export function TaskItTable() {
         setIsFormOpen(true)
     }
 
-    const filtered = tasks?.filter(t =>
-        t.deskripsi.toLowerCase().includes(search.toLowerCase()) ||
-        (t.user?.name.toLowerCase().includes(search.toLowerCase()) ?? false) ||
-        t.status.toLowerCase().includes(search.toLowerCase())
-    ) ?? []
+    const filtered = (tasks ?? []).filter(t => {
+        if (statusFilter === "inprogress") {
+            const s = t.status.toLowerCase()
+            if (s !== "in progress" && s !== "progress" && s !== "sedang dikerjakan") return false
+        }
+        if (!search) return true
+        return (
+            t.deskripsi.toLowerCase().includes(search.toLowerCase()) ||
+            (t.user?.name.toLowerCase().includes(search.toLowerCase()) ?? false) ||
+            t.status.toLowerCase().includes(search.toLowerCase())
+        )
+    })
 
     const sorted = React.useMemo(() => {
         if (!filtered) return []
@@ -322,14 +338,30 @@ export function TaskItTable() {
             </div>
 
             {/* Search */}
-            <div className="relative max-w-sm">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                    placeholder="Cari deskripsi, user, atau status..."
-                    value={search}
-                    onChange={e => setSearch(e.target.value)}
-                    className="pl-9 bg-neutral-50 border-neutral-200 focus:bg-white"
-                />
+            <div className="flex items-center gap-3 flex-wrap">
+                <div className="relative max-w-sm">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        placeholder="Cari deskripsi, user, atau status..."
+                        value={search}
+                        onChange={e => setSearch(e.target.value)}
+                        className="pl-9 bg-neutral-50 border-neutral-200 focus:bg-white"
+                    />
+                </div>
+                {statusFilter === "inprogress" && (
+                    <div className="flex items-center gap-1.5 bg-blue-50 border border-blue-200 text-blue-700 text-xs font-semibold px-3 py-1.5 rounded-full">
+                        <Loader2 className="h-3 w-3 animate-spin" style={{ animationDuration: '3s' }} />
+                        <span>Sedang Dikerjakan</span>
+                        <button
+                            type="button"
+                            onClick={onClearFilter}
+                            className="ml-1 hover:text-blue-900 transition-colors"
+                            aria-label="Hapus filter"
+                        >
+                            ✕
+                        </button>
+                    </div>
+                )}
             </div>
 
             {/* Table */}
