@@ -18,6 +18,8 @@ import {
   FileDown,
   X,
   Truck,
+  QrCode,
+  Printer,
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -50,6 +52,7 @@ import {
   Produksi,
   BarangSupplier,
 } from '@/features/projects/services/project-v2-service';
+import { QRCodeSVG } from 'qrcode.react';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 
@@ -76,13 +79,17 @@ export default function ProduksiDetailPage() {
     null
   );
   const [produksiData, setProduksiData] = React.useState<Partial<Produksi>>({});
-  const [skippedFields, setSkippedFields] = React.useState<Record<string, boolean>>({});
+  const [skippedFields, setSkippedFields] = React.useState<
+    Record<string, boolean>
+  >({});
   const [isOrderCollapsed, setIsOrderCollapsed] = React.useState(false);
   const [isProgressCollapsed, setIsProgressCollapsed] = React.useState(false);
-  
+
   // QC View State
   const [isQcViewOpen, setIsQcViewOpen] = React.useState(false);
-  const [qcViewItem, setQcViewItem] = React.useState<ProjectItemV2 | null>(null);
+  const [qcViewItem, setQcViewItem] = React.useState<ProjectItemV2 | null>(
+    null
+  );
 
   const openQcView = (item: ProjectItemV2) => {
     setQcViewItem(item);
@@ -99,8 +106,11 @@ export default function ProduksiDetailPage() {
   const [bjFile, setBjFile] = React.useState<File | null>(null);
 
   const updateBjMutation = useMutation({
-    mutationFn: (payload: { tanggal: string; jumlah: number; file?: File | null }) =>
-      projectV2Service.updateBarangJadiMasuk(bjItem!.id, payload),
+    mutationFn: (payload: {
+      tanggal: string;
+      jumlah: number;
+      file?: File | null;
+    }) => projectV2Service.updateBarangJadiMasuk(bjItem!.id, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ['project-v2-items', projectId],
@@ -146,7 +156,195 @@ export default function ProduksiDetailPage() {
 
   // Packing View State (View Only)
   const [isPackingViewOpen, setIsPackingViewOpen] = React.useState(false);
-  const [packingViewItem, setPackingViewItem] = React.useState<ProjectItemV2 | null>(null);
+  const [packingViewItem, setPackingViewItem] =
+    React.useState<ProjectItemV2 | null>(null);
+
+  // QR Code Print State (bulk - all items)
+  const [isQrDialogOpen, setIsQrDialogOpen] = React.useState(false);
+  const qrPrintRef = React.useRef<HTMLDivElement>(null);
+
+  // QR Code per-item State
+  const [isItemQrDialogOpen, setIsItemQrDialogOpen] = React.useState(false);
+  const [qrItem, setQrItem] = React.useState<ProjectItemV2 | null>(null);
+  const hiddenQrRef = React.useRef<HTMLDivElement>(null);
+
+  const openItemQrDialog = (item: ProjectItemV2) => {
+    setQrItem(item);
+    setIsItemQrDialogOpen(true);
+  };
+
+  const handlePrintItemQR = () => {
+    if (!qrItem?.mdl_item?.kode_barang) return;
+
+    // Capture the already-rendered QR SVG from hidden div
+    const svgEl = hiddenQrRef.current?.querySelector('svg');
+    const svgString = svgEl?.outerHTML ?? '';
+
+    const total = qrItem.jumlah;
+    const spkYear = project?.spk?.tanggal_spk
+      ? new Date(project.spk.tanggal_spk).getFullYear()
+      : project?.created_at
+      ? new Date(project.created_at).getFullYear()
+      : '';
+    const spkValue =
+      [project?.spk?.nomor_spk, spkYear].filter(Boolean).join(' / ') || '-';
+
+    // Builds one label cell
+    const makeLabelHTML = (idx: number) => {
+      const rows: [string, string][] = [
+        ['NAMA ITEM', qrItem.item || '-'],
+        [
+          'UKURAN',
+          `${qrItem.panjang || '-'} x ${qrItem.lebar || '-'} x ${
+            qrItem.tinggi || '-'
+          }`,
+        ],
+        ['JUMLAH', `${idx + 1}/${total} ${qrItem.satuan || ''}`.trim()],
+        ['RUANG', qrItem.ruang || '-'],
+        ['RUMAH SAKIT', project?.client?.name || '-'],
+        ['NO. SPK/TAHUN', spkValue],
+      ];
+      return `
+        <div class="label">
+          <div class="hdr">
+            <div class="logo"><img src="${
+              window.location.origin
+            }/Logo.png" alt="Logo"/></div>
+            <div class="co">
+              <p class="n">PT DHARMA PUTERA SEJAHTERA ABADI</p>
+              <p class="it">Interior &amp; Furniture Manufaktur</p>
+              <p>Jl. Matraman No. 88, Ringinsari, Maguwoharjo, Depok, Sleman, Yogyakarta</p>
+              <p>Telepon : (0274) 2800089&nbsp;&nbsp;Fax : (0274) 433 2248</p>
+              <p>E-mail : piutang.dpsa@gmail.com&nbsp;Website : www.dpm-jogja.com</p>
+            </div>
+            <div class="dc">
+              <div class="dr">PROD</div><div class="dr b">003</div>
+              <div class="db"><span>Rev:00</span><span>Terbit:<br>08/25</span></div>
+            </div>
+          </div>
+          <div class="bd">
+            <div class="info">
+              ${rows
+                .map(
+                  ([l, v], ri) =>
+                    `<div class="row${
+                      ri === rows.length - 1 ? ' last' : ''
+                    }"><div class="lbl">${l}</div><div class="sep">:</div><div class="val">${v}</div></div>`
+                )
+                .join('')}
+            </div>
+            <div class="qr">${svgString}<p>${
+        qrItem.mdl_item!.kode_barang
+      }</p></div>
+          </div>
+        </div>`;
+    };
+
+    // Group indices into pages of 4
+    const pages: number[][] = [];
+    for (let i = 0; i < total; i += 4) {
+      pages.push(
+        Array.from({ length: Math.min(4, total - i) }, (_, j) => i + j)
+      );
+    }
+
+    const html = `<!DOCTYPE html><html><head>
+      <title>Label - ${qrItem.item}</title>
+      <style>
+        @page { size: A4 portrait; margin: 5mm; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: Arial, sans-serif; font-size: 9px; color: #171717; background: #fff; }
+        /* Page: 2×2 grid — height auto agar label hanya setinggi konten */
+        .pg {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          grid-template-rows: auto auto;
+          gap: 3mm;
+          width: 100%;
+          page-break-after: always;
+          break-after: page;
+        }
+        .pg.last { page-break-after: auto; break-after: auto; }
+        .empty { border: 1px dashed #ccc; }
+        /* Label — tidak flex agar tinggi ikut konten */
+        .label { border: 1px solid #000; }
+        /* Header */
+        .hdr { display: flex; border-bottom: 1px solid #000; }
+        .logo { width: 44px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; padding: 4px; border-right: 1px solid #000; }
+        .logo img { width: 34px; height: 34px; object-fit: contain; }
+        .co { flex: 1; text-align: center; padding: 3px 5px; border-right: 1px solid #000; }
+        .co .n  { font-weight: 900; color: #1d4ed8; font-size: 8.5px; text-transform: uppercase; line-height: 1.2; }
+        .co .it { font-style: italic; font-size: 7.5px; color: #525252; }
+        .co p   { font-size: 7.5px; color: #525252; line-height: 1.3; }
+        .dc { width: 58px; flex-shrink: 0; display: flex; flex-direction: column; text-align: center; font-size: 7.5px; }
+        .dr { border-bottom: 1px solid #000; padding: 1px 2px; font-weight: 700; }
+        .dr.b { font-size: 11px; }
+        .db { display: flex; }
+        .db span { flex: 1; padding: 1px 2px; line-height: 1.2; }
+        .db span:first-child { border-right: 1px solid #000; }
+        /* Body — tanpa flex:1 agar tinggi natural */
+        .bd { display: flex; }
+        .info { flex: 1; border-right: 1px solid #000; }
+        .row { display: flex; border-bottom: 1px solid #000; }
+        .row.last { border-bottom: none; }
+        .lbl { width: 78px; font-weight: 700; padding: 3px 4px; border-right: 1px solid #000; flex-shrink: 0; font-size: 8px; }
+        .sep { width: 12px; text-align: center; padding: 3px 0; border-right: 1px solid #000; flex-shrink: 0; }
+        .val { flex: 1; padding: 3px 4px; font-size: 8px; word-break: break-word; }
+        /* QR — justify-content: flex-start agar rata atas, bukan mengapung di tengah */
+        .qr  { width: 94px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 4px; padding: 6px 5px; }
+        .qr svg { display: block; width: 76px !important; height: 76px !important; }
+        .qr p { font-family: monospace; font-weight: 700; text-align: center; word-break: break-all; font-size: 7.5px; }
+      </style>
+    </head><body>
+      ${pages
+        .map(
+          (page, pi) => `
+        <div class="pg${pi === pages.length - 1 ? ' last' : ''}">
+          ${page.map((idx) => makeLabelHTML(idx)).join('')}
+          ${Array.from(
+            { length: 4 - page.length },
+            () => '<div class="empty"></div>'
+          ).join('')}
+        </div>`
+        )
+        .join('')}
+    </body></html>`;
+
+    const win = window.open('', '_blank');
+    if (!win) return;
+    win.document.open();
+    win.document.write(html);
+    win.document.close();
+    let printed = false;
+    const doPrint = () => {
+      if (printed) return;
+      printed = true;
+      win.print();
+    };
+    win.addEventListener('load', doPrint);
+    setTimeout(doPrint, 800);
+  };
+
+  const handlePrintQR = () => {
+    const printStyle = document.createElement('style');
+    printStyle.id = 'qr-print-style';
+    printStyle.innerHTML = `
+      @media print {
+        body * { visibility: hidden !important; }
+        #qr-print-area, #qr-print-area * { visibility: visible !important; }
+        #qr-print-area {
+          position: fixed !important;
+          left: 0 !important;
+          top: 0 !important;
+          width: 100% !important;
+          padding: 16px !important;
+        }
+      }
+    `;
+    document.head.appendChild(printStyle);
+    window.print();
+    document.head.removeChild(printStyle);
+  };
 
   const openPackingView = (item: ProjectItemV2) => {
     setPackingViewItem(item);
@@ -175,18 +373,27 @@ export default function ProduksiDetailPage() {
 
   const handleProduksiUpdate = () => {
     if (!produksiItem) return;
-    const skippedList = Object.keys(skippedFields).filter((k) => skippedFields[k]);
-    updateProduksiMutation.mutate({ ...produksiData, skipped_fields: skippedList });
+    const skippedList = Object.keys(skippedFields).filter(
+      (k) => skippedFields[k]
+    );
+    updateProduksiMutation.mutate({
+      ...produksiData,
+      skipped_fields: skippedList,
+    });
   };
 
   // Supplier Confirm State
-  const [isSupplierConfirmOpen, setIsSupplierConfirmOpen] = React.useState(false);
-  const [supplierConfirmItem, setSupplierConfirmItem] = React.useState<ProjectItemV2 | null>(null);
+  const [isSupplierConfirmOpen, setIsSupplierConfirmOpen] =
+    React.useState(false);
+  const [supplierConfirmItem, setSupplierConfirmItem] =
+    React.useState<ProjectItemV2 | null>(null);
 
   const markAsSupplierMutation = useMutation({
     mutationFn: (itemId: number) => projectV2Service.markAsSupplier(itemId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['project-v2-items', projectId] });
+      queryClient.invalidateQueries({
+        queryKey: ['project-v2-items', projectId],
+      });
       setIsSupplierConfirmOpen(false);
       setIsProduksiDialogOpen(false);
       if (supplierConfirmItem) openBarangSupplierDialog(supplierConfirmItem);
@@ -197,10 +404,16 @@ export default function ProduksiDetailPage() {
   });
 
   // Barang Supplier State
-  const [isBarangSupplierDialogOpen, setIsBarangSupplierDialogOpen] = React.useState(false);
-  const [barangSupplierItem, setBarangSupplierItem] = React.useState<ProjectItemV2 | null>(null);
-  const [barangSupplierData, setBarangSupplierData] = React.useState<Partial<BarangSupplier>>({});
-  const [bsSkippedFields, setBsSkippedFields] = React.useState<Record<string, boolean>>({});
+  const [isBarangSupplierDialogOpen, setIsBarangSupplierDialogOpen] =
+    React.useState(false);
+  const [barangSupplierItem, setBarangSupplierItem] =
+    React.useState<ProjectItemV2 | null>(null);
+  const [barangSupplierData, setBarangSupplierData] = React.useState<
+    Partial<BarangSupplier>
+  >({});
+  const [bsSkippedFields, setBsSkippedFields] = React.useState<
+    Record<string, boolean>
+  >({});
 
   const toggleBsSkipField = (field: string) => {
     setBsSkippedFields((prev) => ({ ...prev, [field]: !prev[field] }));
@@ -210,7 +423,9 @@ export default function ProduksiDetailPage() {
     mutationFn: (payload: Partial<BarangSupplier>) =>
       projectV2Service.updateBarangSupplier(barangSupplierItem!.id, payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['project-v2-items', projectId] });
+      queryClient.invalidateQueries({
+        queryKey: ['project-v2-items', projectId],
+      });
       queryClient.invalidateQueries({ queryKey: ['projects-v2', projectId] });
       toast.success('Barang Supplier updated');
       setIsBarangSupplierDialogOpen(false);
@@ -235,7 +450,10 @@ export default function ProduksiDetailPage() {
     );
     const saved = item.barang_supplier?.skipped_fields ?? [];
     setBsSkippedFields(
-      saved.reduce<Record<string, boolean>>((acc, f) => { acc[f] = true; return acc; }, {})
+      saved.reduce<Record<string, boolean>>((acc, f) => {
+        acc[f] = true;
+        return acc;
+      }, {})
     );
     setIsProduksiDialogOpen(false);
     setIsBarangSupplierDialogOpen(true);
@@ -243,8 +461,13 @@ export default function ProduksiDetailPage() {
 
   const handleBarangSupplierUpdate = () => {
     if (!barangSupplierItem) return;
-    const skippedList = Object.keys(bsSkippedFields).filter((k) => bsSkippedFields[k]);
-    updateBarangSupplierMutation.mutate({ ...barangSupplierData, skipped_fields: skippedList });
+    const skippedList = Object.keys(bsSkippedFields).filter(
+      (k) => bsSkippedFields[k]
+    );
+    updateBarangSupplierMutation.mutate({
+      ...barangSupplierData,
+      skipped_fields: skippedList,
+    });
   };
 
   const openProduksiDialog = (item: ProjectItemV2) => {
@@ -344,13 +567,28 @@ export default function ProduksiDetailPage() {
   React.useEffect(() => {
     if (!isBarangSupplierDialogOpen) return;
 
-    const allFields = ['barang_dipesan', 'barang_tersedia', 'rakit', 'packing', 'terkirim'] as const;
+    const allFields = [
+      'barang_dipesan',
+      'barang_tersedia',
+      'rakit',
+      'packing',
+      'terkirim',
+    ] as const;
     const activeFields = allFields.filter((f) => !bsSkippedFields[f]);
     const order = Number(barangSupplierData.jumlah_order) || 1;
-    const totalSum = activeFields.reduce((sum, f) => sum + Number(barangSupplierData[f] || 0), 0);
-    const calculated = activeFields.length === 0
-      ? 0
-      : Math.min(Number(((totalSum * 100) / (activeFields.length * order)).toFixed(2)), 100);
+    const totalSum = activeFields.reduce(
+      (sum, f) => sum + Number(barangSupplierData[f] || 0),
+      0
+    );
+    const calculated =
+      activeFields.length === 0
+        ? 0
+        : Math.min(
+            Number(
+              ((totalSum * 100) / (activeFields.length * order)).toFixed(2)
+            ),
+            100
+          );
 
     setBarangSupplierData((prev) => {
       if (prev.persen === calculated) return prev;
@@ -388,7 +626,9 @@ export default function ProduksiDetailPage() {
       id: 1,
       title: 'Order Produksi',
       description: 'Production Order',
-      isCompleted: !!(project.order_produksi && project.order_produksi.length > 0),
+      isCompleted: !!(
+        project.order_produksi && project.order_produksi.length > 0
+      ),
       isActive: true,
       icon: FileText,
       color: 'text-orange-600',
@@ -410,9 +650,10 @@ export default function ProduksiDetailPage() {
     },
   ];
 
-  const latestOrderProduksi = project.order_produksi && project.order_produksi.length > 0 
-    ? project.order_produksi[project.order_produksi.length - 1] 
-    : null;
+  const latestOrderProduksi =
+    project.order_produksi && project.order_produksi.length > 0
+      ? project.order_produksi[project.order_produksi.length - 1]
+      : null;
 
   return (
     <div className='flex flex-col gap-6 p-6 max-w-[1600px] mx-auto w-full'>
@@ -431,7 +672,9 @@ export default function ProduksiDetailPage() {
               <h1 className='text-2xl font-bold tracking-tight text-neutral-900'>
                 {project.name}
               </h1>
-              <p className='text-xs text-muted-foreground'>Produksi View - Project Items Management</p>
+              <p className='text-xs text-muted-foreground'>
+                Produksi View - Project Items Management
+              </p>
             </div>
             <div className='flex flex-wrap items-center gap-x-3 gap-y-1'>
               {project.client?.name && (
@@ -530,8 +773,8 @@ export default function ProduksiDetailPage() {
           }`}
         >
           {latestOrderProduksi && (
-            <div className="absolute -top-1.5 -right-1.5 h-5 w-5 bg-emerald-500 rounded-full flex items-center justify-center shadow-sm z-10 animate-in zoom-in duration-300">
-              <CheckCircle2 className="h-3 w-3 text-white" />
+            <div className='absolute -top-1.5 -right-1.5 h-5 w-5 bg-emerald-500 rounded-full flex items-center justify-center shadow-sm z-10 animate-in zoom-in duration-300'>
+              <CheckCircle2 className='h-3 w-3 text-white' />
             </div>
           )}
           <CardHeader className='pb-3 flex flex-row items-center justify-between gap-3'>
@@ -564,7 +807,7 @@ export default function ProduksiDetailPage() {
             </button>
           </CardHeader>
           {!isOrderCollapsed && (
-            <CardContent className="space-y-2">
+            <CardContent className='space-y-2'>
               {latestOrderProduksi ? (
                 <div className='p-3 rounded-xl bg-orange-50/80 border border-orange-100 flex items-center justify-between shadow-sm'>
                   <div className='flex items-center gap-3'>
@@ -576,9 +819,12 @@ export default function ProduksiDetailPage() {
                         Order Produksi
                       </p>
                       <p className='text-[10px] text-orange-600/80'>
-                        Target:{" "}
+                        Target:{' '}
                         {latestOrderProduksi.target_selesai
-                          ? format(new Date(latestOrderProduksi.target_selesai), 'MMM d, yyyy')
+                          ? format(
+                              new Date(latestOrderProduksi.target_selesai),
+                              'MMM d, yyyy'
+                            )
                           : '-'}
                       </p>
                     </div>
@@ -594,7 +840,9 @@ export default function ProduksiDetailPage() {
                         href={`${(
                           process.env.NEXT_PUBLIC_API_URL ||
                           'http://localhost:8000'
-                        ).replace('/api', '')}/storage/${latestOrderProduksi.file}`}
+                        ).replace('/api', '')}/storage/${
+                          latestOrderProduksi.file
+                        }`}
                         target='_blank'
                         rel='noopener noreferrer'
                       >
@@ -603,10 +851,12 @@ export default function ProduksiDetailPage() {
                     </Button>
                   </div>
                 </div>
-              ) : !project.dokubah?.file_rekap_dokubah && (
-                <p className='text-xs text-muted-foreground italic'>
-                  Belum ada Order Produksi.
-                </p>
+              ) : (
+                !project.dokubah?.file_rekap_dokubah && (
+                  <p className='text-xs text-muted-foreground italic'>
+                    Belum ada Order Produksi.
+                  </p>
+                )
               )}
 
               {project.dokubah?.file_rekap_dokubah && (
@@ -619,7 +869,12 @@ export default function ProduksiDetailPage() {
                       <p className='text-xs font-bold text-indigo-900'>
                         Rekap Dokubah
                       </p>
-                      <p className='text-[10px] text-indigo-600/80 truncate max-w-[200px]' title={project.dokubah.file_rekap_dokubah.split('/').pop()}>
+                      <p
+                        className='text-[10px] text-indigo-600/80 truncate max-w-[200px]'
+                        title={project.dokubah.file_rekap_dokubah
+                          .split('/')
+                          .pop()}
+                      >
                         {project.dokubah.file_rekap_dokubah.split('/').pop()}
                       </p>
                     </div>
@@ -632,7 +887,16 @@ export default function ProduksiDetailPage() {
                       asChild
                     >
                       <a
-                        href={project.dokubah.file_rekap_dokubah.startsWith('http') ? project.dokubah.file_rekap_dokubah : `${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '')}/storage/${project.dokubah.file_rekap_dokubah}`}
+                        href={
+                          project.dokubah.file_rekap_dokubah.startsWith('http')
+                            ? project.dokubah.file_rekap_dokubah
+                            : `${(
+                                process.env.NEXT_PUBLIC_API_URL ||
+                                'http://localhost:8000'
+                              ).replace('/api', '')}/storage/${
+                                project.dokubah.file_rekap_dokubah
+                              }`
+                        }
                         target='_blank'
                         rel='noopener noreferrer'
                       >
@@ -655,8 +919,8 @@ export default function ProduksiDetailPage() {
           }`}
         >
           {(project.progres_produksi || 0) >= 100 && (
-            <div className="absolute -top-1.5 -right-1.5 h-5 w-5 bg-emerald-500 rounded-full flex items-center justify-center shadow-sm z-10 animate-in zoom-in duration-300">
-              <CheckCircle2 className="h-3 w-3 text-white" />
+            <div className='absolute -top-1.5 -right-1.5 h-5 w-5 bg-emerald-500 rounded-full flex items-center justify-center shadow-sm z-10 animate-in zoom-in duration-300'>
+              <CheckCircle2 className='h-3 w-3 text-white' />
             </div>
           )}
           <CardHeader className='pb-3 flex flex-row items-center justify-between gap-3'>
@@ -687,11 +951,18 @@ export default function ProduksiDetailPage() {
           {!isProgressCollapsed && (
             <CardContent className='pt-0'>
               <div className='h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden mt-4'>
-                <div className='h-full bg-blue-600 transition-all duration-500' style={{ width: `${project.progres_produksi || 0}%` }} />
+                <div
+                  className='h-full bg-blue-600 transition-all duration-500'
+                  style={{ width: `${project.progres_produksi || 0}%` }}
+                />
               </div>
               <div className='flex justify-between items-center mt-1'>
-                <p className='text-[10px] font-bold text-neutral-700'>Persentase per SPK</p>
-                <p className='text-[10px] font-bold text-blue-600'>{Number(project.progres_produksi || 0).toFixed(2)}%</p>
+                <p className='text-[10px] font-bold text-neutral-700'>
+                  Persentase per SPK
+                </p>
+                <p className='text-[10px] font-bold text-blue-600'>
+                  {Number(project.progres_produksi || 0).toFixed(2)}%
+                </p>
               </div>
             </CardContent>
           )}
@@ -705,6 +976,16 @@ export default function ProduksiDetailPage() {
             <ListChecks className='h-5 w-5 text-neutral-400' />
             Project Items
           </h2>
+          <Button
+            size='sm'
+            variant='outline'
+            className='gap-2'
+            onClick={() => setIsQrDialogOpen(true)}
+            disabled={!items || items.length === 0}
+          >
+            <QrCode className='h-4 w-4' />
+            Generate QR
+          </Button>
         </div>
 
         <div className='rounded-xl border border-neutral-200 bg-white overflow-hidden shadow-sm'>
@@ -729,13 +1010,14 @@ export default function ProduksiDetailPage() {
                 <TableHead>QC Cek</TableHead>
                 <TableHead>Barang Jadi</TableHead>
                 <TableHead>Packing</TableHead>
+                <TableHead className='text-center'>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoadingItems ? (
                 <TableRow>
                   <TableCell
-                    colSpan={17}
+                    colSpan={18}
                     className='h-32 text-center text-muted-foreground'
                   >
                     <Loader2 className='h-6 w-6 animate-spin mx-auto' />
@@ -744,7 +1026,7 @@ export default function ProduksiDetailPage() {
               ) : items?.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={17}
+                    colSpan={18}
                     className='h-32 text-center text-muted-foreground'
                   >
                     No items recorded for this project.
@@ -795,9 +1077,7 @@ export default function ProduksiDetailPage() {
                           asChild
                         >
                           <a
-                            href={`${
-                              item.mdl_item.link_gambar_kerja
-                            }`}
+                            href={`${item.mdl_item.link_gambar_kerja}`}
                             target='_blank'
                             rel='noopener noreferrer'
                           >
@@ -854,11 +1134,14 @@ export default function ProduksiDetailPage() {
                           <Badge
                             variant='outline'
                             className={`font-bold ${
-                              item.bahan_baku.ketersediaan_stok === 'Tersedia' ||
+                              item.bahan_baku.ketersediaan_stok ===
+                                'Tersedia' ||
                               item.bahan_baku.ketersediaan_stok === 'Lengkap'
                                 ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                : item.bahan_baku.ketersediaan_stok === 'Belum Tersedia' ||
-                                  item.bahan_baku.ketersediaan_stok === 'Belum Lengkap'
+                                : item.bahan_baku.ketersediaan_stok ===
+                                    'Belum Tersedia' ||
+                                  item.bahan_baku.ketersediaan_stok ===
+                                    'Belum Lengkap'
                                 ? 'bg-red-50 text-red-700 border-red-200'
                                 : 'bg-amber-50 text-amber-700 border-amber-200'
                             }`}
@@ -917,7 +1200,9 @@ export default function ProduksiDetailPage() {
                                   href={`${(
                                     process.env.NEXT_PUBLIC_API_URL ||
                                     'http://localhost:8000'
-                                  ).replace('/api', '')}/storage/${item.qc_cek.file}`}
+                                  ).replace('/api', '')}/storage/${
+                                    item.qc_cek.file
+                                  }`}
                                   target='_blank'
                                   rel='noopener noreferrer'
                                 >
@@ -927,7 +1212,9 @@ export default function ProduksiDetailPage() {
                             )}
                           </>
                         ) : (
-                          <span className='text-[10px] text-muted-foreground italic'>-</span>
+                          <span className='text-[10px] text-muted-foreground italic'>
+                            -
+                          </span>
                         )}
                       </div>
                     </TableCell>
@@ -973,6 +1260,18 @@ export default function ProduksiDetailPage() {
                         )}
                       </div>
                     </TableCell>
+                    <TableCell className='text-center'>
+                      <Button
+                        size='sm'
+                        variant='outline'
+                        className='h-7 px-2 gap-1.5 text-[11px]'
+                        disabled={!item.mdl_item?.kode_barang}
+                        onClick={() => openItemQrDialog(item)}
+                      >
+                        <QrCode className='h-3.5 w-3.5' />
+                        QR
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))
               )}
@@ -986,37 +1285,37 @@ export default function ProduksiDetailPage() {
         open={isProduksiDialogOpen}
         onOpenChange={setIsProduksiDialogOpen}
       >
-        <AlertDialogContent className="mb-4 flex h-[90dvh] sm:h-[calc(70vh-2rem)] w-[95vw] sm:min-w-[calc(70vw-2rem)] sm:max-w-[calc(70vw-2rem)] flex-col justify-between gap-0 p-0">
+        <AlertDialogContent className='mb-4 flex h-[90dvh] sm:h-[calc(70vh-2rem)] w-[95vw] sm:min-w-[calc(70vw-2rem)] sm:max-w-[calc(70vw-2rem)] flex-col justify-between gap-0 p-0'>
           {/* Header */}
-          <div className="bg-white border-b px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between shrink-0 shadow-sm z-10">
+          <div className='bg-white border-b px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between shrink-0 shadow-sm z-10'>
             <div>
-              <AlertDialogTitle className="flex items-center gap-2 text-lg sm:text-2xl font-bold tracking-tight text-neutral-800">
-                <BarChart3 className="h-6 w-6 text-orange-500" />
+              <AlertDialogTitle className='flex items-center gap-2 text-lg sm:text-2xl font-bold tracking-tight text-neutral-800'>
+                <BarChart3 className='h-6 w-6 text-orange-500' />
                 Update Progress Produksi
               </AlertDialogTitle>
-              <AlertDialogDescription className="text-sm text-neutral-500 mt-1">
+              <AlertDialogDescription className='text-sm text-neutral-500 mt-1'>
                 Input jumlah item yang telah selesai di setiap tahapan untuk:{' '}
                 <strong>{produksiItem?.item}</strong>
               </AlertDialogDescription>
             </div>
             <Button
-              variant="ghost"
-              size="icon"
+              variant='ghost'
+              size='icon'
               onClick={() => setIsProduksiDialogOpen(false)}
-              className="rounded-full text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700 shrink-0 h-10 w-10"
+              className='rounded-full text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700 shrink-0 h-10 w-10'
             >
-              <X className="w-5 h-5" />
+              <X className='w-5 h-5' />
             </Button>
           </div>
 
           {/* Body */}
-          <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6">
+          <div className='flex-1 overflow-y-auto p-6 md:p-8 space-y-6'>
             {/* Jumlah Order - Top Center */}
-            <div className="flex justify-center">
-              <div className="w-1/2 sm:w-1/3 space-y-2 text-center">
-                <Label className="text-sm font-bold">Jumlah Order</Label>
+            <div className='flex justify-center'>
+              <div className='w-1/2 sm:w-1/3 space-y-2 text-center'>
+                <Label className='text-sm font-bold'>Jumlah Order</Label>
                 <Input
-                  type="number"
+                  type='number'
                   value={produksiData.jumlah_order || 0}
                   onChange={(e) =>
                     setProduksiData({
@@ -1025,291 +1324,438 @@ export default function ProduksiDetailPage() {
                     })
                   }
                   disabled
-                  className="bg-neutral-50 font-bold text-center text-lg h-12"
+                  className='bg-neutral-50 font-bold text-center text-lg h-12'
                 />
               </div>
             </div>
 
             {/* Mesin Section */}
-            <div className="space-y-3">
-              <h4 className="font-semibold text-sm text-neutral-500 uppercase tracking-wider border-b pb-2">
+            <div className='space-y-3'>
+              <h4 className='font-semibold text-sm text-neutral-500 uppercase tracking-wider border-b pb-2'>
                 Mesin
               </h4>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div className="space-y-2">
-                  <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+              <div className='grid grid-cols-2 sm:grid-cols-4 gap-3'>
+                <div className='space-y-2'>
+                  <div className='flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between'>
                     <Label>Cold Press</Label>
                     <Button
-                      type="button"
+                      type='button'
                       variant={skippedFields.cold_press ? 'default' : 'outline'}
-                      size="sm"
-                      className={`h-6 px-2 text-xs ${skippedFields.cold_press ? 'bg-neutral-500 hover:bg-neutral-600' : 'text-neutral-500'}`}
+                      size='sm'
+                      className={`h-6 px-2 text-xs ${
+                        skippedFields.cold_press
+                          ? 'bg-neutral-500 hover:bg-neutral-600'
+                          : 'text-neutral-500'
+                      }`}
                       onClick={() => toggleSkipField('cold_press')}
                     >
                       {skippedFields.cold_press ? 'Batalkan' : 'Lewati Proses'}
                     </Button>
                   </div>
                   <Input
-                    type="number"
+                    type='number'
                     min={0}
                     max={produksiData.jumlah_order}
                     disabled={skippedFields.cold_press}
-                    value={skippedFields.cold_press ? '-' : produksiData.cold_press === 0 ? '' : produksiData.cold_press || ''}
+                    value={
+                      skippedFields.cold_press
+                        ? '-'
+                        : produksiData.cold_press === 0
+                        ? ''
+                        : produksiData.cold_press || ''
+                    }
                     onChange={(e) =>
                       setProduksiData({
                         ...produksiData,
-                        cold_press: Math.min(Math.max(parseInt(e.target.value) || 0, 0), produksiData.jumlah_order ?? 0),
+                        cold_press: Math.min(
+                          Math.max(parseInt(e.target.value) || 0, 0),
+                          produksiData.jumlah_order ?? 0
+                        ),
                       })
                     }
-                    className={skippedFields.cold_press ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100' : ''}
+                    className={
+                      skippedFields.cold_press
+                        ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100'
+                        : ''
+                    }
                   />
                 </div>
-                <div className="space-y-2">
-                  <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                <div className='space-y-2'>
+                  <div className='flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between'>
                     <Label>Running Saw</Label>
                     <Button
-                      type="button"
-                      variant={skippedFields.running_saw ? 'default' : 'outline'}
-                      size="sm"
-                      className={`h-6 px-2 text-xs ${skippedFields.running_saw ? 'bg-neutral-500 hover:bg-neutral-600' : 'text-neutral-500'}`}
+                      type='button'
+                      variant={
+                        skippedFields.running_saw ? 'default' : 'outline'
+                      }
+                      size='sm'
+                      className={`h-6 px-2 text-xs ${
+                        skippedFields.running_saw
+                          ? 'bg-neutral-500 hover:bg-neutral-600'
+                          : 'text-neutral-500'
+                      }`}
                       onClick={() => toggleSkipField('running_saw')}
                     >
                       {skippedFields.running_saw ? 'Batalkan' : 'Lewati Proses'}
                     </Button>
                   </div>
                   <Input
-                    type="number"
+                    type='number'
                     min={0}
                     max={produksiData.jumlah_order}
                     disabled={skippedFields.running_saw}
-                    value={skippedFields.running_saw ? '-' : produksiData.running_saw === 0 ? '' : produksiData.running_saw || ''}
+                    value={
+                      skippedFields.running_saw
+                        ? '-'
+                        : produksiData.running_saw === 0
+                        ? ''
+                        : produksiData.running_saw || ''
+                    }
                     onChange={(e) =>
                       setProduksiData({
                         ...produksiData,
-                        running_saw: Math.min(Math.max(parseInt(e.target.value) || 0, 0), produksiData.jumlah_order ?? 0),
+                        running_saw: Math.min(
+                          Math.max(parseInt(e.target.value) || 0, 0),
+                          produksiData.jumlah_order ?? 0
+                        ),
                       })
                     }
-                    className={skippedFields.running_saw ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100' : ''}
+                    className={
+                      skippedFields.running_saw
+                        ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100'
+                        : ''
+                    }
                   />
                 </div>
-                <div className="space-y-2">
-                  <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                <div className='space-y-2'>
+                  <div className='flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between'>
                     <Label>Edging</Label>
                     <Button
-                      type="button"
+                      type='button'
                       variant={skippedFields.edging ? 'default' : 'outline'}
-                      size="sm"
-                      className={`h-6 px-2 text-xs ${skippedFields.edging ? 'bg-neutral-500 hover:bg-neutral-600' : 'text-neutral-500'}`}
+                      size='sm'
+                      className={`h-6 px-2 text-xs ${
+                        skippedFields.edging
+                          ? 'bg-neutral-500 hover:bg-neutral-600'
+                          : 'text-neutral-500'
+                      }`}
                       onClick={() => toggleSkipField('edging')}
                     >
                       {skippedFields.edging ? 'Batalkan' : 'Lewati Proses'}
                     </Button>
                   </div>
                   <Input
-                    type="number"
+                    type='number'
                     min={0}
                     max={produksiData.jumlah_order}
                     disabled={skippedFields.edging}
-                    value={skippedFields.edging ? '-' : produksiData.edging === 0 ? '' : produksiData.edging || ''}
+                    value={
+                      skippedFields.edging
+                        ? '-'
+                        : produksiData.edging === 0
+                        ? ''
+                        : produksiData.edging || ''
+                    }
                     onChange={(e) =>
                       setProduksiData({
                         ...produksiData,
-                        edging: Math.min(Math.max(parseInt(e.target.value) || 0, 0), produksiData.jumlah_order ?? 0),
+                        edging: Math.min(
+                          Math.max(parseInt(e.target.value) || 0, 0),
+                          produksiData.jumlah_order ?? 0
+                        ),
                       })
                     }
-                    className={skippedFields.edging ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100' : ''}
+                    className={
+                      skippedFields.edging
+                        ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100'
+                        : ''
+                    }
                   />
                 </div>
-                <div className="space-y-2">
-                  <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                <div className='space-y-2'>
+                  <div className='flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between'>
                     <Label>CNC</Label>
                     <Button
-                      type="button"
+                      type='button'
                       variant={skippedFields.cnc ? 'default' : 'outline'}
-                      size="sm"
-                      className={`h-6 px-2 text-xs ${skippedFields.cnc ? 'bg-neutral-500 hover:bg-neutral-600' : 'text-neutral-500'}`}
+                      size='sm'
+                      className={`h-6 px-2 text-xs ${
+                        skippedFields.cnc
+                          ? 'bg-neutral-500 hover:bg-neutral-600'
+                          : 'text-neutral-500'
+                      }`}
                       onClick={() => toggleSkipField('cnc')}
                     >
                       {skippedFields.cnc ? 'Batalkan' : 'Lewati Proses'}
                     </Button>
                   </div>
                   <Input
-                    type="number"
+                    type='number'
                     min={0}
                     max={produksiData.jumlah_order}
                     disabled={skippedFields.cnc}
-                    value={skippedFields.cnc ? '-' : produksiData.cnc === 0 ? '' : produksiData.cnc || ''}
+                    value={
+                      skippedFields.cnc
+                        ? '-'
+                        : produksiData.cnc === 0
+                        ? ''
+                        : produksiData.cnc || ''
+                    }
                     onChange={(e) =>
                       setProduksiData({
                         ...produksiData,
-                        cnc: Math.min(Math.max(parseInt(e.target.value) || 0, 0), produksiData.jumlah_order ?? 0),
+                        cnc: Math.min(
+                          Math.max(parseInt(e.target.value) || 0, 0),
+                          produksiData.jumlah_order ?? 0
+                        ),
                       })
                     }
-                    className={skippedFields.cnc ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100' : ''}
+                    className={
+                      skippedFields.cnc
+                        ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100'
+                        : ''
+                    }
                   />
                 </div>
               </div>
             </div>
 
             {/* Manual Section */}
-            <div className="space-y-3">
-              <h4 className="font-semibold text-sm text-neutral-500 uppercase tracking-wider border-b pb-2">
+            <div className='space-y-3'>
+              <h4 className='font-semibold text-sm text-neutral-500 uppercase tracking-wider border-b pb-2'>
                 Manual
               </h4>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div className="space-y-2">
-                  <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+              <div className='grid grid-cols-2 sm:grid-cols-4 gap-3'>
+                <div className='space-y-2'>
+                  <div className='flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between'>
                     <Label>Tukang Kayu</Label>
                     <Button
-                      type="button"
-                      variant={skippedFields.tukang_kayu ? 'default' : 'outline'}
-                      size="sm"
-                      className={`h-6 px-2 text-xs ${skippedFields.tukang_kayu ? 'bg-neutral-500 hover:bg-neutral-600' : 'text-neutral-500'}`}
+                      type='button'
+                      variant={
+                        skippedFields.tukang_kayu ? 'default' : 'outline'
+                      }
+                      size='sm'
+                      className={`h-6 px-2 text-xs ${
+                        skippedFields.tukang_kayu
+                          ? 'bg-neutral-500 hover:bg-neutral-600'
+                          : 'text-neutral-500'
+                      }`}
                       onClick={() => toggleSkipField('tukang_kayu')}
                     >
                       {skippedFields.tukang_kayu ? 'Batalkan' : 'Lewati Proses'}
                     </Button>
                   </div>
                   <Input
-                    type="number"
+                    type='number'
                     min={0}
                     max={produksiData.jumlah_order}
                     disabled={skippedFields.tukang_kayu}
-                    value={skippedFields.tukang_kayu ? '-' : produksiData.tukang_kayu === 0 ? '' : produksiData.tukang_kayu || ''}
+                    value={
+                      skippedFields.tukang_kayu
+                        ? '-'
+                        : produksiData.tukang_kayu === 0
+                        ? ''
+                        : produksiData.tukang_kayu || ''
+                    }
                     onChange={(e) =>
                       setProduksiData({
                         ...produksiData,
-                        tukang_kayu: Math.min(Math.max(parseInt(e.target.value) || 0, 0), produksiData.jumlah_order ?? 0),
+                        tukang_kayu: Math.min(
+                          Math.max(parseInt(e.target.value) || 0, 0),
+                          produksiData.jumlah_order ?? 0
+                        ),
                       })
                     }
-                    className={skippedFields.tukang_kayu ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100' : ''}
+                    className={
+                      skippedFields.tukang_kayu
+                        ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100'
+                        : ''
+                    }
                   />
                 </div>
-                <div className="space-y-2">
-                  <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                <div className='space-y-2'>
+                  <div className='flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between'>
                     <Label>Tukang Jok</Label>
                     <Button
-                      type="button"
+                      type='button'
                       variant={skippedFields.tukang_jok ? 'default' : 'outline'}
-                      size="sm"
-                      className={`h-6 px-2 text-xs ${skippedFields.tukang_jok ? 'bg-neutral-500 hover:bg-neutral-600' : 'text-neutral-500'}`}
+                      size='sm'
+                      className={`h-6 px-2 text-xs ${
+                        skippedFields.tukang_jok
+                          ? 'bg-neutral-500 hover:bg-neutral-600'
+                          : 'text-neutral-500'
+                      }`}
                       onClick={() => toggleSkipField('tukang_jok')}
                     >
                       {skippedFields.tukang_jok ? 'Batalkan' : 'Lewati Proses'}
                     </Button>
                   </div>
                   <Input
-                    type="number"
+                    type='number'
                     min={0}
                     max={produksiData.jumlah_order}
                     disabled={skippedFields.tukang_jok}
-                    value={skippedFields.tukang_jok ? '-' : produksiData.tukang_jok === 0 ? '' : produksiData.tukang_jok || ''}
+                    value={
+                      skippedFields.tukang_jok
+                        ? '-'
+                        : produksiData.tukang_jok === 0
+                        ? ''
+                        : produksiData.tukang_jok || ''
+                    }
                     onChange={(e) =>
                       setProduksiData({
                         ...produksiData,
-                        tukang_jok: Math.min(Math.max(parseInt(e.target.value) || 0, 0), produksiData.jumlah_order ?? 0),
+                        tukang_jok: Math.min(
+                          Math.max(parseInt(e.target.value) || 0, 0),
+                          produksiData.jumlah_order ?? 0
+                        ),
                       })
                     }
-                    className={skippedFields.tukang_jok ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100' : ''}
+                    className={
+                      skippedFields.tukang_jok
+                        ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100'
+                        : ''
+                    }
                   />
                 </div>
-                <div className="space-y-2">
-                  <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                <div className='space-y-2'>
+                  <div className='flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between'>
                     <Label>Rakit</Label>
                     <Button
-                      type="button"
+                      type='button'
                       variant={skippedFields.rakit ? 'default' : 'outline'}
-                      size="sm"
-                      className={`h-6 px-2 text-xs ${skippedFields.rakit ? 'bg-neutral-500 hover:bg-neutral-600' : 'text-neutral-500'}`}
+                      size='sm'
+                      className={`h-6 px-2 text-xs ${
+                        skippedFields.rakit
+                          ? 'bg-neutral-500 hover:bg-neutral-600'
+                          : 'text-neutral-500'
+                      }`}
                       onClick={() => toggleSkipField('rakit')}
                     >
                       {skippedFields.rakit ? 'Batalkan' : 'Lewati Proses'}
                     </Button>
                   </div>
                   <Input
-                    type="number"
+                    type='number'
                     min={0}
                     max={produksiData.jumlah_order}
                     disabled={skippedFields.rakit}
-                    value={skippedFields.rakit ? '-' : produksiData.rakit === 0 ? '' : produksiData.rakit || ''}
+                    value={
+                      skippedFields.rakit
+                        ? '-'
+                        : produksiData.rakit === 0
+                        ? ''
+                        : produksiData.rakit || ''
+                    }
                     onChange={(e) =>
                       setProduksiData({
                         ...produksiData,
-                        rakit: Math.min(Math.max(parseInt(e.target.value) || 0, 0), produksiData.jumlah_order ?? 0),
+                        rakit: Math.min(
+                          Math.max(parseInt(e.target.value) || 0, 0),
+                          produksiData.jumlah_order ?? 0
+                        ),
                       })
                     }
-                    className={skippedFields.rakit ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100' : ''}
+                    className={
+                      skippedFields.rakit
+                        ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100'
+                        : ''
+                    }
                   />
                 </div>
-                <div className="space-y-2">
-                  <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                <div className='space-y-2'>
+                  <div className='flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between'>
                     <Label>Finishing</Label>
                     <Button
-                      type="button"
+                      type='button'
                       variant={skippedFields.finishing ? 'default' : 'outline'}
-                      size="sm"
-                      className={`h-6 px-2 text-xs ${skippedFields.finishing ? 'bg-neutral-500 hover:bg-neutral-600' : 'text-neutral-500'}`}
+                      size='sm'
+                      className={`h-6 px-2 text-xs ${
+                        skippedFields.finishing
+                          ? 'bg-neutral-500 hover:bg-neutral-600'
+                          : 'text-neutral-500'
+                      }`}
                       onClick={() => toggleSkipField('finishing')}
                     >
                       {skippedFields.finishing ? 'Batalkan' : 'Lewati Proses'}
                     </Button>
                   </div>
                   <Input
-                    type="number"
+                    type='number'
                     min={0}
                     max={produksiData.jumlah_order}
                     disabled={skippedFields.finishing}
-                    value={skippedFields.finishing ? '-' : produksiData.finishing === 0 ? '' : produksiData.finishing || ''}
+                    value={
+                      skippedFields.finishing
+                        ? '-'
+                        : produksiData.finishing === 0
+                        ? ''
+                        : produksiData.finishing || ''
+                    }
                     onChange={(e) =>
                       setProduksiData({
                         ...produksiData,
-                        finishing: Math.min(Math.max(parseInt(e.target.value) || 0, 0), produksiData.jumlah_order ?? 0),
+                        finishing: Math.min(
+                          Math.max(parseInt(e.target.value) || 0, 0),
+                          produksiData.jumlah_order ?? 0
+                        ),
                       })
                     }
-                    className={skippedFields.finishing ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100' : ''}
+                    className={
+                      skippedFields.finishing
+                        ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100'
+                        : ''
+                    }
                   />
                 </div>
               </div>
             </div>
 
             {/* Menggunakan Stok & Persen Section */}
-            <div className="pt-4 border-t flex flex-col sm:flex-row justify-center gap-4 sm:gap-8">
-              <div className="space-y-2 w-full sm:w-[200px] text-center">
-                <Label className="text-sm font-bold">Menggunakan Stok</Label>
+            <div className='pt-4 border-t flex flex-col sm:flex-row justify-center gap-4 sm:gap-8'>
+              <div className='space-y-2 w-full sm:w-[200px] text-center'>
+                <Label className='text-sm font-bold'>Menggunakan Stok</Label>
                 <Input
-                  type="number"
+                  type='number'
                   min={0}
                   max={produksiData.jumlah_order}
-                  value={produksiData.menggunakan_stok === 0 ? '' : produksiData.menggunakan_stok || ''}
+                  value={
+                    produksiData.menggunakan_stok === 0
+                      ? ''
+                      : produksiData.menggunakan_stok || ''
+                  }
                   onChange={(e) =>
                     setProduksiData({
                       ...produksiData,
-                      menggunakan_stok: Math.min(Math.max(parseInt(e.target.value) || 0, 0), produksiData.jumlah_order ?? 0),
+                      menggunakan_stok: Math.min(
+                        Math.max(parseInt(e.target.value) || 0, 0),
+                        produksiData.jumlah_order ?? 0
+                      ),
                     })
                   }
-                  className="font-bold text-center text-lg h-12"
+                  className='font-bold text-center text-lg h-12'
                 />
               </div>
-              <div className="space-y-2 w-full sm:w-[200px] text-center">
-                <Label className="text-sm font-bold">Persen (%)</Label>
+              <div className='space-y-2 w-full sm:w-[200px] text-center'>
+                <Label className='text-sm font-bold'>Persen (%)</Label>
                 <Input
-                  type="text"
+                  type='text'
                   value={
                     typeof produksiData.persen === 'number'
                       ? produksiData.persen.toFixed(2)
                       : (Number(produksiData.persen) || 0).toFixed(2)
                   }
                   disabled
-                  className="bg-orange-50 font-bold text-orange-700 text-center text-lg h-12 disabled:opacity-100"
+                  className='bg-orange-50 font-bold text-orange-700 text-center text-lg h-12 disabled:opacity-100'
                 />
               </div>
             </div>
           </div>
-          
-          <div className="bg-white border-t px-4 sm:px-6 py-3 sm:py-4 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2 sm:gap-4 shrink-0 shadow-[0_-4px_6px_-1px_rgb(0,0,0,0.05)] z-10">
+
+          <div className='bg-white border-t px-4 sm:px-6 py-3 sm:py-4 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2 sm:gap-4 shrink-0 shadow-[0_-4px_6px_-1px_rgb(0,0,0,0.05)] z-10'>
             <Button
-              variant="outline"
-              className="border-blue-200 text-blue-700 hover:bg-blue-50 rounded-full px-5 text-sm"
+              variant='outline'
+              className='border-blue-200 text-blue-700 hover:bg-blue-50 rounded-full px-5 text-sm'
               onClick={() => {
                 if (produksiItem) {
                   setSupplierConfirmItem(produksiItem);
@@ -1317,25 +1763,25 @@ export default function ProduksiDetailPage() {
                 }
               }}
             >
-              <Truck className="w-4 h-4 mr-2" />
+              <Truck className='w-4 h-4 mr-2' />
               Tandai sebagai barang supplier
             </Button>
-            <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4">
+            <div className='flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4'>
               <AlertDialogCancel
                 onClick={() => setIsProduksiDialogOpen(false)}
-                className="px-6 rounded-full font-medium"
+                className='px-6 rounded-full font-medium'
               >
                 Cancel
               </AlertDialogCancel>
               <Button
-                className="bg-orange-600 hover:bg-orange-700 text-white rounded-full px-6"
+                className='bg-orange-600 hover:bg-orange-700 text-white rounded-full px-6'
                 onClick={handleProduksiUpdate}
                 disabled={updateProduksiMutation.isPending}
               >
                 {updateProduksiMutation.isPending ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  <Loader2 className='w-4 h-4 mr-2 animate-spin' />
                 ) : (
-                  <CheckCircle2 className="w-4 h-4 mr-2" />
+                  <CheckCircle2 className='w-4 h-4 mr-2' />
                 )}
                 Update Progress
               </Button>
@@ -1345,7 +1791,10 @@ export default function ProduksiDetailPage() {
       </AlertDialog>
 
       {/* Supplier Confirmation Dialog */}
-      <AlertDialog open={isSupplierConfirmOpen} onOpenChange={setIsSupplierConfirmOpen}>
+      <AlertDialog
+        open={isSupplierConfirmOpen}
+        onOpenChange={setIsSupplierConfirmOpen}
+      >
         <AlertDialogContent className='max-w-sm'>
           <AlertDialogHeader>
             <AlertDialogTitle className='flex items-center gap-2'>
@@ -1353,7 +1802,8 @@ export default function ProduksiDetailPage() {
               Konfirmasi Barang Supplier
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Apakah benar <strong>{supplierConfirmItem?.item}</strong> adalah barang supplier?
+              Apakah benar <strong>{supplierConfirmItem?.item}</strong> adalah
+              barang supplier?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -1362,10 +1812,15 @@ export default function ProduksiDetailPage() {
             </AlertDialogCancel>
             <Button
               className='bg-blue-600 hover:bg-blue-700 text-white'
-              onClick={() => supplierConfirmItem && markAsSupplierMutation.mutate(supplierConfirmItem.id)}
+              onClick={() =>
+                supplierConfirmItem &&
+                markAsSupplierMutation.mutate(supplierConfirmItem.id)
+              }
               disabled={markAsSupplierMutation.isPending}
             >
-              {markAsSupplierMutation.isPending && <Loader2 className='w-4 h-4 mr-2 animate-spin' />}
+              {markAsSupplierMutation.isPending && (
+                <Loader2 className='w-4 h-4 mr-2 animate-spin' />
+              )}
               Ya
             </Button>
           </AlertDialogFooter>
@@ -1373,7 +1828,10 @@ export default function ProduksiDetailPage() {
       </AlertDialog>
 
       {/* Barang Supplier Dialog */}
-      <AlertDialog open={isBarangSupplierDialogOpen} onOpenChange={setIsBarangSupplierDialogOpen}>
+      <AlertDialog
+        open={isBarangSupplierDialogOpen}
+        onOpenChange={setIsBarangSupplierDialogOpen}
+      >
         <AlertDialogContent className='mb-4 flex h-[90dvh] sm:h-[calc(70vh-2rem)] w-[95vw] sm:min-w-[calc(60vw-2rem)] sm:max-w-[calc(60vw-2rem)] flex-col justify-between gap-0 p-0'>
           {/* Header */}
           <div className='bg-white border-b px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between shrink-0 shadow-sm z-10'>
@@ -1383,7 +1841,8 @@ export default function ProduksiDetailPage() {
                 Barang Supplier
               </AlertDialogTitle>
               <AlertDialogDescription className='text-sm text-neutral-500 mt-1'>
-                Input progress untuk: <strong>{barangSupplierItem?.item}</strong>
+                Input progress untuk:{' '}
+                <strong>{barangSupplierItem?.item}</strong>
               </AlertDialogDescription>
             </div>
             <Button
@@ -1433,7 +1892,11 @@ export default function ProduksiDetailPage() {
                         type='button'
                         variant={bsSkippedFields[key] ? 'default' : 'outline'}
                         size='sm'
-                        className={`h-6 px-2 text-xs ${bsSkippedFields[key] ? 'bg-neutral-500 hover:bg-neutral-600' : 'text-neutral-500'}`}
+                        className={`h-6 px-2 text-xs ${
+                          bsSkippedFields[key]
+                            ? 'bg-neutral-500 hover:bg-neutral-600'
+                            : 'text-neutral-500'
+                        }`}
                         onClick={() => toggleBsSkipField(key)}
                       >
                         {bsSkippedFields[key] ? 'Batalkan' : 'Lewati Proses'}
@@ -1444,14 +1907,27 @@ export default function ProduksiDetailPage() {
                       min={0}
                       max={barangSupplierData.jumlah_order}
                       disabled={bsSkippedFields[key]}
-                      value={bsSkippedFields[key] ? '-' : barangSupplierData[key] === 0 ? '' : barangSupplierData[key] || ''}
+                      value={
+                        bsSkippedFields[key]
+                          ? '-'
+                          : barangSupplierData[key] === 0
+                          ? ''
+                          : barangSupplierData[key] || ''
+                      }
                       onChange={(e) =>
                         setBarangSupplierData((p) => ({
                           ...p,
-                          [key]: Math.min(Math.max(parseInt(e.target.value) || 0, 0), p.jumlah_order ?? 0),
+                          [key]: Math.min(
+                            Math.max(parseInt(e.target.value) || 0, 0),
+                            p.jumlah_order ?? 0
+                          ),
                         }))
                       }
-                      className={bsSkippedFields[key] ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100' : ''}
+                      className={
+                        bsSkippedFields[key]
+                          ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100'
+                          : ''
+                      }
                     />
                   </div>
                 ))}
@@ -1478,7 +1954,11 @@ export default function ProduksiDetailPage() {
 
           {/* Footer */}
           <div className='bg-white border-t px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-end gap-4 shrink-0 shadow-[0_-4px_6px_-1px_rgb(0,0,0,0.05)] z-10'>
-            <Button variant='outline' className='rounded-full px-6 font-medium' onClick={() => setIsBarangSupplierDialogOpen(false)}>
+            <Button
+              variant='outline'
+              className='rounded-full px-6 font-medium'
+              onClick={() => setIsBarangSupplierDialogOpen(false)}
+            >
               Cancel
             </Button>
             <Button
@@ -1506,25 +1986,38 @@ export default function ProduksiDetailPage() {
               Detail QC Check
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Hasil pengecekan kualitas untuk: <strong>{qcViewItem?.item}</strong>
+              Hasil pengecekan kualitas untuk:{' '}
+              <strong>{qcViewItem?.item}</strong>
             </AlertDialogDescription>
           </AlertDialogHeader>
-          
+
           <div className='py-4 space-y-5'>
             {/* Detail Cards/Numbers */}
             <div className='grid grid-cols-2 gap-4'>
               <div className='bg-neutral-50 p-3 rounded-lg border border-neutral-100'>
-                <span className='text-[10px] uppercase text-neutral-400 font-bold block'>Jumlah Checked</span>
-                <span className='text-lg font-bold text-neutral-800'>{qcViewItem?.qc_cek?.qty || 0} / {qcViewItem?.jumlah || 0} Unit</span>
+                <span className='text-[10px] uppercase text-neutral-400 font-bold block'>
+                  Jumlah Checked
+                </span>
+                <span className='text-lg font-bold text-neutral-800'>
+                  {qcViewItem?.qc_cek?.qty || 0} / {qcViewItem?.jumlah || 0}{' '}
+                  Unit
+                </span>
               </div>
               <div className='bg-neutral-50 p-3 rounded-lg border border-neutral-100'>
-                <span className='text-[10px] uppercase text-neutral-400 font-bold block'>Status</span>
-                <span className={`text-xs font-bold px-2 py-0.5 rounded-full inline-block mt-1 ${
-                  qcViewItem?.qc_cek?.status === 'Pass' ? 'bg-emerald-100 text-emerald-700' :
-                  qcViewItem?.qc_cek?.status === 'Repair' ? 'bg-amber-100 text-amber-700' :
-                  qcViewItem?.qc_cek?.status === 'Defect' ? 'bg-red-100 text-red-700' :
-                  'bg-neutral-100 text-neutral-700'
-                }`}>
+                <span className='text-[10px] uppercase text-neutral-400 font-bold block'>
+                  Status
+                </span>
+                <span
+                  className={`text-xs font-bold px-2 py-0.5 rounded-full inline-block mt-1 ${
+                    qcViewItem?.qc_cek?.status === 'Pass'
+                      ? 'bg-emerald-100 text-emerald-700'
+                      : qcViewItem?.qc_cek?.status === 'Repair'
+                      ? 'bg-amber-100 text-amber-700'
+                      : qcViewItem?.qc_cek?.status === 'Defect'
+                      ? 'bg-red-100 text-red-700'
+                      : 'bg-neutral-100 text-neutral-700'
+                  }`}
+                >
                   {qcViewItem?.qc_cek?.status || '-'}
                 </span>
               </div>
@@ -1532,16 +2025,28 @@ export default function ProduksiDetailPage() {
 
             <div className='grid grid-cols-3 gap-3 text-center'>
               <div className='bg-amber-50/50 p-3 rounded-lg border border-amber-100'>
-                <span className='text-[10px] uppercase text-amber-600 font-bold block'>Repair</span>
-                <span className='text-lg font-black text-amber-700'>{qcViewItem?.qc_cek?.repair || 0}</span>
+                <span className='text-[10px] uppercase text-amber-600 font-bold block'>
+                  Repair
+                </span>
+                <span className='text-lg font-black text-amber-700'>
+                  {qcViewItem?.qc_cek?.repair || 0}
+                </span>
               </div>
               <div className='bg-emerald-50/50 p-3 rounded-lg border border-emerald-100'>
-                <span className='text-[10px] uppercase text-emerald-600 font-bold block'>Pass</span>
-                <span className='text-lg font-black text-emerald-700'>{qcViewItem?.qc_cek?.pass || 0}</span>
+                <span className='text-[10px] uppercase text-emerald-600 font-bold block'>
+                  Pass
+                </span>
+                <span className='text-lg font-black text-emerald-700'>
+                  {qcViewItem?.qc_cek?.pass || 0}
+                </span>
               </div>
               <div className='bg-red-50/50 p-3 rounded-lg border border-red-100'>
-                <span className='text-[10px] uppercase text-red-600 font-bold block'>Afkir</span>
-                <span className='text-lg font-black text-red-700'>{qcViewItem?.qc_cek?.afkir || 0}</span>
+                <span className='text-[10px] uppercase text-red-600 font-bold block'>
+                  Afkir
+                </span>
+                <span className='text-lg font-black text-red-700'>
+                  {qcViewItem?.qc_cek?.afkir || 0}
+                </span>
               </div>
             </div>
 
@@ -1553,15 +2058,29 @@ export default function ProduksiDetailPage() {
               return (
                 <div className='bg-neutral-50 rounded-xl p-3 space-y-2 border border-neutral-100'>
                   <div className='flex items-center justify-between'>
-                    <span className='text-xs font-semibold text-neutral-500'>Pass Rate</span>
-                    <span className={`text-sm font-bold ${
-                      persen >= 100 ? 'text-emerald-600' : persen >= 80 ? 'text-amber-600' : 'text-red-600'
-                    }`}>{persen}%</span>
+                    <span className='text-xs font-semibold text-neutral-500'>
+                      Pass Rate
+                    </span>
+                    <span
+                      className={`text-sm font-bold ${
+                        persen >= 100
+                          ? 'text-emerald-600'
+                          : persen >= 80
+                          ? 'text-amber-600'
+                          : 'text-red-600'
+                      }`}
+                    >
+                      {persen}%
+                    </span>
                   </div>
                   <div className='h-2 bg-neutral-200 rounded-full overflow-hidden'>
                     <div
                       className={`h-full rounded-full transition-all duration-500 ${
-                        persen >= 100 ? 'bg-emerald-500' : persen >= 80 ? 'bg-amber-500' : 'bg-red-500'
+                        persen >= 100
+                          ? 'bg-emerald-500'
+                          : persen >= 80
+                          ? 'bg-amber-500'
+                          : 'bg-red-500'
                       }`}
                       style={{ width: `${persen}%` }}
                     />
@@ -1572,21 +2091,28 @@ export default function ProduksiDetailPage() {
 
             {qcViewItem?.qc_cek?.file && (
               <div className='space-y-1.5'>
-                <span className='text-[10px] uppercase text-neutral-400 font-bold block'>File QC</span>
-                <a 
-                  href={`${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '')}/storage/${qcViewItem.qc_cek.file}`} 
-                  target="_blank" 
-                  rel="noreferrer" 
-                  className="text-xs text-blue-600 hover:underline flex items-center gap-1"
+                <span className='text-[10px] uppercase text-neutral-400 font-bold block'>
+                  File QC
+                </span>
+                <a
+                  href={`${(
+                    process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+                  ).replace('/api', '')}/storage/${qcViewItem.qc_cek.file}`}
+                  target='_blank'
+                  rel='noreferrer'
+                  className='text-xs text-blue-600 hover:underline flex items-center gap-1'
                 >
-                  <Eye className="h-3 w-3" /> Lihat Berkas / Foto QC
+                  <Eye className='h-3 w-3' /> Lihat Berkas / Foto QC
                 </a>
               </div>
             )}
           </div>
-          
+
           <AlertDialogFooter>
-            <AlertDialogCancel className='bg-neutral-100 hover:bg-neutral-200 border-none' onClick={() => setIsQcViewOpen(false)}>
+            <AlertDialogCancel
+              className='bg-neutral-100 hover:bg-neutral-200 border-none'
+              onClick={() => setIsQcViewOpen(false)}
+            >
               Tutup
             </AlertDialogCancel>
           </AlertDialogFooter>
@@ -1625,7 +2151,12 @@ export default function ProduksiDetailPage() {
                         <div className='flex items-center gap-2'>
                           {record.file_setrim && (
                             <a
-                              href={`${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '')}/storage/${record.file_setrim}`}
+                              href={`${(
+                                process.env.NEXT_PUBLIC_API_URL ||
+                                'http://localhost:8000'
+                              ).replace('/api', '')}/storage/${
+                                record.file_setrim
+                              }`}
                               target='_blank'
                               rel='noreferrer'
                               className='text-[10px] text-blue-600 hover:underline flex items-center gap-0.5'
@@ -1727,6 +2258,281 @@ export default function ProduksiDetailPage() {
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* QR Code Print Dialog */}
+      <AlertDialog open={isQrDialogOpen} onOpenChange={setIsQrDialogOpen}>
+        <AlertDialogContent className='max-w-4xl max-h-[90vh] overflow-y-auto'>
+          <AlertDialogHeader>
+            <AlertDialogTitle className='flex items-center gap-2'>
+              <QrCode className='h-5 w-5 text-blue-600' />
+              QR Code — Project Items
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              QR code berdasarkan kode barang setiap item. Klik{' '}
+              <strong>Print</strong> untuk mencetak.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <div ref={qrPrintRef}>
+            <div
+              id='qr-print-area'
+              className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 py-4'
+            >
+              {items
+                ?.filter((item) => item.mdl_item?.kode_barang)
+                .map((item) => (
+                  <div
+                    key={item.id}
+                    className='flex flex-col items-center gap-2 border border-neutral-200 rounded-lg p-3 text-center bg-white'
+                  >
+                    <QRCodeSVG
+                      value={item.mdl_item!.kode_barang!}
+                      size={110}
+                      bgColor='#ffffff'
+                      fgColor='#1a1a1a'
+                      level='M'
+                    />
+                    <p className='text-[11px] font-mono font-bold text-neutral-800 leading-tight break-all'>
+                      {item.mdl_item!.kode_barang}
+                    </p>
+                    <p className='text-[10px] text-muted-foreground leading-tight line-clamp-2'>
+                      {item.item}
+                    </p>
+                    {item.lantai && (
+                      <p className='text-[10px] text-neutral-400'>
+                        Lt.{item.lantai} {item.ruang ? `— ${item.ruang}` : ''}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              {items?.every((item) => !item.mdl_item?.kode_barang) && (
+                <p className='col-span-full text-center text-sm text-muted-foreground py-8'>
+                  Tidak ada kode barang yang tersedia untuk di-generate QR.
+                </p>
+              )}
+            </div>
+          </div>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setIsQrDialogOpen(false)}>
+              Tutup
+            </AlertDialogCancel>
+            <Button
+              className='bg-blue-600 hover:bg-blue-700 text-white gap-2'
+              onClick={handlePrintQR}
+            >
+              <Printer className='h-4 w-4' />
+              Print QR Codes
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Per-Item QR Code Dialog - Label Format */}
+      <AlertDialog
+        open={isItemQrDialogOpen}
+        onOpenChange={setIsItemQrDialogOpen}
+      >
+        <AlertDialogContent className='max-w-3xl'>
+          <AlertDialogHeader>
+            <AlertDialogTitle className='flex items-center gap-2 text-base'>
+              <QrCode className='h-4 w-4 text-blue-600' />
+              Label Produksi — {qrItem?.item}
+            </AlertDialogTitle>
+            <AlertDialogDescription className='text-xs'>
+              Preview label cetak. Klik <strong>Print Label</strong> untuk
+              mencetak.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          {/* Label Preview */}
+          <div
+            id='qr-item-print-area'
+            className='border border-black font-sans text-neutral-900 bg-white text-[11px] mt-2'
+          >
+            {/* ── Header ── */}
+            <div className='flex border-b border-black'>
+              {/* Logo */}
+              <div className='flex items-center justify-center p-2 border-r border-black w-20 shrink-0'>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src='/Logo.png'
+                  alt='Logo DPM'
+                  className='w-14 h-14 object-contain'
+                />
+              </div>
+
+              {/* Company Info */}
+              <div className='flex-1 text-center py-2 px-4 border-r border-black'>
+                <p className='font-extrabold text-blue-700 text-[13px] tracking-wide uppercase leading-tight'>
+                  PT DHARMA PUTERA SEJAHTERA ABADI
+                </p>
+                <p className='italic text-[10px] text-neutral-600 mt-0.5'>
+                  Interior &amp; Furniture Manufaktur
+                </p>
+                <p className='text-[10px] text-neutral-600 mt-0.5'>
+                  Jl. Matraman No. 88, Ringinsari, Maguwoharjo, Depok, Sleman,
+                  Yogyakarta
+                </p>
+                <p className='text-[10px] text-neutral-600'>
+                  Telepon : (0274) 2800089&nbsp;&nbsp;&nbsp;Fax : (0274) 433
+                  2248
+                </p>
+                <p className='text-[10px] text-neutral-600'>
+                  E-mail : piutang.dpsa@gmail.com&nbsp;&nbsp;Website :
+                  www.dpm-jogja.com
+                </p>
+              </div>
+
+              {/* Doc Code Box */}
+              <div className='w-24 shrink-0 flex flex-col text-[10px] text-center'>
+                <div className='border-b border-black py-0.5 px-1 font-bold'>
+                  PROD
+                </div>
+                <div className='border-b border-black py-0.5 px-1 font-bold text-[13px]'>
+                  003
+                </div>
+                <div className='flex flex-1'>
+                  <div className='flex-1 border-r border-black py-0.5 px-1'>
+                    Rev:00
+                  </div>
+                  <div className='flex-1 py-0.5 px-1 leading-tight'>
+                    Terbit:
+                    <br />
+                    08/25
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* ── Info Fields + QR ── */}
+            <div className='flex'>
+              {/* Left: info rows */}
+              <div className='flex-1 border-r border-black'>
+                {[
+                  {
+                    label: 'NAMA ITEM',
+                    value: qrItem?.item || '-',
+                  },
+                  {
+                    label: 'UKURAN',
+                    value: `${qrItem?.panjang || '-'} x ${
+                      qrItem?.lebar || '-'
+                    } x ${qrItem?.tinggi || '-'}`,
+                  },
+                  {
+                    label: 'JUMLAH',
+                    value: qrItem?.jumlah
+                      ? `${qrItem.jumlah} ${qrItem.satuan || ''}`.trim()
+                      : '-',
+                  },
+                  {
+                    label: 'RUANG',
+                    value: qrItem?.ruang || '-',
+                  },
+                  {
+                    label: 'RUMAH SAKIT',
+                    value: project?.client?.name || '-',
+                  },
+                  {
+                    label: 'NO. SPK/TAHUN',
+                    value:
+                      [
+                        project?.spk?.nomor_spk,
+                        project?.spk?.tanggal_spk
+                          ? new Date(project.spk.tanggal_spk).getFullYear()
+                          : project?.created_at
+                          ? new Date(project.created_at).getFullYear()
+                          : null,
+                      ]
+                        .filter(Boolean)
+                        .join(' / ') || '-',
+                  },
+                ].map((row) => (
+                  <div
+                    key={row.label}
+                    className='flex border-b border-black last:border-b-0'
+                  >
+                    <div className='w-36 font-bold py-2 px-2 border-r border-black shrink-0'>
+                      {row.label}
+                    </div>
+                    <div className='w-5 text-center py-2 border-r border-black shrink-0'>
+                      :
+                    </div>
+                    <div className='flex-1 py-2 px-2'>{row.value}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Right: QR code */}
+              <div className='w-44 shrink-0 flex flex-col items-center justify-center gap-2 p-3'>
+                {qrItem?.mdl_item?.kode_barang ? (
+                  <>
+                    <QRCodeSVG
+                      value={qrItem.mdl_item.kode_barang}
+                      size={128}
+                      bgColor='#ffffff'
+                      fgColor='#000000'
+                      level='M'
+                    />
+                    <p className='font-mono font-bold text-center break-all leading-tight text-[10px]'>
+                      {qrItem.mdl_item.kode_barang}
+                    </p>
+                  </>
+                ) : (
+                  <p className='text-neutral-400 italic text-center'>
+                    Kode tidak tersedia
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <AlertDialogFooter className='mt-4 flex-col sm:flex-row items-start sm:items-center gap-2'>
+            {qrItem?.jumlah && qrItem.jumlah > 1 && (
+              <p className='text-xs text-muted-foreground flex-1'>
+                Akan mencetak <strong>{qrItem.jumlah} label</strong> (1 per
+                unit)
+              </p>
+            )}
+            <div className='flex gap-2 ml-auto'>
+              <AlertDialogCancel onClick={() => setIsItemQrDialogOpen(false)}>
+                Tutup
+              </AlertDialogCancel>
+              <Button
+                className='bg-blue-600 hover:bg-blue-700 text-white gap-2'
+                disabled={!qrItem?.mdl_item?.kode_barang}
+                onClick={handlePrintItemQR}
+              >
+                <Printer className='h-4 w-4' />
+                Print {qrItem?.jumlah ?? ''} Label
+              </Button>
+            </div>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Hidden QR capture — rendered off-screen for SVG extraction before printing */}
+      <div
+        ref={hiddenQrRef}
+        style={{
+          position: 'fixed',
+          left: '-9999px',
+          visibility: 'hidden',
+          pointerEvents: 'none',
+        }}
+        aria-hidden='true'
+      >
+        {qrItem?.mdl_item?.kode_barang && (
+          <QRCodeSVG
+            value={qrItem.mdl_item.kode_barang}
+            size={128}
+            bgColor='#ffffff'
+            fgColor='#000000'
+            level='M'
+          />
+        )}
+      </div>
+
       {/* Packing Detail Dialog (View Only) */}
       <AlertDialog open={isPackingViewOpen} onOpenChange={setIsPackingViewOpen}>
         <AlertDialogContent className='max-w-md'>
@@ -1736,10 +2542,11 @@ export default function ProduksiDetailPage() {
               Detail Packing
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Riwayat packing untuk item: <strong>{packingViewItem?.item}</strong>
+              Riwayat packing untuk item:{' '}
+              <strong>{packingViewItem?.item}</strong>
             </AlertDialogDescription>
           </AlertDialogHeader>
-          
+
           <div className='py-4 space-y-4'>
             {packingViewItem?.barang_jadi_terpacking &&
             packingViewItem.barang_jadi_terpacking.length > 0 ? (
@@ -1779,9 +2586,12 @@ export default function ProduksiDetailPage() {
               </p>
             )}
           </div>
-          
+
           <AlertDialogFooter>
-            <AlertDialogCancel className='bg-neutral-100 hover:bg-neutral-200 border-none' onClick={() => setIsPackingViewOpen(false)}>
+            <AlertDialogCancel
+              className='bg-neutral-100 hover:bg-neutral-200 border-none'
+              onClick={() => setIsPackingViewOpen(false)}
+            >
               Tutup
             </AlertDialogCancel>
           </AlertDialogFooter>
