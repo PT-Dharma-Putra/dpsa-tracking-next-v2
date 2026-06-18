@@ -2422,7 +2422,7 @@ export default function ProduksiDetailPage() {
                   {
                     label: 'JUMLAH',
                     value: qrItem?.jumlah
-                      ? `1/${qrItem.jumlah} ${qrItem.satuan || ''}`.trim()
+                      ? `${qrItem.jumlah} ${qrItem.satuan || ''}`.trim()
                       : '-',
                   },
                   {
