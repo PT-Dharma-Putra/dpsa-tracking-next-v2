@@ -181,6 +181,7 @@ export function ProjectsV2Table({
   const [dashboardFilter, setDashboardFilter] = React.useState<
     | 'spk'
     | 'sph'
+    | 'sph_only'
     | 'selesai'
     | 'on_progress'
     | 'belum_produksi'
@@ -195,6 +196,7 @@ export function ProjectsV2Table({
     filter:
       | 'spk'
       | 'sph'
+      | 'sph_only'
       | 'selesai'
       | 'on_progress'
       | 'belum_produksi'
@@ -627,48 +629,48 @@ export function ProjectsV2Table({
       {showPerencanaan && stats && (
         <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4'>
           {/* Total Project */}
-          <div className='flex items-center gap-3 p-4 rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md'>
-            <div className='h-10 w-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 shrink-0'>
-              <Briefcase className='h-5 w-5' />
-            </div>
-            <div>
+          <div className='flex flex-col gap-2 p-4 rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md'>
+            <div className='flex items-center gap-2 border-b border-slate-100 pb-2'>
+              <div className='h-6 w-6 rounded bg-slate-100 flex items-center justify-center text-slate-600 shrink-0'>
+                <Briefcase className='h-3.5 w-3.5' />
+              </div>
               <p className='text-[10px] font-bold text-slate-500 uppercase tracking-wider'>
                 Total Projek
               </p>
-              <p className='text-xl font-bold text-slate-800'>
+              <span className='ml-auto text-lg font-bold text-slate-800'>
                 {stats.total_project}
-              </p>
-            </div>
-          </div>
-
-          {/* Total SPK */}
-          <div
-            onClick={() => handleFilterClick('spk')}
-            className={cn(
-              'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-indigo-400 select-none',
-              spkFilterActive
-                ? 'border-indigo-500 bg-indigo-50/50 ring-2 ring-indigo-500/20'
-                : 'border-indigo-200 bg-white'
-            )}
-          >
-            <div className='flex items-center gap-3'>
-              <div className='h-10 w-10 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600 shrink-0'>
-                <FileText className='h-5 w-5' />
-              </div>
-              <div>
-                <p className='text-[10px] font-bold text-indigo-600 uppercase tracking-wider'>
-                  Total SPK
-                </p>
-                <p className='text-xl font-bold text-slate-800'>
-                  {stats.total_spk}
-                </p>
-              </div>
-            </div>
-            {spkFilterActive && (
-              <span className='text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
-                Ada SPK
               </span>
-            )}
+            </div>
+
+            <div className='flex flex-row gap-1.5 mt-auto'>
+              {/* Terbit SPH */}
+              <div
+                onClick={() => handleDashboardFilterClick('sph_only')}
+                className={cn(
+                  'flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  dashboardFilter === 'sph_only'
+                    ? 'border-amber-500 bg-amber-50 text-amber-700 font-semibold'
+                    : 'border-amber-100 bg-amber-50/50 hover:border-amber-300 text-amber-700'
+                )}
+              >
+                <span className='truncate mr-1 font-medium'>Terbit SPH</span>
+                <span className='font-bold'>{stats.sph_only ?? 0}</span>
+              </div>
+
+              {/* Terbit SPK */}
+              <div
+                onClick={() => handleDashboardFilterClick('spk')}
+                className={cn(
+                  'flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  dashboardFilter === 'spk'
+                    ? 'border-indigo-500 bg-indigo-50 text-indigo-700 font-semibold'
+                    : 'border-indigo-100 bg-indigo-50/50 hover:border-indigo-300 text-indigo-700'
+                )}
+              >
+                <span className='truncate mr-1 font-medium'>Terbit SPK</span>
+                <span className='font-bold'>{stats.total_spk}</span>
+              </div>
+            </div>
           </div>
 
           {/* PO Divisi */}
