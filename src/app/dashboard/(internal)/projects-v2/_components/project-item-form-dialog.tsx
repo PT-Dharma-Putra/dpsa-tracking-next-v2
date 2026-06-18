@@ -83,6 +83,80 @@ interface ProjectItemFormDialogProps {
     item?: ProjectItemV2 | null
 }
 
+function RuangComboboxField({ value, onChange, lokasiOptions }: {
+    value: string
+    onChange: (value: string) => void
+    lokasiOptions: Array<{ id: number; nama: string }>
+}) {
+    const [open, setOpen] = React.useState(false)
+    const [query, setQuery] = React.useState(value || '')
+
+    React.useEffect(() => {
+        setQuery(value || '')
+    }, [value])
+
+    const filtered = React.useMemo(
+        () => lokasiOptions.filter(l => l.nama.toLowerCase().includes(query.toLowerCase())),
+        [lokasiOptions, query]
+    )
+
+    return (
+        <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+                <Button
+                    variant="outline"
+                    role="combobox"
+                    className={cn(
+                        "h-8 w-full text-xs justify-between font-normal px-2 bg-white",
+                        !value && "text-muted-foreground"
+                    )}
+                >
+                    <span className="truncate">{value || "Ruang..."}</span>
+                    <ChevronsUpDown className="ml-1 h-3 w-3 shrink-0 opacity-50" />
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[220px] p-0" align="start">
+                <Command shouldFilter={false}>
+                    <CommandInput
+                        placeholder="Ketik atau cari ruang..."
+                        className="h-8 text-xs"
+                        value={query}
+                        onValueChange={(val) => {
+                            setQuery(val)
+                            onChange(val)
+                        }}
+                    />
+                    <CommandList>
+                        {filtered.length === 0 ? (
+                            <CommandEmpty className="py-2 text-center text-xs text-muted-foreground">
+                                {query ? `Tekan pilihan atau ketik manual` : "Tidak ditemukan"}
+                            </CommandEmpty>
+                        ) : (
+                            <CommandGroup className="max-h-[200px] overflow-y-auto">
+                                {filtered.map((lokasi) => (
+                                    <CommandItem
+                                        key={lokasi.id}
+                                        value={lokasi.nama}
+                                        onSelect={() => {
+                                            setQuery(lokasi.nama)
+                                            onChange(lokasi.nama)
+                                            setOpen(false)
+                                        }}
+                                        className="text-xs"
+                                    >
+                                        <Check className={cn("mr-2 h-3 w-3", value === lokasi.nama ? "opacity-100" : "opacity-0")} />
+                                        {lokasi.nama}
+                                    </CommandItem>
+                                ))}
+                            </CommandGroup>
+                        )}
+                    </CommandList>
+                </Command>
+            </PopoverContent>
+        </Popover>
+    )
+}
+
 export function ProjectItemFormDialog({ open, onOpenChange, projectId, item }: ProjectItemFormDialogProps) {
     const queryClient = useQueryClient()
     const isEdit = !!item
@@ -388,46 +462,13 @@ export function ProjectItemFormDialog({ open, onOpenChange, projectId, item }: P
                                                 name={`items.${index}.ruang`}
                                                 render={({ field }) => (
                                                     <FormItem>
-                                                        <Popover>
-                                                            <PopoverTrigger asChild>
-                                                                <FormControl>
-                                                                    <Button
-                                                                        variant="outline"
-                                                                        role="combobox"
-                                                                        className={cn(
-                                                                            "h-8 w-full text-xs justify-between font-normal px-2 bg-white",
-                                                                            !field.value && "text-muted-foreground"
-                                                                        )}
-                                                                    >
-                                                                        <span className="truncate">{field.value || "Ruang..."}</span>
-                                                                        <ChevronsUpDown className="ml-1 h-3 w-3 shrink-0 opacity-50" />
-                                                                    </Button>
-                                                                </FormControl>
-                                                            </PopoverTrigger>
-                                                            <PopoverContent className="w-[220px] p-0" align="start">
-                                                                <Command>
-                                                                    <CommandInput placeholder="Cari ruang..." className="h-8 text-xs" />
-                                                                    <CommandList>
-                                                                        <CommandEmpty className="py-2 text-center text-xs text-muted-foreground">
-                                                                            Tidak ditemukan
-                                                                        </CommandEmpty>
-                                                                        <CommandGroup className="max-h-[200px] overflow-y-auto">
-                                                                            {lokasiOptions.map((lokasi) => (
-                                                                                <CommandItem
-                                                                                    key={lokasi.id}
-                                                                                    value={lokasi.nama}
-                                                                                    onSelect={() => field.onChange(lokasi.nama)}
-                                                                                    className="text-xs"
-                                                                                >
-                                                                                    <Check className={cn("mr-2 h-3 w-3", field.value === lokasi.nama ? "opacity-100" : "opacity-0")} />
-                                                                                    {lokasi.nama}
-                                                                                </CommandItem>
-                                                                            ))}
-                                                                        </CommandGroup>
-                                                                    </CommandList>
-                                                                </Command>
-                                                            </PopoverContent>
-                                                        </Popover>
+                                                        <FormControl>
+                                                            <RuangComboboxField
+                                                                value={field.value}
+                                                                onChange={field.onChange}
+                                                                lokasiOptions={lokasiOptions}
+                                                            />
+                                                        </FormControl>
                                                         <FormMessage />
                                                     </FormItem>
                                                 )}
