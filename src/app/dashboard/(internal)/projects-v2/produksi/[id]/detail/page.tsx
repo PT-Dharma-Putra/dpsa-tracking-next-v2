@@ -988,8 +988,8 @@ export default function ProduksiDetailPage() {
           </Button>
         </div>
 
-        <div className='rounded-xl border border-neutral-200 bg-white overflow-hidden shadow-sm'>
-          <Table>
+        <div className='rounded-xl border border-neutral-200 bg-white overflow-x-auto shadow-sm'>
+          <Table className='min-w-max'>
             <TableHeader className='bg-neutral-50/80'>
               <TableRow>
                 <TableHead className='w-[50px]'>#</TableHead>
@@ -2332,7 +2332,7 @@ export default function ProduksiDetailPage() {
         open={isItemQrDialogOpen}
         onOpenChange={setIsItemQrDialogOpen}
       >
-        <AlertDialogContent className='max-w-3xl'>
+        <AlertDialogContent className='max-w-4xl'>
           <AlertDialogHeader>
             <AlertDialogTitle className='flex items-center gap-2 text-base'>
               <QrCode className='h-4 w-4 text-blue-600' />
@@ -2422,7 +2422,7 @@ export default function ProduksiDetailPage() {
                   {
                     label: 'JUMLAH',
                     value: qrItem?.jumlah
-                      ? `${qrItem.jumlah} ${qrItem.satuan || ''}`.trim()
+                      ? `1/${qrItem.jumlah} ${qrItem.satuan || ''}`.trim()
                       : '-',
                   },
                   {
@@ -2435,17 +2435,7 @@ export default function ProduksiDetailPage() {
                   },
                   {
                     label: 'NO. SPK/TAHUN',
-                    value:
-                      [
-                        project?.spk?.nomor_spk,
-                        project?.spk?.tanggal_spk
-                          ? new Date(project.spk.tanggal_spk).getFullYear()
-                          : project?.created_at
-                          ? new Date(project.created_at).getFullYear()
-                          : null,
-                      ]
-                        .filter(Boolean)
-                        .join(' / ') || '-',
+                    value: project?.spk?.nomor_spk || '-',
                   },
                 ].map((row) => (
                   <div
@@ -2464,12 +2454,12 @@ export default function ProduksiDetailPage() {
               </div>
 
               {/* Right: QR code */}
-              <div className='w-44 shrink-0 flex flex-col items-center justify-center gap-2 p-3'>
+              {/* <div className='w-48 shrink-0 flex flex-col items-center justify-center gap-2 p-4'>
                 {qrItem?.mdl_item?.kode_barang ? (
                   <>
                     <QRCodeSVG
                       value={qrItem.mdl_item.kode_barang}
-                      size={128}
+                      size={140}
                       bgColor='#ffffff'
                       fgColor='#000000'
                       level='M'
@@ -2483,7 +2473,7 @@ export default function ProduksiDetailPage() {
                     Kode tidak tersedia
                   </p>
                 )}
-              </div>
+              </div> */}
             </div>
           </div>
 
