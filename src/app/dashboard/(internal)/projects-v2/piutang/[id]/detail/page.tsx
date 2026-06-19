@@ -985,9 +985,10 @@ export default function PiutangDetailPage() {
                   type='number'
                   min={0}
                   max={100}
-                  value={form.persentase || 0}
+                  value={form.persentase || ''}
+                  onFocus={(e) => e.target.select()}
                   onChange={(e) => {
-                    const pct = parseFloat(e.target.value) || 0;
+                    const pct = Math.min(parseFloat(e.target.value) || 0, 100);
                     const spkNominal = project?.spk?.nominal
                       ? parseDatabaseNominal(project.spk.nominal)
                       : 0;
@@ -1007,7 +1008,7 @@ export default function PiutangDetailPage() {
 
               {/* Nominal */}
               <div className='space-y-2'>
-                <Label>Nominal</Label>
+                <Label>Nominal Tagihan</Label>
                 <Input
                   type='text'
                   placeholder='Rp 0'
@@ -1073,12 +1074,21 @@ export default function PiutangDetailPage() {
                 <Input
                   type='date'
                   value={form.tanggal_invoice || ''}
-                  onChange={(e) =>
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    const due = val
+                      ? new Date(
+                          new Date(val).getTime() + 30 * 24 * 60 * 60 * 1000
+                        )
+                          .toISOString()
+                          .slice(0, 10)
+                      : '';
                     setForm((prev) => ({
                       ...prev,
-                      tanggal_invoice: e.target.value,
-                    }))
-                  }
+                      tanggal_invoice: val,
+                      jatuh_tempo: due,
+                    }));
+                  }}
                 />
               </div>
 

@@ -448,7 +448,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         allowedRoles: ['Super-Admin', 'Keuangan', 'Piutang', 'Purchasing'],
         items: [
           {
-            title: 'Project V2 | Keuangan',
+            title: 'Project V2 | Piutang',
             url: '/dashboard/projects-v2/piutang',
           },
           {
