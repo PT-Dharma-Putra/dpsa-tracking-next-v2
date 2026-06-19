@@ -822,13 +822,20 @@ export const projectV2Service = {
   },
 
   markAsSupplier: async (itemId: number) => {
-    const { data } = await apiClient.post(`/projects-v2-items/${itemId}/mark-supplier`);
+    const { data } = await apiClient.post(
+      `/projects-v2-items/${itemId}/mark-supplier`
+    );
     return data;
   },
 
   updateBarangSupplier: async (
     itemId: number,
-    payload: Partial<Omit<BarangSupplier, 'id' | 'project_item_id' | 'created_at' | 'updated_at'>>
+    payload: Partial<
+      Omit<
+        BarangSupplier,
+        'id' | 'project_item_id' | 'created_at' | 'updated_at'
+      >
+    >
   ) => {
     const { data } = await apiClient.post(
       `/projects-v2-items/${itemId}/barang-supplier`,
@@ -979,6 +986,7 @@ export interface MDLItem {
 }
 
 export interface ProjectItemV2 {
+  sub_kategori: string | undefined;
   id: number;
   project_id: number;
   status?: string | null;

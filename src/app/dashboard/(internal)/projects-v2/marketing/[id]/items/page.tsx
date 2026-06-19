@@ -79,6 +79,7 @@ import {
 } from '@/features/projects/services/project-v2-service';
 import { ProjectItemFormDialog } from '../../../_components/project-item-form-dialog';
 import { CatalogModal } from '../../../_components/catalog-modal';
+import { ProjectItemImportDialog } from '../../../_components/project-item-import-dialog';
 import { Badge } from '@/components/ui/badge';
 
 const formatRupiah = (value: string | number) => {
@@ -124,6 +125,7 @@ export default function ProjectItemsPage() {
 
   const [isFormOpen, setIsFormOpen] = React.useState(false);
   const [isCatalogOpen, setIsCatalogOpen] = React.useState(false);
+  const [isImportOpen, setIsImportOpen] = React.useState(false);
   const [selectedItem, setSelectedItem] = React.useState<ProjectItemV2 | null>(
     null
   );
@@ -1701,13 +1703,25 @@ export default function ProjectItemsPage() {
               </p>
             </div>
           </div>
-          <Button
-            onClick={handleAddItem}
-            className='bg-blue-600 hover:bg-blue-700 shadow-sm transition-all hover:scale-105 active:scale-95'
-          >
-            <Plus className='mr-2 h-4 w-4' />
-            Add Item
-          </Button>
+
+          <div className='flex items-center gap-2'>
+            <Button
+              onClick={() => setIsImportOpen(true)}
+              variant='outline'
+              className='border-blue-200 text-blue-700 hover:bg-blue-50 hover:text-blue-800 shadow-sm'
+            >
+              <Upload className='mr-2 h-4 w-4' />
+              Import Excel
+            </Button>
+
+            <Button
+              onClick={handleAddItem}
+              className='bg-blue-600 hover:bg-blue-700 shadow-sm transition-all hover:scale-105 active:scale-95'
+            >
+              <Plus className='mr-2 h-4 w-4' />
+              Add Item
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className='p-0'>
           <div className='overflow-x-auto'>
@@ -1720,11 +1734,14 @@ export default function ProjectItemsPage() {
                   <TableHead className='whitespace-nowrap'>
                     Kode Barang
                   </TableHead>
+                  <TableHead className='whitespace-nowrap'>Lantai</TableHead>
+                  <TableHead className='whitespace-nowrap'>
+                    Area/Sub Kategori
+                  </TableHead>
+                  <TableHead className='whitespace-nowrap'>Ruang</TableHead>
                   <TableHead className='whitespace-nowrap min-w-[200px]'>
                     Item
                   </TableHead>
-                  <TableHead className='whitespace-nowrap'>Lantai</TableHead>
-                  <TableHead className='whitespace-nowrap'>Ruang</TableHead>
                   <TableHead className='whitespace-nowrap'>
                     Size (P x L x T) <br /> (Meter)
                   </TableHead>
@@ -1781,20 +1798,26 @@ export default function ProjectItemsPage() {
                       <TableCell className='text-xs text-neutral-500 whitespace-nowrap'>
                         {item.mdl_item?.kode_barang || '-'}
                       </TableCell>
-                      <TableCell
-                        className='font-semibold text-neutral-800 text-sm max-w-[200px] truncate'
-                        title={item.item}
-                      >
-                        {item.item}
-                      </TableCell>
                       <TableCell className='text-xs'>
                         {item.lantai || '-'}
+                      </TableCell>
+                      <TableCell
+                        className='font-semibold text-neutral-800 text-sm max-w-[200px] truncate'
+                        title={item.sub_kategori}
+                      >
+                        {item.sub_kategori}
                       </TableCell>
                       <TableCell
                         className='text-xs max-w-[120px] truncate'
                         title={item.ruang}
                       >
                         {item.ruang || '-'}
+                      </TableCell>
+                      <TableCell
+                        className='font-semibold text-neutral-800 text-sm max-w-[200px] truncate'
+                        title={item.item}
+                      >
+                        {item.item}
                       </TableCell>
                       <TableCell className='text-xs text-muted-foreground whitespace-nowrap bg-neutral-50/50 group-hover:bg-transparent'>
                         {item.panjang || '-'} x {item.lebar || '-'} x{' '}
@@ -2651,6 +2674,12 @@ export default function ProjectItemsPage() {
         item={selectedItem}
       />
 
+      <ProjectItemImportDialog
+        open={isImportOpen}
+        onOpenChange={setIsImportOpen}
+        projectId={projectId}
+      />
+
       <AlertDialog
         open={isCancelDialogOpen}
         onOpenChange={setIsCancelDialogOpen}
@@ -2659,7 +2688,9 @@ export default function ProjectItemsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Batalkan item ini?</AlertDialogTitle>
             <AlertDialogDescription>
-              Item <strong>{itemToCancel?.item}</strong> akan ditandai sebagai <strong>Cancelled</strong>. Anda dapat mengubah statusnya kembali melalui edit jika diperlukan.
+              Item <strong>{itemToCancel?.item}</strong> akan ditandai sebagai{' '}
+              <strong>Cancelled</strong>. Anda dapat mengubah statusnya kembali
+              melalui edit jika diperlukan.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
