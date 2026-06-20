@@ -52,6 +52,8 @@ export interface ProjectV2 {
     id: number;
     nomor_sph?: string;
     nominal?: string;
+    nominal_dpp?: string;
+    ppn?: string;
     file: string | null;
     status: string;
     note_revision: string | null;
@@ -61,6 +63,8 @@ export interface ProjectV2 {
     id: number;
     nomor_sph?: string;
     nominal?: string;
+    nominal_dpp?: string;
+    ppn?: string;
     file: string | null;
     status: string;
     note_revision: string | null;
@@ -70,6 +74,8 @@ export interface ProjectV2 {
     id: number;
     nomor_spk?: string;
     nominal?: string | number | null;
+    nominal_dpp?: string | number | null;
+    ppn?: string | number | null;
     deadline?: string | null;
     file: string | null;
     spk_signed_file: string | null;
@@ -403,12 +409,16 @@ export const projectV2Service = {
     projectId: number | string,
     file: File,
     nomor_sph: string,
-    nominal?: number | string
+    nominal_dpp?: number | string,
+    ppn?: number | string,
+    grand_total?: number | string
   ) => {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('nomor_sph', nomor_sph);
-    if (nominal) formData.append('nominal', nominal.toString());
+    if (nominal_dpp) formData.append('nominal_dpp', nominal_dpp.toString());
+    if (ppn) formData.append('ppn', ppn.toString());
+    if (grand_total) formData.append('grand_total', grand_total.toString());
     const { data } = await apiClient.post(
       `/projects-v2/${projectId}/upload-sph`,
       formData
@@ -457,12 +467,20 @@ export const projectV2Service = {
 
   updateSphMeta: async (
     projectId: number,
-    payload: { nomor_sph: string; nominal?: string; file?: File | null }
+    payload: {
+      nomor_sph: string;
+      nominal_dpp?: string;
+      ppn?: string;
+      grand_total?: string;
+      file?: File | null;
+    }
   ) => {
     const formData = new FormData();
     formData.append('nomor_sph', payload.nomor_sph);
     if (payload.file) formData.append('file', payload.file);
-    if (payload.nominal) formData.append('nominal', payload.nominal);
+    if (payload.nominal_dpp) formData.append('nominal_dpp', payload.nominal_dpp);
+    if (payload.ppn) formData.append('ppn', payload.ppn);
+    if (payload.grand_total) formData.append('grand_total', payload.grand_total);
     const { data } = await apiClient.post(
       `/projects-v2/${projectId}/update-sph`,
       formData
@@ -506,8 +524,10 @@ export const projectV2Service = {
     deadline?: string,
     prioritas?: string,
     tanggal_masuk?: string,
-    nominal?: string,
-    tanggal_spk?: string
+    nominal_dpp?: string,
+    tanggal_spk?: string,
+    ppn?: string,
+    grand_total?: string
   ) => {
     const formData = new FormData();
     formData.append('file', file);
@@ -515,7 +535,9 @@ export const projectV2Service = {
     if (deadline) formData.append('deadline', deadline);
     if (prioritas) formData.append('prioritas', prioritas);
     if (tanggal_masuk) formData.append('tanggal_masuk', tanggal_masuk);
-    if (nominal) formData.append('nominal', nominal);
+    if (nominal_dpp) formData.append('nominal_dpp', nominal_dpp);
+    if (ppn) formData.append('ppn', ppn);
+    if (grand_total) formData.append('grand_total', grand_total);
     if (tanggal_spk) formData.append('tanggal_spk', tanggal_spk);
     const { data } = await apiClient.post(
       `/projects-v2/${projectId}/upload-spk`,
