@@ -198,6 +198,7 @@ interface GetProjectsV2Params {
   page?: number;
   search?: string;
   client_id?: string;
+  marketing_id?: string;
   month?: string;
   year?: string;
   sort_by?: string;
@@ -226,6 +227,13 @@ export const projectV2Service = {
     const { data } = await apiClient.get<ProjectV2Stats>(
       '/projects-v2/summary-stats',
       { params }
+    );
+    return data;
+  },
+
+  getMarketings: async () => {
+    const { data } = await apiClient.get<Array<{ id: number; name: string }>>(
+      '/projects-v2/marketings'
     );
     return data;
   },
