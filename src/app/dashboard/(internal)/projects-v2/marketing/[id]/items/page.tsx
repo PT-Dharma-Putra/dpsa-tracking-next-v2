@@ -251,23 +251,31 @@ export default function ProjectItemsPage() {
   const [sphFile, setSphFile] = React.useState<File | null>(null);
   const [sphNumber, setSphNumber] = React.useState<string>('');
   const [sphNominal, setSphNominal] = React.useState<string>('');
+  const [sphPpn, setSphPpn] = React.useState<string>('');
+  const [sphGrandTotal, setSphGrandTotal] = React.useState<string>('');
 
   const uploadSphMutation = useMutation({
     mutationFn: ({
       file,
       number,
-      nominal,
+      nominal_dpp,
+      ppn,
+      grand_total,
     }: {
       file: File;
       number: string;
-      nominal?: string;
-    }) => projectV2Service.uploadSPH(projectId, file, number, nominal),
+      nominal_dpp?: string;
+      ppn?: string;
+      grand_total?: string;
+    }) => projectV2Service.uploadSPH(projectId, file, number, nominal_dpp, ppn, grand_total),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects-v2', projectId] });
       toast.success('SPH uploaded successfully');
       setSphFile(null);
       setSphNumber('');
       setSphNominal('');
+      setSphPpn('');
+      setSphGrandTotal('');
     },
     onError: () => {
       toast.error('Failed to upload SPH');
@@ -293,7 +301,9 @@ export default function ProjectItemsPage() {
     uploadSphMutation.mutate({
       file: sphFile,
       number: sphNumber,
-      nominal: sphNominal,
+      nominal_dpp: sphNominal,
+      ppn: sphPpn,
+      grand_total: sphGrandTotal,
     });
   };
 
@@ -339,6 +349,8 @@ export default function ProjectItemsPage() {
   );
   const [spkTanggalMasuk, setSpkTanggalMasuk] = React.useState<string>('');
   const [spkNominal, setSpkNominal] = React.useState<string>('');
+  const [spkPpn, setSpkPpn] = React.useState<string>('');
+  const [spkGrandTotal, setSpkGrandTotal] = React.useState<string>('');
 
   const uploadSpkMutation = useMutation({
     mutationFn: ({
@@ -347,16 +359,20 @@ export default function ProjectItemsPage() {
       deadline,
       prioritas,
       tanggal_masuk,
-      nominal,
+      nominal_dpp,
       tanggal_spk,
+      ppn,
+      grand_total,
     }: {
       file: File;
       number: string;
       deadline?: string;
       prioritas?: string;
       tanggal_masuk?: string;
-      nominal?: string;
+      nominal_dpp?: string;
       tanggal_spk?: string;
+      ppn?: string;
+      grand_total?: string;
     }) =>
       projectV2Service.uploadSPK(
         projectId,
@@ -365,19 +381,23 @@ export default function ProjectItemsPage() {
         deadline,
         prioritas,
         tanggal_masuk,
-        nominal,
-        tanggal_spk
+        nominal_dpp,
+        tanggal_spk,
+        ppn,
+        grand_total
       ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects-v2', projectId] });
       toast.success('SPK uploaded successfully');
-      setSpkFile(null); // Fixed typo from earlier (was setSpdFile)
+      setSpkFile(null);
       setSpkNumber('');
       setSpkTanggalSpk('');
       setSpkDeadline('');
       setSpkPrioritas('Normal');
       setSpkTanggalMasuk('');
       setSpkNominal('');
+      setSpkPpn('');
+      setSpkGrandTotal('');
     },
     onError: () => {
       toast.error('Failed to upload SPK');
@@ -395,8 +415,10 @@ export default function ProjectItemsPage() {
       deadline: spkDeadline,
       prioritas: spkPrioritas,
       tanggal_masuk: spkTanggalMasuk,
-      nominal: parseRawNumber(spkNominal),
+      nominal_dpp: parseRawNumber(spkNominal),
       tanggal_spk: spkTanggalSpk,
+      ppn: spkPpn,
+      grand_total: spkGrandTotal,
     });
   };
 
@@ -404,13 +426,17 @@ export default function ProjectItemsPage() {
   const [editSphFile, setEditSphFile] = React.useState<File | null>(null);
   const [editSphNumber, setEditSphNumber] = React.useState<string>('');
   const [editSphNominal, setEditSphNominal] = React.useState<string>('');
+  const [editSphPpn, setEditSphPpn] = React.useState<string>('');
+  const [editSphGrandTotal, setEditSphGrandTotal] = React.useState<string>('');
 
   const updateSphMutation = useMutation({
     mutationFn: () =>
       projectV2Service.updateSphMeta(projectId, {
         nomor_sph: editSphNumber,
         file: editSphFile,
-        nominal: editSphNominal ? parseRawNumber(editSphNominal) : undefined,
+        nominal_dpp: editSphNominal ? parseRawNumber(editSphNominal) : undefined,
+        ppn: editSphPpn || undefined,
+        grand_total: editSphGrandTotal ? parseRawNumber(editSphGrandTotal) : undefined,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects-v2', projectId] });
@@ -427,6 +453,10 @@ export default function ProjectItemsPage() {
     if (existingSph) {
       setEditSphNumber(existingSph.nomor_sph || '');
       setEditSphNominal(
+        existingSph.nominal_dpp ? formatRupiah(String(existingSph.nominal_dpp)) : ''
+      );
+      setEditSphPpn(existingSph.ppn ? String(existingSph.ppn) : '');
+      setEditSphGrandTotal(
         existingSph.nominal ? formatRupiah(String(existingSph.nominal)) : ''
       );
     }
@@ -2110,15 +2140,52 @@ export default function ProjectItemsPage() {
             </div>
             <div className='space-y-1.5'>
               <Label className='text-xs font-medium text-blue-700'>
-                Nominal
+                Nominal (DPP)
               </Label>
               <Input
                 type='text'
                 placeholder='Rp 0'
                 value={editSphNominal}
-                onChange={(e) =>
-                  setEditSphNominal(formatRupiah(e.target.value))
-                }
+                onChange={(e) => {
+                  const formatted = formatRupiah(e.target.value);
+                  setEditSphNominal(formatted);
+                  const nominalNum = parseInt(parseRawNumber(e.target.value) || '0', 10);
+                  const ppnAmount = Math.round(nominalNum * (parseFloat(editSphPpn || '0') / 100));
+                  setEditSphGrandTotal((nominalNum + ppnAmount) > 0 ? formatRupiah((nominalNum + ppnAmount).toString()) : '');
+                }}
+                className='h-9 text-xs font-mono border-blue-200'
+              />
+            </div>
+            <div className='space-y-1.5'>
+              <Label className='text-xs font-medium text-blue-700'>
+                PPN (%)
+              </Label>
+              <Input
+                type='number'
+                placeholder='Contoh: 11 atau 12'
+                value={editSphPpn}
+                onChange={(e) => {
+                  const pct = e.target.value;
+                  setEditSphPpn(pct);
+                  const nominalNum = parseInt(parseRawNumber(editSphNominal) || '0', 10);
+                  const ppnAmount = Math.round(nominalNum * (parseFloat(pct || '0') / 100));
+                  setEditSphGrandTotal((nominalNum + ppnAmount) > 0 ? formatRupiah((nominalNum + ppnAmount).toString()) : '');
+                }}
+                className='h-9 text-xs border-blue-200'
+                min='0'
+                max='100'
+                step='0.1'
+              />
+            </div>
+            <div className='space-y-1.5'>
+              <Label className='text-xs font-medium text-blue-700'>
+                Grand Total
+              </Label>
+              <Input
+                type='text'
+                placeholder='Rp 0'
+                value={editSphGrandTotal}
+                onChange={(e) => setEditSphGrandTotal(formatRupiah(e.target.value))}
                 className='h-9 text-xs font-mono border-blue-200'
               />
             </div>
@@ -2189,7 +2256,44 @@ export default function ProjectItemsPage() {
                 type='text'
                 placeholder='Rp 0'
                 value={formatRupiah(sphNominal)}
-                onChange={(e) => setSphNominal(parseRawNumber(e.target.value))}
+                onChange={(e) => {
+                  const raw = parseRawNumber(e.target.value);
+                  setSphNominal(raw);
+                  const nominalNum = parseInt(raw || '0', 10);
+                  const ppnAmount = Math.round(nominalNum * (parseFloat(sphPpn || '0') / 100));
+                  setSphGrandTotal((nominalNum + ppnAmount) > 0 ? (nominalNum + ppnAmount).toString() : '');
+                }}
+                className='h-9 text-xs font-mono'
+              />
+            </div>
+
+            <div className='space-y-1.5'>
+              <Label className='text-xs font-medium'>PPN (%)</Label>
+              <Input
+                type='number'
+                placeholder='Contoh: 11 atau 12'
+                value={sphPpn}
+                onChange={(e) => {
+                  const pct = e.target.value;
+                  setSphPpn(pct);
+                  const nominalNum = parseInt(sphNominal || '0', 10);
+                  const ppnAmount = Math.round(nominalNum * (parseFloat(pct || '0') / 100));
+                  setSphGrandTotal((nominalNum + ppnAmount) > 0 ? (nominalNum + ppnAmount).toString() : '');
+                }}
+                className='h-9 text-xs'
+                min='0'
+                max='100'
+                step='0.1'
+              />
+            </div>
+
+            <div className='space-y-1.5'>
+              <Label className='text-xs font-medium'>Grand Total</Label>
+              <Input
+                type='text'
+                placeholder='Rp 0'
+                value={formatRupiah(sphGrandTotal)}
+                onChange={(e) => setSphGrandTotal(parseRawNumber(e.target.value))}
                 className='h-9 text-xs font-mono'
               />
             </div>
@@ -2431,14 +2535,53 @@ export default function ProjectItemsPage() {
             </div>
             <div className='space-y-1.5'>
               <Label className='text-xs font-medium text-purple-700'>
-                Nominal SPK
+                Nominal (DPP)
               </Label>
               <Input
                 type='text'
-                placeholder='Nominal SPK'
+                placeholder='Rp 0'
                 value={spkNominal}
-                onChange={(e) => setSpkNominal(formatRupiah(e.target.value))}
+                onChange={(e) => {
+                  const formatted = formatRupiah(e.target.value);
+                  setSpkNominal(formatted);
+                  const nominalNum = parseInt(parseRawNumber(e.target.value) || '0', 10);
+                  const ppnAmount = Math.round(nominalNum * (parseFloat(spkPpn || '0') / 100));
+                  setSpkGrandTotal((nominalNum + ppnAmount) > 0 ? (nominalNum + ppnAmount).toString() : '');
+                }}
                 className='h-9 text-xs border-purple-200'
+              />
+            </div>
+            <div className='space-y-1.5'>
+              <Label className='text-xs font-medium text-purple-700'>
+                PPN (%)
+              </Label>
+              <Input
+                type='number'
+                placeholder='Contoh: 11 atau 12'
+                value={spkPpn}
+                onChange={(e) => {
+                  const pct = e.target.value;
+                  setSpkPpn(pct);
+                  const nominalNum = parseInt(parseRawNumber(spkNominal) || '0', 10);
+                  const ppnAmount = Math.round(nominalNum * (parseFloat(pct || '0') / 100));
+                  setSpkGrandTotal((nominalNum + ppnAmount) > 0 ? (nominalNum + ppnAmount).toString() : '');
+                }}
+                className='h-9 text-xs border-purple-200'
+                min='0'
+                max='100'
+                step='0.1'
+              />
+            </div>
+            <div className='space-y-1.5'>
+              <Label className='text-xs font-medium text-purple-700'>
+                Grand Total
+              </Label>
+              <Input
+                type='text'
+                placeholder='Rp 0'
+                value={formatRupiah(spkGrandTotal)}
+                onChange={(e) => setSpkGrandTotal(parseRawNumber(e.target.value))}
+                className='h-9 text-xs font-mono border-purple-200'
               />
             </div>
             <div className='space-y-1.5'>
