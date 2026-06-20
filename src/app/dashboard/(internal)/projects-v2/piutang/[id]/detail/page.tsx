@@ -181,6 +181,10 @@ export default function PiutangDetailPage() {
   const [isTerminOpen, setIsTerminOpen] = React.useState(false);
   const [newTerminName, setNewTerminName] = React.useState('');
 
+  // SPK Nominal inline edit
+  const [isEditingSpkNominal, setIsEditingSpkNominal] = React.useState(false);
+  const [spkNominalInput, setSpkNominalInput] = React.useState('');
+
   // Collapsing states
   const [isBilledCollapsed, setIsBilledCollapsed] = React.useState(false);
   const [isPaymentCollapsed, setIsPaymentCollapsed] = React.useState(false);
@@ -262,6 +266,24 @@ export default function PiutangDetailPage() {
     onError: () => toast.error('Gagal menghapus termin'),
   });
 
+  const updateSpkNominalMutation = useMutation({
+    mutationFn: ({
+      nominal,
+      nomor_spk,
+    }: {
+      nominal: string;
+      nomor_spk: string;
+    }) =>
+      projectV2Service.updateSpkMeta(projectId, { nomor_spk, nominal }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects-v2', projectId] });
+      toast.success('Nominal SPK berhasil diperbarui');
+      setIsEditingSpkNominal(false);
+      setSpkNominalInput('');
+    },
+    onError: () => toast.error('Gagal memperbarui nominal SPK'),
+  });
+
   const openCreate = () => {
     setEditingId(null);
     setForm(emptyForm);
@@ -297,6 +319,8 @@ export default function PiutangDetailPage() {
     setEditingId(null);
     setForm(emptyForm);
     setFileInput(null);
+    setIsEditingSpkNominal(false);
+    setSpkNominalInput('');
   };
 
   const handleSubmit = () => {
@@ -977,6 +1001,107 @@ export default function PiutangDetailPage() {
               />
             </div>
 
+            {/* Nominal SPK */}
+            <div className='space-y-2'>
+              <Label htmlFor='nominal_spk'>Nominal SPK</Label>
+              {project?.spk?.nominal ? (
+                <Input
+                  id='nominal_spk'
+                  type='text'
+                  readOnly
+                  disabled
+                  value={formatRupiah(project.spk.nominal)}
+                  className='bg-neutral-50 text-neutral-500 cursor-not-allowed'
+                />
+              ) : !project?.spk ? (
+                <Input
+                  id='nominal_spk'
+                  type='text'
+                  readOnly
+                  disabled
+                  value=''
+                  placeholder='Belum ada data SPK'
+                  className='bg-neutral-50 text-neutral-500 cursor-not-allowed'
+                />
+              ) : isEditingSpkNominal ? (
+                <div className='flex gap-2'>
+                  <Input
+                    id='nominal_spk'
+                    type='text'
+                    autoFocus
+                    placeholder='Masukkan nominal SPK...'
+                    value={spkNominalInput}
+                    onChange={(e) =>
+                      setSpkNominalInput(formatRupiah(e.target.value))
+                    }
+                    onKeyDown={(e) => {
+                      if (e.key === 'Escape') {
+                        setIsEditingSpkNominal(false);
+                        setSpkNominalInput('');
+                      }
+                    }}
+                  />
+                  <Button
+                    type='button'
+                    variant='outline'
+                    size='icon'
+                    disabled={updateSpkNominalMutation.isPending}
+                    onClick={() => {
+                      const raw = parseRawNumber(spkNominalInput);
+                      if (!raw) {
+                        toast.error('Masukkan nominal yang valid');
+                        return;
+                      }
+                      updateSpkNominalMutation.mutate({
+                        nominal: raw,
+                        nomor_spk: project?.spk?.nomor_spk || '',
+                      });
+                    }}
+                  >
+                    {updateSpkNominalMutation.isPending ? (
+                      <Loader2 className='h-4 w-4 animate-spin' />
+                    ) : (
+                      <CheckCircle2 className='h-4 w-4 text-emerald-600' />
+                    )}
+                  </Button>
+                  <Button
+                    type='button'
+                    variant='ghost'
+                    size='icon'
+                    onClick={() => {
+                      setIsEditingSpkNominal(false);
+                      setSpkNominalInput('');
+                    }}
+                  >
+                    <X className='h-4 w-4' />
+                  </Button>
+                </div>
+              ) : (
+                <div className='flex gap-2'>
+                  <Input
+                    id='nominal_spk'
+                    type='text'
+                    readOnly
+                    disabled
+                    value=''
+                    placeholder='Belum ada nominal SPK'
+                    className='bg-neutral-50 text-neutral-500 cursor-not-allowed'
+                  />
+                  <Button
+                    type='button'
+                    variant='outline'
+                    size='icon'
+                    onClick={() => {
+                      setSpkNominalInput('');
+                      setIsEditingSpkNominal(true);
+                    }}
+                  >
+                    <Pencil className='h-4 w-4' />
+                  </Button>
+                </div>
+              )}
+            </div>
+
             <div className='grid grid-cols-3 gap-4'>
               {/* Persentase */}
               <div className='space-y-2'>
@@ -985,9 +1110,10 @@ export default function PiutangDetailPage() {
                   type='number'
                   min={0}
                   max={100}
-                  value={form.persentase || 0}
+                  value={form.persentase || ''}
+                  onFocus={(e) => e.target.select()}
                   onChange={(e) => {
-                    const pct = parseFloat(e.target.value) || 0;
+                    const pct = Math.min(parseFloat(e.target.value) || 0, 100);
                     const spkNominal = project?.spk?.nominal
                       ? parseDatabaseNominal(project.spk.nominal)
                       : 0;
@@ -1007,7 +1133,7 @@ export default function PiutangDetailPage() {
 
               {/* Nominal */}
               <div className='space-y-2'>
-                <Label>Nominal</Label>
+                <Label>Nominal Tagihan</Label>
                 <Input
                   type='text'
                   placeholder='Rp 0'
@@ -1073,12 +1199,21 @@ export default function PiutangDetailPage() {
                 <Input
                   type='date'
                   value={form.tanggal_invoice || ''}
-                  onChange={(e) =>
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    const due = val
+                      ? new Date(
+                          new Date(val).getTime() + 30 * 24 * 60 * 60 * 1000
+                        )
+                          .toISOString()
+                          .slice(0, 10)
+                      : '';
                     setForm((prev) => ({
                       ...prev,
-                      tanggal_invoice: e.target.value,
-                    }))
-                  }
+                      tanggal_invoice: val,
+                      jatuh_tempo: due,
+                    }));
+                  }}
                 />
               </div>
 
