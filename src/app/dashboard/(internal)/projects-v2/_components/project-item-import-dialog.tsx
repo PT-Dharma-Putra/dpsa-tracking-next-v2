@@ -41,7 +41,7 @@ export function ProjectItemImportDialog({
   }, [open]);
 
   const handleDownloadTemplate = () => {
-    const NUM_COLS = 14;
+    const NUM_COLS = 13;
     const e = Array(NUM_COLS).fill('');
 
     // Row 0: instruction 1
@@ -55,7 +55,6 @@ export function ProjectItemImportDialog({
     const EX = 4;
 
     const colHeader1 = [
-      'No',
       'Lantai',
       'Area / Sub Kategori',
       'Ruang',
@@ -75,7 +74,6 @@ export function ProjectItemImportDialog({
       '',
       '',
       '',
-      '',
       'Pjg',
       'Lbr',
       'Tgi',
@@ -87,7 +85,6 @@ export function ProjectItemImportDialog({
       '',
     ];
     const example = [
-      1,
       '4',
       'RAWAT INAP PADMA',
       'SELASAR',
@@ -103,10 +100,18 @@ export function ProjectItemImportDialog({
       'BB LAPIS HPL GOLD TEAK, AKRILIK HITAM TEBAL 1 CM, AKRILIK PUTIH 5 MM, STICKER PENAMAAN HITAM BASE SILVER CHROME, AKRILIK BENING 3 MM',
     ];
 
-    const emptyDataRows = Array(49).fill(null).map(() => [...e]);
+    const emptyDataRows = Array(49)
+      .fill(null)
+      .map(() => [...e]);
 
-    const instrRow1 = ['Baris keempat adalah contoh, tidak perlu dihapus', ...Array(NUM_COLS - 1).fill('')];
-    const instrRow2 = ['Isikan mulai dari baris ke lima', ...Array(NUM_COLS - 1).fill('')];
+    const instrRow1 = [
+      'Baris ke-5 adalah contoh, jangan dihapus!',
+      ...Array(NUM_COLS - 1).fill(''),
+    ];
+    const instrRow2 = [
+      'Isikan mulai dari baris ke-6',
+      ...Array(NUM_COLS - 1).fill(''),
+    ];
 
     const worksheet = XLSX.utils.aoa_to_sheet([
       instrRow1,
@@ -121,18 +126,17 @@ export function ProjectItemImportDialog({
     worksheet['!merges'] = [
       { s: { r: 0, c: 0 }, e: { r: 0, c: NUM_COLS - 1 } }, // instruction 1
       { s: { r: 1, c: 0 }, e: { r: 1, c: NUM_COLS - 1 } }, // instruction 2
-      { s: { r: CH1, c: 0 }, e: { r: CH2, c: 0 } }, // No
-      { s: { r: CH1, c: 1 }, e: { r: CH2, c: 1 } }, // Lantai
-      { s: { r: CH1, c: 2 }, e: { r: CH2, c: 2 } }, // Area / Sub Kat
-      { s: { r: CH1, c: 3 }, e: { r: CH2, c: 3 } }, // Ruang
-      { s: { r: CH1, c: 4 }, e: { r: CH2, c: 4 } }, // Item / Perabot
-      { s: { r: CH1, c: 5 }, e: { r: CH1, c: 7 } }, // Dimensi (m)
-      { s: { r: CH1, c: 8 }, e: { r: CH2, c: 8 } }, // Vol
-      { s: { r: CH1, c: 9 }, e: { r: CH2, c: 9 } }, // Sat
-      { s: { r: CH1, c: 10 }, e: { r: CH2, c: 10 } }, // Jml
-      { s: { r: CH1, c: 11 }, e: { r: CH2, c: 11 } }, // Harga Sat
-      { s: { r: CH1, c: 12 }, e: { r: CH2, c: 12 } }, // Harga Total
-      { s: { r: CH1, c: 13 }, e: { r: CH2, c: 13 } }, // Keterangan
+      { s: { r: CH1, c: 0 }, e: { r: CH2, c: 0 } }, // Lantai
+      { s: { r: CH1, c: 1 }, e: { r: CH2, c: 1 } }, // Area / Sub Kat
+      { s: { r: CH1, c: 2 }, e: { r: CH2, c: 2 } }, // Ruang
+      { s: { r: CH1, c: 3 }, e: { r: CH2, c: 3 } }, // Item / Perabot
+      { s: { r: CH1, c: 4 }, e: { r: CH1, c: 6 } }, // Dimensi (m)
+      { s: { r: CH1, c: 7 }, e: { r: CH2, c: 7 } }, // Vol
+      { s: { r: CH1, c: 8 }, e: { r: CH2, c: 8 } }, // Sat
+      { s: { r: CH1, c: 9 }, e: { r: CH2, c: 9 } }, // Jml
+      { s: { r: CH1, c: 10 }, e: { r: CH2, c: 10 } }, // Harga Sat
+      { s: { r: CH1, c: 11 }, e: { r: CH2, c: 11 } }, // Harga Total
+      { s: { r: CH1, c: 12 }, e: { r: CH2, c: 12 } }, // Keterangan
     ];
 
     // ── Styles ───────────────────────────────────────────────────────────────
@@ -165,7 +169,7 @@ export function ProjectItemImportDialog({
     }
 
     // Example row — light blue background, center-align specific columns
-    const exCenterCols = new Set([0, 1, 5, 6, 7, 8, 10]);
+    const exCenterCols = new Set([0, 4, 5, 6, 7, 9]);
     for (let cc = 0; cc < NUM_COLS; cc++) {
       const ref = XLSX.utils.encode_cell({ r: EX, c: cc });
       if (worksheet[ref])
@@ -181,7 +185,6 @@ export function ProjectItemImportDialog({
 
     // ── Column widths & row heights ───────────────────────────────────────────
     worksheet['!cols'] = [
-      { wch: 5 }, // No
       { wch: 10 }, // Lantai
       { wch: 22 }, // Area / Sub Kategori
       { wch: 16 }, // Ruang
@@ -253,18 +256,18 @@ export function ProjectItemImportDialog({
           .slice(5)
           .filter((r) => r.some((v) => v != null && v !== ''));
 
-        // Forward-fill merged cells for Lantai (col 1), Area/Sub Kat (col 2), Ruang (col 3)
+        // Forward-fill merged cells for Lantai (col 0), Area/Sub Kat (col 1), Ruang (col 2)
         let lastLantai: CellValue = null;
         let lastSubKat: CellValue = null;
         let lastRuang: CellValue = null;
         const dataRows = raw.map((r) => {
           const row = [...r];
-          if (row[1] != null && row[1] !== '') lastLantai = row[1];
-          else row[1] = lastLantai;
-          if (row[2] != null && row[2] !== '') lastSubKat = row[2];
-          else row[2] = lastSubKat;
-          if (row[3] != null && row[3] !== '') lastRuang = row[3];
-          else row[3] = lastRuang;
+          if (row[0] != null && row[0] !== '') lastLantai = row[0];
+          else row[0] = lastLantai;
+          if (row[1] != null && row[1] !== '') lastSubKat = row[1];
+          else row[1] = lastSubKat;
+          if (row[2] != null && row[2] !== '') lastRuang = row[2];
+          else row[2] = lastRuang;
           return row;
         });
 
@@ -277,26 +280,26 @@ export function ProjectItemImportDialog({
         const parseNum = (val: any) =>
           val != null && val !== '' ? Number(val) : null;
 
-        // Column order: 0=No, 1=Lantai, 2=Area/SubKat, 3=Ruang, 4=Item,
-        // 5=Pjg, 6=Lbr, 7=Tgi, 8=Vol, 9=Sat, 10=Jml, 11=HargaSat, 12=HargaTotal, 13=Keterangan
+        // Column order: 0=Lantai, 1=Area/SubKat, 2=Ruang, 3=Item,
+        // 4=Pjg, 5=Lbr, 6=Tgi, 7=Vol, 8=Sat, 9=Jml, 10=HargaSat, 11=HargaTotal, 12=Keterangan
         const items = dataRows
           .map((row) => ({
-            lantai: row[1] != null ? String(row[1]) : '',
-            sub_kategori: row[2] != null ? String(row[2]) : null,
-            ruang: row[3] != null ? String(row[3]) : '',
-            item: String(row[4] ?? '').trim(),
-            panjang: parseNum(row[5]),
-            lebar: parseNum(row[6]),
-            tinggi: parseNum(row[7]),
-            volume: parseNum(row[8]),
-            satuan: row[9] != null ? String(row[9]) : 'UNIT',
+            lantai: row[0] != null ? String(row[0]) : '',
+            sub_kategori: row[1] != null ? String(row[1]) : null,
+            ruang: row[2] != null ? String(row[2]) : '',
+            item: String(row[3] ?? '').trim(),
+            panjang: parseNum(row[4]),
+            lebar: parseNum(row[5]),
+            tinggi: parseNum(row[6]),
+            volume: parseNum(row[7]),
+            satuan: row[8] != null ? String(row[8]) : 'UNIT',
             jumlah:
-              row[10] != null && row[10] !== '' && row[10] !== false
-                ? Number(row[10])
+              row[9] != null && row[9] !== '' && row[9] !== false
+                ? Number(row[9])
                 : 1,
-            harga_satuan: parseNum(row[11]),
-            harga: parseNum(row[12]),
-            keterangan: row[13] != null ? String(row[13]) : '',
+            harga_satuan: parseNum(row[10]),
+            harga: parseNum(row[11]),
+            keterangan: row[12] != null ? String(row[12]) : '',
             custom: false,
           }))
           .filter((item) => item.item);
