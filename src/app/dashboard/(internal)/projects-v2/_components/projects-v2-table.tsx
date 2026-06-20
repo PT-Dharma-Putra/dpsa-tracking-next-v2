@@ -1874,7 +1874,31 @@ export function ProjectsV2Table({
                     </>
                   )}
                   {!showAllDashboard && !showProduksi && !showPurchasing && !showPiutang && (
-                    <TableHead>Pakai Desain</TableHead>
+                    <TableHead
+                      className='cursor-pointer hover:bg-neutral-100 transition-colors group'
+                      onClick={() => {
+                        if (sortBy === 'need_design') {
+                          setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                        } else {
+                          setSortBy('need_design');
+                          setSortOrder('asc');
+                        }
+                        setPage(1);
+                      }}
+                    >
+                      <div className='flex items-center gap-1'>
+                        Pakai Desain
+                        {sortBy === 'need_design' ? (
+                          sortOrder === 'asc' ? (
+                            <ArrowUp className='h-3 w-3' />
+                          ) : (
+                            <ArrowDown className='h-3 w-3' />
+                          )
+                        ) : (
+                          <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
+                        )}
+                      </div>
+                    </TableHead>
                   )}
                   {!showAllDashboard && !showSPD && !showPiutang && (
                     <TableHead>Jadwal Kirim</TableHead>
