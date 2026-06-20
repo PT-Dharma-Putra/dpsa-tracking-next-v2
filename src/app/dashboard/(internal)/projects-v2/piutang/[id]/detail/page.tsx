@@ -274,7 +274,7 @@ export default function PiutangDetailPage() {
       nominal: string;
       nomor_spk: string;
     }) =>
-      projectV2Service.updateSpkMeta(projectId, { nomor_spk, nominal }),
+      projectV2Service.updateSpkMeta(projectId, { nomor_spk, grand_total: nominal }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects-v2', projectId] });
       toast.success('Nominal SPK berhasil diperbarui');

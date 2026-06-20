@@ -496,7 +496,9 @@ export const projectV2Service = {
       deadline?: string;
       prioritas?: string;
       tanggal_masuk?: string;
-      nominal?: string;
+      nominal_dpp?: string;
+      ppn?: string;
+      grand_total?: string;
       file?: File | null;
     }
   ) => {
@@ -509,7 +511,9 @@ export const projectV2Service = {
     if (payload.prioritas) formData.append('prioritas', payload.prioritas);
     if (payload.tanggal_masuk)
       formData.append('tanggal_masuk', payload.tanggal_masuk);
-    if (payload.nominal) formData.append('nominal', payload.nominal);
+    if (payload.nominal_dpp) formData.append('nominal_dpp', payload.nominal_dpp);
+    if (payload.ppn) formData.append('ppn', payload.ppn);
+    if (payload.grand_total) formData.append('grand_total', payload.grand_total);
     const { data } = await apiClient.post(
       `/projects-v2/${projectId}/update-spk`,
       formData

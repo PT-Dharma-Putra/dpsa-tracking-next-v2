@@ -474,6 +474,8 @@ export default function ProjectItemsPage() {
   const [editSpkTanggalMasuk, setEditSpkTanggalMasuk] =
     React.useState<string>('');
   const [editSpkNominal, setEditSpkNominal] = React.useState<string>('');
+  const [editSpkPpn, setEditSpkPpn] = React.useState<string>('');
+  const [editSpkGrandTotal, setEditSpkGrandTotal] = React.useState<string>('');
 
   const updateSpkMutation = useMutation({
     mutationFn: () =>
@@ -484,7 +486,9 @@ export default function ProjectItemsPage() {
         deadline: editSpkDeadline || undefined,
         prioritas: editSpkPrioritas,
         tanggal_masuk: editSpkTanggalMasuk || undefined,
-        nominal: editSpkNominal ? parseRawNumber(editSpkNominal) : undefined,
+        nominal_dpp: editSpkNominal ? parseRawNumber(editSpkNominal) : undefined,
+        ppn: editSpkPpn || undefined,
+        grand_total: editSpkGrandTotal ? parseRawNumber(editSpkGrandTotal) : undefined,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects-v2', projectId] });
@@ -510,6 +514,10 @@ export default function ProjectItemsPage() {
       );
       setEditSpkTanggalMasuk(toDateInput(existingSpk.tanggal_masuk));
       setEditSpkNominal(
+        existingSpk.nominal_dpp ? formatRupiah(String(existingSpk.nominal_dpp)) : ''
+      );
+      setEditSpkPpn(existingSpk.ppn ? String(existingSpk.ppn) : '');
+      setEditSpkGrandTotal(
         existingSpk.nominal ? formatRupiah(String(existingSpk.nominal)) : ''
       );
     }
@@ -2400,12 +2408,49 @@ export default function ProjectItemsPage() {
               </Label>
               <Input
                 type='text'
-                placeholder='Nominal (DPP)'
+                placeholder='Rp 0'
                 value={editSpkNominal}
-                onChange={(e) =>
-                  setEditSpkNominal(formatRupiah(e.target.value))
-                }
+                onChange={(e) => {
+                  const formatted = formatRupiah(e.target.value);
+                  setEditSpkNominal(formatted);
+                  const nominalNum = parseInt(parseRawNumber(e.target.value) || '0', 10);
+                  const ppnAmount = Math.round(nominalNum * (parseFloat(editSpkPpn || '0') / 100));
+                  setEditSpkGrandTotal((nominalNum + ppnAmount) > 0 ? formatRupiah((nominalNum + ppnAmount).toString()) : '');
+                }}
                 className='h-9 text-xs border-purple-200'
+              />
+            </div>
+            <div className='space-y-1.5'>
+              <Label className='text-xs font-medium text-purple-700'>
+                PPN (%)
+              </Label>
+              <Input
+                type='number'
+                placeholder='Contoh: 11 atau 12'
+                value={editSpkPpn}
+                onChange={(e) => {
+                  const pct = e.target.value;
+                  setEditSpkPpn(pct);
+                  const nominalNum = parseInt(parseRawNumber(editSpkNominal) || '0', 10);
+                  const ppnAmount = Math.round(nominalNum * (parseFloat(pct || '0') / 100));
+                  setEditSpkGrandTotal((nominalNum + ppnAmount) > 0 ? formatRupiah((nominalNum + ppnAmount).toString()) : '');
+                }}
+                className='h-9 text-xs border-purple-200'
+                min='0'
+                max='100'
+                step='0.1'
+              />
+            </div>
+            <div className='space-y-1.5'>
+              <Label className='text-xs font-medium text-purple-700'>
+                Grand Total
+              </Label>
+              <Input
+                type='text'
+                placeholder='Rp 0'
+                value={editSpkGrandTotal}
+                onChange={(e) => setEditSpkGrandTotal(formatRupiah(e.target.value))}
+                className='h-9 text-xs font-mono border-purple-200'
               />
             </div>
             <div className='space-y-1.5'>
