@@ -138,6 +138,7 @@ export function ProjectsV2Table({
   showPiutang = false,
   showQC = false,
   showAllDashboard = false,
+  showMarketingFilter = false,
 }: {
   showSPD?: boolean;
   showPerencanaan?: boolean;
@@ -148,6 +149,7 @@ export function ProjectsV2Table({
   showPiutang?: boolean;
   showQC?: boolean;
   showAllDashboard?: boolean;
+  showMarketingFilter?: boolean;
 }) {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -155,6 +157,7 @@ export function ProjectsV2Table({
   const [search, setSearch] = React.useState('');
   const [searchInput, setSearchInput] = React.useState('');
   const [clientId, setClientId] = React.useState<string>('all');
+  const [marketingId, setMarketingId] = React.useState<string>('all');
   const [sortBy, setSortBy] = React.useState<string>('created_at');
   const [sortOrder, setSortOrder] = React.useState<'asc' | 'desc'>('desc');
   const [selectedMonth, setSelectedMonth] = React.useState<string>('all');
@@ -353,6 +356,7 @@ export function ProjectsV2Table({
       page,
       search,
       clientId,
+      marketingId,
       selectedMonth,
       selectedYear,
       sortBy,
@@ -371,6 +375,7 @@ export function ProjectsV2Table({
         page,
         search,
         client_id: clientId !== 'all' ? clientId : undefined,
+        marketing_id: marketingId !== 'all' ? marketingId : undefined,
         month: selectedMonth !== 'all' ? selectedMonth : undefined,
         year: selectedYear !== 'all' ? selectedYear : undefined,
         sort_by: sortBy,
@@ -391,6 +396,7 @@ export function ProjectsV2Table({
       'projects-v2-stats',
       search,
       clientId,
+      marketingId,
       selectedMonth,
       selectedYear,
     ],
@@ -398,6 +404,7 @@ export function ProjectsV2Table({
       projectV2Service.getProjectStats({
         search,
         client_id: clientId !== 'all' ? clientId : undefined,
+        marketing_id: marketingId !== 'all' ? marketingId : undefined,
         month: selectedMonth !== 'all' ? selectedMonth : undefined,
         year: selectedYear !== 'all' ? selectedYear : undefined,
       }),
@@ -437,6 +444,12 @@ export function ProjectsV2Table({
   const clients = Array.from(
     new Map(clientsRaw.map((c: any) => [c.id, c])).values()
   );
+
+  const { data: marketingUsers = [] } = useQuery({
+    queryKey: ['projects-v2-marketings'],
+    queryFn: () => projectV2Service.getMarketings(),
+    enabled: showMarketingFilter,
+  });
 
   const observerRef = React.useRef<IntersectionObserver>(null);
   const loadMoreRef = React.useCallback(
@@ -1528,6 +1541,28 @@ export function ProjectsV2Table({
                   </Command>
                 </PopoverContent>
               </Popover>
+
+              {showMarketingFilter && (
+                <Select
+                  value={marketingId}
+                  onValueChange={(v) => {
+                    setMarketingId(v);
+                    setPage(1);
+                  }}
+                >
+                  <SelectTrigger className='w-[160px]'>
+                    <SelectValue placeholder='All Marketing' />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value='all'>All Marketing</SelectItem>
+                    {marketingUsers.map((m) => (
+                      <SelectItem key={m.id} value={m.id.toString()}>
+                        {m.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
 
             <div className='flex flex-wrap gap-2 items-center'>

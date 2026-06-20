@@ -13,7 +13,7 @@ export default function ProjectsV2Page() {
             </div>
 
             <div className="bg-white rounded-xl shadow-sm border border-neutral-200">
-                <ProjectsV2Table />
+                <ProjectsV2Table showMarketingFilter />
             </div>
         </div>
     )
