@@ -198,6 +198,8 @@ export interface ProjectV2Stats {
   tanpa_gambar: number;
   belum_diorder: number;
   po_supplier: number;
+  pengiriman_completed: number;
+  pengiriman_not_completed: number;
 }
 
 interface GetProjectsV2Params {
@@ -215,6 +217,7 @@ interface GetProjectsV2Params {
   dokubah_status?: string;
   stok_material_status?: string;
   produksi_status?: string;
+  pengiriman_status?: string;
   order_status?: string;
   dashboard_filter?: string;
 }
@@ -1057,6 +1060,7 @@ export interface ProjectItemV2 {
   barang_jadi_terpacking?: BarangJadiTerpacking[];
   barang_jadi_keluar?: BarangJadiKeluar[];
   surat_jalan?: SuratJalan[];
+  detail_pengiriman?: Array<{ id: number; jumlah_keluar: number; jumlah_tersetting: number }>;
   setrim_kembali?: SetrimKembali[];
   setting?: Setting[];
   divisi?: Divisi;

@@ -3,6 +3,7 @@ import { axiosInstance as apiClient } from "@/lib/axios";
 export interface DetailPengiriman {
   id?: number;
   pengiriman_id?: number;
+  spk_id?: number | null;
   project_item_id: number;
   jumlah_keluar: number;
   jumlah_tersetting: number;
@@ -66,6 +67,7 @@ export const PengirimanService = {
     page?: number;
     search?: string;
     client_id?: string;
+    spk_id?: number | string;
     per_page?: number;
   }): Promise<{ data: Pengiriman[]; current_page: number; last_page: number; total: number }> => {
     const response = await apiClient.get("/pengiriman", { params });
@@ -90,6 +92,24 @@ export const PengirimanService = {
 
   deletePengiriman: async (id: number): Promise<void> => {
     await apiClient.delete(`/pengiriman/${id}`);
+  },
+
+  updateSuratJalan: async (id: number, file: File): Promise<Pengiriman> => {
+    const formData = new FormData();
+    formData.append('surat_jalan', file);
+    const response = await apiClient.post(`/pengiriman/${id}/surat-jalan`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
+
+  updateSetrim: async (id: number, file: File): Promise<Pengiriman> => {
+    const formData = new FormData();
+    formData.append('setrim', file);
+    const response = await apiClient.post(`/pengiriman/${id}/setrim`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
   },
 
   getClientProjectItems: async (clientId: number): Promise<ProjectItemWithShipmentStats[]> => {

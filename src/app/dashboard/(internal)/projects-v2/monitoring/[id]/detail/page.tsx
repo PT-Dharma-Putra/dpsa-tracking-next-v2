@@ -95,12 +95,7 @@ export default function ProjectMonitoringDetailPage() {
   if (!project) return null;
 
   const progres = project.progres_kerja;
-  const totalQtyOrder = items.reduce((sum, i) => sum + Number(i.jumlah || 0), 0) || 0;
-  const totalQtyKeluar = items.reduce((sum, i) => sum + (i.barang_jadi_keluar?.reduce((s, bjk) => s + Number(bjk.jumlah || 0), 0) || 0), 0) || 0;
-
-    const percentKeluar = totalQtyOrder > 0 ? (totalQtyKeluar / totalQtyOrder) * 100 : 0;
-  
-    const progressStages = [
+  const progressStages = [
       { 
         label: 'PO Divisi', 
         percent: progres?.po_divisi || 0, 
@@ -143,13 +138,12 @@ export default function ProjectMonitoringDetailPage() {
         icon: Package, 
         color: 'indigo' 
       },
-      { 
-        label: 'Pengiriman', 
-        percent: percentKeluar, 
-        date: progres?.tanggal_update_pengiriman, 
-        icon: Truck, 
+      {
+        label: 'Pengiriman',
+        percent: progres?.pengiriman || 0,
+        date: progres?.tanggal_update_pengiriman,
+        icon: Truck,
         color: 'rose',
-        nominal: `${totalQtyKeluar} / ${totalQtyOrder}`
       }
     ];
 
@@ -395,7 +389,7 @@ export default function ProjectMonitoringDetailPage() {
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
-                          {totalKeluar >= item.jumlah ? (
+                          {project.tanggal_selesai || totalKeluar >= item.jumlah ? (
                             <Badge className="bg-emerald-500 text-white border-none text-[10px] font-black uppercase tracking-widest px-2 py-1">
                               Completed
                             </Badge>
