@@ -265,9 +265,6 @@ export default function ProjectMonitoringDetailPage() {
                 </div>
                 <div className="mt-4">
                   <h3 className="text-xs font-bold text-neutral-700 truncate">{stage.label}</h3>
-                  {stage.nominal && (
-                    <p className="text-[10px] font-black text-rose-600 mt-0.5">{stage.nominal} Items</p>
-                  )}
                   <div className="mt-2 h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden">
                     <div 
                       className={cn("h-full transition-all duration-700", getColorClass(stage.color))} 
