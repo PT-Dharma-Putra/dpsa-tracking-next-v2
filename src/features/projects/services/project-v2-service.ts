@@ -200,6 +200,8 @@ export interface ProjectV2Stats {
   po_supplier: number;
   pengiriman_completed: number;
   pengiriman_not_completed: number;
+  qc_completed: number;
+  qc_not_completed: number;
 }
 
 interface GetProjectsV2Params {
@@ -218,6 +220,7 @@ interface GetProjectsV2Params {
   stok_material_status?: string;
   produksi_status?: string;
   pengiriman_status?: string;
+  qc_status?: string;
   order_status?: string;
   dashboard_filter?: string;
 }
