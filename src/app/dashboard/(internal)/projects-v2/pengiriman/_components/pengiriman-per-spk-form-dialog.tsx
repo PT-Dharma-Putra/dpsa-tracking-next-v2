@@ -117,7 +117,7 @@ export function PengirimanPerSpkFormDialog({
   // Items filtered to only the current project's SPK
   const projectItems = React.useMemo(() => {
     if (!clientItems || !projectId) return clientItems ?? []
-    return clientItems.filter(item => item.project_id === projectId)
+    return clientItems.filter(item => Number(item.project_id) === projectId)
   }, [clientItems, projectId])
 
   // Reset and auto-fill when dialog opens
