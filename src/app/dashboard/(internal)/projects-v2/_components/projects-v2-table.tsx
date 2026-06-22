@@ -1593,7 +1593,8 @@ export function ProjectsV2Table({
             showPerencanaan ||
             showEngineer ||
             showProduksi ||
-            showPurchasing) &&
+            showPurchasing ||
+            showPengirimanV2) &&
             'bg-white rounded-xl shadow-sm border border-neutral-200'
         )}
       >
