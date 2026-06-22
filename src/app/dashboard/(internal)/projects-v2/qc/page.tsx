@@ -12,9 +12,7 @@ export default function QCPage() {
                 </p>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-neutral-200">
-                <ProjectsV2Table showSPD={false} showQC={true} onlyShowDetail={true} />
-            </div>
+            <ProjectsV2Table showSPD={false} showQC={true} onlyShowDetail={true} />
         </div>
     )
 }
