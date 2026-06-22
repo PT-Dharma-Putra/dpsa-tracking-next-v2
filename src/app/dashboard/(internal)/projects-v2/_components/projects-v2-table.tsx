@@ -183,6 +183,9 @@ export function ProjectsV2Table({
   const [pengirimanStatusFilter, setPengirimanStatusFilter] = React.useState<
     'completed' | 'not_completed' | null
   >(null);
+  const [qcStatusFilter, setQcStatusFilter] = React.useState<
+    'completed' | 'not_completed' | null
+  >(null);
   const [orderStatusFilter, setOrderStatusFilter] = React.useState<
     'has_order' | 'tanpa_gambar' | 'sudah_diorder' | 'belum_diorder' | null
   >(null);
@@ -305,6 +308,20 @@ export function ProjectsV2Table({
     setPage(1);
   };
 
+  const handleQcStatusFilterClick = (type: 'completed' | 'not_completed') => {
+    setQcStatusFilter(qcStatusFilter === type ? null : type);
+    setSpkFilterActive(false);
+    setPoDivisiFilter(null);
+    setGambarKerjaFilter(null);
+    setDokubahFilter(null);
+    setStokMaterialFilter(null);
+    setProduksiFilter(null);
+    setPengirimanStatusFilter(null);
+    setOrderStatusFilter(null);
+    setDashboardFilter(null);
+    setPage(1);
+  };
+
   const handlePengirimanStatusFilterClick = (type: 'completed' | 'not_completed') => {
     setPengirimanStatusFilter(pengirimanStatusFilter === type ? null : type);
     setSpkFilterActive(false);
@@ -313,6 +330,7 @@ export function ProjectsV2Table({
     setDokubahFilter(null);
     setStokMaterialFilter(null);
     setProduksiFilter(null);
+    setQcStatusFilter(null);
     setOrderStatusFilter(null);
     setDashboardFilter(null);
     setPage(1);
@@ -386,6 +404,7 @@ export function ProjectsV2Table({
       stokMaterialFilter,
       produksiFilter,
       pengirimanStatusFilter,
+      qcStatusFilter,
       orderStatusFilter,
       dashboardFilter,
     ],
@@ -406,6 +425,7 @@ export function ProjectsV2Table({
         stok_material_status: stokMaterialFilter || undefined,
         produksi_status: produksiFilter || undefined,
         pengiriman_status: pengirimanStatusFilter || undefined,
+        qc_status: qcStatusFilter || undefined,
         order_status: orderStatusFilter || undefined,
         dashboard_filter: dashboardFilter || undefined,
       }),
@@ -930,7 +950,116 @@ export function ProjectsV2Table({
         </div>
       )}
 
-      {showPengirimanV2 && stats && (
+      {showMarketingFilter && stats && (
+        <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 w-full'>
+          {/* Total Projek */}
+          <div className='flex flex-col gap-2 p-4 rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md'>
+            <div className='flex items-center gap-2 border-b border-slate-100 pb-2'>
+              <div className='h-6 w-6 rounded bg-slate-100 flex items-center justify-center text-slate-600 shrink-0'>
+                <Briefcase className='h-3.5 w-3.5' />
+              </div>
+              <p className='text-[10px] font-bold text-slate-500 uppercase tracking-wider'>
+                Total Projek
+              </p>
+              <span className='ml-auto text-lg font-bold text-slate-800'>
+                {stats.total_project}
+              </span>
+            </div>
+
+            <div className='flex flex-row gap-1.5 mt-auto'>
+              {/* Terbit SPH */}
+              <div
+                onClick={() => handleDashboardFilterClick('sph_only')}
+                className={cn(
+                  'flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  dashboardFilter === 'sph_only'
+                    ? 'border-amber-500 bg-amber-50 text-amber-700 font-semibold'
+                    : 'border-amber-100 bg-amber-50/50 hover:border-amber-300 text-amber-700'
+                )}
+              >
+                <span className='truncate mr-1 font-medium'>Terbit SPH</span>
+                <span className='font-bold'>{stats.sph_only ?? 0}</span>
+              </div>
+
+              {/* Terbit SPK */}
+              <div
+                onClick={() => handleDashboardFilterClick('spk')}
+                className={cn(
+                  'flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  dashboardFilter === 'spk'
+                    ? 'border-indigo-500 bg-indigo-50 text-indigo-700 font-semibold'
+                    : 'border-indigo-100 bg-indigo-50/50 hover:border-indigo-300 text-indigo-700'
+                )}
+              >
+                <span className='truncate mr-1 font-medium'>Terbit SPK</span>
+                <span className='font-bold'>{stats.total_spk}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Deadline Dekat */}
+          <div
+            onClick={() => handleDashboardFilterClick('deadline_dekat')}
+            className={cn(
+              'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-amber-400 select-none',
+              dashboardFilter === 'deadline_dekat'
+                ? 'border-amber-500 bg-amber-50/50 ring-2 ring-amber-500/20'
+                : 'border-amber-200 bg-white'
+            )}
+          >
+            <div className='flex items-center gap-3'>
+              <div className='h-10 w-10 rounded-lg bg-amber-100 flex items-center justify-center text-amber-600 shrink-0'>
+                <Clock className='h-5 w-5' />
+              </div>
+              <div>
+                <p className='text-[10px] font-bold text-amber-600 uppercase tracking-wider'>
+                  Deadline Dekat
+                </p>
+                <p className='text-xl font-bold text-slate-800'>
+                  {stats.deadline_dekat}
+                </p>
+              </div>
+            </div>
+            {dashboardFilter === 'deadline_dekat' && (
+              <span className='text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
+                Active
+              </span>
+            )}
+          </div>
+
+          {/* Overdue */}
+          <div
+            onClick={() => handleDashboardFilterClick('overdue')}
+            className={cn(
+              'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-red-400 select-none',
+              dashboardFilter === 'overdue'
+                ? 'border-red-500 bg-red-50/50 ring-2 ring-red-500/20'
+                : 'border-red-200 bg-white'
+            )}
+          >
+            <div className='flex items-center gap-3'>
+              <div className='h-10 w-10 rounded-lg bg-red-100 flex items-center justify-center text-red-600 shrink-0'>
+                <AlertCircle className='h-5 w-5' />
+              </div>
+              <div>
+                <p className='text-[10px] font-bold text-red-600 uppercase tracking-wider'>
+                  Overdue
+                </p>
+                <p className='text-xl font-bold text-red-800'>
+                  {stats.overdue}
+                </p>
+              </div>
+            </div>
+            {dashboardFilter === 'overdue' && (
+              <span className='text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
+                Active
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
+      {(showPengirimanV2 || showQC) && stats && (
         <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 w-full'>
           {/* Total Project */}
           <div
@@ -1022,47 +1151,93 @@ export function ProjectsV2Table({
             )}
           </div>
 
-          {/* Pengiriman */}
-          <div className='flex flex-col gap-2 p-4 rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md'>
-            <div className='flex items-center gap-2 border-b border-slate-100 pb-2'>
-              <div className='h-6 w-6 rounded bg-blue-100 flex items-center justify-center text-blue-600 shrink-0'>
-                <Truck className='h-3.5 w-3.5' />
-              </div>
-              <p className='text-[10px] font-bold text-slate-500 uppercase tracking-wider'>
-                Pengiriman
-              </p>
-            </div>
-
-            <div className='flex flex-row gap-1.5 mt-auto'>
-              {/* Terkirim 100% */}
-              <div
-                onClick={() => handlePengirimanStatusFilterClick('completed')}
-                className={cn(
-                  'flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
-                  pengirimanStatusFilter === 'completed'
-                    ? 'border-blue-500 bg-blue-50 text-blue-700 font-semibold'
-                    : 'border-slate-100 hover:border-slate-300 text-slate-600'
-                )}
-              >
-                <span className='truncate mr-1'>Terkirim 100%</span>
-                <span className='font-bold'>{stats.pengiriman_completed ?? 0}</span>
+          {/* QC — qc page only */}
+          {showQC && (
+            <div className='flex flex-col gap-2 p-4 rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md'>
+              <div className='flex items-center gap-2 border-b border-slate-100 pb-2'>
+                <div className='h-6 w-6 rounded bg-violet-100 flex items-center justify-center text-violet-600 shrink-0'>
+                  <CheckCircle2 className='h-3.5 w-3.5' />
+                </div>
+                <p className='text-[10px] font-bold text-slate-500 uppercase tracking-wider'>
+                  QC
+                </p>
               </div>
 
-              {/* Belum 100% */}
-              <div
-                onClick={() => handlePengirimanStatusFilterClick('not_completed')}
-                className={cn(
-                  'flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
-                  pengirimanStatusFilter === 'not_completed'
-                    ? 'border-rose-500 bg-rose-50 text-rose-700 font-semibold'
-                    : 'border-slate-100 hover:border-slate-300 text-slate-600'
-                )}
-              >
-                <span className='truncate mr-1'>Belum 100%</span>
-                <span className='font-bold'>{stats.pengiriman_not_completed ?? 0}</span>
+              <div className='flex flex-row gap-1.5 mt-auto'>
+                {/* Ter QC 100% */}
+                <div
+                  onClick={() => handleQcStatusFilterClick('completed')}
+                  className={cn(
+                    'flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                    qcStatusFilter === 'completed'
+                      ? 'border-violet-500 bg-violet-50 text-violet-700 font-semibold'
+                      : 'border-slate-100 hover:border-slate-300 text-slate-600'
+                  )}
+                >
+                  <span className='truncate mr-1'>Ter QC 100%</span>
+                  <span className='font-bold'>{stats.qc_completed ?? 0}</span>
+                </div>
+
+                {/* Belum 100% */}
+                <div
+                  onClick={() => handleQcStatusFilterClick('not_completed')}
+                  className={cn(
+                    'flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                    qcStatusFilter === 'not_completed'
+                      ? 'border-rose-500 bg-rose-50 text-rose-700 font-semibold'
+                      : 'border-slate-100 hover:border-slate-300 text-slate-600'
+                  )}
+                >
+                  <span className='truncate mr-1'>Belum 100%</span>
+                  <span className='font-bold'>{stats.qc_not_completed ?? 0}</span>
+                </div>
               </div>
             </div>
-          </div>
+          )}
+
+          {/* Pengiriman — pengiriman-v2 only */}
+          {showPengirimanV2 && (
+            <div className='flex flex-col gap-2 p-4 rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md'>
+              <div className='flex items-center gap-2 border-b border-slate-100 pb-2'>
+                <div className='h-6 w-6 rounded bg-blue-100 flex items-center justify-center text-blue-600 shrink-0'>
+                  <Truck className='h-3.5 w-3.5' />
+                </div>
+                <p className='text-[10px] font-bold text-slate-500 uppercase tracking-wider'>
+                  Pengiriman
+                </p>
+              </div>
+
+              <div className='flex flex-row gap-1.5 mt-auto'>
+                {/* Terkirim 100% */}
+                <div
+                  onClick={() => handlePengirimanStatusFilterClick('completed')}
+                  className={cn(
+                    'flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                    pengirimanStatusFilter === 'completed'
+                      ? 'border-blue-500 bg-blue-50 text-blue-700 font-semibold'
+                      : 'border-slate-100 hover:border-slate-300 text-slate-600'
+                  )}
+                >
+                  <span className='truncate mr-1'>Terkirim 100%</span>
+                  <span className='font-bold'>{stats.pengiriman_completed ?? 0}</span>
+                </div>
+
+                {/* Belum 100% */}
+                <div
+                  onClick={() => handlePengirimanStatusFilterClick('not_completed')}
+                  className={cn(
+                    'flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                    pengirimanStatusFilter === 'not_completed'
+                      ? 'border-rose-500 bg-rose-50 text-rose-700 font-semibold'
+                      : 'border-slate-100 hover:border-slate-300 text-slate-600'
+                  )}
+                >
+                  <span className='truncate mr-1'>Belum 100%</span>
+                  <span className='font-bold'>{stats.pengiriman_not_completed ?? 0}</span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -1593,7 +1768,10 @@ export function ProjectsV2Table({
             showPerencanaan ||
             showEngineer ||
             showProduksi ||
-            showPurchasing) &&
+            showPurchasing ||
+            showPengirimanV2 ||
+            showQC ||
+            showMarketingFilter) &&
             'bg-white rounded-xl shadow-sm border border-neutral-200'
         )}
       >
@@ -1931,7 +2109,7 @@ export function ProjectsV2Table({
                           </div>
                         </TableHead>
                       )}
-                      {!showSPD && !showProduksi && !showPurchasing && !showPengirimanV2 && (
+                      {!showSPD && !showProduksi && !showPurchasing && !showPengirimanV2 && !showQC && (
                         <TableHead>Nomor SPH</TableHead>
                       )}
                       {!showSPD && (
@@ -2029,7 +2207,7 @@ export function ProjectsV2Table({
                       )}
                     </>
                   )}
-                  {!showAllDashboard && !showProduksi && !showPurchasing && !showPiutang && !showPengirimanV2 && (
+                  {!showAllDashboard && !showProduksi && !showPurchasing && !showPiutang && !showPengirimanV2 && !showQC && (
                     <TableHead
                       className='cursor-pointer hover:bg-neutral-100 transition-colors group'
                       onClick={() => {
@@ -2059,8 +2237,11 @@ export function ProjectsV2Table({
                   {!showAllDashboard && !showSPD && !showPiutang && (
                     <TableHead>Jadwal Kirim</TableHead>
                   )}
-                  {showPengirimanV2 && (
+                  {(showPengirimanV2 || showQC) && (
                     <TableHead>Progres Produksi</TableHead>
+                  )}
+                  {showQC && (
+                    <TableHead>Progres QC</TableHead>
                   )}
                   {showPengirimanV2 && (
                     <TableHead>Progres Pengiriman</TableHead>
@@ -2541,7 +2722,7 @@ export function ProjectsV2Table({
                                 : '-'}
                             </TableCell>
                           )}
-                          {!showSPD && !showProduksi && !showPurchasing && !showPengirimanV2 && (
+                          {!showSPD && !showProduksi && !showPurchasing && !showPengirimanV2 && !showQC && (
                             <TableCell>
                               {project.sph?.nomor_sph || '-'}
                             </TableCell>
@@ -2718,7 +2899,7 @@ export function ProjectsV2Table({
                           )}
                         </>
                       )}
-                      {!showAllDashboard && !showProduksi && !showPurchasing && !showPiutang && !showPengirimanV2 && (
+                      {!showAllDashboard && !showProduksi && !showPurchasing && !showPiutang && !showPengirimanV2 && !showQC && (
                         <TableCell>
                           {project.need_design ? 'Ya' : 'Tidak'}
                         </TableCell>
@@ -2801,7 +2982,7 @@ export function ProjectsV2Table({
                           )}
                         </TableCell>
                       )}
-                      {showPengirimanV2 && (
+                      {(showPengirimanV2 || showQC) && (
                         <TableCell>
                           {project.progres_kerja ? (
                             <span className={cn(
@@ -2811,6 +2992,22 @@ export function ProjectsV2Table({
                                 : 'text-cyan-600'
                             )}>
                               {Math.round(project.progres_kerja.produksi)}%
+                            </span>
+                          ) : (
+                            <span className='text-muted-foreground italic text-xs'>-</span>
+                          )}
+                        </TableCell>
+                      )}
+                      {showQC && (
+                        <TableCell>
+                          {project.progres_kerja ? (
+                            <span className={cn(
+                              'text-xs font-black tabular-nums',
+                              project.progres_kerja.gudang_barang_jadi >= 100
+                                ? 'text-emerald-600'
+                                : 'text-violet-600'
+                            )}>
+                              {Math.round(project.progres_kerja.gudang_barang_jadi)}%
                             </span>
                           ) : (
                             <span className='text-muted-foreground italic text-xs'>-</span>
