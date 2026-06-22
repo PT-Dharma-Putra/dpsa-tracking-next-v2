@@ -131,6 +131,7 @@ const formatRupiah = (value: string | number) => {
 export function ProjectsV2Table({
   showSPD = false,
   showPerencanaan = false,
+  showPengirimanV2 = false,
   showProduksi = false,
   showPurchasing = false,
   onlyShowDetail = false,
@@ -142,6 +143,7 @@ export function ProjectsV2Table({
 }: {
   showSPD?: boolean;
   showPerencanaan?: boolean;
+  showPengirimanV2?: boolean;
   showProduksi?: boolean;
   showPurchasing?: boolean;
   onlyShowDetail?: boolean;
@@ -176,6 +178,9 @@ export function ProjectsV2Table({
     'completed' | 'not_completed' | null
   >(null);
   const [produksiFilter, setProduksiFilter] = React.useState<
+    'completed' | 'not_completed' | null
+  >(null);
+  const [pengirimanStatusFilter, setPengirimanStatusFilter] = React.useState<
     'completed' | 'not_completed' | null
   >(null);
   const [orderStatusFilter, setOrderStatusFilter] = React.useState<
@@ -300,6 +305,19 @@ export function ProjectsV2Table({
     setPage(1);
   };
 
+  const handlePengirimanStatusFilterClick = (type: 'completed' | 'not_completed') => {
+    setPengirimanStatusFilter(pengirimanStatusFilter === type ? null : type);
+    setSpkFilterActive(false);
+    setPoDivisiFilter(null);
+    setGambarKerjaFilter(null);
+    setDokubahFilter(null);
+    setStokMaterialFilter(null);
+    setProduksiFilter(null);
+    setOrderStatusFilter(null);
+    setDashboardFilter(null);
+    setPage(1);
+  };
+
   const handleOrderStatusFilterClick = (
     type: 'has_order' | 'tanpa_gambar' | 'sudah_diorder' | 'belum_diorder'
   ) => {
@@ -367,6 +385,7 @@ export function ProjectsV2Table({
       dokubahFilter,
       stokMaterialFilter,
       produksiFilter,
+      pengirimanStatusFilter,
       orderStatusFilter,
       dashboardFilter,
     ],
@@ -386,6 +405,7 @@ export function ProjectsV2Table({
         dokubah_status: dokubahFilter || undefined,
         stok_material_status: stokMaterialFilter || undefined,
         produksi_status: produksiFilter || undefined,
+        pengiriman_status: pengirimanStatusFilter || undefined,
         order_status: orderStatusFilter || undefined,
         dashboard_filter: dashboardFilter || undefined,
       }),
@@ -904,6 +924,142 @@ export function ProjectsV2Table({
                 <span className='font-bold'>
                   {stats.produksi_not_completed}
                 </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showPengirimanV2 && stats && (
+        <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 w-full'>
+          {/* Total Project */}
+          <div
+            onClick={() => handleDashboardFilterClick(null)}
+            className={cn(
+              'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-slate-400 select-none',
+              dashboardFilter === null
+                ? 'border-slate-500 bg-slate-50 ring-2 ring-slate-500/20'
+                : 'border-slate-200 bg-white'
+            )}
+          >
+            <div className='flex items-center gap-3'>
+              <div className='h-10 w-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 shrink-0'>
+                <Briefcase className='h-5 w-5' />
+              </div>
+              <div>
+                <p className='text-[10px] font-bold text-slate-500 uppercase tracking-wider'>
+                  Total Projek
+                </p>
+                <p className='text-xl font-bold text-slate-800'>
+                  {stats.total_project}
+                </p>
+              </div>
+            </div>
+            {dashboardFilter === null && (
+              <span className='text-[10px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
+                Active
+              </span>
+            )}
+          </div>
+
+          {/* Deadline Dekat */}
+          <div
+            onClick={() => handleDashboardFilterClick('deadline_dekat')}
+            className={cn(
+              'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-amber-400 select-none',
+              dashboardFilter === 'deadline_dekat'
+                ? 'border-amber-500 bg-amber-50/50 ring-2 ring-amber-500/20'
+                : 'border-amber-200 bg-white'
+            )}
+          >
+            <div className='flex items-center gap-3'>
+              <div className='h-10 w-10 rounded-lg bg-amber-100 flex items-center justify-center text-amber-600 shrink-0'>
+                <Clock className='h-5 w-5' />
+              </div>
+              <div>
+                <p className='text-[10px] font-bold text-amber-600 uppercase tracking-wider'>
+                  Deadline Dekat
+                </p>
+                <p className='text-xl font-bold text-slate-800'>
+                  {stats.deadline_dekat}
+                </p>
+              </div>
+            </div>
+            {dashboardFilter === 'deadline_dekat' && (
+              <span className='text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
+                Active
+              </span>
+            )}
+          </div>
+
+          {/* Overdue */}
+          <div
+            onClick={() => handleDashboardFilterClick('overdue')}
+            className={cn(
+              'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-red-400 select-none',
+              dashboardFilter === 'overdue'
+                ? 'border-red-500 bg-red-50/50 ring-2 ring-red-500/20'
+                : 'border-red-200 bg-white'
+            )}
+          >
+            <div className='flex items-center gap-3'>
+              <div className='h-10 w-10 rounded-lg bg-red-100 flex items-center justify-center text-red-600 shrink-0'>
+                <AlertCircle className='h-5 w-5' />
+              </div>
+              <div>
+                <p className='text-[10px] font-bold text-red-600 uppercase tracking-wider'>
+                  Overdue
+                </p>
+                <p className='text-xl font-bold text-red-800'>
+                  {stats.overdue}
+                </p>
+              </div>
+            </div>
+            {dashboardFilter === 'overdue' && (
+              <span className='text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
+                Active
+              </span>
+            )}
+          </div>
+
+          {/* Pengiriman */}
+          <div className='flex flex-col gap-2 p-4 rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md'>
+            <div className='flex items-center gap-2 border-b border-slate-100 pb-2'>
+              <div className='h-6 w-6 rounded bg-blue-100 flex items-center justify-center text-blue-600 shrink-0'>
+                <Truck className='h-3.5 w-3.5' />
+              </div>
+              <p className='text-[10px] font-bold text-slate-500 uppercase tracking-wider'>
+                Pengiriman
+              </p>
+            </div>
+
+            <div className='flex flex-row gap-1.5 mt-auto'>
+              {/* Terkirim 100% */}
+              <div
+                onClick={() => handlePengirimanStatusFilterClick('completed')}
+                className={cn(
+                  'flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  pengirimanStatusFilter === 'completed'
+                    ? 'border-blue-500 bg-blue-50 text-blue-700 font-semibold'
+                    : 'border-slate-100 hover:border-slate-300 text-slate-600'
+                )}
+              >
+                <span className='truncate mr-1'>Terkirim 100%</span>
+                <span className='font-bold'>{stats.pengiriman_completed ?? 0}</span>
+              </div>
+
+              {/* Belum 100% */}
+              <div
+                onClick={() => handlePengirimanStatusFilterClick('not_completed')}
+                className={cn(
+                  'flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  pengirimanStatusFilter === 'not_completed'
+                    ? 'border-rose-500 bg-rose-50 text-rose-700 font-semibold'
+                    : 'border-slate-100 hover:border-slate-300 text-slate-600'
+                )}
+              >
+                <span className='truncate mr-1'>Belum 100%</span>
+                <span className='font-bold'>{stats.pengiriman_not_completed ?? 0}</span>
               </div>
             </div>
           </div>
@@ -1775,7 +1931,7 @@ export function ProjectsV2Table({
                           </div>
                         </TableHead>
                       )}
-                      {!showSPD && !showProduksi && !showPurchasing && (
+                      {!showSPD && !showProduksi && !showPurchasing && !showPengirimanV2 && (
                         <TableHead>Nomor SPH</TableHead>
                       )}
                       {!showSPD && (
@@ -1873,7 +2029,7 @@ export function ProjectsV2Table({
                       )}
                     </>
                   )}
-                  {!showAllDashboard && !showProduksi && !showPurchasing && !showPiutang && (
+                  {!showAllDashboard && !showProduksi && !showPurchasing && !showPiutang && !showPengirimanV2 && (
                     <TableHead
                       className='cursor-pointer hover:bg-neutral-100 transition-colors group'
                       onClick={() => {
@@ -1902,6 +2058,12 @@ export function ProjectsV2Table({
                   )}
                   {!showAllDashboard && !showSPD && !showPiutang && (
                     <TableHead>Jadwal Kirim</TableHead>
+                  )}
+                  {showPengirimanV2 && (
+                    <TableHead>Progres Produksi</TableHead>
+                  )}
+                  {showPengirimanV2 && (
+                    <TableHead>Progres Pengiriman</TableHead>
                   )}
 
                   {showAllDashboard && (
@@ -1987,7 +2149,7 @@ export function ProjectsV2Table({
                     </>
                   )}
                   {(showProduksi || showPurchasing) && <TableHead>Progres Produksi</TableHead>}
-                  {(isMainProjectsV2Page || showPerencanaan) && (
+                  {(isMainProjectsV2Page || showPerencanaan) && !showPengirimanV2 && (
                     <>
                       <TableHead
                         className='cursor-pointer hover:bg-neutral-100 transition-colors group'
@@ -2379,7 +2541,7 @@ export function ProjectsV2Table({
                                 : '-'}
                             </TableCell>
                           )}
-                          {!showSPD && !showProduksi && !showPurchasing && (
+                          {!showSPD && !showProduksi && !showPurchasing && !showPengirimanV2 && (
                             <TableCell>
                               {project.sph?.nomor_sph || '-'}
                             </TableCell>
@@ -2556,7 +2718,7 @@ export function ProjectsV2Table({
                           )}
                         </>
                       )}
-                      {!showAllDashboard && !showProduksi && !showPurchasing && !showPiutang && (
+                      {!showAllDashboard && !showProduksi && !showPurchasing && !showPiutang && !showPengirimanV2 && (
                         <TableCell>
                           {project.need_design ? 'Ya' : 'Tidak'}
                         </TableCell>
@@ -2639,7 +2801,39 @@ export function ProjectsV2Table({
                           )}
                         </TableCell>
                       )}
-                      {(isMainProjectsV2Page || showPerencanaan) && (
+                      {showPengirimanV2 && (
+                        <TableCell>
+                          {project.progres_kerja ? (
+                            <span className={cn(
+                              'text-xs font-black tabular-nums',
+                              project.progres_kerja.produksi >= 100
+                                ? 'text-emerald-600'
+                                : 'text-cyan-600'
+                            )}>
+                              {Math.round(project.progres_kerja.produksi)}%
+                            </span>
+                          ) : (
+                            <span className='text-muted-foreground italic text-xs'>-</span>
+                          )}
+                        </TableCell>
+                      )}
+                      {showPengirimanV2 && (
+                        <TableCell>
+                          {project.progres_kerja ? (
+                            <span className={cn(
+                              'text-xs font-black tabular-nums',
+                              project.progres_kerja.pengiriman >= 100
+                                ? 'text-emerald-600'
+                                : 'text-blue-600'
+                            )}>
+                              {Math.round(project.progres_kerja.pengiriman)}%
+                            </span>
+                          ) : (
+                            <span className='text-muted-foreground italic text-xs'>-</span>
+                          )}
+                        </TableCell>
+                      )}
+                      {(isMainProjectsV2Page || showPerencanaan) && !showPengirimanV2 && (
                         <>
                           <TableCell>
                             {project.progres_kerja ? (
@@ -3309,6 +3503,20 @@ export function ProjectsV2Table({
                                   onClick={() =>
                                     router.push(
                                       `/dashboard/projects-v2/perencanaan/${project.id}/detail`
+                                    )
+                                  }
+                                >
+                                  Detail
+                                </Button>
+                              )}
+                              {showPengirimanV2 && (
+                                <Button
+                                  variant='outline'
+                                  size='sm'
+                                  className='h-8 px-3 text-blue-600 border-blue-200 hover:bg-blue-50 hover:text-blue-700'
+                                  onClick={() =>
+                                    router.push(
+                                      `/dashboard/projects-v2/pengiriman-v2/${project.id}/detail`
                                     )
                                   }
                                 >

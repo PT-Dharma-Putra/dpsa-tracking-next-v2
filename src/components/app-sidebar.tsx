@@ -426,6 +426,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             url: '/dashboard/projects-v2/pengiriman',
           },
           {
+            title: 'Project V2 | Pengiriman V2',
+            url: '/dashboard/projects-v2/pengiriman-v2',
+          },
+          {
             title: 'Project V2 | QC',
             url: '/dashboard/projects-v2/qc',
           },
