@@ -88,6 +88,15 @@ export function PengirimanPerSpkFormDialog({
   const queryClient = useQueryClient()
   const isEdit = !!pengiriman
 
+  // Fetch full pengiriman (with details) when editing — the list query may omit details
+  const { data: fullPengirimanData } = useQuery({
+    queryKey: ["pengiriman-detail", pengiriman?.id],
+    queryFn: () => PengirimanService.getPengirimanById(pengiriman!.id),
+    enabled: isEdit && !!pengiriman?.id && open,
+  })
+
+  const effectivePengiriman = isEdit ? (fullPengirimanData ?? pengiriman) : pengiriman
+
   const [selectedItems, setSelectedItems] = React.useState<SelectedItem[]>([])
 
   const form = useForm<FormValues>({
@@ -123,17 +132,17 @@ export function PengirimanPerSpkFormDialog({
   // Reset and auto-fill when dialog opens
   React.useEffect(() => {
     if (open) {
-      if (pengiriman) {
+      if (effectivePengiriman) {
         form.reset({
-          tanggal: new Date(pengiriman.tanggal),
-          client_id: pengiriman.client_id.toString(),
-          surat_jalan: pengiriman.surat_jalan || "",
-          setrim: pengiriman.setrim || "",
-          tanggal_mulai_setting: pengiriman.tanggal_mulai_setting ? new Date(pengiriman.tanggal_mulai_setting) : null,
-          tanggal_selesai_setting: pengiriman.tanggal_selesai_setting ? new Date(pengiriman.tanggal_selesai_setting) : null,
-          koor_setting: pengiriman.koor_setting || "",
-          no_kendaraan: pengiriman.no_kendaraan || "",
-          supir: pengiriman.supir || "",
+          tanggal: new Date(effectivePengiriman.tanggal),
+          client_id: effectivePengiriman.client_id.toString(),
+          surat_jalan: effectivePengiriman.surat_jalan || "",
+          setrim: effectivePengiriman.setrim || "",
+          tanggal_mulai_setting: effectivePengiriman.tanggal_mulai_setting ? new Date(effectivePengiriman.tanggal_mulai_setting) : null,
+          tanggal_selesai_setting: effectivePengiriman.tanggal_selesai_setting ? new Date(effectivePengiriman.tanggal_selesai_setting) : null,
+          koor_setting: effectivePengiriman.koor_setting || "",
+          no_kendaraan: effectivePengiriman.no_kendaraan || "",
+          supir: effectivePengiriman.supir || "",
         })
       } else {
         form.reset({
@@ -150,15 +159,17 @@ export function PengirimanPerSpkFormDialog({
         setSelectedItems([])
       }
     }
-  }, [open, pengiriman, form, clientId])
+  }, [open, effectivePengiriman, form, clientId])
 
   // Sync selected items when projectItems load or dialog reopens
   React.useEffect(() => {
     if (!open) return
     if (!projectItems || projectItems.length === 0) return
+    // In edit mode, wait until the full pengiriman (with details) has been fetched
+    if (isEdit && !fullPengirimanData) return
 
     const items = projectItems.map((item) => {
-      const detail = pengiriman?.details?.find(d => d.project_item_id === item.id)
+      const detail = effectivePengiriman?.details?.find(d => Number(d.project_item_id) === Number(item.id))
       const currentKeluar = detail ? detail.jumlah_keluar : Math.max(0, item.jumlah - item.jumlah_keluar_total)
       const currentTersetting = detail ? detail.jumlah_tersetting : 0
       const isSelected = !!detail
@@ -183,7 +194,7 @@ export function PengirimanPerSpkFormDialog({
     })
 
     setSelectedItems(items)
-  }, [projectItems, isEdit, pengiriman, open])
+  }, [projectItems, isEdit, effectivePengiriman, fullPengirimanData, open])
 
   const toggleSelect = (itemId: number) => {
     setSelectedItems(prev => prev.map(item => {
