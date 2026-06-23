@@ -680,7 +680,7 @@ export function ProjectsV2Table({
       )}
 
       {showPerencanaan && stats && (
-        <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4'>
+        <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8 gap-4'>
           {/* Total Project */}
           <div className='flex flex-col gap-2 p-4 rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md'>
             <div className='flex items-center gap-2 border-b border-slate-100 pb-2'>
@@ -695,33 +695,33 @@ export function ProjectsV2Table({
               </span>
             </div>
 
-            <div className='flex flex-row gap-1.5 mt-auto'>
+            <div className='grid grid-cols-2 gap-1.5 mt-auto'>
               {/* Terbit SPH */}
               <div
                 onClick={() => handleDashboardFilterClick('sph_only')}
                 className={cn(
-                  'flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  'flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
                   dashboardFilter === 'sph_only'
                     ? 'border-amber-500 bg-amber-50 text-amber-700 font-semibold'
                     : 'border-amber-100 bg-amber-50/50 hover:border-amber-300 text-amber-700'
                 )}
               >
-                <span className='truncate mr-1 font-medium'>Terbit SPH</span>
-                <span className='font-bold'>{stats.sph_only ?? 0}</span>
+                <span className='font-medium leading-tight'>Terbit SPH</span>
+                <span className='font-bold shrink-0 ml-1'>{stats.sph_only ?? 0}</span>
               </div>
 
               {/* Terbit SPK */}
               <div
                 onClick={() => handleDashboardFilterClick('spk')}
                 className={cn(
-                  'flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  'flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
                   dashboardFilter === 'spk'
                     ? 'border-indigo-500 bg-indigo-50 text-indigo-700 font-semibold'
                     : 'border-indigo-100 bg-indigo-50/50 hover:border-indigo-300 text-indigo-700'
                 )}
               >
-                <span className='truncate mr-1 font-medium'>Terbit SPK</span>
-                <span className='font-bold'>{stats.total_spk}</span>
+                <span className='font-medium leading-tight'>Terbit SPK</span>
+                <span className='font-bold shrink-0 ml-1'>{stats.total_spk}</span>
               </div>
             </div>
           </div>
@@ -737,33 +737,33 @@ export function ProjectsV2Table({
               </p>
             </div>
 
-            <div className='flex flex-row gap-1.5 mt-auto'>
+            <div className='grid grid-cols-2 gap-1.5 mt-auto'>
               {/* Sudah ter PO */}
               <div
                 onClick={() => handlePoDivisiFilterClick('completed')}
                 className={cn(
-                  'flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  'flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
                   poDivisiFilter === 'completed'
                     ? 'border-emerald-500 bg-emerald-50 text-emerald-700 font-semibold'
                     : 'border-slate-100 hover:border-slate-300 text-slate-600'
                 )}
               >
-                <span className='truncate mr-1'>Sudah ter PO</span>
-                <span className='font-bold'>{stats.po_divisi_completed}</span>
+                <span className='leading-tight'>Sudah ter PO</span>
+                <span className='font-bold shrink-0 ml-1'>{stats.po_divisi_completed}</span>
               </div>
 
               {/* Belum ter PO */}
               <div
                 onClick={() => handlePoDivisiFilterClick('not_completed')}
                 className={cn(
-                  'flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  'flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
                   poDivisiFilter === 'not_completed'
                     ? 'border-amber-500 bg-amber-50 text-amber-700 font-semibold'
                     : 'border-slate-100 hover:border-slate-300 text-slate-600'
                 )}
               >
-                <span className='truncate mr-1'>Belum ter PO</span>
-                <span className='font-bold'>
+                <span className='leading-tight'>Belum ter PO</span>
+                <span className='font-bold shrink-0 ml-1'>
                   {stats.po_divisi_not_completed}
                 </span>
               </div>
@@ -781,19 +781,19 @@ export function ProjectsV2Table({
               </p>
             </div>
 
-            <div className='flex flex-row gap-1.5 mt-auto'>
+            <div className='grid grid-cols-2 gap-1.5 mt-auto'>
               {/* Sudah */}
               <div
                 onClick={() => handleGambarKerjaFilterClick('completed')}
                 className={cn(
-                  'flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  'flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
                   gambarKerjaFilter === 'completed'
                     ? 'border-blue-500 bg-blue-55 text-blue-700 font-semibold animate-none'
                     : 'border-slate-100 hover:border-slate-300 text-slate-600'
                 )}
               >
-                <span className='truncate mr-1'>Lengkap</span>
-                <span className='font-bold'>
+                <span className='leading-tight'>Lengkap</span>
+                <span className='font-bold shrink-0 ml-1'>
                   {stats.gambar_kerja_completed}
                 </span>
               </div>
@@ -802,14 +802,14 @@ export function ProjectsV2Table({
               <div
                 onClick={() => handleGambarKerjaFilterClick('not_completed')}
                 className={cn(
-                  'flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  'flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
                   gambarKerjaFilter === 'not_completed'
                     ? 'border-blue-500 bg-blue-50 text-blue-700 font-semibold'
                     : 'border-slate-100 hover:border-slate-300 text-slate-600'
                 )}
               >
-                <span className='truncate mr-1'>Belum Lengkap</span>
-                <span className='font-bold'>
+                <span className='leading-tight'>Belum Lengkap</span>
+                <span className='font-bold shrink-0 ml-1'>
                   {stats.gambar_kerja_not_completed}
                 </span>
               </div>
@@ -827,33 +827,33 @@ export function ProjectsV2Table({
               </p>
             </div>
 
-            <div className='flex flex-row gap-1.5 mt-auto'>
+            <div className='grid grid-cols-2 gap-1.5 mt-auto'>
               {/* Sudah */}
               <div
                 onClick={() => handleDokubahFilterClick('completed')}
                 className={cn(
-                  'flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  'flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
                   dokubahFilter === 'completed'
                     ? 'border-amber-500 bg-amber-50 text-amber-700 font-semibold'
                     : 'border-slate-100 hover:border-slate-300 text-slate-600'
                 )}
               >
-                <span className='truncate mr-1'>Selesai</span>
-                <span className='font-bold'>{stats.dokubah_completed}</span>
+                <span className='leading-tight'>Selesai</span>
+                <span className='font-bold shrink-0 ml-1'>{stats.dokubah_completed}</span>
               </div>
 
               {/* Belum */}
               <div
                 onClick={() => handleDokubahFilterClick('not_completed')}
                 className={cn(
-                  'flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  'flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
                   dokubahFilter === 'not_completed'
                     ? 'border-amber-500 bg-amber-50 text-amber-700 font-semibold'
                     : 'border-slate-100 hover:border-slate-300 text-slate-600'
                 )}
               >
-                <span className='truncate mr-1'>Belum Selesai</span>
-                <span className='font-bold'>{stats.dokubah_not_completed}</span>
+                <span className='leading-tight'>Belum Selesai</span>
+                <span className='font-bold shrink-0 ml-1'>{stats.dokubah_not_completed}</span>
               </div>
             </div>
           </div>
@@ -869,19 +869,19 @@ export function ProjectsV2Table({
               </p>
             </div>
 
-            <div className='flex flex-row gap-1.5 mt-auto'>
+            <div className='grid grid-cols-2 gap-1.5 mt-auto'>
               {/* Sudah */}
               <div
                 onClick={() => handleStokMaterialFilterClick('completed')}
                 className={cn(
-                  'flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  'flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
                   stokMaterialFilter === 'completed'
                     ? 'border-violet-500 bg-violet-50 text-violet-700 font-semibold'
                     : 'border-slate-100 hover:border-slate-300 text-slate-600'
                 )}
               >
-                <span className='truncate mr-1'>Sudah Update</span>
-                <span className='font-bold'>
+                <span className='leading-tight'>Sudah Update</span>
+                <span className='font-bold shrink-0 ml-1'>
                   {stats.stok_material_completed}
                 </span>
               </div>
@@ -890,14 +890,14 @@ export function ProjectsV2Table({
               <div
                 onClick={() => handleStokMaterialFilterClick('not_completed')}
                 className={cn(
-                  'flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  'flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
                   stokMaterialFilter === 'not_completed'
                     ? 'border-violet-500 bg-violet-55 text-violet-700 font-semibold'
                     : 'border-slate-100 hover:border-slate-300 text-slate-600'
                 )}
               >
-                <span className='truncate mr-1'>Belum Update</span>
-                <span className='font-bold'>
+                <span className='leading-tight'>Belum Update</span>
+                <span className='font-bold shrink-0 ml-1'>
                   {stats.stok_material_not_completed}
                 </span>
               </div>
@@ -915,37 +915,97 @@ export function ProjectsV2Table({
               </p>
             </div>
 
-            <div className='flex flex-row gap-1.5 mt-auto'>
+            <div className='grid grid-cols-2 gap-1.5 mt-auto'>
               {/* Sudah */}
               <div
                 onClick={() => handleProduksiFilterClick('completed')}
                 className={cn(
-                  'flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  'flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
                   produksiFilter === 'completed'
                     ? 'border-rose-500 bg-rose-50 text-rose-700 font-semibold'
                     : 'border-slate-100 hover:border-slate-300 text-slate-600'
                 )}
               >
-                <span className='truncate mr-1'>Sudah Diupload</span>
-                <span className='font-bold'>{stats.produksi_completed}</span>
+                <span className='leading-tight'>Sudah Diupload</span>
+                <span className='font-bold shrink-0 ml-1'>{stats.produksi_completed}</span>
               </div>
 
               {/* Belum */}
               <div
                 onClick={() => handleProduksiFilterClick('not_completed')}
                 className={cn(
-                  'flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  'flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
                   produksiFilter === 'not_completed'
                     ? 'border-rose-55 bg-rose-50 text-rose-700 font-semibold'
                     : 'border-slate-100 hover:border-slate-300 text-slate-600'
                 )}
               >
-                <span className='truncate mr-1'>Belum Diupload</span>
-                <span className='font-bold'>
+                <span className='leading-tight'>Belum Diupload</span>
+                <span className='font-bold shrink-0 ml-1'>
                   {stats.produksi_not_completed}
                 </span>
               </div>
             </div>
+          </div>
+
+          {/* Deadline Dekat */}
+          <div
+            onClick={() => handleDashboardFilterClick('deadline_dekat')}
+            className={cn(
+              'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-amber-400 select-none',
+              dashboardFilter === 'deadline_dekat'
+                ? 'border-amber-500 bg-amber-50/50 ring-2 ring-amber-500/20'
+                : 'border-amber-200 bg-white'
+            )}
+          >
+            <div className='flex items-center gap-3'>
+              <div className='h-10 w-10 rounded-lg bg-amber-100 flex items-center justify-center text-amber-600 shrink-0'>
+                <Clock className='h-5 w-5' />
+              </div>
+              <div>
+                <p className='text-[10px] font-bold text-amber-600 uppercase tracking-wider'>
+                  Deadline Dekat
+                </p>
+                <p className='text-xl font-bold text-slate-800'>
+                  {stats.deadline_dekat}
+                </p>
+              </div>
+            </div>
+            {dashboardFilter === 'deadline_dekat' && (
+              <span className='text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
+                Active
+              </span>
+            )}
+          </div>
+
+          {/* Overdue */}
+          <div
+            onClick={() => handleDashboardFilterClick('overdue')}
+            className={cn(
+              'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-red-400 select-none',
+              dashboardFilter === 'overdue'
+                ? 'border-red-500 bg-red-50/50 ring-2 ring-red-500/20'
+                : 'border-red-200 bg-white'
+            )}
+          >
+            <div className='flex items-center gap-3'>
+              <div className='h-10 w-10 rounded-lg bg-red-100 flex items-center justify-center text-red-600 shrink-0'>
+                <AlertCircle className='h-5 w-5' />
+              </div>
+              <div>
+                <p className='text-[10px] font-bold text-red-600 uppercase tracking-wider'>
+                  Overdue
+                </p>
+                <p className='text-xl font-bold text-red-800'>
+                  {stats.overdue}
+                </p>
+              </div>
+            </div>
+            {dashboardFilter === 'overdue' && (
+              <span className='text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
+                Active
+              </span>
+            )}
           </div>
         </div>
       )}
