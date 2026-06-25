@@ -322,7 +322,9 @@ export function ProjectsV2Table({
     setPage(1);
   };
 
-  const handlePengirimanStatusFilterClick = (type: 'completed' | 'not_completed') => {
+  const handlePengirimanStatusFilterClick = (
+    type: 'completed' | 'not_completed'
+  ) => {
     setPengirimanStatusFilter(pengirimanStatusFilter === type ? null : type);
     setSpkFilterActive(false);
     setPoDivisiFilter(null);
@@ -707,7 +709,9 @@ export function ProjectsV2Table({
                 )}
               >
                 <span className='font-medium leading-tight'>Terbit SPH</span>
-                <span className='font-bold shrink-0 ml-1'>{stats.sph_only ?? 0}</span>
+                <span className='font-bold shrink-0 ml-1'>
+                  {stats.sph_only ?? 0}
+                </span>
               </div>
 
               {/* Terbit SPK */}
@@ -721,7 +725,9 @@ export function ProjectsV2Table({
                 )}
               >
                 <span className='font-medium leading-tight'>Terbit SPK</span>
-                <span className='font-bold shrink-0 ml-1'>{stats.total_spk}</span>
+                <span className='font-bold shrink-0 ml-1'>
+                  {stats.total_spk}
+                </span>
               </div>
             </div>
           </div>
@@ -749,7 +755,9 @@ export function ProjectsV2Table({
                 )}
               >
                 <span className='leading-tight'>Sudah ter PO</span>
-                <span className='font-bold shrink-0 ml-1'>{stats.po_divisi_completed}</span>
+                <span className='font-bold shrink-0 ml-1'>
+                  {stats.po_divisi_completed}
+                </span>
               </div>
 
               {/* Belum ter PO */}
@@ -839,7 +847,9 @@ export function ProjectsV2Table({
                 )}
               >
                 <span className='leading-tight'>Selesai</span>
-                <span className='font-bold shrink-0 ml-1'>{stats.dokubah_completed}</span>
+                <span className='font-bold shrink-0 ml-1'>
+                  {stats.dokubah_completed}
+                </span>
               </div>
 
               {/* Belum */}
@@ -853,7 +863,9 @@ export function ProjectsV2Table({
                 )}
               >
                 <span className='leading-tight'>Belum Selesai</span>
-                <span className='font-bold shrink-0 ml-1'>{stats.dokubah_not_completed}</span>
+                <span className='font-bold shrink-0 ml-1'>
+                  {stats.dokubah_not_completed}
+                </span>
               </div>
             </div>
           </div>
@@ -927,7 +939,9 @@ export function ProjectsV2Table({
                 )}
               >
                 <span className='leading-tight'>Sudah Diupload</span>
-                <span className='font-bold shrink-0 ml-1'>{stats.produksi_completed}</span>
+                <span className='font-bold shrink-0 ml-1'>
+                  {stats.produksi_completed}
+                </span>
               </div>
 
               {/* Belum */}
@@ -1249,7 +1263,9 @@ export function ProjectsV2Table({
                   )}
                 >
                   <span className='truncate mr-1'>Belum 100%</span>
-                  <span className='font-bold'>{stats.qc_not_completed ?? 0}</span>
+                  <span className='font-bold'>
+                    {stats.qc_not_completed ?? 0}
+                  </span>
                 </div>
               </div>
             </div>
@@ -1279,12 +1295,16 @@ export function ProjectsV2Table({
                   )}
                 >
                   <span className='truncate mr-1'>Terkirim 100%</span>
-                  <span className='font-bold'>{stats.pengiriman_completed ?? 0}</span>
+                  <span className='font-bold'>
+                    {stats.pengiriman_completed ?? 0}
+                  </span>
                 </div>
 
                 {/* Belum 100% */}
                 <div
-                  onClick={() => handlePengirimanStatusFilterClick('not_completed')}
+                  onClick={() =>
+                    handlePengirimanStatusFilterClick('not_completed')
+                  }
                   className={cn(
                     'flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
                     pengirimanStatusFilter === 'not_completed'
@@ -1293,7 +1313,9 @@ export function ProjectsV2Table({
                   )}
                 >
                   <span className='truncate mr-1'>Belum 100%</span>
-                  <span className='font-bold'>{stats.pengiriman_not_completed ?? 0}</span>
+                  <span className='font-bold'>
+                    {stats.pengiriman_not_completed ?? 0}
+                  </span>
                 </div>
               </div>
             </div>
@@ -1302,7 +1324,12 @@ export function ProjectsV2Table({
       )}
 
       {(showProduksi || showPurchasing) && stats && (
-        <div className={cn('grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 w-full', showPurchasing ? 'lg:grid-cols-8' : 'lg:grid-cols-7')}>
+        <div
+          className={cn(
+            'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 w-full',
+            showPurchasing ? 'lg:grid-cols-8' : 'lg:grid-cols-7'
+          )}
+        >
           {/* Total Project */}
           <div
             onClick={() => handleDashboardFilterClick(null)}
@@ -2169,9 +2196,11 @@ export function ProjectsV2Table({
                           </div>
                         </TableHead>
                       )}
-                      {!showSPD && !showProduksi && !showPurchasing && !showPengirimanV2 && !showQC && (
-                        <TableHead>Nomor SPH</TableHead>
-                      )}
+                      {!showSPD &&
+                        !showProduksi &&
+                        !showPurchasing &&
+                        !showPengirimanV2 &&
+                        !showQC && <TableHead>Nomor SPH</TableHead>}
                       {!showSPD && (
                         <TableHead
                           className='cursor-pointer hover:bg-neutral-100 transition-colors group'
@@ -2267,42 +2296,45 @@ export function ProjectsV2Table({
                       )}
                     </>
                   )}
-                  {!showAllDashboard && !showProduksi && !showPurchasing && !showPiutang && !showPengirimanV2 && !showQC && (
-                    <TableHead
-                      className='cursor-pointer hover:bg-neutral-100 transition-colors group'
-                      onClick={() => {
-                        if (sortBy === 'need_design') {
-                          setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                        } else {
-                          setSortBy('need_design');
-                          setSortOrder('asc');
-                        }
-                        setPage(1);
-                      }}
-                    >
-                      <div className='flex items-center gap-1'>
-                        Pakai Desain
-                        {sortBy === 'need_design' ? (
-                          sortOrder === 'asc' ? (
-                            <ArrowUp className='h-3 w-3' />
+                  {!showAllDashboard &&
+                    !showProduksi &&
+                    !showPurchasing &&
+                    !showPiutang &&
+                    !showPengirimanV2 &&
+                    !showQC && (
+                      <TableHead
+                        className='cursor-pointer hover:bg-neutral-100 transition-colors group'
+                        onClick={() => {
+                          if (sortBy === 'need_design') {
+                            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                          } else {
+                            setSortBy('need_design');
+                            setSortOrder('asc');
+                          }
+                          setPage(1);
+                        }}
+                      >
+                        <div className='flex items-center gap-1'>
+                          Pakai Desain
+                          {sortBy === 'need_design' ? (
+                            sortOrder === 'asc' ? (
+                              <ArrowUp className='h-3 w-3' />
+                            ) : (
+                              <ArrowDown className='h-3 w-3' />
+                            )
                           ) : (
-                            <ArrowDown className='h-3 w-3' />
-                          )
-                        ) : (
-                          <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
-                        )}
-                      </div>
-                    </TableHead>
-                  )}
+                            <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
+                          )}
+                        </div>
+                      </TableHead>
+                    )}
                   {!showAllDashboard && !showSPD && !showPiutang && (
                     <TableHead>Jadwal Kirim</TableHead>
                   )}
                   {(showPengirimanV2 || showQC) && (
                     <TableHead>Progres Produksi</TableHead>
                   )}
-                  {showQC && (
-                    <TableHead>Progres QC</TableHead>
-                  )}
+                  {showQC && <TableHead>Progres QC</TableHead>}
                   {showPengirimanV2 && (
                     <TableHead>Progres Pengiriman</TableHead>
                   )}
@@ -2389,38 +2421,43 @@ export function ProjectsV2Table({
                       </TableHead>
                     </>
                   )}
-                  {(showProduksi || showPurchasing) && <TableHead>Progres Produksi</TableHead>}
-                  {showProduksi && <TableHead>Progres Barang Jadi</TableHead>}
-                  {(isMainProjectsV2Page || showPerencanaan) && !showPengirimanV2 && (
-                    <>
-                      <TableHead
-                        className='cursor-pointer hover:bg-neutral-100 transition-colors group'
-                        onClick={() => {
-                          if (sortBy === 'persentase_kerja') {
-                            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                          } else {
-                            setSortBy('persentase_kerja');
-                            setSortOrder('asc');
-                          }
-                          setPage(1);
-                        }}
-                      >
-                        <div className='flex items-center gap-1'>
-                          Progres Kerja
-                          {sortBy === 'persentase_kerja' ? (
-                            sortOrder === 'asc' ? (
-                              <ArrowUp className='h-3 w-3' />
-                            ) : (
-                              <ArrowDown className='h-3 w-3' />
-                            )
-                          ) : (
-                            <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
-                          )}
-                        </div>
-                      </TableHead>
-                      <TableHead>Progres Akhir</TableHead>
-                    </>
+                  {(showProduksi || showPurchasing) && (
+                    <TableHead>Progres Produksi</TableHead>
                   )}
+                  {showProduksi && <TableHead>Progres Barang Jadi</TableHead>}
+                  {(isMainProjectsV2Page || showPerencanaan) &&
+                    !showPengirimanV2 && (
+                      <>
+                        <TableHead
+                          className='cursor-pointer hover:bg-neutral-100 transition-colors group'
+                          onClick={() => {
+                            if (sortBy === 'persentase_kerja') {
+                              setSortOrder(
+                                sortOrder === 'asc' ? 'desc' : 'asc'
+                              );
+                            } else {
+                              setSortBy('persentase_kerja');
+                              setSortOrder('asc');
+                            }
+                            setPage(1);
+                          }}
+                        >
+                          <div className='flex items-center gap-1'>
+                            Progres Kerja
+                            {sortBy === 'persentase_kerja' ? (
+                              sortOrder === 'asc' ? (
+                                <ArrowUp className='h-3 w-3' />
+                              ) : (
+                                <ArrowDown className='h-3 w-3' />
+                              )
+                            ) : (
+                              <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
+                            )}
+                          </div>
+                        </TableHead>
+                        <TableHead>Progres Akhir</TableHead>
+                      </>
+                    )}
                   <TableHead className='w-[100px] text-right'>
                     Actions
                   </TableHead>
@@ -2783,11 +2820,15 @@ export function ProjectsV2Table({
                                 : '-'}
                             </TableCell>
                           )}
-                          {!showSPD && !showProduksi && !showPurchasing && !showPengirimanV2 && !showQC && (
-                            <TableCell>
-                              {project.sph?.nomor_sph || '-'}
-                            </TableCell>
-                          )}
+                          {!showSPD &&
+                            !showProduksi &&
+                            !showPurchasing &&
+                            !showPengirimanV2 &&
+                            !showQC && (
+                              <TableCell>
+                                {project.sph?.nomor_sph || '-'}
+                              </TableCell>
+                            )}
                           {!showSPD && (
                             <TableCell>
                               {project.prioritas === 'Urgent' ? (
@@ -2845,15 +2886,18 @@ export function ProjectsV2Table({
                         </TableCell>
                       )}
 
-                      {!showAllDashboard && !showProduksi && !showPurchasing && !showPiutang && (
-                        <TableCell className='max-w-[200px] truncate'>
-                          {project.name || (
-                            <span className='text-muted-foreground italic'>
-                              None
-                            </span>
-                          )}
-                        </TableCell>
-                      )}
+                      {!showAllDashboard &&
+                        !showProduksi &&
+                        !showPurchasing &&
+                        !showPiutang && (
+                          <TableCell className='max-w-[200px] truncate'>
+                            {project.name || (
+                              <span className='text-muted-foreground italic'>
+                                None
+                              </span>
+                            )}
+                          </TableCell>
+                        )}
                       {!showAllDashboard && !showSPD && !showPiutang && (
                         <>
                           <TableCell>
@@ -2960,11 +3004,16 @@ export function ProjectsV2Table({
                           )}
                         </>
                       )}
-                      {!showAllDashboard && !showProduksi && !showPurchasing && !showPiutang && !showPengirimanV2 && !showQC && (
-                        <TableCell>
-                          {project.need_design ? 'Ya' : 'Tidak'}
-                        </TableCell>
-                      )}
+                      {!showAllDashboard &&
+                        !showProduksi &&
+                        !showPurchasing &&
+                        !showPiutang &&
+                        !showPengirimanV2 &&
+                        !showQC && (
+                          <TableCell>
+                            {project.need_design ? 'Ya' : 'Tidak'}
+                          </TableCell>
+                        )}
                       {!showAllDashboard && !showSPD && !showPiutang && (
                         <TableCell>
                           {project.jadwal_pengiriman ? (
@@ -3046,177 +3095,193 @@ export function ProjectsV2Table({
                       {(showPengirimanV2 || showQC) && (
                         <TableCell>
                           {project.progres_kerja ? (
-                            <span className={cn(
-                              'text-xs font-black tabular-nums',
-                              project.progres_kerja.produksi >= 100
-                                ? 'text-emerald-600'
-                                : 'text-cyan-600'
-                            )}>
+                            <span
+                              className={cn(
+                                'text-xs font-black tabular-nums',
+                                project.progres_kerja.produksi >= 100
+                                  ? 'text-emerald-600'
+                                  : 'text-cyan-600'
+                              )}
+                            >
                               {Math.round(project.progres_kerja.produksi)}%
                             </span>
                           ) : (
-                            <span className='text-muted-foreground italic text-xs'>-</span>
+                            <span className='text-muted-foreground italic text-xs'>
+                              -
+                            </span>
                           )}
                         </TableCell>
                       )}
                       {showQC && (
                         <TableCell>
                           {project.progres_kerja ? (
-                            <span className={cn(
-                              'text-xs font-black tabular-nums',
-                              project.progres_kerja.gudang_barang_jadi >= 100
-                                ? 'text-emerald-600'
-                                : 'text-violet-600'
-                            )}>
-                              {Math.round(project.progres_kerja.gudang_barang_jadi)}%
+                            <span
+                              className={cn(
+                                'text-xs font-black tabular-nums',
+                                project.progres_kerja.gudang_barang_jadi >= 100
+                                  ? 'text-emerald-600'
+                                  : 'text-violet-600'
+                              )}
+                            >
+                              {Math.round(
+                                project.progres_kerja.gudang_barang_jadi
+                              )}
+                              %
                             </span>
                           ) : (
-                            <span className='text-muted-foreground italic text-xs'>-</span>
+                            <span className='text-muted-foreground italic text-xs'>
+                              -
+                            </span>
                           )}
                         </TableCell>
                       )}
                       {showPengirimanV2 && (
                         <TableCell>
                           {project.progres_kerja ? (
-                            <span className={cn(
-                              'text-xs font-black tabular-nums',
-                              project.progres_kerja.pengiriman >= 100
-                                ? 'text-emerald-600'
-                                : 'text-blue-600'
-                            )}>
+                            <span
+                              className={cn(
+                                'text-xs font-black tabular-nums',
+                                project.progres_kerja.pengiriman >= 100
+                                  ? 'text-emerald-600'
+                                  : 'text-blue-600'
+                              )}
+                            >
                               {Math.round(project.progres_kerja.pengiriman)}%
                             </span>
                           ) : (
-                            <span className='text-muted-foreground italic text-xs'>-</span>
+                            <span className='text-muted-foreground italic text-xs'>
+                              -
+                            </span>
                           )}
                         </TableCell>
                       )}
-                      {(isMainProjectsV2Page || showPerencanaan) && !showPengirimanV2 && (
-                        <>
-                          <TableCell>
-                            {project.progres_kerja ? (
-                              <span className='text-sm font-black text-blue-600 tabular-nums'>
-                                {Math.round(project.progres_kerja.total)}%
-                              </span>
-                            ) : (
-                              <span className='text-muted-foreground italic text-xs'>
-                                -
-                              </span>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            {(() => {
-                              if (!project.progres_kerja)
+                      {(isMainProjectsV2Page || showPerencanaan) &&
+                        !showPengirimanV2 && (
+                          <>
+                            <TableCell>
+                              {project.progres_kerja ? (
+                                <span className='text-sm font-black text-blue-600 tabular-nums'>
+                                  {Math.round(project.progres_kerja.total)}%
+                                </span>
+                              ) : (
+                                <span className='text-muted-foreground italic text-xs'>
+                                  -
+                                </span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {(() => {
+                                if (!project.progres_kerja)
+                                  return (
+                                    <span className='text-muted-foreground italic text-xs'>
+                                      -
+                                    </span>
+                                  );
+
+                                const stages = [
+                                  {
+                                    name: 'PO Divisi',
+                                    date: project.progres_kerja
+                                      .tanggal_update_po_divisi,
+                                    color: 'blue',
+                                  },
+                                  {
+                                    name: 'Gambar Kerja',
+                                    date: project.progres_kerja
+                                      .tanggal_update_gambar_kerja,
+                                    color: 'orange',
+                                  },
+                                  {
+                                    name: 'Dokubah',
+                                    date: project.progres_kerja
+                                      .tanggal_update_dokubah,
+                                    color: 'purple',
+                                  },
+                                  {
+                                    name: 'Stok Material',
+                                    date: project.progres_kerja
+                                      .tanggal_update_stok_material,
+                                    color: 'emerald',
+                                  },
+                                  {
+                                    name: 'Produksi',
+                                    date: project.progres_kerja
+                                      .tanggal_update_produksi,
+                                    color: 'cyan',
+                                  },
+                                  {
+                                    name: 'Gudang',
+                                    date: project.progres_kerja
+                                      .tanggal_update_gudang_barang_jadi,
+                                    color: 'indigo',
+                                  },
+                                  {
+                                    name: 'Pengiriman',
+                                    date: project.progres_kerja
+                                      .tanggal_update_pengiriman,
+                                    color: 'rose',
+                                  },
+                                ];
+
+                                const latest = stages
+                                  .filter((s) => s.date)
+                                  .sort(
+                                    (a, b) =>
+                                      new Date(b.date!).getTime() -
+                                      new Date(a.date!).getTime()
+                                  )[0];
+
+                                if (!latest)
+                                  return (
+                                    <span className='text-muted-foreground italic text-xs'>
+                                      -
+                                    </span>
+                                  );
+
+                                const getColor = (color: string) => {
+                                  switch (color) {
+                                    case 'blue':
+                                      return 'bg-blue-50 text-blue-700 border-blue-200';
+                                    case 'orange':
+                                      return 'bg-orange-50 text-orange-700 border-orange-200';
+                                    case 'purple':
+                                      return 'bg-purple-50 text-purple-700 border-purple-200';
+                                    case 'emerald':
+                                      return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+                                    case 'cyan':
+                                      return 'bg-cyan-50 text-cyan-700 border-cyan-200';
+                                    case 'indigo':
+                                      return 'bg-indigo-50 text-indigo-700 border-indigo-200';
+                                    case 'rose':
+                                      return 'bg-rose-50 text-rose-700 border-rose-200';
+                                    default:
+                                      return 'bg-neutral-50 text-neutral-700 border-neutral-200';
+                                  }
+                                };
+
                                 return (
-                                  <span className='text-muted-foreground italic text-xs'>
-                                    -
-                                  </span>
+                                  <div className='flex flex-col gap-0.5'>
+                                    <Badge
+                                      variant='outline'
+                                      className={cn(
+                                        'text-[9px] font-bold py-0 h-4 w-fit',
+                                        getColor(latest.color)
+                                      )}
+                                    >
+                                      {latest.name}
+                                    </Badge>
+                                    <span className='text-[8px] text-muted-foreground whitespace-nowrap'>
+                                      {format(
+                                        new Date(latest.date!),
+                                        'MMM d, HH:mm'
+                                      )}
+                                    </span>
+                                  </div>
                                 );
-
-                              const stages = [
-                                {
-                                  name: 'PO Divisi',
-                                  date: project.progres_kerja
-                                    .tanggal_update_po_divisi,
-                                  color: 'blue',
-                                },
-                                {
-                                  name: 'Gambar Kerja',
-                                  date: project.progres_kerja
-                                    .tanggal_update_gambar_kerja,
-                                  color: 'orange',
-                                },
-                                {
-                                  name: 'Dokubah',
-                                  date: project.progres_kerja
-                                    .tanggal_update_dokubah,
-                                  color: 'purple',
-                                },
-                                {
-                                  name: 'Stok Material',
-                                  date: project.progres_kerja
-                                    .tanggal_update_stok_material,
-                                  color: 'emerald',
-                                },
-                                {
-                                  name: 'Produksi',
-                                  date: project.progres_kerja
-                                    .tanggal_update_produksi,
-                                  color: 'cyan',
-                                },
-                                {
-                                  name: 'Gudang',
-                                  date: project.progres_kerja
-                                    .tanggal_update_gudang_barang_jadi,
-                                  color: 'indigo',
-                                },
-                                {
-                                  name: 'Pengiriman',
-                                  date: project.progres_kerja
-                                    .tanggal_update_pengiriman,
-                                  color: 'rose',
-                                },
-                              ];
-
-                              const latest = stages
-                                .filter((s) => s.date)
-                                .sort(
-                                  (a, b) =>
-                                    new Date(b.date!).getTime() -
-                                    new Date(a.date!).getTime()
-                                )[0];
-
-                              if (!latest)
-                                return (
-                                  <span className='text-muted-foreground italic text-xs'>
-                                    -
-                                  </span>
-                                );
-
-                              const getColor = (color: string) => {
-                                switch (color) {
-                                  case 'blue':
-                                    return 'bg-blue-50 text-blue-700 border-blue-200';
-                                  case 'orange':
-                                    return 'bg-orange-50 text-orange-700 border-orange-200';
-                                  case 'purple':
-                                    return 'bg-purple-50 text-purple-700 border-purple-200';
-                                  case 'emerald':
-                                    return 'bg-emerald-50 text-emerald-700 border-emerald-200';
-                                  case 'cyan':
-                                    return 'bg-cyan-50 text-cyan-700 border-cyan-200';
-                                  case 'indigo':
-                                    return 'bg-indigo-50 text-indigo-700 border-indigo-200';
-                                  case 'rose':
-                                    return 'bg-rose-50 text-rose-700 border-rose-200';
-                                  default:
-                                    return 'bg-neutral-50 text-neutral-700 border-neutral-200';
-                                }
-                              };
-
-                              return (
-                                <div className='flex flex-col gap-0.5'>
-                                  <Badge
-                                    variant='outline'
-                                    className={cn(
-                                      'text-[9px] font-bold py-0 h-4 w-fit',
-                                      getColor(latest.color)
-                                    )}
-                                  >
-                                    {latest.name}
-                                  </Badge>
-                                  <span className='text-[8px] text-muted-foreground whitespace-nowrap'>
-                                    {format(
-                                      new Date(latest.date!),
-                                      'MMM d, HH:mm'
-                                    )}
-                                  </span>
-                                </div>
-                              );
-                            })()}
-                          </TableCell>
-                        </>
-                      )}
+                              })()}
+                            </TableCell>
+                          </>
+                        )}
                       {!showAllDashboard && showSPD && (
                         <>
                           {!showEngineer && (
@@ -3727,22 +3792,33 @@ export function ProjectsV2Table({
                                   <div
                                     className='h-full bg-violet-500 rounded-full transition-all duration-500'
                                     style={{
-                                      width: `${project.progres_kerja.gudang_barang_jadi || 0}%`,
+                                      width: `${
+                                        project.progres_kerja
+                                          .gudang_barang_jadi || 0
+                                      }%`,
                                     }}
                                   />
                                 </div>
                               </div>
-                              <span className={cn(
-                                'text-xs font-bold tabular-nums',
-                                project.progres_kerja.gudang_barang_jadi >= 100
-                                  ? 'text-emerald-600'
-                                  : 'text-violet-600'
-                              )}>
-                                {Math.round(project.progres_kerja.gudang_barang_jadi || 0)}%
+                              <span
+                                className={cn(
+                                  'text-xs font-bold tabular-nums',
+                                  project.progres_kerja.gudang_barang_jadi >=
+                                    100
+                                    ? 'text-emerald-600'
+                                    : 'text-violet-600'
+                                )}
+                              >
+                                {Math.round(
+                                  project.progres_kerja.gudang_barang_jadi || 0
+                                )}
+                                %
                               </span>
                             </div>
                           ) : (
-                            <span className='text-muted-foreground italic text-xs'>-</span>
+                            <span className='text-muted-foreground italic text-xs'>
+                              -
+                            </span>
                           )}
                         </TableCell>
                       )}
