@@ -2390,6 +2390,7 @@ export function ProjectsV2Table({
                     </>
                   )}
                   {(showProduksi || showPurchasing) && <TableHead>Progres Produksi</TableHead>}
+                  {showProduksi && <TableHead>Progres Barang Jadi</TableHead>}
                   {(isMainProjectsV2Page || showPerencanaan) && !showPengirimanV2 && (
                     <>
                       <TableHead
@@ -3715,6 +3716,34 @@ export function ProjectsV2Table({
                               {Math.round(project.progres_produksi || 0)}%
                             </span>
                           </div>
+                        </TableCell>
+                      )}
+                      {showProduksi && (
+                        <TableCell>
+                          {project.progres_kerja ? (
+                            <div className='flex items-center gap-2'>
+                              <div className='flex-1 min-w-[60px]'>
+                                <div className='h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden'>
+                                  <div
+                                    className='h-full bg-violet-500 rounded-full transition-all duration-500'
+                                    style={{
+                                      width: `${project.progres_kerja.gudang_barang_jadi || 0}%`,
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                              <span className={cn(
+                                'text-xs font-bold tabular-nums',
+                                project.progres_kerja.gudang_barang_jadi >= 100
+                                  ? 'text-emerald-600'
+                                  : 'text-violet-600'
+                              )}>
+                                {Math.round(project.progres_kerja.gudang_barang_jadi || 0)}%
+                              </span>
+                            </div>
+                          ) : (
+                            <span className='text-muted-foreground italic text-xs'>-</span>
+                          )}
                         </TableCell>
                       )}
                       {showAllDashboard ? (
