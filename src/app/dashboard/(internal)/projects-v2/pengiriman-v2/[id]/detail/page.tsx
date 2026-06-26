@@ -122,6 +122,7 @@ export default function PerencanaanDetailPage() {
 
   // Items Search State
   const [searchQuery, setSearchQuery] = React.useState('');
+  const [showBelumTerkirim, setShowBelumTerkirim] = React.useState(false);
 
   // Gambar Kerja State
   const [isGkDialogOpen, setIsGkDialogOpen] = React.useState(false);
@@ -1628,14 +1629,27 @@ export default function PerencanaanDetailPage() {
               {totalItems} Items
             </Badge>
           </h2>
-          <div className='relative w-64'>
-            <Search className='absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-neutral-400 pointer-events-none' />
-            <Input
-              placeholder='Cari item, lantai, ruang...'
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className='pl-8 h-8 text-xs'
-            />
+          <div className='flex items-center gap-2'>
+            <Button
+              variant={showBelumTerkirim ? 'default' : 'outline'}
+              size='sm'
+              className={cn(
+                'h-8 text-xs font-semibold transition-colors',
+                showBelumTerkirim ? 'bg-amber-500 hover:bg-amber-600 text-white border-transparent' : 'text-amber-600 border-amber-200 hover:bg-amber-50'
+              )}
+              onClick={() => setShowBelumTerkirim(!showBelumTerkirim)}
+            >
+              Belum Terkirim
+            </Button>
+            <div className='relative w-64'>
+              <Search className='absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-neutral-400 pointer-events-none' />
+              <Input
+                placeholder='Cari item, lantai, ruang...'
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className='pl-8 h-8 text-xs'
+              />
+            </div>
           </div>
         </div>
 
@@ -1700,6 +1714,15 @@ export default function PerencanaanDetailPage() {
               ) : (
                 [...(items ?? [])]
                   .filter((item) => {
+                    if (showBelumTerkirim) {
+                      const totalKeluar =
+                        item.detail_pengiriman?.reduce(
+                          (sum, d) => sum + Number(d.jumlah_keluar),
+                          0
+                        ) ?? 0;
+                      if (totalKeluar >= item.jumlah) return false;
+                    }
+
                     if (!searchQuery.trim()) return true;
                     const q = searchQuery.toLowerCase();
                     return (
