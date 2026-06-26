@@ -174,7 +174,9 @@ export default function ProduksiDetailPage() {
   };
 
   const handlePrintItemQR = () => {
-    if (!qrItem?.mdl_item?.kode_barang) return;
+    if (!qrItem) return;
+
+    const qrCodeValue = qrItem.mdl_item?.kode_barang || qrItem.id.toString();
 
     // Capture the already-rendered QR SVG from hidden div
     const svgEl = hiddenQrRef.current?.querySelector('svg');
@@ -234,7 +236,7 @@ export default function ProduksiDetailPage() {
                 .join('')}
             </div>
             <div class="qr">${svgString}<p>${
-        qrItem.mdl_item!.kode_barang
+        qrCodeValue
       }</p></div>
           </div>
         </div>`;
@@ -1265,7 +1267,6 @@ export default function ProduksiDetailPage() {
                         size='sm'
                         variant='outline'
                         className='h-7 px-2 gap-1.5 text-[11px]'
-                        disabled={!item.mdl_item?.kode_barang}
                         onClick={() => openItemQrDialog(item)}
                       >
                         <QrCode className='h-3.5 w-3.5' />
@@ -2490,7 +2491,6 @@ export default function ProduksiDetailPage() {
               </AlertDialogCancel>
               <Button
                 className='bg-blue-600 hover:bg-blue-700 text-white gap-2'
-                disabled={!qrItem?.mdl_item?.kode_barang}
                 onClick={handlePrintItemQR}
               >
                 <Printer className='h-4 w-4' />
@@ -2512,9 +2512,9 @@ export default function ProduksiDetailPage() {
         }}
         aria-hidden='true'
       >
-        {qrItem?.mdl_item?.kode_barang && (
+        {qrItem && (
           <QRCodeSVG
-            value={qrItem.mdl_item.kode_barang}
+            value={qrItem.mdl_item?.kode_barang || qrItem.id.toString()}
             size={128}
             bgColor='#ffffff'
             fgColor='#000000'
