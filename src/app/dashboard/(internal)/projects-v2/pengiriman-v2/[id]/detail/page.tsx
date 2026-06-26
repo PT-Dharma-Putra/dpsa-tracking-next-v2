@@ -181,7 +181,7 @@ export default function PerencanaanDetailPage() {
       },
     };
 
-    const wsData = [
+    const wsData: any[][] = [
       [
         { v: 'NO', t: 's', s: headerStyle },
         { v: 'LANTAI', t: 's', s: headerStyle },
