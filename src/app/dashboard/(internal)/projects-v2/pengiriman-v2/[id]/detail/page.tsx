@@ -69,6 +69,11 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
   Command,
   CommandEmpty,
   CommandGroup,
@@ -92,6 +97,7 @@ import {
   PengirimanService,
   Pengiriman,
 } from '@/features/pengiriman/services/pengiriman-service';
+import * as XLSX from 'xlsx-js-style';
 
 export default function PerencanaanDetailPage() {
   const params = useParams();
@@ -123,6 +129,157 @@ export default function PerencanaanDetailPage() {
   // Items Search State
   const [searchQuery, setSearchQuery] = React.useState('');
   const [showBelumTerkirim, setShowBelumTerkirim] = React.useState(false);
+
+  const handleExportBelumTerkirim = () => {
+    const belumTerkirimItems = (items ?? []).filter((item) => {
+      const totalKeluar =
+        item.detail_pengiriman?.reduce(
+          (sum, d) => sum + Number(d.jumlah_keluar),
+          0
+        ) ?? 0;
+      return totalKeluar < item.jumlah;
+    });
+
+    if (belumTerkirimItems.length === 0) {
+      toast.error('Tidak ada item yang belum terkirim untuk diekspor');
+      return;
+    }
+
+    const wb = XLSX.utils.book_new();
+
+    const headerStyle = {
+      font: { bold: true, sz: 10 },
+      alignment: { horizontal: 'center', vertical: 'center' },
+      border: {
+        top: { style: 'thin' },
+        bottom: { style: 'thin' },
+        left: { style: 'thin' },
+        right: { style: 'thin' },
+      },
+      fill: { fgColor: { rgb: 'F5F5F5' } },
+    };
+
+    const dataStyleCenter = {
+      font: { sz: 10 },
+      alignment: { horizontal: 'center', vertical: 'center' },
+      border: {
+        top: { style: 'thin' },
+        bottom: { style: 'thin' },
+        left: { style: 'thin' },
+        right: { style: 'thin' },
+      },
+    };
+
+    const dataStyleLeft = {
+      font: { sz: 10 },
+      alignment: { horizontal: 'left', vertical: 'center', wrapText: true },
+      border: {
+        top: { style: 'thin' },
+        bottom: { style: 'thin' },
+        left: { style: 'thin' },
+        right: { style: 'thin' },
+      },
+    };
+
+    const wsData = [
+      [
+        { v: 'NO', t: 's', s: headerStyle },
+        { v: 'LANTAI', t: 's', s: headerStyle },
+        { v: 'RUANG', t: 's', s: headerStyle },
+        { v: 'NO. SPK', t: 's', s: headerStyle },
+        { v: 'ITEM/PERABOT', t: 's', s: headerStyle },
+        { v: 'DIMENSI (METER)', t: 's', s: headerStyle },
+        '',
+        '',
+        { v: 'VOL', t: 's', s: headerStyle },
+        { v: 'SAT', t: 's', s: headerStyle },
+        { v: 'JML', t: 's', s: headerStyle },
+        { v: 'KET', t: 's', s: headerStyle },
+      ],
+      [
+        '',
+        '',
+        '',
+        '',
+        '',
+        { v: 'P', t: 's', s: headerStyle },
+        { v: 'L', t: 's', s: headerStyle },
+        { v: 'T', t: 's', s: headerStyle },
+        '',
+        '',
+        '',
+        '',
+      ],
+    ];
+
+    belumTerkirimItems.forEach((item, idx) => {
+      const totalKeluar =
+        item.detail_pengiriman?.reduce(
+          (sum, d) => sum + Number(d.jumlah_keluar),
+          0
+        ) ?? 0;
+      const sisaJml = item.jumlah - totalKeluar;
+
+      wsData.push([
+        { v: idx + 1, t: 'n', s: dataStyleCenter },
+        { v: item.lantai || '-', t: 's', s: dataStyleCenter },
+        { v: item.ruang || '-', t: 's', s: dataStyleLeft },
+        {
+          v: item.project?.spk_number || project?.data?.spk_number || '-',
+          t: 's',
+          s: dataStyleCenter,
+        },
+        { v: item.item || '-', t: 's', s: dataStyleLeft },
+        { v: item.panjang || '-', t: 's', s: dataStyleCenter },
+        { v: item.lebar || '-', t: 's', s: dataStyleCenter },
+        { v: item.tinggi || '-', t: 's', s: dataStyleCenter },
+        { v: item.volume || '-', t: 's', s: dataStyleCenter },
+        { v: item.satuan || '-', t: 's', s: dataStyleCenter },
+        {
+          v: sisaJml,
+          t: 'n',
+          s: { ...dataStyleCenter, font: { bold: true, sz: 10 } },
+        },
+        { v: item.keterangan || '-', t: 's', s: dataStyleLeft },
+      ]);
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+    ws['!merges'] = [
+      { s: { r: 0, c: 0 }, e: { r: 1, c: 0 } },
+      { s: { r: 0, c: 1 }, e: { r: 1, c: 1 } },
+      { s: { r: 0, c: 2 }, e: { r: 1, c: 2 } },
+      { s: { r: 0, c: 3 }, e: { r: 1, c: 3 } },
+      { s: { r: 0, c: 4 }, e: { r: 1, c: 4 } },
+      { s: { r: 0, c: 5 }, e: { r: 0, c: 7 } },
+      { s: { r: 0, c: 8 }, e: { r: 1, c: 8 } },
+      { s: { r: 0, c: 9 }, e: { r: 1, c: 9 } },
+      { s: { r: 0, c: 10 }, e: { r: 1, c: 10 } },
+      { s: { r: 0, c: 11 }, e: { r: 1, c: 11 } },
+    ];
+
+    ws['!cols'] = [
+      { wch: 5 }, // NO
+      { wch: 10 }, // LANTAI
+      { wch: 20 }, // RUANG
+      { wch: 15 }, // SPK
+      { wch: 30 }, // ITEM
+      { wch: 8 }, // P
+      { wch: 8 }, // L
+      { wch: 8 }, // T
+      { wch: 8 }, // VOL
+      { wch: 10 }, // SAT
+      { wch: 8 }, // JML
+      { wch: 20 }, // KET
+    ];
+
+    XLSX.utils.book_append_sheet(wb, ws, 'Belum Terkirim');
+    const clientName = project?.client?.name || '';
+    const safeClientName = clientName.replace(/[^a-zA-Z0-9 _-]/g, '');
+    const fileName = `Belum Terkirim ${safeClientName}`.trim() + '.xlsx';
+    XLSX.writeFile(wb, fileName);
+  };
 
   // Gambar Kerja State
   const [isGkDialogOpen, setIsGkDialogOpen] = React.useState(false);
@@ -1641,6 +1798,22 @@ export default function PerencanaanDetailPage() {
             >
               Belum Terkirim
             </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant='outline'
+                  size='sm'
+                  className='h-8 text-xs font-semibold text-emerald-600 border-emerald-200 hover:bg-emerald-50'
+                  onClick={handleExportBelumTerkirim}
+                >
+                  <FileDown className='h-3.5 w-3.5 mr-1.5' />
+                  Export XLS
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Export Excel Item Belum Terkirim</p>
+              </TooltipContent>
+            </Tooltip>
             <div className='relative w-64'>
               <Search className='absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-neutral-400 pointer-events-none' />
               <Input
