@@ -225,7 +225,7 @@ export default function PerencanaanDetailPage() {
         { v: item.lantai || '-', t: 's', s: dataStyleCenter },
         { v: item.ruang || '-', t: 's', s: dataStyleLeft },
         {
-          v: item.project?.spk_number || project?.data?.spk_number || '-',
+          v: project?.spk_number || project?.spk?.nomor_spk || '-',
           t: 's',
           s: dataStyleCenter,
         },
