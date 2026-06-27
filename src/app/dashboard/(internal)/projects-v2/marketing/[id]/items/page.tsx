@@ -81,6 +81,8 @@ import { ProjectItemFormDialog } from '../../../_components/project-item-form-di
 import { CatalogModal } from '../../../_components/catalog-modal';
 import { ProjectItemImportDialog } from '../../../_components/project-item-import-dialog';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const formatRupiah = (value: string | number) => {
   if (value === null || value === undefined || value === '') return '';
@@ -146,6 +148,27 @@ export default function ProjectItemsPage() {
   const { data: items, isLoading: isLoadingItems } = useQuery({
     queryKey: ['project-v2-items', projectId],
     queryFn: () => projectV2Service.getProjectItems(projectId),
+  });
+
+  const [selectedItemIds, setSelectedItemIds] = React.useState<number[]>([]);
+  const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = React.useState(false);
+
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async () => {
+      const promises = selectedItemIds.map(id => projectV2Service.deleteProjectItem(id));
+      await Promise.all(promises);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['project-v2-items', projectId],
+      });
+      toast.success(`${selectedItemIds.length} item berhasil dihapus`);
+      setSelectedItemIds([]);
+      setIsBulkDeleteDialogOpen(false);
+    },
+    onError: () => {
+      toast.error('Gagal menghapus beberapa item');
+    },
   });
 
   const deleteMutation = useMutation({
@@ -1743,6 +1766,16 @@ export default function ProjectItemsPage() {
           </div>
 
           <div className='flex items-center gap-2'>
+            {selectedItemIds.length > 0 && (
+              <Button
+                onClick={() => setIsBulkDeleteDialogOpen(true)}
+                variant='destructive'
+                className='shadow-sm transition-all hover:scale-105 active:scale-95'
+              >
+                <Trash2 className='mr-2 h-4 w-4' />
+                Hapus Terpilih ({selectedItemIds.length})
+              </Button>
+            )}
             <Button
               onClick={() => setIsImportOpen(true)}
               variant='outline'
@@ -1766,6 +1799,18 @@ export default function ProjectItemsPage() {
             <Table>
               <TableHeader className='bg-white'>
                 <TableRow>
+                  <TableHead className='w-[40px] text-center'>
+                    <Checkbox
+                      checked={!!items && items.length > 0 && selectedItemIds.length === items.length}
+                      onCheckedChange={(checked) => {
+                        if (checked && items) {
+                          setSelectedItemIds(items.map((i) => i.id));
+                        } else {
+                          setSelectedItemIds([]);
+                        }
+                      }}
+                    />
+                  </TableHead>
                   <TableHead className='w-[50px] whitespace-nowrap'>
                     #
                   </TableHead>
@@ -1800,7 +1845,7 @@ export default function ProjectItemsPage() {
               <TableBody>
                 {isLoadingItems ? (
                   <TableRow>
-                    <TableCell colSpan={11} className='h-32 text-center'>
+                    <TableCell colSpan={12} className='h-32 text-center'>
                       <div className='flex items-center justify-center'>
                         <Loader2 className='h-6 w-6 animate-spin text-neutral-400' />
                       </div>
@@ -1808,7 +1853,7 @@ export default function ProjectItemsPage() {
                   </TableRow>
                 ) : items?.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={11} className='h-40 text-center'>
+                    <TableCell colSpan={12} className='h-40 text-center'>
                       <div className='flex flex-col items-center justify-center text-muted-foreground space-y-3'>
                         <div className='h-12 w-12 rounded-full bg-neutral-100 flex items-center justify-center'>
                           <Package className='h-6 w-6 text-neutral-400' />
@@ -1830,6 +1875,20 @@ export default function ProjectItemsPage() {
                       key={item.id}
                       className='hover:bg-blue-50/30 transition-colors group'
                     >
+                      <TableCell className='text-center'>
+                        <Checkbox
+                          checked={selectedItemIds.includes(item.id)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedItemIds((prev) => [...prev, item.id]);
+                            } else {
+                              setSelectedItemIds((prev) =>
+                                prev.filter((id) => id !== item.id)
+                              );
+                            }
+                          }}
+                        />
+                      </TableCell>
                       <TableCell className='text-muted-foreground font-medium'>
                         {index + 1}
                       </TableCell>
@@ -2083,7 +2142,7 @@ export default function ProjectItemsPage() {
             </div>
             <div className='space-y-1.5'>
               <Label className='text-xs font-medium text-emerald-700'>
-                Bukti ACC (File/Foto)
+                Bukti ACC (File pdf design fix)
               </Label>
               <Input
                 type='file'
@@ -2112,7 +2171,7 @@ export default function ProjectItemsPage() {
                 handleAccUpdate();
                 setIsAccModalOpen(false);
               }}
-              disabled={updateAccMutation.isPending}
+              disabled={updateAccMutation.isPending || (!buktiAccFile && !existingAcc?.bukti_acc)}
             >
               {updateAccMutation.isPending ? (
                 <Loader2 className='h-4 w-4 animate-spin' />
@@ -2411,24 +2470,23 @@ export default function ProjectItemsPage() {
             </div>
             <div className='space-y-1.5'>
               <Label className='text-xs font-medium text-purple-700'>
-                PPN (%)
+                PPN 12% (11/12 x 12%)
               </Label>
-              <Input
-                type='number'
-                placeholder='Contoh: 11 atau 12'
-                value={editSpkPpn}
-                onChange={(e) => {
-                  const pct = e.target.value;
-                  setEditSpkPpn(pct);
-                  const nominalNum = parseInt(parseRawNumber(editSpkNominal) || '0', 10);
-                  const ppnAmount = Math.round(nominalNum * (parseFloat(pct || '0') / 100));
-                  setEditSpkGrandTotal((nominalNum + ppnAmount) > 0 ? formatRupiah((nominalNum + ppnAmount).toString()) : '');
-                }}
-                className='h-9 text-xs border-purple-200'
-                min='0'
-                max='100'
-                step='0.1'
-              />
+              <div className='flex items-center gap-3 h-9'>
+                <Switch
+                  checked={editSpkPpn === '11'}
+                  onCheckedChange={(checked) => {
+                    const pct = checked ? '11' : '0';
+                    setEditSpkPpn(pct);
+                    const nominalNum = parseInt(parseRawNumber(editSpkNominal) || '0', 10);
+                    const ppnAmount = Math.round(nominalNum * (parseFloat(pct || '0') / 100));
+                    setEditSpkGrandTotal((nominalNum + ppnAmount) > 0 ? formatRupiah((nominalNum + ppnAmount).toString()) : '');
+                  }}
+                />
+                <span className='text-xs font-medium text-neutral-600'>
+                  {editSpkPpn === '11' ? 'Ya' : 'Tidak'}
+                </span>
+              </div>
             </div>
             <div className='space-y-1.5'>
               <Label className='text-xs font-medium text-purple-700'>
@@ -2576,24 +2634,23 @@ export default function ProjectItemsPage() {
             </div>
             <div className='space-y-1.5'>
               <Label className='text-xs font-medium text-purple-700'>
-                PPN (%)
+                PPN 12% (11/12 x 12%)
               </Label>
-              <Input
-                type='number'
-                placeholder='Contoh: 11 atau 12'
-                value={spkPpn}
-                onChange={(e) => {
-                  const pct = e.target.value;
-                  setSpkPpn(pct);
-                  const nominalNum = parseInt(parseRawNumber(spkNominal) || '0', 10);
-                  const ppnAmount = Math.round(nominalNum * (parseFloat(pct || '0') / 100));
-                  setSpkGrandTotal((nominalNum + ppnAmount) > 0 ? (nominalNum + ppnAmount).toString() : '');
-                }}
-                className='h-9 text-xs border-purple-200'
-                min='0'
-                max='100'
-                step='0.1'
-              />
+              <div className='flex items-center gap-3 h-9'>
+                <Switch
+                  checked={spkPpn === '11'}
+                  onCheckedChange={(checked) => {
+                    const pct = checked ? '11' : '0';
+                    setSpkPpn(pct);
+                    const nominalNum = parseInt(parseRawNumber(spkNominal) || '0', 10);
+                    const ppnAmount = Math.round(nominalNum * (parseFloat(pct || '0') / 100));
+                    setSpkGrandTotal((nominalNum + ppnAmount) > 0 ? (nominalNum + ppnAmount).toString() : '');
+                  }}
+                />
+                <span className='text-xs font-medium text-neutral-600'>
+                  {spkPpn === '11' ? 'Ya' : 'Tidak'}
+                </span>
+              </div>
             </div>
             <div className='space-y-1.5'>
               <Label className='text-xs font-medium text-purple-700'>
@@ -2896,6 +2953,32 @@ export default function ProjectItemsPage() {
                 <Loader2 className='mr-2 h-4 w-4 animate-spin' />
               )}
               Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={isBulkDeleteDialogOpen}
+        onOpenChange={setIsBulkDeleteDialogOpen}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus {selectedItemIds.length} item?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tindakan ini akan menghapus {selectedItemIds.length} item yang dipilih secara permanen. Anda tidak dapat membatalkan tindakan ini.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => bulkDeleteMutation.mutate()}
+              className='bg-red-600 hover:bg-red-700'
+            >
+              {bulkDeleteMutation.isPending && (
+                <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+              )}
+              Ya, Hapus
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
