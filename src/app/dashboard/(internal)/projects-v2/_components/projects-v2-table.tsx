@@ -2165,7 +2165,7 @@ export function ProjectsV2Table({
                         <TableHead>Mkt</TableHead>
                       )}
                       <TableHead>Client</TableHead>
-                      {!showSPD && <TableHead>Nomor SPK</TableHead>}
+                      {(!showSPD || showEngineer) && <TableHead>No SPK</TableHead>}
                       {showPiutang && <TableHead>Nominal</TableHead>}
                       {!showSPD && (
                         <TableHead
@@ -2471,7 +2471,7 @@ export function ProjectsV2Table({
                         showAllDashboard
                           ? 12
                           : showEngineer
-                          ? 17
+                          ? 18
                           : showProduksi || showPurchasing
                           ? 13
                           : showPiutang
@@ -2494,7 +2494,7 @@ export function ProjectsV2Table({
                         showAllDashboard
                           ? 12
                           : showEngineer
-                          ? 17
+                          ? 18
                           : showProduksi || showPurchasing
                           ? 13
                           : showPiutang
@@ -2796,7 +2796,7 @@ export function ProjectsV2Table({
                               {project.client?.name || '-'}
                             </TableCell>
                           )}
-                          {!showSPD && (
+                          {(!showSPD || showEngineer) && (
                             <TableCell className='font-medium text-blue-600'>
                               {project.spk_number ||
                                 project.spk?.nomor_spk ||
