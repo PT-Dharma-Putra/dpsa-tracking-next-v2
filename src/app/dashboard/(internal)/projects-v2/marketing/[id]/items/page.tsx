@@ -81,6 +81,7 @@ import { ProjectItemFormDialog } from '../../../_components/project-item-form-di
 import { CatalogModal } from '../../../_components/catalog-modal';
 import { ProjectItemImportDialog } from '../../../_components/project-item-import-dialog';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 
 const formatRupiah = (value: string | number) => {
   if (value === null || value === undefined || value === '') return '';
@@ -2411,24 +2412,23 @@ export default function ProjectItemsPage() {
             </div>
             <div className='space-y-1.5'>
               <Label className='text-xs font-medium text-purple-700'>
-                PPN (%)
+                PPN 12% (11/12 x 12%)
               </Label>
-              <Input
-                type='number'
-                placeholder='Contoh: 11 atau 12'
-                value={editSpkPpn}
-                onChange={(e) => {
-                  const pct = e.target.value;
-                  setEditSpkPpn(pct);
-                  const nominalNum = parseInt(parseRawNumber(editSpkNominal) || '0', 10);
-                  const ppnAmount = Math.round(nominalNum * (parseFloat(pct || '0') / 100));
-                  setEditSpkGrandTotal((nominalNum + ppnAmount) > 0 ? formatRupiah((nominalNum + ppnAmount).toString()) : '');
-                }}
-                className='h-9 text-xs border-purple-200'
-                min='0'
-                max='100'
-                step='0.1'
-              />
+              <div className='flex items-center gap-3 h-9'>
+                <Switch
+                  checked={editSpkPpn === '11'}
+                  onCheckedChange={(checked) => {
+                    const pct = checked ? '11' : '0';
+                    setEditSpkPpn(pct);
+                    const nominalNum = parseInt(parseRawNumber(editSpkNominal) || '0', 10);
+                    const ppnAmount = Math.round(nominalNum * (parseFloat(pct || '0') / 100));
+                    setEditSpkGrandTotal((nominalNum + ppnAmount) > 0 ? formatRupiah((nominalNum + ppnAmount).toString()) : '');
+                  }}
+                />
+                <span className='text-xs font-medium text-neutral-600'>
+                  {editSpkPpn === '11' ? 'Ya' : 'Tidak'}
+                </span>
+              </div>
             </div>
             <div className='space-y-1.5'>
               <Label className='text-xs font-medium text-purple-700'>
@@ -2576,24 +2576,23 @@ export default function ProjectItemsPage() {
             </div>
             <div className='space-y-1.5'>
               <Label className='text-xs font-medium text-purple-700'>
-                PPN (%)
+                PPN 12% (11/12 x 12%)
               </Label>
-              <Input
-                type='number'
-                placeholder='Contoh: 11 atau 12'
-                value={spkPpn}
-                onChange={(e) => {
-                  const pct = e.target.value;
-                  setSpkPpn(pct);
-                  const nominalNum = parseInt(parseRawNumber(spkNominal) || '0', 10);
-                  const ppnAmount = Math.round(nominalNum * (parseFloat(pct || '0') / 100));
-                  setSpkGrandTotal((nominalNum + ppnAmount) > 0 ? (nominalNum + ppnAmount).toString() : '');
-                }}
-                className='h-9 text-xs border-purple-200'
-                min='0'
-                max='100'
-                step='0.1'
-              />
+              <div className='flex items-center gap-3 h-9'>
+                <Switch
+                  checked={spkPpn === '11'}
+                  onCheckedChange={(checked) => {
+                    const pct = checked ? '11' : '0';
+                    setSpkPpn(pct);
+                    const nominalNum = parseInt(parseRawNumber(spkNominal) || '0', 10);
+                    const ppnAmount = Math.round(nominalNum * (parseFloat(pct || '0') / 100));
+                    setSpkGrandTotal((nominalNum + ppnAmount) > 0 ? (nominalNum + ppnAmount).toString() : '');
+                  }}
+                />
+                <span className='text-xs font-medium text-neutral-600'>
+                  {spkPpn === '11' ? 'Ya' : 'Tidak'}
+                </span>
+              </div>
             </div>
             <div className='space-y-1.5'>
               <Label className='text-xs font-medium text-purple-700'>
