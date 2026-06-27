@@ -875,9 +875,9 @@ export default function EngineerDetailPage() {
                 <TableRow>
                   <TableHead className='w-[60px] text-center'>#</TableHead>
                   <TableHead>Kode Barang</TableHead>
+                  <TableHead>Location / Floor</TableHead>
                   <TableHead>Item Name</TableHead>
                   <TableHead>Spesifikasi</TableHead>
-                  <TableHead>Location / Floor</TableHead>
                   <TableHead className='text-center'>Ukuran</TableHead>
                   <TableHead className='text-center'>Volume</TableHead>
                   <TableHead className='text-center'>Qty</TableHead>
@@ -926,6 +926,21 @@ export default function EngineerDetailPage() {
                         )}
                       </TableCell>
                       <TableCell>
+                        <div className='flex flex-col gap-0.5'>
+                          <span className='text-xs text-neutral-700'>
+                            {item.lokasi || '-'}
+                          </span>
+                          {item.lantai && (
+                            <Badge
+                              variant='secondary'
+                              className='w-fit text-[9px] h-4 px-1.5 font-normal bg-neutral-100'
+                            >
+                              Floor {item.lantai}
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
                         <div className='flex flex-col'>
                           <div className='flex items-center gap-2'>
                             <span className='font-bold text-neutral-900'>
@@ -959,21 +974,7 @@ export default function EngineerDetailPage() {
                           </span>
                         )}
                       </TableCell>
-                      <TableCell>
-                        <div className='flex flex-col gap-0.5'>
-                          <span className='text-xs text-neutral-700'>
-                            {item.lokasi || '-'}
-                          </span>
-                          {item.lantai && (
-                            <Badge
-                              variant='secondary'
-                              className='w-fit text-[9px] h-4 px-1.5 font-normal bg-neutral-100'
-                            >
-                              Floor {item.lantai}
-                            </Badge>
-                          )}
-                        </div>
-                      </TableCell>
+
                       <TableCell className='text-center text-sm tabular-nums text-neutral-600'>
                         {item.panjang || 0} x {item.lebar || 0} x{' '}
                         {item.tinggi || 0}
