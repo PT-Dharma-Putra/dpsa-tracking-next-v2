@@ -995,22 +995,25 @@ export default function ProduksiDetailPage() {
             <TableHeader className='bg-neutral-50/80'>
               <TableRow>
                 <TableHead className='w-[50px]'>#</TableHead>
-                <TableHead>Kode Barang</TableHead>
-                <TableHead>Floor</TableHead>
-                <TableHead>Room</TableHead>
-                <TableHead>Item Name</TableHead>
-                <TableHead>Desc</TableHead>
-                <TableHead>Dimensions</TableHead>
-                <TableHead>Vol</TableHead>
+                {/* <TableHead>Kode Barang</TableHead> */}
+                <TableHead>Lantai | Ruang</TableHead>
+                <TableHead>Nama Item</TableHead>
+                <TableHead>Deskripsi</TableHead>
+                <TableHead>Vol | Dimensi</TableHead>
                 <TableHead>Qty</TableHead>
                 <TableHead>Satuan</TableHead>
                 <TableHead>GK MDL</TableHead>
                 <TableHead>GK Custom</TableHead>
                 <TableHead>PO Divisi</TableHead>
-                <TableHead>Stok Material</TableHead>
-                <TableHead>Persentase Produksi</TableHead>
+                <TableHead>
+                  <div className='flex flex-col gap-0.5 align-center'>
+                    <span className='text-[12px] font-bold text-neutral-800'>STOK</span>
+                    <span className='text-[12px] font-bold text-neutral-800'>MATERIAL</span>
+                  </div>
+                </TableHead>
+                <TableHead>Produksi</TableHead>
                 <TableHead>QC Cek</TableHead>
-                <TableHead>Barang Jadi</TableHead>
+                <TableHead>B. Jadi</TableHead>
                 <TableHead>Packing</TableHead>
                 <TableHead className='text-center'>Actions</TableHead>
               </TableRow>
@@ -1043,28 +1046,48 @@ export default function ProduksiDetailPage() {
                     <TableCell className='text-muted-foreground font-medium'>
                       {index + 1}
                     </TableCell>
-                    <TableCell className='text-xs font-mono text-neutral-600'>
+                    {/* <TableCell className='text-xs font-mono text-neutral-600'>
                       {item.mdl_item?.kode_barang || '-'}
+                    </TableCell> */}
+                    <TableCell>
+                      <div className='flex flex-col gap-0.5'>
+                        <span className='text-xs font-bold text-neutral-800'>{item.lantai || '-'}</span>
+                        <span className='text-[9px] text-muted-foreground truncate max-w-[120px]'>{item.ruang || '-'}</span>
+                      </div>
                     </TableCell>
-                    <TableCell className='text-xs font-medium'>
-                      {item.lantai || '-'}
+                    <TableCell className='font-bold text-neutral-800 text-sm max-w-[160px]'>
+                      {item.item ? (
+                        <span
+                          className='line-clamp-2'
+                          title={item.item}
+                        >
+                          {item.item}
+                        </span>
+                      ) : (
+                        <span className='text-muted-foreground italic'>
+                          -
+                        </span>
+                      )}
                     </TableCell>
-                    <TableCell className='text-xs max-w-[120px] truncate'>
-                      {item.ruang || '-'}
-                    </TableCell>
-                    <TableCell className='font-bold text-neutral-800'>
-                      {item.item}
-                    </TableCell>
-                    <TableCell className='max-w-[150px] truncate text-xs text-muted-foreground'>
-                      {item.keterangan || '-'}
-                    </TableCell>
-                    <TableCell className='text-xs text-muted-foreground'>
-                      {item.panjang || '-'}x{item.lebar || '-'}x
-                      {item.tinggi || '-'}
-                    </TableCell>
-
-                    <TableCell className='font-bold text-blue-600 text-xs'>
-                      {item.volume || '-'}
+                    <TableCell className='text-sm text-neutral-600 max-w-[180px]'>
+                      {item.keterangan ? (
+                        <span
+                          className='line-clamp-2'
+                          title={item.keterangan}
+                        >
+                          {item.keterangan}
+                        </span>
+                      ) : (
+                        <span className='text-muted-foreground italic'>
+                          -
+                        </span>
+                      )}
+                    </TableCell>                    
+                    <TableCell>
+                      <div className='flex flex-col gap-0.5'>
+                        <span className='text-xs font-bold text-neutral-800'>{item.volume || '-'}</span>
+                        <span className='text-[12px] text-muted-foreground truncate max-w-[120px]'>{item.panjang || '-'}x{item.lebar || '-'}x{item.tinggi || '-'}</span>
+                      </div>
                     </TableCell>
                     <TableCell className='font-bold'>{item.jumlah}</TableCell>
                     <TableCell className='text-[10px] text-muted-foreground'>
