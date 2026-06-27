@@ -2084,7 +2084,7 @@ export default function ProjectItemsPage() {
             </div>
             <div className='space-y-1.5'>
               <Label className='text-xs font-medium text-emerald-700'>
-                Bukti ACC (File/Foto)
+                Bukti ACC (File pdf design fix)
               </Label>
               <Input
                 type='file'
@@ -2113,7 +2113,7 @@ export default function ProjectItemsPage() {
                 handleAccUpdate();
                 setIsAccModalOpen(false);
               }}
-              disabled={updateAccMutation.isPending}
+              disabled={updateAccMutation.isPending || (!buktiAccFile && !existingAcc?.bukti_acc)}
             >
               {updateAccMutation.isPending ? (
                 <Loader2 className='h-4 w-4 animate-spin' />
