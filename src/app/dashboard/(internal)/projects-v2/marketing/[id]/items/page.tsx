@@ -2393,17 +2393,6 @@ export default function ProjectItemsPage() {
             </div>
             <div className='space-y-1.5'>
               <Label className='text-xs font-medium text-purple-700'>
-                Deadline Project
-              </Label>
-              <Input
-                type='date'
-                value={editSpkDeadline}
-                onChange={(e) => setEditSpkDeadline(e.target.value)}
-                className='h-9 text-xs border-purple-200'
-              />
-            </div>
-            <div className='space-y-1.5'>
-              <Label className='text-xs font-medium text-purple-700'>
                 Nominal (DPP)
               </Label>
               <Input
@@ -2566,17 +2555,6 @@ export default function ProjectItemsPage() {
                   className='h-9 text-xs border-purple-200 w-full'
                 />
               </div>
-            </div>
-            <div className='space-y-1.5'>
-              <Label className='text-xs font-medium text-purple-700'>
-                Deadline Project
-              </Label>
-              <Input
-                type='date'
-                value={spkDeadline}
-                onChange={(e) => setSpkDeadline(e.target.value)}
-                className='h-9 text-xs border-purple-200'
-              />
             </div>
             <div className='space-y-1.5'>
               <Label className='text-xs font-medium text-purple-700'>
