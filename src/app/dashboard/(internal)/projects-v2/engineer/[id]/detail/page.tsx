@@ -30,6 +30,7 @@ import {
   ChevronsUpDown,
   Copy,
 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { format, differenceInDays } from 'date-fns';
 
 import {
@@ -170,6 +171,7 @@ export default function EngineerDetailPage() {
   const [openPicPopover, setOpenPicPopover] = React.useState<number | null>(
     null
   );
+  const [selectedItemIds, setSelectedItemIds] = React.useState<number[]>([]);
 
   // Quick PIC Creation States
   const [isNewPicDialogOpen, setIsNewPicDialogOpen] = React.useState(false);
@@ -274,6 +276,25 @@ export default function EngineerDetailPage() {
     },
     onError: () => {
       toast.error('Failed to update PIC');
+    },
+  });
+
+  const bulkUpdatePicMutation = useMutation({
+    mutationFn: async (picId: number) => {
+      const promises = selectedItemIds.map(itemId => 
+        projectV2Service.updateProjectItemPic(itemId, picId)
+      );
+      await Promise.all(promises);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['project-v2-items', projectId],
+      });
+      toast.success('PIC berhasil diupdate untuk item yang dipilih');
+      setSelectedItemIds([]);
+    },
+    onError: () => {
+      toast.error('Gagal mengupdate PIC');
     },
   });
 
@@ -867,6 +888,40 @@ export default function EngineerDetailPage() {
               Manage items and technical drawings
             </p>
           </div>
+          {selectedItemIds.length > 0 && (
+            <div className='flex items-center gap-3 pr-2'>
+              <span className='text-xs text-muted-foreground font-medium'>{selectedItemIds.length} item dipilih</span>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button size='sm' variant='outline' className='h-8 bg-white'>
+                    <User className='h-3.5 w-3.5 mr-2' />
+                    Set PIC Massal
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className='w-[200px] p-0' align='end'>
+                  <Command>
+                    <CommandInput placeholder='Cari engineer...' />
+                    <CommandList>
+                      <CommandEmpty>No engineer found.</CommandEmpty>
+                      <CommandGroup>
+                        {designers?.map((pic) => (
+                          <CommandItem
+                            key={pic.id}
+                            onSelect={() => {
+                              bulkUpdatePicMutation.mutate(pic.id);
+                            }}
+                          >
+                            <User className='h-4 w-4 mr-2 text-muted-foreground' />
+                            {pic.name}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
+          )}
         </CardHeader>
         <CardContent className='p-0'>
           <div className='overflow-x-auto'>
@@ -883,6 +938,18 @@ export default function EngineerDetailPage() {
                   <TableHead className='text-center'>Qty</TableHead>
                   <TableHead className='text-center'>Satuan</TableHead>
                   <TableHead>PO Divisi</TableHead>
+                  <TableHead className='w-[40px] text-center'>
+                    <Checkbox
+                      checked={!!items && items.length > 0 && selectedItemIds.length === items.length}
+                      onCheckedChange={(checked) => {
+                        if (checked && items) {
+                          setSelectedItemIds(items.map((i) => i.id));
+                        } else {
+                          setSelectedItemIds([]);
+                        }
+                      }}
+                    />
+                  </TableHead>
                   <TableHead className='text-center'>PIC</TableHead>
                   <TableHead>Submit</TableHead>
                   <TableHead>Tepat Waktu</TableHead>
@@ -894,14 +961,14 @@ export default function EngineerDetailPage() {
               <TableBody>
                 {isLoadingItems ? (
                   <TableRow>
-                    <TableCell colSpan={18} className='h-32 text-center'>
+                    <TableCell colSpan={19} className='h-32 text-center'>
                       <Loader2 className='h-6 w-6 animate-spin mx-auto text-neutral-300' />
                     </TableCell>
                   </TableRow>
                 ) : items?.length === 0 ? (
                   <TableRow>
                     <TableCell
-                      colSpan={18}
+                      colSpan={19}
                       className='h-32 text-center text-muted-foreground italic'
                     >
                       No items added to this project yet.
@@ -1009,6 +1076,20 @@ export default function EngineerDetailPage() {
                             -
                           </span>
                         )}
+                      </TableCell>
+                      <TableCell className='text-center'>
+                        <Checkbox
+                          checked={selectedItemIds.includes(item.id)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedItemIds((prev) => [...prev, item.id]);
+                            } else {
+                              setSelectedItemIds((prev) =>
+                                prev.filter((id) => id !== item.id)
+                              );
+                            }
+                          }}
+                        />
                       </TableCell>
                       <TableCell>
                         <Popover
