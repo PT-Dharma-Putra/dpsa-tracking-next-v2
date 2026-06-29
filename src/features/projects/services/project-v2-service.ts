@@ -34,6 +34,7 @@ export interface ProjectV2 {
     spd_file: string | null;
     tanggal: string | null;
     target_selesai: string | null;
+    final_file_path?: string | null;
     acc_design?: {
       id: number;
       tanggal_kirim: string | null;
