@@ -3399,42 +3399,29 @@ export function ProjectsV2Table({
                                 <span className='text-xs font-medium'>
                                   {project.designs?.[0]?.studio?.name || '-'}
                                 </span>
-                                {project.designs?.[0]?.design_progres &&
-                                  project.designs[0].design_progres.length >
-                                    0 &&
-                                  (() => {
-                                    const latest =
-                                      project.designs[0].design_progres[
-                                        project.designs[0].design_progres
-                                          .length - 1
-                                      ];
-                                    return (
-                                      <div className='flex items-center gap-2'>
-                                        {latest.file && (
-                                          <Button
-                                            variant='ghost'
-                                            size='icon'
-                                            className='h-5 w-5 text-blue-600'
-                                            asChild
-                                          >
-                                            <a
-                                              href={`${(
-                                                process.env
-                                                  .NEXT_PUBLIC_API_URL ||
-                                                'http://localhost:8000'
-                                              ).replace('/api', '')}/storage/${
-                                                latest.file
-                                              }`}
-                                              target='_blank'
-                                              rel='noopener noreferrer'
-                                            >
-                                              <Eye className='h-3 w-3' />
-                                            </a>
-                                          </Button>
-                                        )}
-                                      </div>
-                                    );
-                                  })()}
+                                {project.designs?.[0]?.final_file_path && (
+                                  <div className='flex items-center gap-2'>
+                                    <Button
+                                      variant='ghost'
+                                      size='icon'
+                                      className='h-5 w-5 text-blue-600'
+                                      asChild
+                                    >
+                                      <a
+                                        href={`${(
+                                          process.env.NEXT_PUBLIC_API_URL ||
+                                          'http://localhost:8000'
+                                        ).replace('/api', '')}/storage/${
+                                          project.designs[0].final_file_path
+                                        }`}
+                                        target='_blank'
+                                        rel='noopener noreferrer'
+                                      >
+                                        <Eye className='h-3 w-3' />
+                                      </a>
+                                    </Button>
+                                  </div>
+                                )}
                               </div>
                             </TableCell>
                           )}
