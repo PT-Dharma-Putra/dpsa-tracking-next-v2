@@ -419,6 +419,39 @@ export default function EngineerDetailPage() {
     },
   });
 
+  // Bulk Gambar Kerja State
+  const [isBulkGkDialogOpen, setIsBulkGkDialogOpen] = React.useState(false);
+  const [bulkGkFile, setBulkGkFile] = React.useState<File | string | null>(null);
+  const [bulkGkStart, setBulkGkStart] = React.useState<string>('');
+  const [bulkGkEnd, setBulkGkEnd] = React.useState<string>('');
+
+  const bulkUploadGkMutation = useMutation({
+    mutationFn: async (payload: {
+      file?: File | string;
+      tanggal_mulai?: string;
+      tanggal_selesai?: string;
+    }) => {
+      const promises = selectedItemIds.map(itemId => 
+        projectV2Service.uploadGambarKerja(itemId, payload)
+      );
+      await Promise.all(promises);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['project-v2-items', projectId],
+      });
+      toast.success('Gambar Kerja massal berhasil diupdate');
+      setIsBulkGkDialogOpen(false);
+      setBulkGkFile(null);
+      setBulkGkStart('');
+      setBulkGkEnd('');
+      setSelectedItemIds([]);
+    },
+    onError: () => {
+      toast.error('Gagal mengupdate Gambar Kerja massal');
+    },
+  });
+
   // Signed Order Gambar Kerja State
   const [isSignedOrderGkDialogOpen, setIsSignedOrderGkDialogOpen] =
     React.useState(false);
@@ -891,6 +924,15 @@ export default function EngineerDetailPage() {
           {selectedItemIds.length > 0 && (
             <div className='flex items-center gap-3 pr-2'>
               <span className='text-xs text-muted-foreground font-medium'>{selectedItemIds.length} item dipilih</span>
+              <Button 
+                size='sm' 
+                variant='outline' 
+                className='h-8 bg-white'
+                onClick={() => setIsBulkGkDialogOpen(true)}
+              >
+                <ImageIcon className='h-3.5 w-3.5 mr-2' />
+                Set GK Massal
+              </Button>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button size='sm' variant='outline' className='h-8 bg-white'>
@@ -1391,6 +1433,74 @@ export default function EngineerDetailPage() {
               disabled={uploadGkMutation.isPending}
             >
               {uploadGkMutation.isPending && (
+                <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+              )}
+              Save Drawings
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk Gambar Kerja Upload Dialog */}
+      <AlertDialog open={isBulkGkDialogOpen} onOpenChange={setIsBulkGkDialogOpen}>
+        <AlertDialogContent className='max-w-md'>
+          <AlertDialogHeader>
+            <AlertDialogTitle className='flex items-center gap-2'>
+              <ImageIcon className='h-5 w-5 text-orange-500' />
+              Upload Gambar Kerja Massal
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Upload technical drawing untuk <strong>{selectedItemIds.length} item yang dipilih</strong>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className='grid gap-4 py-4'>
+            <div className='grid grid-cols-2 gap-4'>
+              <div className='space-y-2'>
+                <Label>Tanggal Mulai</Label>
+                <Input
+                  type='date'
+                  value={bulkGkStart}
+                  onChange={(e) => setBulkGkStart(e.target.value)}
+                  className='text-xs'
+                />
+              </div>
+              <div className='space-y-2'>
+                <Label>Tanggal Selesai</Label>
+                <Input
+                  type='date'
+                  value={bulkGkEnd}
+                  onChange={(e) => setBulkGkEnd(e.target.value)}
+                  className='text-xs'
+                />
+              </div>
+            </div>
+            <div className='space-y-2'>
+              <Label>Link Gambar Kerja</Label>
+              <Input
+                type='text'
+                value={typeof bulkGkFile === 'string' ? bulkGkFile : ''}
+                onChange={(e) => setBulkGkFile(e.target.value)}
+                placeholder='Paste link here...'
+                className='text-xs'
+              />
+            </div>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setIsBulkGkDialogOpen(false)}>
+              Cancel
+            </AlertDialogCancel>
+            <Button
+              className='bg-orange-600 hover:bg-orange-700'
+              onClick={() => {
+                bulkUploadGkMutation.mutate({
+                  file: bulkGkFile || undefined,
+                  tanggal_mulai: bulkGkStart || undefined,
+                  tanggal_selesai: bulkGkEnd || undefined,
+                });
+              }}
+              disabled={bulkUploadGkMutation.isPending}
+            >
+              {bulkUploadGkMutation.isPending && (
                 <Loader2 className='mr-2 h-4 w-4 animate-spin' />
               )}
               Save Drawings
