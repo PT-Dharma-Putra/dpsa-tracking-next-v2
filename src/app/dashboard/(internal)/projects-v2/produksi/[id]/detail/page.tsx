@@ -166,10 +166,12 @@ export default function ProduksiDetailPage() {
   // QR Code per-item State
   const [isItemQrDialogOpen, setIsItemQrDialogOpen] = React.useState(false);
   const [qrItem, setQrItem] = React.useState<ProjectItemV2 | null>(null);
+  const [qrParts, setQrParts] = React.useState<number>(1);
   const hiddenQrRef = React.useRef<HTMLDivElement>(null);
 
   const openItemQrDialog = (item: ProjectItemV2) => {
     setQrItem(item);
+    setQrParts(1);
     setIsItemQrDialogOpen(true);
   };
 
@@ -192,7 +194,7 @@ export default function ProduksiDetailPage() {
       [project?.spk?.nomor_spk, spkYear].filter(Boolean).join(' / ') || '-';
 
     // Builds one label cell
-    const makeLabelHTML = (idx: number) => {
+    const makeLabelHTML = (itemIndex: number, partIndex: number) => {
       const rows: [string, string][] = [
         ['NAMA ITEM', qrItem.item || '-'],
         [
@@ -201,11 +203,19 @@ export default function ProduksiDetailPage() {
             qrItem.tinggi || '-'
           }`,
         ],
-        ['JUMLAH', `${idx + 1}/${total} ${qrItem.satuan || ''}`.trim()],
+        ['JUMLAH', `${itemIndex + 1}/${total} ${qrItem.satuan || ''}`.trim()],
+      ];
+      
+      if (qrParts > 1) {
+        rows.push(['BAGIAN', `${partIndex + 1}/${qrParts}`]);
+      }
+      
+      rows.push(
         ['RUANG', qrItem.ruang || '-'],
         ['RUMAH SAKIT', project?.client?.name || '-'],
-        ['NO. SPK/TAHUN', spkValue],
-      ];
+        ['NO. SPK/TAHUN', spkValue]
+      );
+
       return `
         <div class="label">
           <div class="hdr">
@@ -242,12 +252,17 @@ export default function ProduksiDetailPage() {
         </div>`;
     };
 
+    const labelsData = [];
+    for (let i = 0; i < total; i++) {
+      for (let p = 0; p < qrParts; p++) {
+        labelsData.push({ itemIndex: i, partIndex: p });
+      }
+    }
+
     // Group indices into pages of 4
-    const pages: number[][] = [];
-    for (let i = 0; i < total; i += 4) {
-      pages.push(
-        Array.from({ length: Math.min(4, total - i) }, (_, j) => i + j)
-      );
+    const pages: any[][] = [];
+    for (let i = 0; i < labelsData.length; i += 4) {
+      pages.push(labelsData.slice(i, i + 4));
     }
 
     const html = `<!DOCTYPE html><html><head>
@@ -302,7 +317,7 @@ export default function ProduksiDetailPage() {
         .map(
           (page, pi) => `
         <div class="pg${pi === pages.length - 1 ? ' last' : ''}">
-          ${page.map((idx) => makeLabelHTML(idx)).join('')}
+          ${page.map((data) => makeLabelHTML(data.itemIndex, data.partIndex)).join('')}
           ${Array.from(
             { length: 4 - page.length },
             () => '<div class="empty"></div>'
@@ -2449,6 +2464,10 @@ export default function ProduksiDetailPage() {
                       ? `${qrItem.jumlah} ${qrItem.satuan || ''}`.trim()
                       : '-',
                   },
+                  ...(qrParts > 1 ? [{
+                    label: 'BAGIAN',
+                    value: `1/${qrParts}`,
+                  }] : []),
                   {
                     label: 'RUANG',
                     value: qrItem?.ruang || '-',
@@ -2502,10 +2521,20 @@ export default function ProduksiDetailPage() {
           </div>
 
           <AlertDialogFooter className='mt-4 flex-col sm:flex-row items-start sm:items-center gap-2'>
-            {qrItem?.jumlah && qrItem.jumlah > 1 && (
-              <p className='text-xs text-muted-foreground flex-1'>
-                Akan mencetak <strong>{qrItem.jumlah} label</strong> (1 per
-                unit)
+            <div className='flex items-center gap-2'>
+              <Label className='text-xs'>Bagian per Qty:</Label>
+              <Input
+                type='number'
+                min={1}
+                value={qrParts}
+                onChange={(e) => setQrParts(Math.max(1, parseInt(e.target.value) || 1))}
+                className='h-8 w-16 text-xs'
+              />
+            </div>
+            {qrItem?.jumlah && (
+              <p className='text-xs text-muted-foreground flex-1 ml-2'>
+                Akan mencetak <strong>{qrItem.jumlah * qrParts} label</strong> 
+                ({qrItem.jumlah} Qty × {qrParts} Bagian)
               </p>
             )}
             <div className='flex gap-2 ml-auto'>
@@ -2517,7 +2546,7 @@ export default function ProduksiDetailPage() {
                 onClick={handlePrintItemQR}
               >
                 <Printer className='h-4 w-4' />
-                Print {qrItem?.jumlah ?? ''} Label
+                Print {qrItem?.jumlah ? qrItem.jumlah * qrParts : ''} Label
               </Button>
             </div>
           </AlertDialogFooter>
