@@ -178,7 +178,7 @@ export default function ProduksiDetailPage() {
   const handlePrintItemQR = () => {
     if (!qrItem) return;
 
-    const qrCodeValue = qrItem.mdl_item?.kode_barang || qrItem.id.toString();
+    const qrCodeValue = qrItem.id.toString();
 
     // Capture the already-rendered QR SVG from hidden div
     const svgEl = hiddenQrRef.current?.querySelector('svg');
@@ -2566,7 +2566,7 @@ export default function ProduksiDetailPage() {
       >
         {qrItem && (
           <QRCodeSVG
-            value={qrItem.mdl_item?.kode_barang || qrItem.id.toString()}
+            value={qrItem.id.toString()}
             size={128}
             bgColor='#ffffff'
             fgColor='#000000'
