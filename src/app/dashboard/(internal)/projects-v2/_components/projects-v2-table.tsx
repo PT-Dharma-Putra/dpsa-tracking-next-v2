@@ -2165,7 +2165,8 @@ export function ProjectsV2Table({
                         <TableHead>Mkt</TableHead>
                       )}
                       <TableHead>Client</TableHead>
-                      {(!showSPD || showEngineer) && <TableHead>No SPK</TableHead>}
+                      {(!showSPD || showEngineer) && <TableHead>NO SPK</TableHead>}
+                      {(!showSPD || showEngineer) && <TableHead>TGL SPK MASUK</TableHead>}
                       {showPiutang && <TableHead>Nominal</TableHead>}
                       {!showSPD && (
                         <TableHead
@@ -2801,6 +2802,16 @@ export function ProjectsV2Table({
                               {project.spk_number ||
                                 project.spk?.nomor_spk ||
                                 '-'}
+                            </TableCell>
+                          )}
+                          {(!showSPD || showEngineer) && (
+                            <TableCell>
+                              {project.spk?.tanggal_masuk
+                                ? format(
+                                    new Date(project.spk.tanggal_masuk),
+                                    'dd MMM yyyy'
+                                  )
+                                : '-'}
                             </TableCell>
                           )}
                           {showPiutang && (
