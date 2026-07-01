@@ -452,6 +452,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             title: 'Scan Barang Jadi',
             url: '/dashboard/projects-v2/scan-barang-jadi',
           },
+          {
+            title: 'Setrim Barang Jadi',
+            url: '/dashboard/projects-v2/setrim-barang-jadi',
+          },
         ],
       },
       {
