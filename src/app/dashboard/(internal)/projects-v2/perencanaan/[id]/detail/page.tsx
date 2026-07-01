@@ -1342,14 +1342,13 @@ export default function PerencanaanDetailPage() {
                 <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>Produksi</TableHead>
                 <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>B. Jadi</TableHead>
                 <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>Packing</TableHead>
-                <TableHead className='w-[100px] text-right text-[10px] uppercase font-bold text-neutral-500 pr-4'>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoadingItems ? (
                 <TableRow>
                   <TableCell
-                    colSpan={13}
+                    colSpan={12}
                     className='h-32 text-center text-muted-foreground'
                   >
                     <Loader2 className='h-6 w-6 animate-spin mx-auto' />
@@ -1358,7 +1357,7 @@ export default function PerencanaanDetailPage() {
               ) : items?.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={13}
+                    colSpan={12}
                     className='h-32 text-center text-muted-foreground'
                   >
                     No items recorded for this project.
@@ -1620,21 +1619,6 @@ export default function PerencanaanDetailPage() {
                           </span>
                         )}
                       </div>
-                    </TableCell>
-                    <TableCell className='text-right pr-4'>
-                      <Button
-                        variant='ghost'
-                        size='sm'
-                        className='h-7 text-[10px] hover:bg-neutral-100 text-neutral-600 hover:text-blue-600 transition-all font-semibold'
-                        asChild
-                      >
-                        <Link
-                          href={`/dashboard/projects-v2/perencanaan/${projectId}/item/${item.id}`}
-                        >
-                          Ship
-                          <ArrowUpRight className='ml-1 h-3 w-3' />
-                        </Link>
-                      </Button>
                     </TableCell>
                   </TableRow>
                 ))
