@@ -2598,7 +2598,7 @@ export function ProjectsV2Table({
                       </>
                     )}
                   <TableHead className='w-[100px] text-right'>
-                    ACTIONS
+                    ACTION
                   </TableHead>
                 </TableRow>
               </TableHeader>
