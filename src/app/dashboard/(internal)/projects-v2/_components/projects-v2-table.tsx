@@ -1911,7 +1911,8 @@ export function ProjectsV2Table({
             showPurchasing ||
             showPengirimanV2 ||
             showQC ||
-            showMarketingFilter) &&
+            showMarketingFilter ||
+            showPiutang) &&
             'bg-white rounded-xl shadow-sm border border-neutral-200'
         )}
       >
@@ -2283,9 +2284,93 @@ export function ProjectsV2Table({
                           </div>
                         </TableHead>
                       )}
-                      {showPiutang && <TableHead>PROGRES PRODUKSI</TableHead>}
-                      {showPiutang && <TableHead>PROGRES PENGIRIMAN</TableHead>}
-                      {showPiutang && <TableHead>TOTAL PENAGIHAN</TableHead>}
+                      {showPiutang && (
+                        <TableHead
+                          className='cursor-pointer hover:bg-neutral-100 transition-colors group'
+                          onClick={() => {
+                            if (sortBy === 'progres_produksi') {
+                              setSortOrder(
+                                sortOrder === 'asc' ? 'desc' : 'asc'
+                              );
+                            } else {
+                              setSortBy('progres_produksi');
+                              setSortOrder('asc');
+                            }
+                            setPage(1);
+                          }}
+                        >
+                          <div className='flex items-center gap-1'>
+                            PROGRES PRODUKSI
+                            {sortBy === 'progres_produksi' ? (
+                              sortOrder === 'asc' ? (
+                                <ArrowUp className='h-3 w-3' />
+                              ) : (
+                                <ArrowDown className='h-3 w-3' />
+                              )
+                            ) : (
+                              <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
+                            )}
+                          </div>
+                        </TableHead>
+                      )}
+                      {showPiutang && (
+                        <TableHead
+                          className='cursor-pointer hover:bg-neutral-100 transition-colors group'
+                          onClick={() => {
+                            if (sortBy === 'progres_pengiriman') {
+                              setSortOrder(
+                                sortOrder === 'asc' ? 'desc' : 'asc'
+                              );
+                            } else {
+                              setSortBy('progres_pengiriman');
+                              setSortOrder('asc');
+                            }
+                            setPage(1);
+                          }}
+                        >
+                          <div className='flex items-center gap-1'>
+                            PROGRES PENGIRIMAN
+                            {sortBy === 'progres_pengiriman' ? (
+                              sortOrder === 'asc' ? (
+                                <ArrowUp className='h-3 w-3' />
+                              ) : (
+                                <ArrowDown className='h-3 w-3' />
+                              )
+                            ) : (
+                              <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
+                            )}
+                          </div>
+                        </TableHead>
+                      )}
+                      {showPiutang && (
+                        <TableHead
+                          className='cursor-pointer hover:bg-neutral-100 transition-colors group'
+                          onClick={() => {
+                            if (sortBy === 'total_penagihan') {
+                              setSortOrder(
+                                sortOrder === 'asc' ? 'desc' : 'asc'
+                              );
+                            } else {
+                              setSortBy('total_penagihan');
+                              setSortOrder('asc');
+                            }
+                            setPage(1);
+                          }}
+                        >
+                          <div className='flex items-center gap-1'>
+                            TOTAL PENAGIHAN
+                            {sortBy === 'total_penagihan' ? (
+                              sortOrder === 'asc' ? (
+                                <ArrowUp className='h-3 w-3' />
+                              ) : (
+                                <ArrowDown className='h-3 w-3' />
+                              )
+                            ) : (
+                              <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
+                            )}
+                          </div>
+                        </TableHead>
+                      )}
                       {!showProduksi && !showPurchasing && !showPiutang && (
                         <TableHead>NAMA PROJEK</TableHead>
                       )}
