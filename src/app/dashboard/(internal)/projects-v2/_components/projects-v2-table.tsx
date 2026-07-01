@@ -2055,9 +2055,9 @@ export function ProjectsV2Table({
                   <TableHead className='w-[50px]'>#</TableHead>
                   {showAllDashboard ? (
                     <>
-                      <TableHead>Client</TableHead>
-                      <TableHead>Nama Projek</TableHead>
-                      <TableHead>Nomor SPK</TableHead>
+                      <TableHead>CLIENT</TableHead>
+                      <TableHead>NAMA PROJEK</TableHead>
+                      <TableHead>NO SPK</TableHead>
                       <TableHead
                         className='cursor-pointer hover:bg-neutral-100 transition-colors group'
                         onClick={() => {
@@ -2071,7 +2071,7 @@ export function ProjectsV2Table({
                         }}
                       >
                         <div className='flex items-center gap-1'>
-                          SPK Masuk
+                          SPK MASUK
                           {sortBy === 'spk_masuk' ? (
                             sortOrder === 'asc' ? (
                               <ArrowUp className='h-3 w-3' />
@@ -2096,7 +2096,7 @@ export function ProjectsV2Table({
                         }}
                       >
                         <div className='flex items-center gap-1'>
-                          Prioritas
+                          PRIORITAS
                           {sortBy === 'prioritas' ? (
                             sortOrder === 'asc' ? (
                               <ArrowUp className='h-3 w-3' />
@@ -2121,7 +2121,7 @@ export function ProjectsV2Table({
                         }}
                       >
                         <div className='flex items-center gap-1'>
-                          Deadline
+                          DEADLINE
                           {sortBy === 'deadline' ? (
                             sortOrder === 'asc' ? (
                               <ArrowUp className='h-3 w-3' />
@@ -2146,7 +2146,7 @@ export function ProjectsV2Table({
                         }}
                       >
                         <div className='flex items-center gap-1'>
-                          Sisa Hari
+                          SISA HARI
                           {sortBy === 'sisa_hari' ? (
                             sortOrder === 'asc' ? (
                               <ArrowUp className='h-3 w-3' />
@@ -2162,13 +2162,12 @@ export function ProjectsV2Table({
                   ) : (
                     <>
                       {!showEngineer && !showProduksi && !showPurchasing && (
-                        <TableHead>Mkt</TableHead>
+                        <TableHead>MKT</TableHead>
                       )}
-                      <TableHead>Client</TableHead>
+                      <TableHead>CLIENT</TableHead>
                       {(!showSPD || showEngineer) && <TableHead>NO SPK</TableHead>}
-                      {(!showSPD || showEngineer) && <TableHead>TGL SPK MASUK</TableHead>}
-                      {showPiutang && <TableHead>Nominal</TableHead>}
-                      {!showSPD && (
+                      {showPiutang && <TableHead>NOIMNAL</TableHead>}
+                      {!showSPD || showEngineer && (
                         <TableHead
                           className='cursor-pointer hover:bg-neutral-100 transition-colors group'
                           onClick={() => {
@@ -2184,7 +2183,7 @@ export function ProjectsV2Table({
                           }}
                         >
                           <div className='flex items-center gap-1'>
-                            SPK Masuk
+                            SPK MASUK
                             {sortBy === 'spk_masuk' ? (
                               sortOrder === 'asc' ? (
                                 <ArrowUp className='h-3 w-3' />
@@ -2201,7 +2200,7 @@ export function ProjectsV2Table({
                         !showProduksi &&
                         !showPurchasing &&
                         !showPengirimanV2 &&
-                        !showQC && <TableHead>Nomor SPH</TableHead>}
+                        !showQC && <TableHead>NO SPH</TableHead>}
                       {!showSPD && (
                         <TableHead
                           className='cursor-pointer hover:bg-neutral-100 transition-colors group'
@@ -2218,7 +2217,7 @@ export function ProjectsV2Table({
                           }}
                         >
                           <div className='flex items-center gap-1'>
-                            Prioritas
+                            PRIORITAS
                             {sortBy === 'prioritas' ? (
                               sortOrder === 'asc' ? (
                                 <ArrowUp className='h-3 w-3' />
@@ -2231,10 +2230,10 @@ export function ProjectsV2Table({
                           </div>
                         </TableHead>
                       )}
-                      {showPiutang && <TableHead>Progres Produksi</TableHead>}
-                      {showPiutang && <TableHead>Total Penagihan</TableHead>}
+                      {showPiutang && <TableHead>PROGRES PRODUKSI</TableHead>}
+                      {showPiutang && <TableHead>TOTAL PENAGIHAN</TableHead>}
                       {!showProduksi && !showPurchasing && !showPiutang && (
-                        <TableHead>Nama Projek</TableHead>
+                        <TableHead>NAMA PROJEK</TableHead>
                       )}
                     </>
                   )}
@@ -2253,7 +2252,7 @@ export function ProjectsV2Table({
                         }}
                       >
                         <div className='flex items-center gap-1'>
-                          Deadline
+                          DEADLINE
                           {sortBy === 'deadline' ? (
                             sortOrder === 'asc' ? (
                               <ArrowUp className='h-3 w-3' />
@@ -2282,7 +2281,7 @@ export function ProjectsV2Table({
                           }}
                         >
                           <div className='flex items-center gap-1'>
-                            Sisa Hari
+                            SISA HARI
                             {sortBy === 'sisa_hari' ? (
                               sortOrder === 'asc' ? (
                                 <ArrowUp className='h-3 w-3' />
@@ -2316,7 +2315,7 @@ export function ProjectsV2Table({
                         }}
                       >
                         <div className='flex items-center gap-1'>
-                          Pakai Desain
+                          PAKAI DESAIN
                           {sortBy === 'need_design' ? (
                             sortOrder === 'asc' ? (
                               <ArrowUp className='h-3 w-3' />
@@ -2330,19 +2329,19 @@ export function ProjectsV2Table({
                       </TableHead>
                     )}
                   {!showAllDashboard && !showSPD && !showPiutang && (
-                    <TableHead>Jadwal Kirim</TableHead>
+                    <TableHead>JADWAL KIRIM</TableHead>
                   )}
                   {(showPengirimanV2 || showQC) && (
-                    <TableHead>Progres Produksi</TableHead>
+                    <TableHead>PROGRES PRODUKSI</TableHead>
                   )}
-                  {showQC && <TableHead>Progres QC</TableHead>}
+                  {showQC && <TableHead>PROGRES QC</TableHead>}
                   {showPengirimanV2 && (
-                    <TableHead>Progres Pengiriman</TableHead>
+                    <TableHead>PROGRES PENGIRIMAN</TableHead>
                   )}
 
                   {showAllDashboard && (
                     <>
-                      <TableHead>Jadwal Kirim</TableHead>
+                      <TableHead>JADWAL KIRIM</TableHead>
                       <TableHead
                         className='cursor-pointer hover:bg-neutral-100 transition-colors group'
                         onClick={() => {
@@ -2356,7 +2355,7 @@ export function ProjectsV2Table({
                         }}
                       >
                         <div className='flex items-center gap-1'>
-                          Progres Kerja
+                          PROGRES KERJA
                           {sortBy === 'persentase_kerja' ? (
                             sortOrder === 'asc' ? (
                               <ArrowUp className='h-3 w-3' />
@@ -2368,13 +2367,13 @@ export function ProjectsV2Table({
                           )}
                         </div>
                       </TableHead>
-                      <TableHead>Progres Akhir</TableHead>
+                      <TableHead>PROGRES AKHIR</TableHead>
                     </>
                   )}
                   {!showAllDashboard && showSPD && (
                     <>
                       {!showEngineer && <TableHead>SPD</TableHead>}
-                      {!showEngineer && <TableHead>Pic</TableHead>}
+                      {!showEngineer && <TableHead>PIC</TableHead>}
                       {showEngineer ? (
                         <TableHead>Desainer</TableHead>
                       ) : (
@@ -2393,8 +2392,8 @@ export function ProjectsV2Table({
                   )}
                   {(showProduksi || showPurchasing) && (
                     <>
-                      <TableHead>Order Produksi</TableHead>
-                      <TableHead>Target Selesai</TableHead>
+                      <TableHead>ORDER PRODUKSI</TableHead>
+                      <TableHead>TARGET SELESAI</TableHead>
                       <TableHead
                         className='cursor-pointer hover:bg-neutral-100 transition-colors group'
                         onClick={() => {
@@ -2408,7 +2407,7 @@ export function ProjectsV2Table({
                         }}
                       >
                         <div className='flex items-center gap-1'>
-                          Sisa Hari
+                          SISA HARI
                           {sortBy === 'sisa_hari' ? (
                             sortOrder === 'asc' ? (
                               <ArrowUp className='h-3 w-3' />
@@ -2423,9 +2422,9 @@ export function ProjectsV2Table({
                     </>
                   )}
                   {(showProduksi || showPurchasing) && (
-                    <TableHead>Progres Produksi</TableHead>
+                    <TableHead>PROGRES PRODUKSI</TableHead>
                   )}
-                  {showProduksi && <TableHead>Progres Barang Jadi</TableHead>}
+                  {showProduksi && <TableHead>PROGRES BARANG JADI</TableHead>}
                   {(isMainProjectsV2Page || showPerencanaan) &&
                     !showPengirimanV2 && (
                       <>
@@ -2444,7 +2443,7 @@ export function ProjectsV2Table({
                           }}
                         >
                           <div className='flex items-center gap-1'>
-                            Progres Kerja
+                            PROGRES KERJA
                             {sortBy === 'persentase_kerja' ? (
                               sortOrder === 'asc' ? (
                                 <ArrowUp className='h-3 w-3' />
@@ -2456,11 +2455,11 @@ export function ProjectsV2Table({
                             )}
                           </div>
                         </TableHead>
-                        <TableHead>Progres Akhir</TableHead>
+                        <TableHead>PROGRES AKHIR</TableHead>
                       </>
                     )}
                   <TableHead className='w-[100px] text-right'>
-                    Actions
+                    ACTIONS
                   </TableHead>
                 </TableRow>
               </TableHeader>
@@ -2804,16 +2803,6 @@ export function ProjectsV2Table({
                                 '-'}
                             </TableCell>
                           )}
-                          {(!showSPD || showEngineer) && (
-                            <TableCell>
-                              {project.spk?.tanggal_masuk
-                                ? format(
-                                    new Date(project.spk.tanggal_masuk),
-                                    'dd MMM yyyy'
-                                  )
-                                : '-'}
-                            </TableCell>
-                          )}
                           {showPiutang && (
                             <TableCell className='font-semibold text-emerald-700'>
                               {project.spk?.nominal
@@ -2821,7 +2810,7 @@ export function ProjectsV2Table({
                                 : '-'}
                             </TableCell>
                           )}
-                          {!showSPD && (
+                          {!showSPD || showEngineer && (
                             <TableCell>
                               {project.spk?.tanggal_masuk
                                 ? format(
