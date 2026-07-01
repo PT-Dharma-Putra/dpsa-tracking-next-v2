@@ -681,6 +681,59 @@ export function ProjectsV2Table({
         </div>
       )}
 
+      {showPiutang && stats && (
+        <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8 gap-4'>
+          {/* Total Project */}
+          <div className='flex flex-col gap-2 p-4 rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md'>
+            <div className='flex items-center gap-2 border-b border-slate-100 pb-2'>
+              <div className='h-6 w-6 rounded bg-slate-100 flex items-center justify-center text-slate-600 shrink-0'>
+                <Briefcase className='h-3.5 w-3.5' />
+              </div>
+              <p className='text-[10px] font-bold text-slate-500 uppercase tracking-wider'>
+                Total Projek
+              </p>
+              <span className='ml-auto text-lg font-bold text-slate-800'>
+                {stats.total_project}
+              </span>
+            </div>
+
+            <div className='grid grid-cols-2 gap-1.5 mt-auto'>
+              {/* Terbit SPH */}
+              <div
+                onClick={() => handleDashboardFilterClick('sph_only')}
+                className={cn(
+                  'flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  dashboardFilter === 'sph_only'
+                    ? 'border-amber-500 bg-amber-50 text-amber-700 font-semibold'
+                    : 'border-amber-100 bg-amber-50/50 hover:border-amber-300 text-amber-700'
+                )}
+              >
+                <span className='font-medium leading-tight'>Terbit SPH</span>
+                <span className='font-bold shrink-0 ml-1'>
+                  {stats.sph_only ?? 0}
+                </span>
+              </div>
+
+              {/* Terbit SPK */}
+              <div
+                onClick={() => handleDashboardFilterClick('spk')}
+                className={cn(
+                  'flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  dashboardFilter === 'spk'
+                    ? 'border-indigo-500 bg-indigo-50 text-indigo-700 font-semibold'
+                    : 'border-indigo-100 bg-indigo-50/50 hover:border-indigo-300 text-indigo-700'
+                )}
+              >
+                <span className='font-medium leading-tight'>Terbit SPK</span>
+                <span className='font-bold shrink-0 ml-1'>
+                  {stats.total_spk}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showPerencanaan && stats && (
         <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8 gap-4'>
           {/* Total Project */}
@@ -1858,7 +1911,8 @@ export function ProjectsV2Table({
             showPurchasing ||
             showPengirimanV2 ||
             showQC ||
-            showMarketingFilter) &&
+            showMarketingFilter ||
+            showPiutang) &&
             'bg-white rounded-xl shadow-sm border border-neutral-200'
         )}
       >
@@ -2230,8 +2284,93 @@ export function ProjectsV2Table({
                           </div>
                         </TableHead>
                       )}
-                      {showPiutang && <TableHead>PROGRES PRODUKSI</TableHead>}
-                      {showPiutang && <TableHead>TOTAL PENAGIHAN</TableHead>}
+                      {showPiutang && (
+                        <TableHead
+                          className='cursor-pointer hover:bg-neutral-100 transition-colors group'
+                          onClick={() => {
+                            if (sortBy === 'progres_produksi') {
+                              setSortOrder(
+                                sortOrder === 'asc' ? 'desc' : 'asc'
+                              );
+                            } else {
+                              setSortBy('progres_produksi');
+                              setSortOrder('asc');
+                            }
+                            setPage(1);
+                          }}
+                        >
+                          <div className='flex items-center gap-1'>
+                            PROGRES PRODUKSI
+                            {sortBy === 'progres_produksi' ? (
+                              sortOrder === 'asc' ? (
+                                <ArrowUp className='h-3 w-3' />
+                              ) : (
+                                <ArrowDown className='h-3 w-3' />
+                              )
+                            ) : (
+                              <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
+                            )}
+                          </div>
+                        </TableHead>
+                      )}
+                      {showPiutang && (
+                        <TableHead
+                          className='cursor-pointer hover:bg-neutral-100 transition-colors group'
+                          onClick={() => {
+                            if (sortBy === 'progres_pengiriman') {
+                              setSortOrder(
+                                sortOrder === 'asc' ? 'desc' : 'asc'
+                              );
+                            } else {
+                              setSortBy('progres_pengiriman');
+                              setSortOrder('asc');
+                            }
+                            setPage(1);
+                          }}
+                        >
+                          <div className='flex items-center gap-1'>
+                            PROGRES PENGIRIMAN
+                            {sortBy === 'progres_pengiriman' ? (
+                              sortOrder === 'asc' ? (
+                                <ArrowUp className='h-3 w-3' />
+                              ) : (
+                                <ArrowDown className='h-3 w-3' />
+                              )
+                            ) : (
+                              <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
+                            )}
+                          </div>
+                        </TableHead>
+                      )}
+                      {showPiutang && (
+                        <TableHead
+                          className='cursor-pointer hover:bg-neutral-100 transition-colors group'
+                          onClick={() => {
+                            if (sortBy === 'total_penagihan') {
+                              setSortOrder(
+                                sortOrder === 'asc' ? 'desc' : 'asc'
+                              );
+                            } else {
+                              setSortBy('total_penagihan');
+                              setSortOrder('asc');
+                            }
+                            setPage(1);
+                          }}
+                        >
+                          <div className='flex items-center gap-1'>
+                            TOTAL PENAGIHAN
+                            {sortBy === 'total_penagihan' ? (
+                              sortOrder === 'asc' ? (
+                                <ArrowUp className='h-3 w-3' />
+                              ) : (
+                                <ArrowDown className='h-3 w-3' />
+                              )
+                            ) : (
+                              <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
+                            )}
+                          </div>
+                        </TableHead>
+                      )}
                       {!showProduksi && !showPurchasing && !showPiutang && (
                         <TableHead>NAMA PROJEK</TableHead>
                       )}
@@ -2459,7 +2598,7 @@ export function ProjectsV2Table({
                       </>
                     )}
                   <TableHead className='w-[100px] text-right'>
-                    ACTIONS
+                    ACTION
                   </TableHead>
                 </TableRow>
               </TableHeader>
@@ -2475,7 +2614,7 @@ export function ProjectsV2Table({
                           : showProduksi || showPurchasing
                           ? 13
                           : showPiutang
-                          ? 13
+                          ? 14
                           : isMainProjectsV2Page || showPerencanaan
                           ? 20
                           : 18
@@ -2498,7 +2637,7 @@ export function ProjectsV2Table({
                           : showProduksi || showPurchasing
                           ? 13
                           : showPiutang
-                          ? 13
+                          ? 14
                           : isMainProjectsV2Page || showPerencanaan
                           ? 20
                           : 18
@@ -2853,21 +2992,16 @@ export function ProjectsV2Table({
                       )}
                       {showPiutang && (
                         <TableCell>
-                          <div className='flex items-center gap-2'>
-                            <div className='flex-1 min-w-[60px]'>
-                              <div className='h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden'>
-                                <div
-                                  className='h-full bg-blue-600 rounded-full transition-all duration-500'
-                                  style={{
-                                    width: `${project.progres_produksi || 0}%`,
-                                  }}
-                                />
-                              </div>
-                            </div>
-                            <span className='text-xs font-bold text-neutral-700'>
-                              {Math.round(project.progres_produksi || 0)}%
-                            </span>
-                          </div>
+                          <span className='text-xs font-bold text-neutral-700'>
+                            {Math.round(project.progres_produksi || 0)}%
+                          </span>
+                        </TableCell>
+                      )}
+                      {showPiutang && (
+                        <TableCell>
+                          <span className='text-xs font-bold text-neutral-700'>
+                            {Math.round(project.progres_kerja?.pengiriman || 0)}%
+                          </span>
                         </TableCell>
                       )}
                       {showAllDashboard && <></>}
