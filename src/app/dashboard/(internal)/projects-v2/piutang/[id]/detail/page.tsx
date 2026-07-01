@@ -17,6 +17,8 @@ import {
   Building2,
   Info,
   ChevronDown,
+  Eye,
+  Truck,
 } from 'lucide-react';
 import { format, differenceInDays, startOfDay } from 'date-fns';
 import { Progress } from '@/components/ui/progress';
@@ -68,6 +70,7 @@ import {
   Penagihan,
   CreatePenagihanPayload,
 } from '@/features/projects/services/penagihan-service';
+import { PengirimanService } from '@/features/pengiriman/services/pengiriman-service';
 
 const formatRupiah = (value: string | number) => {
   if (value === null || value === undefined || value === '') return '';
@@ -165,6 +168,15 @@ export default function PiutangDetailPage() {
     queryFn: () => penagihanService.getTermin(),
   });
 
+  const spkId = project?.spk?.id;
+
+  const { data: pengirimanPerSpkData } = useQuery({
+    queryKey: ['pengiriman-per-spk', spkId],
+    queryFn: () =>
+      PengirimanService.getPengiriman({ spk_id: spkId, per_page: 100 }),
+    enabled: !!spkId,
+  });
+
   // Form state
   const [isFormOpen, setIsFormOpen] = React.useState(false);
   const [editingId, setEditingId] = React.useState<number | null>(null);
@@ -188,6 +200,7 @@ export default function PiutangDetailPage() {
   // Collapsing states
   const [isBilledCollapsed, setIsBilledCollapsed] = React.useState(false);
   const [isPaymentCollapsed, setIsPaymentCollapsed] = React.useState(false);
+  const [isShipCollapsed, setIsShipCollapsed] = React.useState(false);
   const [editingTermin, setEditingTermin] = React.useState<{
     id: number;
     nama: string;
@@ -552,7 +565,150 @@ export default function PiutangDetailPage() {
       </div>
 
       {/* Document Section at Top */}
-      <div className='grid grid-cols-1 md:grid-cols-2 gap-4 w-full'>
+      <div className='grid grid-cols-1 lg:grid-cols-3 gap-4 w-full'>
+        {/* Card Pengiriman */}
+        <Card className='border border-neutral-200 shadow-sm bg-white transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md'>
+          <CardHeader className='pb-2 flex flex-row items-center justify-between gap-3 min-w-0'>
+            <button
+              className='flex items-center gap-3 flex-1 text-left min-w-0'
+              onClick={() => setIsShipCollapsed(!isShipCollapsed)}
+            >
+              <div className='h-8 w-8 rounded-full flex items-center justify-center bg-violet-100 text-violet-600 shrink-0'>
+                <Truck className='h-4 w-4' />
+              </div>
+              <div className='flex-1 min-w-0'>
+                <CardTitle className='text-sm text-neutral-800 font-bold truncate'>
+                  Pengiriman
+                </CardTitle>
+                <p className='text-[10px] text-muted-foreground uppercase tracking-wider font-semibold truncate'>
+                  Logistics
+                </p>
+              </div>
+              <ChevronDown
+                className={`h-4 w-4 text-neutral-400 shrink-0 transition-transform duration-200 ${
+                  isShipCollapsed ? '-rotate-90' : ''
+                }`}
+              />
+            </button>
+          </CardHeader>
+          {!isShipCollapsed && (
+            <CardContent className='pt-0'>
+              <div className='border-t border-neutral-100 pt-2.5 space-y-3'>
+                {/* Progress Bar Pengiriman */}
+                <div className='space-y-1.5'>
+                  <div className='flex justify-between items-center'>
+                    <p className='text-[10px] font-bold text-neutral-500 uppercase tracking-wider'>
+                      Progres Pengiriman
+                    </p>
+                    <p className='text-[10px] font-bold text-violet-600'>
+                      {Math.round(project.progres_kerja?.pengiriman || 0)}%
+                    </p>
+                  </div>
+                  <div className='h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden'>
+                    <div
+                      className='h-full bg-violet-600 transition-all duration-500'
+                      style={{
+                        width: `${Math.min(
+                          Math.round(project.progres_kerja?.pengiriman || 0),
+                          100
+                        )}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* List pengiriman per SPK */}
+                {pengirimanPerSpkData &&
+                pengirimanPerSpkData.data.length > 0 ? (
+                  <div className='space-y-1.5 pt-1 border-t border-neutral-100 max-h-[180px] overflow-y-auto pr-1'>
+                    {[...pengirimanPerSpkData.data]
+                      .sort(
+                        (a, b) =>
+                          new Date(a.tanggal).getTime() -
+                          new Date(b.tanggal).getTime()
+                      )
+                      .map((p) => {
+                        const totalKeluar =
+                          p.details?.reduce(
+                            (s, d) => s + Number(d.jumlah_keluar),
+                            0
+                          ) ?? 0;
+                        const totalTersetting =
+                          p.details?.reduce(
+                            (s, d) => s + Number(d.jumlah_tersetting),
+                            0
+                          ) ?? 0;
+                        return (
+                          <div
+                            key={p.id}
+                            className='p-2 rounded-md bg-violet-50/60 border border-violet-100 space-y-1'
+                          >
+                            <div className='flex items-center justify-between gap-1'>
+                              <span className='text-[10px] font-bold text-violet-800 truncate'>
+                                {format(new Date(p.tanggal), 'dd MMM yyyy')}
+                              </span>
+                            </div>
+                            <div className='flex items-center gap-2 text-[9px] text-neutral-600 font-medium'>
+                              {p.supir && (
+                                <span className='truncate'>
+                                  Supir: {p.supir}
+                                </span>
+                              )}
+                            </div>
+                            <div className='flex items-center gap-2 flex-wrap'>
+                              {totalKeluar > 0 && (
+                                <span className='text-[9px] font-bold bg-teal-100 text-teal-700 px-1.5 py-0.5 rounded'>
+                                  Keluar: {totalKeluar}
+                                </span>
+                              )}
+                              {p.surat_jalan && (
+                                <a
+                                  href={`${(
+                                    process.env.NEXT_PUBLIC_API_URL ||
+                                    'http://localhost:8000'
+                                  ).replace('/api', '')}/storage/${
+                                    p.surat_jalan
+                                  }`}
+                                  target='_blank'
+                                  rel='noreferrer'
+                                  className='text-[9px] font-semibold text-neutral-600 bg-neutral-100 px-1.5 py-0.5 rounded hover:bg-neutral-200 flex items-center gap-0.5'
+                                >
+                                  <Eye className='h-2.5 w-2.5' /> Lihat SJ
+                                </a>
+                              )}
+                              {p.setrim && (
+                                <a
+                                  href={`${(
+                                    process.env.NEXT_PUBLIC_API_URL ||
+                                    'http://localhost:8000'
+                                  ).replace('/api', '')}/storage/${p.setrim}`}
+                                  target='_blank'
+                                  rel='noreferrer'
+                                  className='text-[9px] font-semibold text-neutral-600 bg-neutral-100 px-1.5 py-0.5 rounded hover:bg-neutral-200 flex items-center gap-0.5'
+                                >
+                                  <Eye className='h-2.5 w-2.5' /> Lihat Setrim
+                                </a>
+                              )}
+                              {totalTersetting > 0 && (
+                                <span className='text-[9px] font-bold bg-violet-100 text-violet-700 px-1.5 py-0.5 rounded'>
+                                  Setting: {totalTersetting}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                ) : (
+                  <p className='text-[10px] text-muted-foreground text-center py-2'>
+                    Belum ada data pengiriman.
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          )}
+        </Card>
+
         {/* 1. BILLED PROGRESS SECTION */}
         <Card
           className={`relative border shadow-sm transition-all duration-300 ${

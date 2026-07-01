@@ -83,6 +83,7 @@ import {
   projectV2Service,
   ProjectItemV2,
 } from '@/features/projects/services/project-v2-service';
+import { PengirimanService } from '@/features/pengiriman/services/pengiriman-service';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Switch } from '@/components/ui/switch';
@@ -112,6 +113,15 @@ export default function PerencanaanDetailPage() {
   const { data: pics } = useQuery({
     queryKey: ['pics'],
     queryFn: () => projectV2Service.getPics(),
+  });
+
+  const spkId = project?.spk?.id;
+
+  const { data: pengirimanPerSpkData } = useQuery({
+    queryKey: ['pengiriman-per-spk', spkId],
+    queryFn: () =>
+      PengirimanService.getPengiriman({ spk_id: spkId, per_page: 100 }),
+    enabled: !!spkId,
   });
 
   // Items Search State
@@ -583,8 +593,20 @@ export default function PerencanaanDetailPage() {
   const totalQtyOrder = items?.reduce((sum, i) => sum + i.jumlah, 0) || 0;
   const totalQtyMasuk = items?.reduce((sum, i) => sum + (i.barang_jadi_masuk?.reduce((s, bj) => s + bj.jumlah, 0) || 0), 0) || 0;
   const totalQtyPacking = items?.reduce((sum, i) => sum + (i.barang_jadi_terpacking?.reduce((s, p) => s + p.jumlah, 0) || 0), 0) || 0;
-  const totalQtyKeluar = items?.reduce((sum, i) => sum + (i.barang_jadi_keluar?.reduce((s, bjk) => s + bjk.jumlah, 0) || 0), 0) || 0;
-  const totalQtySetting = items?.reduce((sum, i) => sum + (i.setting?.reduce((s, st) => s + st.jumlah, 0) || 0), 0) || 0;
+  const totalQtyKeluar =
+    pengirimanPerSpkData?.data.reduce(
+      (sum, p) =>
+        sum +
+        (p.details?.reduce((s, d) => s + Number(d.jumlah_keluar), 0) ?? 0),
+      0
+    ) ?? 0;
+  const totalQtySetting =
+    pengirimanPerSpkData?.data.reduce(
+      (sum, p) =>
+        sum +
+        (p.details?.reduce((s, d) => s + Number(d.jumlah_tersetting), 0) ?? 0),
+      0
+    ) ?? 0;
   const totalQtyBelumSetting = totalQtyKeluar - totalQtySetting;
   const orderGk = project?.order_gambar_kerja?.[0];
   const isGkCompleted = (totalItems > 0 && gambarKerjaCount === totalItems) || orderGk?.pakai_gambar === 0;
@@ -1201,14 +1223,96 @@ export default function PerencanaanDetailPage() {
           </CardHeader>
           {!isShipCollapsed && (
             <CardContent className='pt-0'>
-               <div className='border-t border-neutral-100 pt-2.5'>
-                 <Button variant='ghost' size='sm' className='h-7 w-full text-[10px] bg-neutral-50 hover:bg-neutral-100 flex items-center justify-center gap-1.5 font-bold border border-neutral-200' asChild>
-                    <Link href={`/dashboard/projects-v2/jadwal-pengiriman?project_id=${projectId}`}>
-                      <Truck className='h-3 w-3 text-neutral-500' />
-                      View Schedule
-                    </Link>
-                 </Button>
-               </div>
+              <div className='border-t border-neutral-100 pt-2.5 space-y-3'>
+                {/* List pengiriman per SPK */}
+                {pengirimanPerSpkData &&
+                pengirimanPerSpkData.data.length > 0 ? (
+                  <div className='space-y-1.5 pt-1 max-h-[180px] overflow-y-auto pr-1'>
+                    {[...pengirimanPerSpkData.data]
+                      .sort(
+                        (a, b) =>
+                          new Date(a.tanggal).getTime() -
+                          new Date(b.tanggal).getTime()
+                      )
+                      .map((p) => {
+                        const totalKeluar =
+                          p.details?.reduce(
+                            (s, d) => s + Number(d.jumlah_keluar),
+                            0
+                          ) ?? 0;
+                        const totalTersetting =
+                          p.details?.reduce(
+                            (s, d) => s + Number(d.jumlah_tersetting),
+                            0
+                          ) ?? 0;
+                        return (
+                          <div
+                            key={p.id}
+                            className='p-2 rounded-md bg-violet-50/60 border border-violet-100 space-y-1'
+                          >
+                            <div className='flex items-center justify-between gap-1'>
+                              <span className='text-[10px] font-bold text-violet-800 truncate'>
+                                {format(new Date(p.tanggal), 'dd MMM yyyy')}
+                              </span>
+                            </div>
+                            <div className='flex items-center gap-2 text-[9px] text-neutral-600 font-medium'>
+                              {p.supir && (
+                                <span className='truncate'>
+                                  Supir: {p.supir}
+                                </span>
+                              )}
+                            </div>
+                            <div className='flex items-center gap-2 flex-wrap'>
+                              {totalKeluar > 0 && (
+                                <span className='text-[9px] font-bold bg-teal-100 text-teal-700 px-1.5 py-0.5 rounded'>
+                                  Keluar: {totalKeluar}
+                                </span>
+                              )}
+                              {p.surat_jalan && (
+                                <a
+                                  href={`${(
+                                    process.env.NEXT_PUBLIC_API_URL ||
+                                    'http://localhost:8000'
+                                  ).replace('/api', '')}/storage/${
+                                    p.surat_jalan
+                                  }`}
+                                  target='_blank'
+                                  rel='noreferrer'
+                                  className='text-[9px] font-semibold text-neutral-600 bg-neutral-100 px-1.5 py-0.5 rounded hover:bg-neutral-200 flex items-center gap-0.5'
+                                >
+                                  <Eye className='h-2.5 w-2.5' /> Lihat SJ
+                                </a>
+                              )}
+                              {p.setrim && (
+                                <a
+                                  href={`${(
+                                    process.env.NEXT_PUBLIC_API_URL ||
+                                    'http://localhost:8000'
+                                  ).replace('/api', '')}/storage/${p.setrim}`}
+                                  target='_blank'
+                                  rel='noreferrer'
+                                  className='text-[9px] font-semibold text-neutral-600 bg-neutral-100 px-1.5 py-0.5 rounded hover:bg-neutral-200 flex items-center gap-0.5'
+                                >
+                                  <Eye className='h-2.5 w-2.5' /> Lihat Setrim
+                                </a>
+                              )}
+                              {totalTersetting > 0 && (
+                                <span className='text-[9px] font-bold bg-violet-100 text-violet-700 px-1.5 py-0.5 rounded'>
+                                  Setting: {totalTersetting}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                ) : (
+                  <p className='text-[10px] text-muted-foreground text-center py-2'>
+                    Belum ada data pengiriman.
+                  </p>
+                )}
+
+              </div>
             </CardContent>
           )}
         </Card>
@@ -1342,14 +1446,15 @@ export default function PerencanaanDetailPage() {
                 <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>Produksi</TableHead>
                 <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>B. Jadi</TableHead>
                 <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>Packing</TableHead>
-                <TableHead className='w-[100px] text-right text-[10px] uppercase font-bold text-neutral-500 pr-4'>Actions</TableHead>
+                <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>B Keluar</TableHead>
+                <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>B Tersetting</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoadingItems ? (
                 <TableRow>
                   <TableCell
-                    colSpan={13}
+                    colSpan={14}
                     className='h-32 text-center text-muted-foreground'
                   >
                     <Loader2 className='h-6 w-6 animate-spin mx-auto' />
@@ -1358,7 +1463,7 @@ export default function PerencanaanDetailPage() {
               ) : items?.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={13}
+                    colSpan={14}
                     className='h-32 text-center text-muted-foreground'
                   >
                     No items recorded for this project.
@@ -1621,20 +1726,41 @@ export default function PerencanaanDetailPage() {
                         )}
                       </div>
                     </TableCell>
-                    <TableCell className='text-right pr-4'>
-                      <Button
-                        variant='ghost'
-                        size='sm'
-                        className='h-7 text-[10px] hover:bg-neutral-100 text-neutral-600 hover:text-blue-600 transition-all font-semibold'
-                        asChild
-                      >
-                        <Link
-                          href={`/dashboard/projects-v2/perencanaan/${projectId}/item/${item.id}`}
-                        >
-                          Ship
-                          <ArrowUpRight className='ml-1 h-3 w-3' />
-                        </Link>
-                      </Button>
+                    <TableCell>
+                      {(() => {
+                        const total =
+                          item.detail_pengiriman?.reduce(
+                            (sum, d) => sum + Number(d.jumlah_keluar),
+                            0
+                          ) ?? 0;
+                        return total > 0 ? (
+                          <Badge className='bg-teal-600 text-white border-none font-bold text-[10px] h-5 px-1.5 shadow-sm'>
+                            {total} / {item.jumlah}
+                          </Badge>
+                        ) : (
+                          <span className='text-[9px] text-muted-foreground italic'>
+                            -
+                          </span>
+                        );
+                      })()}
+                    </TableCell>
+                    <TableCell>
+                      {(() => {
+                        const total =
+                          item.detail_pengiriman?.reduce(
+                            (sum, d) => sum + Number(d.jumlah_tersetting),
+                            0
+                          ) ?? 0;
+                        return total > 0 ? (
+                          <Badge className='bg-violet-600 text-white border-none font-bold text-[10px] h-5 px-1.5 shadow-sm'>
+                            {total} / {item.jumlah}
+                          </Badge>
+                        ) : (
+                          <span className='text-[9px] text-muted-foreground italic'>
+                            -
+                          </span>
+                        );
+                      })()}
                     </TableCell>
                   </TableRow>
                 ))

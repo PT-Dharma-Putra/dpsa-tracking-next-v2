@@ -20,6 +20,7 @@ import {
   Truck,
   QrCode,
   Printer,
+  Search,
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -162,6 +163,9 @@ export default function ProduksiDetailPage() {
   // QR Code Print State (bulk - all items)
   const [isQrDialogOpen, setIsQrDialogOpen] = React.useState(false);
   const qrPrintRef = React.useRef<HTMLDivElement>(null);
+
+  // Items Search State
+  const [searchQuery, setSearchQuery] = React.useState('');
 
   // QR Code per-item State
   const [isItemQrDialogOpen, setIsItemQrDialogOpen] = React.useState(false);
@@ -988,21 +992,32 @@ export default function ProduksiDetailPage() {
 
       {/* Items Table Section */}
       <div className='space-y-4 pt-4 border-t'>
-        <div className='flex justify-between items-center'>
+        <div className='flex justify-between items-center gap-4'>
           <h2 className='text-xl font-bold flex items-center gap-2'>
             <ListChecks className='h-5 w-5 text-neutral-400' />
             Project Items
           </h2>
-          <Button
-            size='sm'
-            variant='outline'
-            className='gap-2'
-            onClick={() => setIsQrDialogOpen(true)}
-            disabled={!items || items.length === 0}
-          >
-            <QrCode className='h-4 w-4' />
-            Generate QR
-          </Button>
+          <div className='flex items-center gap-2'>
+            <div className='relative w-64'>
+              <Search className='absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-neutral-400 pointer-events-none' />
+              <Input
+                placeholder='Cari item, lantai, ruang...'
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className='pl-8 h-8 text-xs'
+              />
+            </div>
+            <Button
+              size='sm'
+              variant='outline'
+              className='gap-2 h-8'
+              onClick={() => setIsQrDialogOpen(true)}
+              disabled={!items || items.length === 0}
+            >
+              <QrCode className='h-4 w-4' />
+              Generate QR
+            </Button>
+          </div>
         </div>
 
         <div className='rounded-xl border border-neutral-200 bg-white overflow-x-auto shadow-sm'>
@@ -1053,7 +1068,18 @@ export default function ProduksiDetailPage() {
                   </TableCell>
                 </TableRow>
               ) : (
-                items?.map((item, index) => (
+                [...(items ?? [])]
+                  .filter((item) => {
+                    if (!searchQuery.trim()) return true;
+                    const q = searchQuery.toLowerCase();
+                    return (
+                      item.item?.toLowerCase().includes(q) ||
+                      (item.lantai ?? '').toLowerCase().includes(q) ||
+                      (item.ruang ?? '').toLowerCase().includes(q) ||
+                      (item.keterangan ?? '').toLowerCase().includes(q)
+                    );
+                  })
+                  .map((item, index) => (
                   <TableRow
                     key={item.id}
                     className='hover:bg-neutral-50/50 transition-colors'
