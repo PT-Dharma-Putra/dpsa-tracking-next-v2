@@ -56,14 +56,14 @@ const RingChart = ({ percentage, color, label, subLabel }: { percentage: number,
             strokeLinecap="round"
             style={{
               strokeDasharray: circumference,
-              strokeDashoffset: strokeDashoffset,
+              strokeDashoffset: isNaN(strokeDashoffset) ? circumference : strokeDashoffset,
               transition: 'stroke-dashoffset 1s ease-in-out',
             }}
           />
         </svg>
       </div>
       <div className="mt-2 text-center">
-        <div className="text-xl font-bold text-neutral-800">{percentage.toFixed(1)}%</div>
+        <div className="text-xl font-bold text-neutral-800">{isNaN(percentage) ? '0.0' : percentage.toFixed(1)}%</div>
         <div className="text-[10px] text-muted-foreground">{label}</div>
         <div className="text-[10px] font-medium text-neutral-500 mt-1">{subLabel}</div>
       </div>
@@ -72,6 +72,7 @@ const RingChart = ({ percentage, color, label, subLabel }: { percentage: number,
 };
 
 const HorizontalProgressBar = ({ label, percentage, color, bgLight }: { label: string, percentage: number, color: string, bgLight: string }) => {
+  const safePercentage = isNaN(percentage) ? 0 : percentage;
   return (
     <div className="flex items-center gap-4 py-2">
       <span className="w-24 text-xs font-medium text-neutral-600">{label}</span>
@@ -79,11 +80,11 @@ const HorizontalProgressBar = ({ label, percentage, color, bgLight }: { label: s
         <div className={`h-2 w-full ${bgLight} rounded-full overflow-hidden`}>
           <div
             className={`h-full rounded-full transition-all duration-1000 ${color}`}
-            style={{ width: `${percentage}%` }}
+            style={{ width: `${safePercentage}%` }}
           />
         </div>
       </div>
-      <span className="w-12 text-right text-xs font-bold text-neutral-800">{percentage.toFixed(1)}%</span>
+      <span className="w-12 text-right text-xs font-bold text-neutral-800">{safePercentage.toFixed(1)}%</span>
     </div>
   );
 };
@@ -194,25 +195,25 @@ export default function PerencanaanRekapPage() {
   let itemsPackingCount = 0;
   let itemsTerkirimCount = 0;
   let itemsBelumTersettingCount = 0;
+  let itemsTersettingCount = 0;
 
   const tableData = items.map((item, index) => {
     const qty = item.jumlah;
 
     // Produksi
-    const qtyProduksi = item.barang_jadi_masuk?.reduce((sum, bj) => sum + bj.jumlah, 0) || 0;
-    const progressProduksi = qty > 0 ? Math.min(100, (qtyProduksi / qty) * 100) : 0;
-    if (qtyProduksi > 0) itemsProduksiCount++;
+    const progressProduksi = Number(item.produksi?.persen) || 0;
+    if (progressProduksi > 0) itemsProduksiCount++;
     totalProduksiProgress += progressProduksi;
 
-    // Packing
-    const qtyPacking = item.barang_jadi_terpacking?.reduce((sum, p) => sum + p.jumlah, 0) || 0;
-    const progressPacking = qty > 0 ? Math.min(100, (qtyPacking / qty) * 100) : 0;
-    if (qtyPacking > 0) itemsPackingCount++;
-    totalPackingProgress += progressPacking;
+    // Barang Jadi (previously Packing)
+    const qtyBarangJadi = item.barang_jadi_masuk?.reduce((sum, bj) => sum + Number(bj.jumlah), 0) || 0;
+    const progressBarangJadi = qty > 0 ? Math.min(100, (qtyBarangJadi / qty) * 100) : 0;
+    if (qtyBarangJadi > 0) itemsPackingCount++;
+    totalPackingProgress += progressBarangJadi;
 
     // Terkirim & Tersetting from Pengiriman
     const qtyTerkirim = pengirimanPerSpkData?.data.reduce(
-      (sum, p) => sum + (p.details?.find((d) => d.project_item_id === item.id)?.jumlah_keluar || 0),
+      (sum, p) => sum + Number(p.details?.find((d) => d.project_item_id === item.id)?.jumlah_keluar || 0),
       0
     ) || 0;
     const progressTerkirim = qty > 0 ? Math.min(100, (qtyTerkirim / qty) * 100) : 0;
@@ -220,11 +221,12 @@ export default function PerencanaanRekapPage() {
     totalTerkirimProgress += progressTerkirim;
 
     const qtyTersetting = pengirimanPerSpkData?.data.reduce(
-      (sum, p) => sum + (p.details?.find((d) => d.project_item_id === item.id)?.jumlah_tersetting || 0),
+      (sum, p) => sum + Number(p.details?.find((d) => d.project_item_id === item.id)?.jumlah_tersetting || 0),
       0
     ) || 0;
     const progressTersetting = qty > 0 ? Math.min(100, (qtyTersetting / qty) * 100) : 0;
     totalTersettingProgress += progressTersetting;
+    if (qtyTersetting > 0) itemsTersettingCount++;
 
     const qtyBelumTersetting = qtyTerkirim - qtyTersetting;
     if (qtyBelumTersetting > 0) itemsBelumTersettingCount++;
@@ -235,7 +237,7 @@ export default function PerencanaanRekapPage() {
       statusAkhir = 'Selesai';
       itemsSelesai++;
       qtySelesai += qty;
-    } else if (qtyProduksi > 0 || qtyPacking > 0 || qtyTerkirim > 0 || qtyTersetting > 0) {
+    } else if (progressProduksi > 0 || qtyBarangJadi > 0 || qtyTerkirim > 0 || qtyTersetting > 0) {
       statusAkhir = 'Sebagian';
       itemsSebagian++;
       qtySebagian += qty;
@@ -257,8 +259,8 @@ export default function PerencanaanRekapPage() {
       },
       qty,
       poDivisi: item.divisi?.nama || '-',
-      produksi: { progress: progressProduksi, text: qtyProduksi > 0 ? `${qtyProduksi}/${qty}` : '' },
-      packing: { progress: progressPacking, text: qtyPacking > 0 ? `${qtyPacking}/${qty}` : 'Record' },
+      produksi: { progress: progressProduksi, text: progressProduksi > 0 ? `${progressProduksi}%` : '' },
+      packing: { progress: progressBarangJadi, text: qtyBarangJadi > 0 ? `${qtyBarangJadi}/${qty}` : 'Record' },
       terkirim: { progress: progressTerkirim, text: qtyTerkirim > 0 ? `${qtyTerkirim}/${qty}` : '-' },
       tersetting: { progress: progressTersetting, text: qtyTersetting > 0 ? `${qtyTersetting}/${qty}` : '-' },
       statusAkhir,
@@ -330,7 +332,7 @@ export default function PerencanaanRekapPage() {
       </div>
 
       {/* Top Cards Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-4">
         <Card className="shadow-sm border-neutral-100">
           <CardContent className="p-4 flex flex-col justify-between h-full">
             <div className="text-xs font-bold text-neutral-800">Total Item</div>
@@ -372,7 +374,7 @@ export default function PerencanaanRekapPage() {
         </Card>
         <Card className="shadow-sm border-neutral-100">
           <CardContent className="p-4 flex items-center justify-between h-full">
-            <div className="text-xs font-bold text-emerald-600 self-start">Packing</div>
+            <div className="text-xs font-bold text-emerald-600 self-start">Barang Jadi</div>
             <RingChart
               percentage={avgPacking}
               color="#10b981" // emerald-500
@@ -403,6 +405,17 @@ export default function PerencanaanRekapPage() {
             />
           </CardContent>
         </Card>
+        <Card className="shadow-sm border-neutral-100">
+          <CardContent className="p-4 flex items-center justify-between h-full">
+            <div className="text-xs font-bold text-emerald-600 self-start">Tersetting</div>
+            <RingChart
+              percentage={avgTersetting}
+              color="#10b981" // emerald-500
+              label="Rata-rata"
+              subLabel={`${itemsTersettingCount} / ${totalItemsCount} item`}
+            />
+          </CardContent>
+        </Card>
       </div>
 
       {/* Middle Row */}
@@ -417,7 +430,7 @@ export default function PerencanaanRekapPage() {
           </CardHeader>
           <CardContent className="space-y-1">
             <HorizontalProgressBar label="Produksi" percentage={avgProduksi} color="bg-blue-500" bgLight="bg-blue-50" />
-            <HorizontalProgressBar label="Packing" percentage={avgPacking} color="bg-blue-500" bgLight="bg-blue-50" />
+            <HorizontalProgressBar label="Barang Jadi" percentage={avgPacking} color="bg-blue-500" bgLight="bg-blue-50" />
             <HorizontalProgressBar label="Terkirim" percentage={avgTerkirim} color="bg-emerald-500" bgLight="bg-emerald-50" />
             <HorizontalProgressBar label="Tersetting" percentage={avgTersetting} color="bg-orange-500" bgLight="bg-orange-50" />
             
@@ -523,7 +536,7 @@ export default function PerencanaanRekapPage() {
                 </TableHead>
                 <TableHead className="text-center">
                   <div className="flex flex-col items-center">
-                    <span className="text-[10px] font-bold text-neutral-500 tracking-wider">PACKING</span>
+                    <span className="text-[10px] font-bold text-neutral-500 tracking-wider">BARANG JADI</span>
                     <span className="text-[9px] text-muted-foreground font-normal mt-0.5">Progress</span>
                   </div>
                 </TableHead>
