@@ -3979,18 +3979,34 @@ export function ProjectsV2Table({
                                 </Button>
                               )}
                               {showPerencanaan && (
-                                <Button
-                                  variant='outline'
-                                  size='sm'
-                                  className='h-8 px-3 text-blue-600 border-blue-200 hover:bg-blue-50 hover:text-blue-700'
-                                  onClick={() =>
-                                    router.push(
-                                      `/dashboard/projects-v2/perencanaan/${project.id}/detail`
-                                    )
-                                  }
-                                >
-                                  Detail
-                                </Button>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant='ghost' className='h-8 w-8 p-0'>
+                                      <span className='sr-only'>Open menu</span>
+                                      <MoreHorizontal className='h-4 w-4' />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align='end'>
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        router.push(
+                                          `/dashboard/projects-v2/perencanaan/${project.id}/detail`
+                                        )
+                                      }
+                                    >
+                                      Detail
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        router.push(
+                                          `/dashboard/projects-v2/perencanaan/${project.id}/rekap`
+                                        )
+                                      }
+                                    >
+                                      Rekap
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
                               )}
                               {showPengirimanV2 && (
                                 <Button
@@ -4095,16 +4111,28 @@ export function ProjectsV2Table({
                                   </DropdownMenuItem>
                                 )}
                                 {showPerencanaan && (
-                                  <DropdownMenuItem
-                                    onClick={() =>
-                                      router.push(
-                                        `/dashboard/projects-v2/perencanaan/${project.id}/detail`
-                                      )
-                                    }
-                                  >
-                                    <Plus className='mr-2 h-4 w-4' />
-                                    Detail
-                                  </DropdownMenuItem>
+                                  <>
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        router.push(
+                                          `/dashboard/projects-v2/perencanaan/${project.id}/detail`
+                                        )
+                                      }
+                                    >
+                                      <Plus className='mr-2 h-4 w-4' />
+                                      Detail
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        router.push(
+                                          `/dashboard/projects-v2/perencanaan/${project.id}/rekap`
+                                        )
+                                      }
+                                    >
+                                      <FileText className='mr-2 h-4 w-4' />
+                                      Rekap
+                                    </DropdownMenuItem>
+                                  </>
                                 )}
                                 {showQC && (
                                   <DropdownMenuItem
