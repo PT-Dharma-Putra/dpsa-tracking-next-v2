@@ -78,6 +78,7 @@ import {
 } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
 import { Check, ChevronsUpDown, Plus, ClipboardList } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 
 import {
   projectV2Service,
@@ -126,6 +127,10 @@ export default function PerencanaanDetailPage() {
 
   // Items Search State
   const [searchQuery, setSearchQuery] = React.useState('');
+  
+  // Bulk PO Divisi State
+  const [selectedItemIds, setSelectedItemIds] = React.useState<number[]>([]);
+  const [openDivisiPopover, setOpenDivisiPopover] = React.useState<number | null>(null);
 
   // Gambar Kerja State
   const [isGkDialogOpen, setIsGkDialogOpen] = React.useState(false);
@@ -458,6 +463,25 @@ export default function PerencanaanDetailPage() {
     },
     onError: () => {
       toast.error('Failed to assign division');
+    },
+  });
+
+  const bulkUpdateItemDivisiMutation = useMutation({
+    mutationFn: async (divisiId: number) => {
+      const promises = selectedItemIds.map(itemId => 
+        projectV2Service.updateProjectItem(itemId, { divisi_id: divisiId })
+      );
+      await Promise.all(promises);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['project-v2-items', projectId],
+      });
+      toast.success('PO Divisi massal berhasil diupdate');
+      setSelectedItemIds([]);
+    },
+    onError: () => {
+      toast.error('Gagal mengupdate PO Divisi massal');
     },
   });
 
@@ -1419,14 +1443,60 @@ export default function PerencanaanDetailPage() {
             Project Items List
             <Badge variant='outline' className='ml-2 bg-neutral-50 text-neutral-600 border-neutral-200'>{totalItems} Items</Badge>
           </h2>
-          <div className='relative w-64'>
-            <Search className='absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-neutral-400 pointer-events-none' />
-            <Input
-              placeholder='Cari item, lantai, ruang...'
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className='pl-8 h-8 text-xs'
-            />
+          
+          <div className='flex items-center gap-3'>
+            {selectedItemIds.length > 0 && (
+              <div className='flex items-center gap-3 pr-2 border-r border-neutral-200'>
+                <span className='text-xs text-muted-foreground font-medium'>{selectedItemIds.length} item dipilih</span>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button 
+                      size='sm' 
+                      variant='outline' 
+                      className='h-8 bg-white'
+                      disabled={bulkUpdateItemDivisiMutation.isPending}
+                    >
+                      {bulkUpdateItemDivisiMutation.isPending ? (
+                        <Loader2 className='h-3.5 w-3.5 mr-2 animate-spin' />
+                      ) : (
+                        <Building2 className='h-3.5 w-3.5 mr-2' />
+                      )}
+                      Set PO Divisi Massal
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className='w-[200px] p-0' align='end'>
+                    <Command>
+                      <CommandInput placeholder='Cari divisi...' />
+                      <CommandList>
+                        <CommandEmpty>No divisi found.</CommandEmpty>
+                        <CommandGroup>
+                          {divisions?.map((divisi) => (
+                            <CommandItem
+                              key={divisi.id}
+                              onSelect={() => {
+                                bulkUpdateItemDivisiMutation.mutate(divisi.id);
+                              }}
+                            >
+                              <Building2 className='h-4 w-4 mr-2 text-muted-foreground' />
+                              {divisi.nama}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              </div>
+            )}
+            <div className='relative w-64'>
+              <Search className='absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-neutral-400 pointer-events-none' />
+              <Input
+                placeholder='Cari item, lantai, ruang...'
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className='pl-8 h-8 text-xs'
+              />
+            </div>
           </div>
         </div>
 
@@ -1435,6 +1505,18 @@ export default function PerencanaanDetailPage() {
             <TableHeader className='bg-neutral-50/80'>
               <TableRow className='hover:bg-transparent'>
                 <TableHead className='w-[40px] text-[10px] uppercase font-bold text-neutral-500'>#</TableHead>
+                <TableHead className='w-[40px] text-center'>
+                  <Checkbox
+                    checked={!!items && items.length > 0 && selectedItemIds.length === items.length}
+                    onCheckedChange={(checked) => {
+                      if (checked && items) {
+                        setSelectedItemIds(items.map((i) => i.id));
+                      } else {
+                        setSelectedItemIds([]);
+                      }
+                    }}
+                  />
+                </TableHead>
                 <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>Floor/Room</TableHead>
                 <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>Item Name</TableHead>
                 <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>Vol/Dim</TableHead>
@@ -1454,7 +1536,7 @@ export default function PerencanaanDetailPage() {
               {isLoadingItems ? (
                 <TableRow>
                   <TableCell
-                    colSpan={14}
+                    colSpan={15}
                     className='h-32 text-center text-muted-foreground'
                   >
                     <Loader2 className='h-6 w-6 animate-spin mx-auto' />
@@ -1463,7 +1545,7 @@ export default function PerencanaanDetailPage() {
               ) : items?.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={14}
+                    colSpan={15}
                     className='h-32 text-center text-muted-foreground'
                   >
                     No items recorded for this project.
@@ -1497,6 +1579,20 @@ export default function PerencanaanDetailPage() {
                   >
                     <TableCell className='text-[10px] text-muted-foreground font-medium'>
                       {index + 1}
+                    </TableCell>
+                    <TableCell className='text-center'>
+                      <Checkbox
+                        checked={selectedItemIds.includes(item.id)}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setSelectedItemIds((prev) => [...prev, item.id]);
+                          } else {
+                            setSelectedItemIds((prev) =>
+                              prev.filter((id) => id !== item.id)
+                            );
+                          }
+                        }}
+                      />
                     </TableCell>
                     <TableCell>
                       <div className='flex flex-col gap-0.5'>
@@ -1554,30 +1650,58 @@ export default function PerencanaanDetailPage() {
                           </Badge>
                         ) : (
                           <div className='flex items-center gap-1'>
-                            <Select
-                              defaultValue={item.divisi_id?.toString()}
-                              onValueChange={(val) =>
-                                updateItemDivisiMutation.mutate({
-                                  itemId: item.id,
-                                  divisiId: parseInt(val),
-                                })
-                              }
-                            >
-                              <SelectTrigger className='h-6 text-[9px] w-[80px] bg-white border-neutral-200'>
-                                <SelectValue placeholder='Pilih' />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {divisions
-                                  ? [...divisions]
-                                      .sort((a, b) => a.nama.localeCompare(b.nama))
-                                      .map((d) => (
-                                        <SelectItem key={d.id} value={d.id.toString()} className='text-[10px]'>
-                                          {d.nama}
-                                        </SelectItem>
-                                      ))
-                                  : null}
-                              </SelectContent>
-                            </Select>
+                            <Popover open={openDivisiPopover === item.id} onOpenChange={(open) => setOpenDivisiPopover(open ? item.id : null)}>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  role="combobox"
+                                  className="h-6 text-[9px] w-[110px] bg-white border-neutral-200 justify-between px-2"
+                                >
+                                  <span className="truncate">
+                                    {item.divisi_id
+                                      ? divisions?.find((d) => d.id === item.divisi_id)?.nama
+                                      : "Pilih Divisi..."}
+                                  </span>
+                                  <ChevronsUpDown className="ml-1 h-3 w-3 shrink-0 opacity-50" />
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-[180px] p-0" align="start">
+                                <Command>
+                                  <CommandInput placeholder="Cari divisi..." className="text-xs" />
+                                  <CommandList>
+                                    <CommandEmpty className="text-xs p-2 text-center text-muted-foreground">No divisi found.</CommandEmpty>
+                                    <CommandGroup>
+                                      {divisions
+                                        ? [...divisions]
+                                            .sort((a, b) => a.nama.localeCompare(b.nama))
+                                            .map((d) => (
+                                              <CommandItem
+                                                key={d.id}
+                                                value={d.nama}
+                                                className="text-xs"
+                                                onSelect={() => {
+                                                  updateItemDivisiMutation.mutate({
+                                                    itemId: item.id,
+                                                    divisiId: d.id,
+                                                  });
+                                                  setOpenDivisiPopover(null);
+                                                }}
+                                              >
+                                                <Check
+                                                  className={cn(
+                                                    "mr-2 h-3 w-3",
+                                                    item.divisi_id === d.id ? "opacity-100" : "opacity-0"
+                                                  )}
+                                                />
+                                                {d.nama}
+                                              </CommandItem>
+                                            ))
+                                        : null}
+                                    </CommandGroup>
+                                  </CommandList>
+                                </Command>
+                              </PopoverContent>
+                            </Popover>
                           </div>
                         )}
                         <Button 
