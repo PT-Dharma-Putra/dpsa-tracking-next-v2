@@ -3,8 +3,10 @@
 import * as React from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, Loader2, Package, ListChecks, CheckCircle2, Box, Layers, Building2, Calendar, ClipboardCheck, FileText } from 'lucide-react';
+import { ArrowLeft, Loader2, Package, ListChecks, CheckCircle2, Box, Layers, Building2, Calendar, ClipboardCheck, FileText, FileDown } from 'lucide-react';
 import { format } from 'date-fns';
+import * as XLSX from 'xlsx-js-style';
+import { toast } from 'sonner';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -279,6 +281,100 @@ export default function PerencanaanRekapPage() {
     { value: itemsBelumAdaData, color: '#d1d5db', label: 'Belum Ada Data' }, // gray-300
   ];
 
+  const handleExportExcel = () => {
+    try {
+      const wb = XLSX.utils.book_new();
+      const headerStyle = {
+        font: { bold: true, sz: 10 },
+        alignment: { horizontal: 'center', vertical: 'center' },
+        border: {
+          top: { style: 'thin' },
+          bottom: { style: 'thin' },
+          left: { style: 'thin' },
+          right: { style: 'thin' },
+        },
+        fill: { fgColor: { rgb: 'F5F5F5' } },
+      };
+
+      const dataStyleCenter = {
+        font: { sz: 10 },
+        alignment: { horizontal: 'center', vertical: 'center' },
+        border: {
+          top: { style: 'thin' },
+          bottom: { style: 'thin' },
+          left: { style: 'thin' },
+          right: { style: 'thin' },
+        },
+      };
+
+      const dataStyleLeft = {
+        font: { sz: 10 },
+        alignment: { horizontal: 'left', vertical: 'center', wrapText: true },
+        border: {
+          top: { style: 'thin' },
+          bottom: { style: 'thin' },
+          left: { style: 'thin' },
+          right: { style: 'thin' },
+        },
+      };
+
+      const wsData: any[][] = [
+        [
+          { v: 'NO', t: 's', s: headerStyle },
+          { v: 'ITEM NAME', t: 's', s: headerStyle },
+          { v: 'VOL/DIM', t: 's', s: headerStyle },
+          { v: 'QTY', t: 's', s: headerStyle },
+          { v: 'PO DIVISI', t: 's', s: headerStyle },
+          { v: 'PRODUKSI', t: 's', s: headerStyle },
+          { v: 'BARANG JADI', t: 's', s: headerStyle },
+          { v: 'TERKIRIM', t: 's', s: headerStyle },
+          { v: 'TERSETTING', t: 's', s: headerStyle },
+          { v: 'STATUS AKHIR', t: 's', s: headerStyle },
+        ]
+      ];
+
+      tableData.forEach((row) => {
+        wsData.push([
+          { v: row.no, t: 'n', s: dataStyleCenter },
+          { v: row.name || '-', t: 's', s: dataStyleLeft },
+          { v: `${row.volDim.volume} (${row.volDim.dim} ${row.volDim.satuan})`, t: 's', s: dataStyleCenter },
+          { v: row.qty, t: 'n', s: dataStyleCenter },
+          { v: row.poDivisi, t: 's', s: dataStyleCenter },
+          { v: row.produksi.text || '0%', t: 's', s: dataStyleCenter },
+          { v: row.packing.text === 'Record' ? '-' : row.packing.text, t: 's', s: dataStyleCenter },
+          { v: row.terkirim.text, t: 's', s: dataStyleCenter },
+          { v: row.tersetting.text, t: 's', s: dataStyleCenter },
+          { v: row.statusAkhir, t: 's', s: dataStyleCenter },
+        ]);
+      });
+
+      const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+      ws['!cols'] = [
+        { wch: 5 }, // NO
+        { wch: 35 }, // ITEM NAME
+        { wch: 20 }, // VOL/DIM
+        { wch: 10 }, // QTY
+        { wch: 20 }, // PO DIVISI
+        { wch: 15 }, // PRODUKSI
+        { wch: 15 }, // BARANG JADI
+        { wch: 15 }, // TERKIRIM
+        { wch: 15 }, // TERSETTING
+        { wch: 15 }, // STATUS AKHIR
+      ];
+
+      XLSX.utils.book_append_sheet(wb, ws, 'Rekap Perencanaan');
+      const safeProjectName = project?.name?.replace(/[^a-zA-Z0-9 _-]/g, '') || 'Project';
+      const fileName = `Rekap_Perencanaan_${safeProjectName}`.trim() + '.xlsx';
+      XLSX.writeFile(wb, fileName);
+      
+      toast.success('Berhasil export data ke Excel!');
+    } catch (error) {
+      console.error('Error exporting excel', error);
+      toast.error('Gagal export excel');
+    }
+  };
+
   return (
     <div className="flex flex-col gap-6 p-6 max-w-[1600px] mx-auto w-full">
       {/* Header */}
@@ -516,8 +612,17 @@ export default function PerencanaanRekapPage() {
 
       {/* Detail Table */}
       <Card className="shadow-sm border-neutral-100 overflow-hidden">
-        <CardHeader className="pb-0 pt-4 px-4 bg-white">
-          <CardTitle className="text-sm font-bold text-neutral-800 mb-2">Ringkasan Item per Tahap</CardTitle>
+        <CardHeader className="pb-4 pt-4 px-4 bg-white flex flex-row items-center justify-between border-b border-neutral-100/60">
+          <CardTitle className="text-sm font-bold text-neutral-800">Ringkasan Item per Tahap</CardTitle>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 text-xs font-semibold text-emerald-600 border-emerald-200 hover:bg-emerald-50"
+            onClick={handleExportExcel}
+          >
+            <FileDown className="h-3.5 w-3.5 mr-1.5" />
+            Export XLS
+          </Button>
         </CardHeader>
         <div className="overflow-x-auto">
           <Table>
