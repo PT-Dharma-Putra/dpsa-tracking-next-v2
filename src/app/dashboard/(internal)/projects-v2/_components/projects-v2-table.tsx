@@ -2514,19 +2514,19 @@ export function ProjectsV2Table({
                       {!showEngineer && <TableHead>SPD</TableHead>}
                       {!showEngineer && <TableHead>PIC</TableHead>}
                       {showEngineer ? (
-                        <TableHead>Desainer</TableHead>
+                        <TableHead>DESAINER</TableHead>
                       ) : (
-                        !showEngineer && <TableHead>Desain</TableHead>
+                        !showEngineer && <TableHead>DESAIN</TableHead>
                       )}
-                      {!showEngineer && <TableHead>Approval Status</TableHead>}
-                      {!showEngineer && <TableHead>Target Desain</TableHead>}
-                      {showEngineer && <TableHead>Target</TableHead>}
-                      {showEngineer && <TableHead>Persentase</TableHead>}
-                      {!showEngineer && <TableHead>Submit</TableHead>}
-                      {showEngineer && <TableHead>Submit</TableHead>}
-                      <TableHead>Tepat Waktu</TableHead>
-                      {showEngineer && <TableHead>Note</TableHead>}
-                      {!showEngineer && <TableHead>List Furnitur</TableHead>}
+                      {!showEngineer && <TableHead>APPROVAL STATUS</TableHead>}
+                      {!showEngineer && <TableHead>TARGET DESAIN</TableHead>}
+                      {showEngineer && <TableHead>TARGET</TableHead>}
+                      {showEngineer && <TableHead>PERSENTASE</TableHead>}
+                      {!showEngineer && <TableHead>SUBMIT</TableHead>}
+                      {showEngineer && <TableHead>SUBMIT</TableHead>}
+                      <TableHead>TEPAT WAKTU</TableHead>
+                      {showEngineer && <TableHead>NOTE</TableHead>}
+                      {!showEngineer && <TableHead>LIST FURNITUR</TableHead>}
                     </>
                   )}
                   {(showProduksi || showPurchasing) && (
@@ -3145,7 +3145,30 @@ export function ProjectsV2Table({
                         !showPengirimanV2 &&
                         !showQC && (
                           <TableCell>
-                            {project.need_design ? 'Ya' : 'Tidak'}
+                            <div className='flex items-center gap-2'>
+                              <span>{project.need_design ? 'Ya' : 'Tidak'}</span>
+                              {project.need_design === 1 && project.designs?.[0]?.final_file_path && (
+                                <Button
+                                  variant='ghost'
+                                  size='icon'
+                                  className='h-5 w-5 text-blue-600'
+                                  asChild
+                                >
+                                  <a
+                                    href={`${(
+                                      process.env.NEXT_PUBLIC_API_URL ||
+                                      'http://localhost:8000'
+                                    ).replace('/api', '')}/storage/${
+                                      project.designs[0].final_file_path
+                                    }`}
+                                    target='_blank'
+                                    rel='noopener noreferrer'
+                                  >
+                                    <Eye className='h-3 w-3' />
+                                  </a>
+                                </Button>
+                              )}
+                            </div>
                           </TableCell>
                         )}
                       {!showAllDashboard && !showSPD && !showPiutang && (
