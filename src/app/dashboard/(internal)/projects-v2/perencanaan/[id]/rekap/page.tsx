@@ -3,8 +3,10 @@
 import * as React from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, Loader2, Package, ListChecks, CheckCircle2, Box, Layers, Building2, Calendar, ClipboardCheck, FileText } from 'lucide-react';
+import { ArrowLeft, Loader2, Package, ListChecks, CheckCircle2, Box, Layers, Building2, Calendar, ClipboardCheck, FileText, FileDown } from 'lucide-react';
 import { format } from 'date-fns';
+import * as XLSX from 'xlsx-js-style';
+import { toast } from 'sonner';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -56,14 +58,14 @@ const RingChart = ({ percentage, color, label, subLabel }: { percentage: number,
             strokeLinecap="round"
             style={{
               strokeDasharray: circumference,
-              strokeDashoffset: strokeDashoffset,
+              strokeDashoffset: isNaN(strokeDashoffset) ? circumference : strokeDashoffset,
               transition: 'stroke-dashoffset 1s ease-in-out',
             }}
           />
         </svg>
       </div>
       <div className="mt-2 text-center">
-        <div className="text-xl font-bold text-neutral-800">{percentage.toFixed(1)}%</div>
+        <div className="text-xl font-bold text-neutral-800">{isNaN(percentage) ? '0.0' : percentage.toFixed(1)}%</div>
         <div className="text-[10px] text-muted-foreground">{label}</div>
         <div className="text-[10px] font-medium text-neutral-500 mt-1">{subLabel}</div>
       </div>
@@ -72,6 +74,7 @@ const RingChart = ({ percentage, color, label, subLabel }: { percentage: number,
 };
 
 const HorizontalProgressBar = ({ label, percentage, color, bgLight }: { label: string, percentage: number, color: string, bgLight: string }) => {
+  const safePercentage = isNaN(percentage) ? 0 : percentage;
   return (
     <div className="flex items-center gap-4 py-2">
       <span className="w-24 text-xs font-medium text-neutral-600">{label}</span>
@@ -79,11 +82,11 @@ const HorizontalProgressBar = ({ label, percentage, color, bgLight }: { label: s
         <div className={`h-2 w-full ${bgLight} rounded-full overflow-hidden`}>
           <div
             className={`h-full rounded-full transition-all duration-1000 ${color}`}
-            style={{ width: `${percentage}%` }}
+            style={{ width: `${safePercentage}%` }}
           />
         </div>
       </div>
-      <span className="w-12 text-right text-xs font-bold text-neutral-800">{percentage.toFixed(1)}%</span>
+      <span className="w-12 text-right text-xs font-bold text-neutral-800">{safePercentage.toFixed(1)}%</span>
     </div>
   );
 };
@@ -194,25 +197,25 @@ export default function PerencanaanRekapPage() {
   let itemsPackingCount = 0;
   let itemsTerkirimCount = 0;
   let itemsBelumTersettingCount = 0;
+  let itemsTersettingCount = 0;
 
   const tableData = items.map((item, index) => {
     const qty = item.jumlah;
 
     // Produksi
-    const qtyProduksi = item.barang_jadi_masuk?.reduce((sum, bj) => sum + bj.jumlah, 0) || 0;
-    const progressProduksi = qty > 0 ? Math.min(100, (qtyProduksi / qty) * 100) : 0;
-    if (qtyProduksi > 0) itemsProduksiCount++;
+    const progressProduksi = Number(item.produksi?.persen) || 0;
+    if (progressProduksi > 0) itemsProduksiCount++;
     totalProduksiProgress += progressProduksi;
 
-    // Packing
-    const qtyPacking = item.barang_jadi_terpacking?.reduce((sum, p) => sum + p.jumlah, 0) || 0;
-    const progressPacking = qty > 0 ? Math.min(100, (qtyPacking / qty) * 100) : 0;
-    if (qtyPacking > 0) itemsPackingCount++;
-    totalPackingProgress += progressPacking;
+    // Barang Jadi (previously Packing)
+    const qtyBarangJadi = item.barang_jadi_masuk?.reduce((sum, bj) => sum + Number(bj.jumlah), 0) || 0;
+    const progressBarangJadi = qty > 0 ? Math.min(100, (qtyBarangJadi / qty) * 100) : 0;
+    if (qtyBarangJadi > 0) itemsPackingCount++;
+    totalPackingProgress += progressBarangJadi;
 
     // Terkirim & Tersetting from Pengiriman
     const qtyTerkirim = pengirimanPerSpkData?.data.reduce(
-      (sum, p) => sum + (p.details?.find((d) => d.project_item_id === item.id)?.jumlah_keluar || 0),
+      (sum, p) => sum + Number(p.details?.find((d) => d.project_item_id === item.id)?.jumlah_keluar || 0),
       0
     ) || 0;
     const progressTerkirim = qty > 0 ? Math.min(100, (qtyTerkirim / qty) * 100) : 0;
@@ -220,11 +223,12 @@ export default function PerencanaanRekapPage() {
     totalTerkirimProgress += progressTerkirim;
 
     const qtyTersetting = pengirimanPerSpkData?.data.reduce(
-      (sum, p) => sum + (p.details?.find((d) => d.project_item_id === item.id)?.jumlah_tersetting || 0),
+      (sum, p) => sum + Number(p.details?.find((d) => d.project_item_id === item.id)?.jumlah_tersetting || 0),
       0
     ) || 0;
     const progressTersetting = qty > 0 ? Math.min(100, (qtyTersetting / qty) * 100) : 0;
     totalTersettingProgress += progressTersetting;
+    if (qtyTersetting > 0) itemsTersettingCount++;
 
     const qtyBelumTersetting = qtyTerkirim - qtyTersetting;
     if (qtyBelumTersetting > 0) itemsBelumTersettingCount++;
@@ -235,7 +239,7 @@ export default function PerencanaanRekapPage() {
       statusAkhir = 'Selesai';
       itemsSelesai++;
       qtySelesai += qty;
-    } else if (qtyProduksi > 0 || qtyPacking > 0 || qtyTerkirim > 0 || qtyTersetting > 0) {
+    } else if (progressProduksi > 0 || qtyBarangJadi > 0 || qtyTerkirim > 0 || qtyTersetting > 0) {
       statusAkhir = 'Sebagian';
       itemsSebagian++;
       qtySebagian += qty;
@@ -257,8 +261,8 @@ export default function PerencanaanRekapPage() {
       },
       qty,
       poDivisi: item.divisi?.nama || '-',
-      produksi: { progress: progressProduksi, text: qtyProduksi > 0 ? `${qtyProduksi}/${qty}` : '' },
-      packing: { progress: progressPacking, text: qtyPacking > 0 ? `${qtyPacking}/${qty}` : 'Record' },
+      produksi: { progress: progressProduksi, text: progressProduksi > 0 ? `${progressProduksi}%` : '' },
+      packing: { progress: progressBarangJadi, text: qtyBarangJadi > 0 ? `${qtyBarangJadi}/${qty}` : 'Record' },
       terkirim: { progress: progressTerkirim, text: qtyTerkirim > 0 ? `${qtyTerkirim}/${qty}` : '-' },
       tersetting: { progress: progressTersetting, text: qtyTersetting > 0 ? `${qtyTersetting}/${qty}` : '-' },
       statusAkhir,
@@ -276,6 +280,100 @@ export default function PerencanaanRekapPage() {
     { value: itemsBelum, color: '#eab308', label: 'Belum' }, // yellow-500
     { value: itemsBelumAdaData, color: '#d1d5db', label: 'Belum Ada Data' }, // gray-300
   ];
+
+  const handleExportExcel = () => {
+    try {
+      const wb = XLSX.utils.book_new();
+      const headerStyle = {
+        font: { bold: true, sz: 10 },
+        alignment: { horizontal: 'center', vertical: 'center' },
+        border: {
+          top: { style: 'thin' },
+          bottom: { style: 'thin' },
+          left: { style: 'thin' },
+          right: { style: 'thin' },
+        },
+        fill: { fgColor: { rgb: 'F5F5F5' } },
+      };
+
+      const dataStyleCenter = {
+        font: { sz: 10 },
+        alignment: { horizontal: 'center', vertical: 'center' },
+        border: {
+          top: { style: 'thin' },
+          bottom: { style: 'thin' },
+          left: { style: 'thin' },
+          right: { style: 'thin' },
+        },
+      };
+
+      const dataStyleLeft = {
+        font: { sz: 10 },
+        alignment: { horizontal: 'left', vertical: 'center', wrapText: true },
+        border: {
+          top: { style: 'thin' },
+          bottom: { style: 'thin' },
+          left: { style: 'thin' },
+          right: { style: 'thin' },
+        },
+      };
+
+      const wsData: any[][] = [
+        [
+          { v: 'NO', t: 's', s: headerStyle },
+          { v: 'ITEM NAME', t: 's', s: headerStyle },
+          { v: 'VOL/DIM', t: 's', s: headerStyle },
+          { v: 'QTY', t: 's', s: headerStyle },
+          { v: 'PO DIVISI', t: 's', s: headerStyle },
+          { v: 'PRODUKSI', t: 's', s: headerStyle },
+          { v: 'BARANG JADI', t: 's', s: headerStyle },
+          { v: 'TERKIRIM', t: 's', s: headerStyle },
+          { v: 'TERSETTING', t: 's', s: headerStyle },
+          { v: 'STATUS AKHIR', t: 's', s: headerStyle },
+        ]
+      ];
+
+      tableData.forEach((row) => {
+        wsData.push([
+          { v: row.no, t: 'n', s: dataStyleCenter },
+          { v: row.name || '-', t: 's', s: dataStyleLeft },
+          { v: `${row.volDim.volume} (${row.volDim.dim} ${row.volDim.satuan})`, t: 's', s: dataStyleCenter },
+          { v: row.qty, t: 'n', s: dataStyleCenter },
+          { v: row.poDivisi, t: 's', s: dataStyleCenter },
+          { v: row.produksi.text || '0%', t: 's', s: dataStyleCenter },
+          { v: row.packing.text === 'Record' ? '-' : row.packing.text, t: 's', s: dataStyleCenter },
+          { v: row.terkirim.text, t: 's', s: dataStyleCenter },
+          { v: row.tersetting.text, t: 's', s: dataStyleCenter },
+          { v: row.statusAkhir, t: 's', s: dataStyleCenter },
+        ]);
+      });
+
+      const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+      ws['!cols'] = [
+        { wch: 5 }, // NO
+        { wch: 35 }, // ITEM NAME
+        { wch: 20 }, // VOL/DIM
+        { wch: 10 }, // QTY
+        { wch: 20 }, // PO DIVISI
+        { wch: 15 }, // PRODUKSI
+        { wch: 15 }, // BARANG JADI
+        { wch: 15 }, // TERKIRIM
+        { wch: 15 }, // TERSETTING
+        { wch: 15 }, // STATUS AKHIR
+      ];
+
+      XLSX.utils.book_append_sheet(wb, ws, 'Rekap Perencanaan');
+      const safeProjectName = project?.name?.replace(/[^a-zA-Z0-9 _-]/g, '') || 'Project';
+      const fileName = `Rekap_Perencanaan_${safeProjectName}`.trim() + '.xlsx';
+      XLSX.writeFile(wb, fileName);
+      
+      toast.success('Berhasil export data ke Excel!');
+    } catch (error) {
+      console.error('Error exporting excel', error);
+      toast.error('Gagal export excel');
+    }
+  };
 
   return (
     <div className="flex flex-col gap-6 p-6 max-w-[1600px] mx-auto w-full">
@@ -330,7 +428,7 @@ export default function PerencanaanRekapPage() {
       </div>
 
       {/* Top Cards Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-4">
         <Card className="shadow-sm border-neutral-100">
           <CardContent className="p-4 flex flex-col justify-between h-full">
             <div className="text-xs font-bold text-neutral-800">Total Item</div>
@@ -372,7 +470,7 @@ export default function PerencanaanRekapPage() {
         </Card>
         <Card className="shadow-sm border-neutral-100">
           <CardContent className="p-4 flex items-center justify-between h-full">
-            <div className="text-xs font-bold text-emerald-600 self-start">Packing</div>
+            <div className="text-xs font-bold text-emerald-600 self-start">Barang Jadi</div>
             <RingChart
               percentage={avgPacking}
               color="#10b981" // emerald-500
@@ -403,6 +501,17 @@ export default function PerencanaanRekapPage() {
             />
           </CardContent>
         </Card>
+        <Card className="shadow-sm border-neutral-100">
+          <CardContent className="p-4 flex items-center justify-between h-full">
+            <div className="text-xs font-bold text-emerald-600 self-start">Tersetting</div>
+            <RingChart
+              percentage={avgTersetting}
+              color="#10b981" // emerald-500
+              label="Rata-rata"
+              subLabel={`${itemsTersettingCount} / ${totalItemsCount} item`}
+            />
+          </CardContent>
+        </Card>
       </div>
 
       {/* Middle Row */}
@@ -417,7 +526,7 @@ export default function PerencanaanRekapPage() {
           </CardHeader>
           <CardContent className="space-y-1">
             <HorizontalProgressBar label="Produksi" percentage={avgProduksi} color="bg-blue-500" bgLight="bg-blue-50" />
-            <HorizontalProgressBar label="Packing" percentage={avgPacking} color="bg-blue-500" bgLight="bg-blue-50" />
+            <HorizontalProgressBar label="Barang Jadi" percentage={avgPacking} color="bg-blue-500" bgLight="bg-blue-50" />
             <HorizontalProgressBar label="Terkirim" percentage={avgTerkirim} color="bg-emerald-500" bgLight="bg-emerald-50" />
             <HorizontalProgressBar label="Tersetting" percentage={avgTersetting} color="bg-orange-500" bgLight="bg-orange-50" />
             
@@ -503,8 +612,17 @@ export default function PerencanaanRekapPage() {
 
       {/* Detail Table */}
       <Card className="shadow-sm border-neutral-100 overflow-hidden">
-        <CardHeader className="pb-0 pt-4 px-4 bg-white">
-          <CardTitle className="text-sm font-bold text-neutral-800 mb-2">Ringkasan Item per Tahap</CardTitle>
+        <CardHeader className="pb-4 pt-4 px-4 bg-white flex flex-row items-center justify-between border-b border-neutral-100/60">
+          <CardTitle className="text-sm font-bold text-neutral-800">Ringkasan Item per Tahap</CardTitle>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 text-xs font-semibold text-emerald-600 border-emerald-200 hover:bg-emerald-50"
+            onClick={handleExportExcel}
+          >
+            <FileDown className="h-3.5 w-3.5 mr-1.5" />
+            Export XLS
+          </Button>
         </CardHeader>
         <div className="overflow-x-auto">
           <Table>
@@ -523,7 +641,7 @@ export default function PerencanaanRekapPage() {
                 </TableHead>
                 <TableHead className="text-center">
                   <div className="flex flex-col items-center">
-                    <span className="text-[10px] font-bold text-neutral-500 tracking-wider">PACKING</span>
+                    <span className="text-[10px] font-bold text-neutral-500 tracking-wider">BARANG JADI</span>
                     <span className="text-[9px] text-muted-foreground font-normal mt-0.5">Progress</span>
                   </div>
                 </TableHead>
