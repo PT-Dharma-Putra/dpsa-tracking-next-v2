@@ -2107,6 +2107,9 @@ export function ProjectsV2Table({
               <TableHeader className='bg-neutral-50'>
                 <TableRow>
                   <TableHead className='w-[50px]'>#</TableHead>
+                  <TableHead className='w-[100px] text-left'>
+                    ACTION
+                  </TableHead>
                   {showAllDashboard ? (
                     <>
                       <TableHead>CLIENT</TableHead>
@@ -2597,10 +2600,7 @@ export function ProjectsV2Table({
                         <TableHead>PROGRES AKHIR</TableHead>
                       </>
                     )}
-                  <TableHead className='w-[100px] text-right'>
-                    ACTION
-                  </TableHead>
-                </TableRow>
+                  </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading ? (
@@ -2650,9 +2650,265 @@ export function ProjectsV2Table({
                 ) : (
                   projects.map((project, index) => (
                     <TableRow key={project.id}>
+
                       <TableCell className='font-medium text-muted-foreground'>
                         {(page - 1) * 10 + index + 1}
                       </TableCell>
+                      {showAllDashboard ? (
+                        <TableCell className='text-left'>
+                          <Button
+                            variant='outline'
+                            size='sm'
+                            className='h-8 px-3 text-blue-600 border-blue-200 hover:bg-blue-50 hover:text-blue-700'
+                            onClick={() =>
+                              router.push(
+                                `/dashboard/projects-v2/monitoring/${project.id}/detail`
+                              )
+                            }
+                          >
+                            Detail
+                          </Button>
+                        </TableCell>
+                      ) : (
+                        <TableCell className='text-left'>
+                          {onlyShowDetail ? (
+                            <div className='flex justify-start'>
+                              {showSPD && (
+                                <Button
+                                  variant='outline'
+                                  size='sm'
+                                  className='h-8 px-3 text-orange-600 border-orange-200 hover:bg-orange-50 hover:text-orange-700'
+                                  onClick={() =>
+                                    router.push(
+                                      showEngineer
+                                        ? `/dashboard/projects-v2/engineer/${project.id}/detail`
+                                        : `/dashboard/projects-v2/perintah-kerja/${project.id}/detail`
+                                    )
+                                  }
+                                >
+                                  Detail
+                                </Button>
+                              )}
+                              {showPerencanaan && (
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant='ghost' className='h-8 w-8 p-0'>
+                                      <span className='sr-only'>Open menu</span>
+                                      <MoreHorizontal className='h-4 w-4' />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align='start'>
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        router.push(
+                                          `/dashboard/projects-v2/perencanaan/${project.id}/detail`
+                                        )
+                                      }
+                                    >
+                                      Detail
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        router.push(
+                                          `/dashboard/projects-v2/perencanaan/${project.id}/rekap`
+                                        )
+                                      }
+                                    >
+                                      Rekap
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              )}
+                              {showPengirimanV2 && (
+                                <Button
+                                  variant='outline'
+                                  size='sm'
+                                  className='h-8 px-3 text-blue-600 border-blue-200 hover:bg-blue-50 hover:text-blue-700'
+                                  onClick={() =>
+                                    router.push(
+                                      `/dashboard/projects-v2/pengiriman-v2/${project.id}/detail`
+                                    )
+                                  }
+                                >
+                                  Detail
+                                </Button>
+                              )}
+                              {showProduksi && (
+                                <Button
+                                  variant='outline'
+                                  size='sm'
+                                  className='h-8 px-3 text-emerald-600 border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700'
+                                  onClick={() =>
+                                    router.push(
+                                      `/dashboard/projects-v2/produksi/${project.id}/detail`
+                                    )
+                                  }
+                                >
+                                  Detail
+                                </Button>
+                              )}
+                              {showPurchasing && (
+                                <Button
+                                  variant='outline'
+                                  size='sm'
+                                  className='h-8 px-3 text-blue-600 border-blue-200 hover:bg-blue-50 hover:text-blue-700'
+                                  onClick={() =>
+                                    router.push(
+                                      `/dashboard/projects-v2/purchasing/${project.id}/detail`
+                                    )
+                                  }
+                                >
+                                  Detail
+                                </Button>
+                              )}
+                              {showQC && (
+                                <Button
+                                  variant='outline'
+                                  size='sm'
+                                  className='h-8 px-3 text-orange-600 border-orange-200 hover:bg-orange-50 hover:text-orange-700'
+                                  onClick={() =>
+                                    router.push(
+                                      `/dashboard/projects-v2/qc/${project.id}/detail`
+                                    )
+                                  }
+                                >
+                                  Detail
+                                </Button>
+                              )}
+                              {showPiutang && (
+                                <Button
+                                  variant='outline'
+                                  size='sm'
+                                  className='h-8 px-3 text-blue-600 border-blue-200 hover:bg-blue-50 hover:text-blue-700'
+                                  onClick={() =>
+                                    router.push(
+                                      `/dashboard/projects-v2/piutang/${project.id}/detail`
+                                    )
+                                  }
+                                >
+                                  Detail
+                                </Button>
+                              )}
+                            </div>
+                          ) : (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant='ghost' className='h-8 w-8 p-0'>
+                                  <span className='sr-only'>Open menu</span>
+                                  <MoreHorizontal className='h-4 w-4' />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align='start'>
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    router.push(
+                                      `/dashboard/projects-v2/marketing/${project.id}/items`
+                                    )
+                                  }
+                                >
+                                  <Plus className='mr-2 h-4 w-4' />
+                                  Item
+                                </DropdownMenuItem>
+                                {showSPD && (
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      router.push(
+                                        `/dashboard/projects-v2/perintah-kerja/${project.id}/detail`
+                                      )
+                                    }
+                                  >
+                                    <Plus className='mr-2 h-4 w-4' />
+                                    Detail
+                                  </DropdownMenuItem>
+                                )}
+                                {showPerencanaan && (
+                                  <>
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        router.push(
+                                          `/dashboard/projects-v2/perencanaan/${project.id}/detail`
+                                        )
+                                      }
+                                    >
+                                      <Plus className='mr-2 h-4 w-4' />
+                                      Detail
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        router.push(
+                                          `/dashboard/projects-v2/perencanaan/${project.id}/rekap`
+                                        )
+                                      }
+                                    >
+                                      <FileText className='mr-2 h-4 w-4' />
+                                      Rekap
+                                    </DropdownMenuItem>
+                                  </>
+                                )}
+                                {showQC && (
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      router.push(
+                                        `/dashboard/projects-v2/qc/${project.id}/detail`
+                                      )
+                                    }
+                                  >
+                                    <Plus className='mr-2 h-4 w-4' />
+                                    Detail
+                                  </DropdownMenuItem>
+                                )}
+                                {showProduksi && (
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      router.push(
+                                        `/dashboard/projects-v2/produksi/${project.id}/detail`
+                                      )
+                                    }
+                                  >
+                                    <Plus className='mr-2 h-4 w-4' />
+                                    Detail
+                                  </DropdownMenuItem>
+                                )}
+                                {showPurchasing && (
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      router.push(
+                                        `/dashboard/projects-v2/purchasing/${project.id}/detail`
+                                      )
+                                    }
+                                  >
+                                    <Plus className='mr-2 h-4 w-4' />
+                                    Detail
+                                  </DropdownMenuItem>
+                                )}
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  onClick={() => handleEdit(project)}
+                                >
+                                  <Pencil className='mr-2 h-4 w-4' />
+                                  Edit
+                                </DropdownMenuItem>
+                                {isJadwalEditable && (
+                                  <DropdownMenuItem
+                                    onClick={() => handleScheduleClick(project)}
+                                  >
+                                    <Truck className='mr-2 h-4 w-4' />
+                                    Jadwalkan Pengiriman
+                                  </DropdownMenuItem>
+                                )}
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  className='text-red-600 focus:text-red-600'
+                                  onClick={() => handleDeleteClick(project)}
+                                >
+                                  <Trash2 className='mr-2 h-4 w-4' />
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
+                        </TableCell>
+                      )}
                       {showAllDashboard ? (
                         <>
                           <TableCell>{project.client?.name || '-'}</TableCell>
@@ -3963,261 +4219,6 @@ export function ProjectsV2Table({
                             <span className='text-muted-foreground italic text-xs'>
                               -
                             </span>
-                          )}
-                        </TableCell>
-                      )}
-                      {showAllDashboard ? (
-                        <TableCell className='text-right'>
-                          <Button
-                            variant='outline'
-                            size='sm'
-                            className='h-8 px-3 text-blue-600 border-blue-200 hover:bg-blue-50 hover:text-blue-700'
-                            onClick={() =>
-                              router.push(
-                                `/dashboard/projects-v2/monitoring/${project.id}/detail`
-                              )
-                            }
-                          >
-                            Detail
-                          </Button>
-                        </TableCell>
-                      ) : (
-                        <TableCell className='text-right'>
-                          {onlyShowDetail ? (
-                            <div className='flex justify-end'>
-                              {showSPD && (
-                                <Button
-                                  variant='outline'
-                                  size='sm'
-                                  className='h-8 px-3 text-orange-600 border-orange-200 hover:bg-orange-50 hover:text-orange-700'
-                                  onClick={() =>
-                                    router.push(
-                                      showEngineer
-                                        ? `/dashboard/projects-v2/engineer/${project.id}/detail`
-                                        : `/dashboard/projects-v2/perintah-kerja/${project.id}/detail`
-                                    )
-                                  }
-                                >
-                                  Detail
-                                </Button>
-                              )}
-                              {showPerencanaan && (
-                                <DropdownMenu>
-                                  <DropdownMenuTrigger asChild>
-                                    <Button variant='ghost' className='h-8 w-8 p-0'>
-                                      <span className='sr-only'>Open menu</span>
-                                      <MoreHorizontal className='h-4 w-4' />
-                                    </Button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent align='end'>
-                                    <DropdownMenuItem
-                                      onClick={() =>
-                                        router.push(
-                                          `/dashboard/projects-v2/perencanaan/${project.id}/detail`
-                                        )
-                                      }
-                                    >
-                                      Detail
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      onClick={() =>
-                                        router.push(
-                                          `/dashboard/projects-v2/perencanaan/${project.id}/rekap`
-                                        )
-                                      }
-                                    >
-                                      Rekap
-                                    </DropdownMenuItem>
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
-                              )}
-                              {showPengirimanV2 && (
-                                <Button
-                                  variant='outline'
-                                  size='sm'
-                                  className='h-8 px-3 text-blue-600 border-blue-200 hover:bg-blue-50 hover:text-blue-700'
-                                  onClick={() =>
-                                    router.push(
-                                      `/dashboard/projects-v2/pengiriman-v2/${project.id}/detail`
-                                    )
-                                  }
-                                >
-                                  Detail
-                                </Button>
-                              )}
-                              {showProduksi && (
-                                <Button
-                                  variant='outline'
-                                  size='sm'
-                                  className='h-8 px-3 text-emerald-600 border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700'
-                                  onClick={() =>
-                                    router.push(
-                                      `/dashboard/projects-v2/produksi/${project.id}/detail`
-                                    )
-                                  }
-                                >
-                                  Detail
-                                </Button>
-                              )}
-                              {showPurchasing && (
-                                <Button
-                                  variant='outline'
-                                  size='sm'
-                                  className='h-8 px-3 text-blue-600 border-blue-200 hover:bg-blue-50 hover:text-blue-700'
-                                  onClick={() =>
-                                    router.push(
-                                      `/dashboard/projects-v2/purchasing/${project.id}/detail`
-                                    )
-                                  }
-                                >
-                                  Detail
-                                </Button>
-                              )}
-                              {showQC && (
-                                <Button
-                                  variant='outline'
-                                  size='sm'
-                                  className='h-8 px-3 text-orange-600 border-orange-200 hover:bg-orange-50 hover:text-orange-700'
-                                  onClick={() =>
-                                    router.push(
-                                      `/dashboard/projects-v2/qc/${project.id}/detail`
-                                    )
-                                  }
-                                >
-                                  Detail
-                                </Button>
-                              )}
-                              {showPiutang && (
-                                <Button
-                                  variant='outline'
-                                  size='sm'
-                                  className='h-8 px-3 text-blue-600 border-blue-200 hover:bg-blue-50 hover:text-blue-700'
-                                  onClick={() =>
-                                    router.push(
-                                      `/dashboard/projects-v2/piutang/${project.id}/detail`
-                                    )
-                                  }
-                                >
-                                  Detail
-                                </Button>
-                              )}
-                            </div>
-                          ) : (
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant='ghost' className='h-8 w-8 p-0'>
-                                  <span className='sr-only'>Open menu</span>
-                                  <MoreHorizontal className='h-4 w-4' />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align='end'>
-                                <DropdownMenuItem
-                                  onClick={() =>
-                                    router.push(
-                                      `/dashboard/projects-v2/marketing/${project.id}/items`
-                                    )
-                                  }
-                                >
-                                  <Plus className='mr-2 h-4 w-4' />
-                                  Item
-                                </DropdownMenuItem>
-                                {showSPD && (
-                                  <DropdownMenuItem
-                                    onClick={() =>
-                                      router.push(
-                                        `/dashboard/projects-v2/perintah-kerja/${project.id}/detail`
-                                      )
-                                    }
-                                  >
-                                    <Plus className='mr-2 h-4 w-4' />
-                                    Detail
-                                  </DropdownMenuItem>
-                                )}
-                                {showPerencanaan && (
-                                  <>
-                                    <DropdownMenuItem
-                                      onClick={() =>
-                                        router.push(
-                                          `/dashboard/projects-v2/perencanaan/${project.id}/detail`
-                                        )
-                                      }
-                                    >
-                                      <Plus className='mr-2 h-4 w-4' />
-                                      Detail
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      onClick={() =>
-                                        router.push(
-                                          `/dashboard/projects-v2/perencanaan/${project.id}/rekap`
-                                        )
-                                      }
-                                    >
-                                      <FileText className='mr-2 h-4 w-4' />
-                                      Rekap
-                                    </DropdownMenuItem>
-                                  </>
-                                )}
-                                {showQC && (
-                                  <DropdownMenuItem
-                                    onClick={() =>
-                                      router.push(
-                                        `/dashboard/projects-v2/qc/${project.id}/detail`
-                                      )
-                                    }
-                                  >
-                                    <Plus className='mr-2 h-4 w-4' />
-                                    Detail
-                                  </DropdownMenuItem>
-                                )}
-                                {showProduksi && (
-                                  <DropdownMenuItem
-                                    onClick={() =>
-                                      router.push(
-                                        `/dashboard/projects-v2/produksi/${project.id}/detail`
-                                      )
-                                    }
-                                  >
-                                    <Plus className='mr-2 h-4 w-4' />
-                                    Detail
-                                  </DropdownMenuItem>
-                                )}
-                                {showPurchasing && (
-                                  <DropdownMenuItem
-                                    onClick={() =>
-                                      router.push(
-                                        `/dashboard/projects-v2/purchasing/${project.id}/detail`
-                                      )
-                                    }
-                                  >
-                                    <Plus className='mr-2 h-4 w-4' />
-                                    Detail
-                                  </DropdownMenuItem>
-                                )}
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                  onClick={() => handleEdit(project)}
-                                >
-                                  <Pencil className='mr-2 h-4 w-4' />
-                                  Edit
-                                </DropdownMenuItem>
-                                {isJadwalEditable && (
-                                  <DropdownMenuItem
-                                    onClick={() => handleScheduleClick(project)}
-                                  >
-                                    <Truck className='mr-2 h-4 w-4' />
-                                    Jadwalkan Pengiriman
-                                  </DropdownMenuItem>
-                                )}
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                  className='text-red-600 focus:text-red-600'
-                                  onClick={() => handleDeleteClick(project)}
-                                >
-                                  <Trash2 className='mr-2 h-4 w-4' />
-                                  Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
                           )}
                         </TableCell>
                       )}
