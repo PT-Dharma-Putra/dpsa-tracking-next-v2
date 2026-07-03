@@ -214,16 +214,16 @@ export default function PerencanaanRekapPage() {
     totalPackingProgress += progressBarangJadi;
 
     // Terkirim & Tersetting from Pengiriman
-    const qtyTerkirim = pengirimanPerSpkData?.data.reduce(
-      (sum, p) => sum + Number(p.details?.find((d) => d.project_item_id === item.id)?.jumlah_keluar || 0),
+    const qtyTerkirim = item.detail_pengiriman?.reduce(
+      (sum, dp) => sum + Number(dp.jumlah_keluar || 0),
       0
     ) || 0;
     const progressTerkirim = qty > 0 ? Math.min(100, (qtyTerkirim / qty) * 100) : 0;
     if (qtyTerkirim > 0) itemsTerkirimCount++;
     totalTerkirimProgress += progressTerkirim;
 
-    const qtyTersetting = pengirimanPerSpkData?.data.reduce(
-      (sum, p) => sum + Number(p.details?.find((d) => d.project_item_id === item.id)?.jumlah_tersetting || 0),
+    const qtyTersetting = item.detail_pengiriman?.reduce(
+      (sum, dp) => sum + Number(dp.jumlah_tersetting || 0),
       0
     ) || 0;
     const progressTersetting = qty > 0 ? Math.min(100, (qtyTersetting / qty) * 100) : 0;
