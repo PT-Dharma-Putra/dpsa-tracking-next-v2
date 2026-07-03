@@ -735,7 +735,7 @@ export function ProjectsV2Table({
       )}
 
       {showPerencanaan && stats && (
-        <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8 gap-4'>
+        <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-9 gap-4 w-full'>
           {/* Total Project */}
           <div className='flex flex-col gap-2 p-4 rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md'>
             <div className='flex items-center gap-2 border-b border-slate-100 pb-2'>
@@ -1074,11 +1074,41 @@ export function ProjectsV2Table({
               </span>
             )}
           </div>
+
+          {/* Selesai */}
+          <div
+            onClick={() => handleDashboardFilterClick('selesai')}
+            className={cn(
+              'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-emerald-400 select-none',
+              dashboardFilter === 'selesai'
+                ? 'border-emerald-500 bg-emerald-50/50 ring-2 ring-emerald-500/20'
+                : 'border-emerald-200 bg-white'
+            )}
+          >
+            <div className='flex items-center gap-3'>
+              <div className='h-10 w-10 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0'>
+                <CheckCircle2 className='h-5 w-5' />
+              </div>
+              <div>
+                <p className='text-[10px] font-bold text-emerald-600 uppercase tracking-wider'>
+                  Selesai
+                </p>
+                <p className='text-xl font-bold text-emerald-800'>
+                  {stats.selesai}
+                </p>
+              </div>
+            </div>
+            {dashboardFilter === 'selesai' && (
+              <span className='text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
+                Active
+              </span>
+            )}
+          </div>
         </div>
       )}
 
       {showMarketingFilter && stats && (
-        <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 w-full'>
+        <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 w-full'>
           {/* Total Projek */}
           <div className='flex flex-col gap-2 p-4 rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md'>
             <div className='flex items-center gap-2 border-b border-slate-100 pb-2'>
@@ -1179,6 +1209,36 @@ export function ProjectsV2Table({
             </div>
             {dashboardFilter === 'overdue' && (
               <span className='text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
+                Active
+              </span>
+            )}
+          </div>
+
+          {/* Selesai */}
+          <div
+            onClick={() => handleDashboardFilterClick('selesai')}
+            className={cn(
+              'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-emerald-400 select-none',
+              dashboardFilter === 'selesai'
+                ? 'border-emerald-500 bg-emerald-50/50 ring-2 ring-emerald-500/20'
+                : 'border-emerald-200 bg-white'
+            )}
+          >
+            <div className='flex items-center gap-3'>
+              <div className='h-10 w-10 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0'>
+                <CheckCircle2 className='h-5 w-5' />
+              </div>
+              <div>
+                <p className='text-[10px] font-bold text-emerald-600 uppercase tracking-wider'>
+                  Selesai
+                </p>
+                <p className='text-xl font-bold text-emerald-800'>
+                  {stats.selesai}
+                </p>
+              </div>
+            </div>
+            {dashboardFilter === 'selesai' && (
+              <span className='text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
                 Active
               </span>
             )}
