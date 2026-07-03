@@ -728,7 +728,6 @@ export default function PurchasingDetailPage() {
                 <TableHead>Persentase Produksi</TableHead>
                 <TableHead>QC Cek</TableHead>
                 <TableHead>Barang Jadi</TableHead>
-                <TableHead>Packing</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -948,27 +947,6 @@ export default function PurchasingDetailPage() {
                         ) : (
                           <span className='text-[9px] text-muted-foreground italic hover:text-blue-600 transition-colors'>
                             Record
-                          </span>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div
-                        className='cursor-pointer p-1 rounded transition-colors flex flex-col gap-0.5'
-                        onClick={() => openPackingView(item)}
-                      >
-                        {item.barang_jadi_terpacking &&
-                        item.barang_jadi_terpacking.length > 0 ? (
-                          <Badge className='bg-orange-600 text-white border-none font-bold text-[10px] h-5 px-1.5 shadow-sm w-fit'>
-                            {item.barang_jadi_terpacking.reduce(
-                              (sum, p) => sum + Number(p.jumlah),
-                              0
-                            )}{' '}
-                            / {item.jumlah}
-                          </Badge>
-                        ) : (
-                          <span className='text-[9px] text-muted-foreground italic hover:text-orange-600 transition-colors'>
-                            -
                           </span>
                         )}
                       </div>

@@ -1235,14 +1235,12 @@ export default function PerencanaanDetailPage() {
         <Card
           className={`relative border shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md ${
             totalQtyMasuk >= totalQtyOrder &&
-            totalQtyPacking >= totalQtyOrder &&
             totalQtyOrder > 0
               ? 'border-emerald-200 bg-white ring-1 ring-emerald-100'
               : 'border-neutral-200 bg-white'
           }`}
         >
           {totalQtyMasuk >= totalQtyOrder &&
-            totalQtyPacking >= totalQtyOrder &&
             totalQtyOrder > 0 && (
               <div className='absolute -top-1.5 -right-1.5 h-5 w-5 bg-emerald-500 rounded-full flex items-center justify-center shadow-sm z-10 animate-in zoom-in duration-300'>
                 <Check className='h-3 w-3 text-white' strokeWidth={3} />
@@ -1256,8 +1254,7 @@ export default function PerencanaanDetailPage() {
               <div
                 className={`h-8 w-8 rounded-full flex items-center justify-center font-bold shrink-0 ${
                   totalQtyMasuk > 0
-                    ? totalQtyMasuk >= totalQtyOrder &&
-                      totalQtyPacking >= totalQtyOrder
+                    ? totalQtyMasuk >= totalQtyOrder
                       ? 'bg-emerald-100 text-emerald-600'
                       : 'bg-blue-100 text-blue-600'
                     : 'bg-neutral-100 text-neutral-500'
@@ -1270,7 +1267,7 @@ export default function PerencanaanDetailPage() {
                   Gudang Barang Jadi
                 </CardTitle>
                 <p className='text-[10px] text-muted-foreground uppercase tracking-wider font-semibold truncate'>
-                  Finished Goods & Packing
+                  Finished Goods
                 </p>
               </div>
               <ChevronDown
@@ -1319,48 +1316,6 @@ export default function PerencanaanDetailPage() {
                 </div>
                 <p className='text-[10px] font-bold text-neutral-600'>
                   {totalQtyMasuk} / {totalQtyOrder} Items
-                </p>
-              </div>
-
-              {/* Packing Progress */}
-              <div className='space-y-1.5 pt-2 border-t border-neutral-100'>
-                <div className='flex justify-between items-center'>
-                  <p className='text-[10px] font-bold text-neutral-500 uppercase tracking-wider'>
-                    Barang Terpacking
-                  </p>
-                  <p
-                    className={`text-[10px] font-bold ${
-                      totalQtyPacking >= totalQtyOrder
-                        ? 'text-emerald-600'
-                        : 'text-orange-600'
-                    }`}
-                  >
-                    {Math.round(
-                      totalQtyOrder
-                        ? (totalQtyPacking / totalQtyOrder) * 100
-                        : 0
-                    )}
-                    %
-                  </p>
-                </div>
-                <div className='h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden'>
-                  <div
-                    className={`h-full transition-all duration-500 ${
-                      totalQtyPacking >= totalQtyOrder
-                        ? 'bg-emerald-600'
-                        : 'bg-orange-600'
-                    }`}
-                    style={{
-                      width: `${
-                        totalQtyOrder
-                          ? (totalQtyPacking / totalQtyOrder) * 100
-                          : 0
-                      }%`,
-                    }}
-                  />
-                </div>
-                <p className='text-[10px] font-bold text-neutral-600'>
-                  {totalQtyPacking} / {totalQtyOrder} Items
                 </p>
               </div>
             </CardContent>
@@ -1855,9 +1810,6 @@ export default function PerencanaanDetailPage() {
                   B. Jadi
                 </TableHead>
                 <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>
-                  Packing
-                </TableHead>
-                <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>
                   B Keluar
                 </TableHead>
                 <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>
@@ -2107,27 +2059,7 @@ export default function PerencanaanDetailPage() {
                           )}
                         </div>
                       </TableCell>
-                      <TableCell>
-                        <div
-                          className='cursor-pointer p-1 rounded transition-colors flex flex-col gap-0.5'
-                          onClick={() => openPackingDialog(item)}
-                        >
-                          {item.barang_jadi_terpacking &&
-                          item.barang_jadi_terpacking.length > 0 ? (
-                            <Badge className='bg-orange-600 text-white border-none font-bold text-[10px] h-5 px-1.5 shadow-sm'>
-                              {item.barang_jadi_terpacking.reduce(
-                                (sum, p) => sum + Number(p.jumlah),
-                                0
-                              )}{' '}
-                              / {item.jumlah}
-                            </Badge>
-                          ) : (
-                            <span className='text-[9px] text-muted-foreground italic hover:text-orange-600 transition-colors'>
-                              Record
-                            </span>
-                          )}
-                        </div>
-                      </TableCell>
+
                       <TableCell>
                         {(() => {
                           const total =
