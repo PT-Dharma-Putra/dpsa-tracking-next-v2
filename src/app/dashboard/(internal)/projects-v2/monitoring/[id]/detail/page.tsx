@@ -334,8 +334,7 @@ export default function ProjectMonitoringDetailPage() {
                 ) : (
                   filteredItems.map((item, idx) => {
                     const totalMasuk = item.barang_jadi_masuk?.reduce((s, b) => s + Number(b.jumlah || 0), 0) || 0;
-                    const totalPacking = item.barang_jadi_terpacking?.reduce((s, b) => s + Number(b.jumlah || 0), 0) || 0;
-                    const gudangProgress = item.jumlah > 0 ? ((totalMasuk + totalPacking) / (2 * item.jumlah)) * 100 : 0;
+                    const gudangProgress = item.jumlah > 0 ? (totalMasuk / item.jumlah) * 100 : 0;
                     const totalKeluar = item.barang_jadi_keluar?.reduce((s, bjk) => s + Number(bjk.jumlah || 0), 0) || 0;
                     
                     return (
