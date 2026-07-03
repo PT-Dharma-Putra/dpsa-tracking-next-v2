@@ -220,6 +220,19 @@ export default function PurchasingDetailPage() {
     },
   });
 
+  const cancelBarangSupplierMutation = useMutation({
+    mutationFn: (itemId: number) => projectV2Service.cancelBarangSupplier(itemId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['project-v2-items', projectId] });
+      queryClient.invalidateQueries({ queryKey: ['projects-v2', projectId] });
+      toast.success('Berhasil membatalkan sebagai barang supplier');
+      setIsBarangSupplierDialogOpen(false);
+    },
+    onError: () => {
+      toast.error('Gagal membatalkan sebagai barang supplier');
+    },
+  });
+
   const openBarangSupplierDialog = (item: ProjectItemV2) => {
     setBarangSupplierItem(item);
     setBarangSupplierData(
@@ -1455,22 +1468,35 @@ export default function PurchasingDetailPage() {
           </div>
 
           {/* Footer */}
-          <div className='bg-white border-t px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-end gap-4 shrink-0 shadow-[0_-4px_6px_-1px_rgb(0,0,0,0.05)] z-10'>
-            <Button variant='outline' className='rounded-full px-6 font-medium' onClick={() => setIsBarangSupplierDialogOpen(false)}>
-              Cancel
-            </Button>
+          <div className='bg-white border-t px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-4 shrink-0 shadow-[0_-4px_6px_-1px_rgb(0,0,0,0.05)] z-10'>
             <Button
-              className='bg-blue-600 hover:bg-blue-700 text-white rounded-full px-6'
-              onClick={handleBarangSupplierUpdate}
-              disabled={updateBarangSupplierMutation.isPending}
+              variant='destructive'
+              className='rounded-full px-4 sm:px-6 font-medium text-xs sm:text-sm'
+              onClick={() => barangSupplierItem && cancelBarangSupplierMutation.mutate(barangSupplierItem.id)}
+              disabled={cancelBarangSupplierMutation.isPending}
             >
-              {updateBarangSupplierMutation.isPending ? (
+              {cancelBarangSupplierMutation.isPending ? (
                 <Loader2 className='w-4 h-4 mr-2 animate-spin' />
-              ) : (
-                <CheckCircle2 className='w-4 h-4 mr-2' />
-              )}
-              Simpan
+              ) : null}
+              Batalkan sebagai barang supplier
             </Button>
+            <div className='flex items-center gap-4'>
+              <Button variant='outline' className='rounded-full px-6 font-medium' onClick={() => setIsBarangSupplierDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                className='bg-blue-600 hover:bg-blue-700 text-white rounded-full px-6'
+                onClick={handleBarangSupplierUpdate}
+                disabled={updateBarangSupplierMutation.isPending}
+              >
+                {updateBarangSupplierMutation.isPending ? (
+                  <Loader2 className='w-4 h-4 mr-2 animate-spin' />
+                ) : (
+                  <CheckCircle2 className='w-4 h-4 mr-2' />
+                )}
+                Simpan
+              </Button>
+            </div>
           </div>
         </AlertDialogContent>
       </AlertDialog>
