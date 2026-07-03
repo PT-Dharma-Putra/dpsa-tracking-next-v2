@@ -885,6 +885,13 @@ export const projectV2Service = {
     return data;
   },
 
+  cancelBarangSupplier: async (itemId: number) => {
+    const { data } = await apiClient.post(
+      `/projects-v2-items/${itemId}/cancel-supplier`
+    );
+    return data;
+  },
+
   // Shipment Methods
   getTahapPengiriman: async (projectId?: number) => {
     const { data } = await apiClient.get('/tahap-pengiriman', {
