@@ -2146,10 +2146,26 @@ export default function ProjectItemsPage() {
               </Label>
               <Input
                 type='file'
-                onChange={(e) => setBuktiAccFile(e.target.files?.[0] || null)}
+                onChange={(e) => {
+                  const file = e.target.files?.[0] || null;
+                  if (file) {
+                    if (file.size > 5 * 1024 * 1024) {
+                      toast.error('Ukuran file tidak boleh melebihi 5 MB');
+                      e.target.value = '';
+                      setBuktiAccFile(null);
+                      return;
+                    }
+                  }
+                  setBuktiAccFile(file);
+                }}
                 className='h-9 text-[10px] border-emerald-200 bg-emerald-50/30'
               />
-              {existingAcc?.bukti_acc && (
+              {buktiAccFile && (
+                <p className='text-[10px] text-emerald-600 font-medium'>
+                  Ukuran file: {(buktiAccFile.size / (1024 * 1024)).toFixed(2)} MB
+                </p>
+              )}
+              {existingAcc?.bukti_acc && !buktiAccFile && (
                 <p className='text-[10px] text-muted-foreground italic'>
                   File exists. Upload new to replace.
                 </p>
