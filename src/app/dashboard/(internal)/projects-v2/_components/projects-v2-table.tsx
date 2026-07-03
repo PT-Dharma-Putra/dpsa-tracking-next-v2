@@ -2939,6 +2939,18 @@ export function ProjectsV2Table({
                                     Detail
                                   </DropdownMenuItem>
                                 )}
+                                {showMarketingFilter && (
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      router.push(
+                                        `/dashboard/projects-v2/perencanaan/${project.id}/rekap`
+                                      )
+                                    }
+                                  >
+                                    <FileText className='mr-2 h-4 w-4' />
+                                    Rekap
+                                  </DropdownMenuItem>
+                                )}
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
                                   onClick={() => handleEdit(project)}
