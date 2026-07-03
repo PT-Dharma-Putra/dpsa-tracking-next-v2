@@ -2948,7 +2948,7 @@ export function ProjectsV2Table({
                                     }
                                   >
                                     <FileText className='mr-2 h-4 w-4' />
-                                    Rekap
+                                    Telusuri
                                   </DropdownMenuItem>
                                 )}
                                 <DropdownMenuSeparator />
