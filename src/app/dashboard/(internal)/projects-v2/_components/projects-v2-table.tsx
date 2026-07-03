@@ -2224,7 +2224,6 @@ export function ProjectsV2Table({
                       <TableHead>CLIENT</TableHead>
                       {(!showSPD || showEngineer) && <TableHead>NO SPK</TableHead>}
                       {showPiutang && <TableHead>NOIMNAL</TableHead>}
-                      {!showSPD || showEngineer && (
                         <TableHead
                           className='cursor-pointer hover:bg-neutral-100 transition-colors group'
                           onClick={() => {
@@ -2252,7 +2251,6 @@ export function ProjectsV2Table({
                             )}
                           </div>
                         </TableHead>
-                      )}
                       {!showSPD &&
                         !showProduksi &&
                         !showPurchasing &&
@@ -3205,7 +3203,6 @@ export function ProjectsV2Table({
                                 : '-'}
                             </TableCell>
                           )}
-                          {!showSPD || showEngineer && (
                             <TableCell>
                               {project.spk?.tanggal_masuk
                                 ? format(
@@ -3214,7 +3211,6 @@ export function ProjectsV2Table({
                                   )
                                 : '-'}
                             </TableCell>
-                          )}
                           {!showSPD &&
                             !showProduksi &&
                             !showPurchasing &&
