@@ -1341,7 +1341,15 @@ export default function ProduksiDetailPage() {
         open={isProduksiDialogOpen}
         onOpenChange={setIsProduksiDialogOpen}
       >
-        <AlertDialogContent className='mb-4 flex h-[90dvh] sm:h-[calc(70vh-2rem)] w-[95vw] sm:min-w-[calc(70vw-2rem)] sm:max-w-[calc(70vw-2rem)] flex-col justify-between gap-0 p-0'>
+        <AlertDialogContent 
+          className='mb-4 flex h-[90dvh] sm:h-[calc(70vh-2rem)] w-[95vw] sm:min-w-[calc(70vw-2rem)] sm:max-w-[calc(70vw-2rem)] flex-col justify-between gap-0 p-0'
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              handleProduksiUpdate();
+            }
+          }}
+        >
           {/* Header */}
           <div className='bg-white border-b px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between shrink-0 shadow-sm z-10'>
             <div>
