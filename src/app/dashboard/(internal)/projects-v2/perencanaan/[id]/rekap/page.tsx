@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, Loader2, Package, ListChecks, CheckCircle2, Box, Layers, Building2, Calendar, ClipboardCheck, FileText, FileDown, BarChart3, Activity, User, Truck } from 'lucide-react';
+import { ArrowLeft, Loader2, Package, ListChecks, CheckCircle2, Box, Layers, Building2, Calendar, ClipboardCheck, FileText, FileDown, BarChart3, Activity, User, Truck, Search } from 'lucide-react';
 import { format } from 'date-fns';
 import * as XLSX from 'xlsx-js-style';
 import { toast } from 'sonner';
@@ -20,6 +20,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { Input } from '@/components/ui/input';
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -156,6 +157,7 @@ export default function PerencanaanRekapPage() {
   const [produksiViewItem, setProduksiViewItem] = React.useState<ProjectItemV2 | null>(null);
   const [isSupplierViewOpen, setIsSupplierViewOpen] = React.useState(false);
   const [supplierViewItem, setSupplierViewItem] = React.useState<ProjectItemV2 | null>(null);
+  const [searchQuery, setSearchQuery] = React.useState('');
 
   const openProduksiView = (item: ProjectItemV2) => {
     if (item.produksi?.is_supplier) {
@@ -299,6 +301,15 @@ export default function PerencanaanRekapPage() {
   const avgPacking = totalItemsCount > 0 ? totalPackingProgress / totalItemsCount : 0;
   const avgTerkirim = totalItemsCount > 0 ? totalTerkirimProgress / totalItemsCount : 0;
   const avgTersetting = totalItemsCount > 0 ? totalTersettingProgress / totalItemsCount : 0;
+
+  const filteredTableData = tableData.filter((row) => {
+    if (!searchQuery) return true;
+    const lowerQuery = searchQuery.toLowerCase();
+    return row.name.toLowerCase().includes(lowerQuery) || 
+           (row.originalItem?.keterangan || '').toLowerCase().includes(lowerQuery) ||
+           (row.originalItem?.lantai || '').toLowerCase().includes(lowerQuery) ||
+           (row.originalItem?.ruang || '').toLowerCase().includes(lowerQuery);
+  });
 
   const donutData = [
     { value: itemsSelesai, color: '#3b82f6', label: 'Selesai' }, // blue-500
@@ -636,17 +647,29 @@ export default function PerencanaanRekapPage() {
 
       {/* Detail Table */}
       <Card className="shadow-sm border-neutral-100 overflow-hidden">
-        <CardHeader className="pb-4 pt-4 px-4 bg-white flex flex-row items-center justify-between border-b border-neutral-100/60">
+        <CardHeader className="pb-4 pt-4 px-4 bg-white flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-neutral-100/60 gap-4">
           <CardTitle className="text-sm font-bold text-neutral-800">Ringkasan Item per Tahap</CardTitle>
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8 text-xs font-semibold text-emerald-600 border-emerald-200 hover:bg-emerald-50"
-            onClick={handleExportExcel}
-          >
-            <FileDown className="h-3.5 w-3.5 mr-1.5" />
-            Export XLS
-          </Button>
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 text-xs font-semibold text-emerald-600 border-emerald-200 hover:bg-emerald-50 shrink-0"
+              onClick={handleExportExcel}
+            >
+              <FileDown className="h-3.5 w-3.5 mr-1.5" />
+              Export XLS
+            </Button>
+
+            <div className='relative w-full sm:w-64'>
+              <Search className='absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-neutral-400 pointer-events-none' />
+              <Input
+                placeholder='Cari item, lantai, ruang...'
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className='pl-8 h-8 text-xs'
+              />
+            </div>
+          </div>
         </CardHeader>
         <div className="overflow-x-auto">
           <Table>
@@ -685,14 +708,14 @@ export default function PerencanaanRekapPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {tableData.length === 0 ? (
+              {filteredTableData.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={10} className="text-center text-sm text-muted-foreground h-24">
                     No items found.
                   </TableCell>
                 </TableRow>
               ) : (
-                tableData.map((row, i) => (
+                filteredTableData.map((row, i) => (
                   <TableRow key={i} className="hover:bg-neutral-50/50">
                     <TableCell className="text-center text-xs text-neutral-500">{row.no}</TableCell>
                     <TableCell>
