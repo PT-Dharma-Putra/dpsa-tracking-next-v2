@@ -278,7 +278,6 @@ export default function PerencanaanRekapPage() {
     { value: itemsSelesai, color: '#3b82f6', label: 'Selesai' }, // blue-500
     { value: itemsSebagian, color: '#22c55e', label: 'Sebagian' }, // green-500
     { value: itemsBelum, color: '#eab308', label: 'Belum' }, // yellow-500
-    { value: itemsBelumAdaData, color: '#d1d5db', label: 'Belum Ada Data' }, // gray-300
   ];
 
   const handleExportExcel = () => {
@@ -536,7 +535,6 @@ export default function PerencanaanRekapPage() {
                   <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-blue-500"></div><span className="text-[10px] text-neutral-600">Selesai</span></div>
                   <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-emerald-500"></div><span className="text-[10px] text-neutral-600">Sebagian</span></div>
                   <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-yellow-500"></div><span className="text-[10px] text-neutral-600">Belum</span></div>
-                  <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-gray-300"></div><span className="text-[10px] text-neutral-600">Belum Ada Data</span></div>
                </div>
             </div>
           </CardContent>
