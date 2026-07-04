@@ -2586,9 +2586,71 @@ export function ProjectsV2Table({
                   )}
 
                   {(showProduksi || showPurchasing) && (
-                    <TableHead>PROGRES PRODUKSI</TableHead>
+
+
+                    <TableHead
+                          className='cursor-pointer hover:bg-neutral-100 transition-colors group'
+                          onClick={() => {
+                            if (sortBy === 'progres_produksi') {
+                              setSortOrder(
+                                sortOrder === 'asc' ? 'desc' : 'asc'
+                              );
+                            } else {
+                              setSortBy('progres_produksi');
+                              setSortOrder('asc');
+                            }
+                            setPage(1);
+                          }}
+                        >
+                          <div className="flex items-center">
+                            <div className="flex flex-col items-center">
+                              <span>PROGRES</span>
+                              <span>PRODUKSI</span>
+                            </div>
+
+                            {sortBy === 'progres_produksi' ? (
+                                sortOrder === 'asc' ? (
+                                  <ArrowUp className='h-3 w-3' />
+                                ) : (
+                                  <ArrowDown className='h-3 w-3' />
+                                )
+                              ) : (
+                                <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
+                              )}
+                          </div>
+                        </TableHead>
                   )}
-                  {showProduksi && <TableHead>PROGRES BARANG JADI</TableHead>}
+                  {showProduksi && (
+                    <TableHead
+                      className='cursor-pointer hover:bg-neutral-100 transition-colors group text-center'
+                      onClick={() => {
+                        if (sortBy === 'gudang_barang_jadi') {
+                          setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                        } else {
+                          setSortBy('gudang_barang_jadi');
+                          setSortOrder('asc');
+                        }
+                        setPage(1);
+                      }}
+                    >
+                      <div className='flex items-center justify-center gap-1'>
+                        <div className="flex flex-col items-center">
+                          <span>GUDANG</span>
+                          <span>B. JADI</span>
+                        </div>
+                        {sortBy === 'gudang_barang_jadi' ? (
+                          sortOrder === 'asc' ? (
+                            <ArrowUp className='h-3 w-3' />
+                          ) : (
+                            <ArrowDown className='h-3 w-3' />
+                          )
+                        ) : (
+                          <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
+                        )}
+                      </div>
+                    </TableHead>
+                  )}
+
                   {(isMainProjectsV2Page || showPerencanaan) &&
                     !showPengirimanV2 && (
                       <>
@@ -4112,55 +4174,28 @@ export function ProjectsV2Table({
 
                       {(showProduksi || showPurchasing) && (
                         <TableCell>
-                          <div className='flex items-center gap-2'>
-                            <div className='flex-1 min-w-[60px]'>
-                              <div className='h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden'>
-                                <div
-                                  className='h-full bg-blue-600 rounded-full transition-all duration-500'
-                                  style={{
-                                    width: `${project.progres_produksi || 0}%`,
-                                  }}
-                                />
-                              </div>
-                            </div>
-                            <span className='text-xs font-bold text-neutral-700'>
-                              {Math.round(project.progres_produksi || 0)}%
-                            </span>
-                          </div>
+                          <span className='text-xs font-bold text-neutral-700'>
+                            {Math.round(project.progres_produksi || 0)}%
+                          </span>
                         </TableCell>
                       )}
                       {showProduksi && (
                         <TableCell>
                           {project.progres_kerja ? (
-                            <div className='flex items-center gap-2'>
-                              <div className='flex-1 min-w-[60px]'>
-                                <div className='h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden'>
-                                  <div
-                                    className='h-full bg-violet-500 rounded-full transition-all duration-500'
-                                    style={{
-                                      width: `${
-                                        project.progres_kerja
-                                          .gudang_barang_jadi || 0
-                                      }%`,
-                                    }}
-                                  />
-                                </div>
-                              </div>
-                              <span
-                                className={cn(
-                                  'text-xs font-bold tabular-nums',
-                                  project.progres_kerja.gudang_barang_jadi >=
-                                    100
-                                    ? 'text-emerald-600'
-                                    : 'text-violet-600'
-                                )}
-                              >
-                                {Math.round(
-                                  project.progres_kerja.gudang_barang_jadi || 0
-                                )}
-                                %
-                              </span>
-                            </div>
+                            <span
+                              className={cn(
+                                'text-xs font-bold tabular-nums',
+                                project.progres_kerja.gudang_barang_jadi >=
+                                  100
+                                  ? 'text-emerald-600'
+                                  : 'text-violet-600'
+                              )}
+                            >
+                              {Math.round(
+                                project.progres_kerja.gudang_barang_jadi || 0
+                              )}
+                              %
+                            </span>
                           ) : (
                             <span className='text-muted-foreground italic text-xs'>
                               -
