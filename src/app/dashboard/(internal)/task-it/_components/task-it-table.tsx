@@ -132,6 +132,9 @@ export function TaskItTable({ statusFilter, onClearFilter }: TaskItTableProps = 
         if (statusFilter === "inprogress") {
             const s = t.status.toLowerCase()
             if (s !== "in progress" && s !== "progress" && s !== "sedang dikerjakan") return false
+        } else if (statusFilter === "pending") {
+            const s = t.status.toLowerCase()
+            if (s !== "pending" && s !== "tunda") return false
         }
         if (!search) return true
         return (
@@ -356,6 +359,20 @@ export function TaskItTable({ statusFilter, onClearFilter }: TaskItTableProps = 
                             type="button"
                             onClick={onClearFilter}
                             className="ml-1 hover:text-blue-900 transition-colors"
+                            aria-label="Hapus filter"
+                        >
+                            ✕
+                        </button>
+                    </div>
+                )}
+                {statusFilter === "pending" && (
+                    <div className="flex items-center gap-1.5 bg-yellow-50 border border-yellow-200 text-yellow-700 text-xs font-semibold px-3 py-1.5 rounded-full">
+                        <Loader2 className="h-3 w-3 animate-pulse" />
+                        <span>Pekerjaan Pending</span>
+                        <button
+                            type="button"
+                            onClick={onClearFilter}
+                            className="ml-1 hover:text-yellow-900 transition-colors"
                             aria-label="Hapus filter"
                         >
                             ✕
