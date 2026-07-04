@@ -428,91 +428,91 @@ export default function PerencanaanRekapPage() {
       </div>
 
       {/* Top Cards Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-4">
-        <Card className="shadow-sm border-neutral-100">
-          <CardContent className="p-4 flex flex-col justify-between h-full">
-            <div className="text-xs font-bold text-neutral-800">Total Item</div>
-            <div className="flex items-center justify-between mt-2">
-              <div className="flex flex-col">
-                <span className="text-3xl font-black text-neutral-900">{totalItemsCount}</span>
-                <span className="text-xs text-muted-foreground font-medium">Item</span>
+        {/* <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-4">
+          <Card className="shadow-sm border-neutral-100">
+            <CardContent className="p-4 flex flex-col justify-between h-full">
+              <div className="text-xs font-bold text-neutral-800">Total Item</div>
+              <div className="flex items-center justify-between mt-2">
+                <div className="flex flex-col">
+                  <span className="text-3xl font-black text-neutral-900">{totalItemsCount}</span>
+                  <span className="text-xs text-muted-foreground font-medium">Item</span>
+                </div>
+                <div className="h-10 w-10 bg-blue-50 rounded-full flex items-center justify-center">
+                  <Layers className="h-5 w-5 text-blue-500" />
+                </div>
               </div>
-              <div className="h-10 w-10 bg-blue-50 rounded-full flex items-center justify-center">
-                <Layers className="h-5 w-5 text-blue-500" />
+            </CardContent>
+          </Card>
+          <Card className="shadow-sm border-neutral-100">
+            <CardContent className="p-4 flex flex-col justify-between h-full">
+              <div className="text-xs font-bold text-neutral-800">Total QTY</div>
+              <div className="flex items-center justify-between mt-2">
+                <div className="flex flex-col">
+                  <span className="text-3xl font-black text-neutral-900">{totalQtyOrder}</span>
+                  <span className="text-xs text-muted-foreground font-medium">UNIT</span>
+                </div>
+                <div className="h-10 w-10 bg-purple-50 rounded-full flex items-center justify-center">
+                  <ListChecks className="h-5 w-5 text-purple-500" />
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="shadow-sm border-neutral-100">
-          <CardContent className="p-4 flex flex-col justify-between h-full">
-            <div className="text-xs font-bold text-neutral-800">Total QTY</div>
-            <div className="flex items-center justify-between mt-2">
-              <div className="flex flex-col">
-                <span className="text-3xl font-black text-neutral-900">{totalQtyOrder}</span>
-                <span className="text-xs text-muted-foreground font-medium">UNIT</span>
-              </div>
-              <div className="h-10 w-10 bg-purple-50 rounded-full flex items-center justify-center">
-                <ListChecks className="h-5 w-5 text-purple-500" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="shadow-sm border-neutral-100">
-          <CardContent className="p-4 flex items-center justify-between h-full">
-            <div className="text-xs font-bold text-blue-600 self-start">Produksi</div>
-            <RingChart
-              percentage={avgProduksi}
-              color="#3b82f6" // blue-500
-              label="Rata-rata"
-              subLabel={`${itemsProduksiCount} / ${totalItemsCount} item`}
-            />
-          </CardContent>
-        </Card>
-        <Card className="shadow-sm border-neutral-100">
-          <CardContent className="p-4 flex items-center justify-between h-full">
-            <div className="text-xs font-bold text-emerald-600 self-start">Barang Jadi</div>
-            <RingChart
-              percentage={avgPacking}
-              color="#10b981" // emerald-500
-              label="Rata-rata"
-              subLabel={`${itemsPackingCount} / ${totalItemsCount} item`}
-            />
-          </CardContent>
-        </Card>
-        <Card className="shadow-sm border-neutral-100">
-          <CardContent className="p-4 flex items-center justify-between h-full">
-            <div className="text-xs font-bold text-emerald-600 self-start">Terkirim</div>
-            <RingChart
-              percentage={avgTerkirim}
-              color="#10b981" // emerald-500
-              label="Rata-rata"
-              subLabel={`${itemsTerkirimCount} / ${totalItemsCount} item`}
-            />
-          </CardContent>
-        </Card>
-        <Card className="shadow-sm border-neutral-100">
-          <CardContent className="p-4 flex items-center justify-between h-full">
-            <div className="text-xs font-bold text-orange-600 self-start">Belum Tersetting</div>
-            <RingChart
-              percentage={totalItemsCount > 0 ? (itemsBelumTersettingCount / totalItemsCount) * 100 : 0}
-              color="#f97316" // orange-500
-              label="Rata-rata"
-              subLabel={`${itemsBelumTersettingCount} / ${totalItemsCount} item`}
-            />
-          </CardContent>
-        </Card>
-        <Card className="shadow-sm border-neutral-100">
-          <CardContent className="p-4 flex items-center justify-between h-full">
-            <div className="text-xs font-bold text-emerald-600 self-start">Tersetting</div>
-            <RingChart
-              percentage={avgTersetting}
-              color="#10b981" // emerald-500
-              label="Rata-rata"
-              subLabel={`${itemsTersettingCount} / ${totalItemsCount} item`}
-            />
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
+          <Card className="shadow-sm border-neutral-100">
+            <CardContent className="p-4 flex items-center justify-between h-full">
+              <div className="text-xs font-bold text-blue-600 self-start">Produksi</div>
+              <RingChart
+                percentage={avgProduksi}
+                color="#3b82f6" // blue-500
+                label="Rata-rata"
+                subLabel={`${itemsProduksiCount} / ${totalItemsCount} item`}
+              />
+            </CardContent>
+          </Card>
+          <Card className="shadow-sm border-neutral-100">
+            <CardContent className="p-4 flex items-center justify-between h-full">
+              <div className="text-xs font-bold text-emerald-600 self-start">Barang Jadi</div>
+              <RingChart
+                percentage={avgPacking}
+                color="#10b981" // emerald-500
+                label="Rata-rata"
+                subLabel={`${itemsPackingCount} / ${totalItemsCount} item`}
+              />
+            </CardContent>
+          </Card>
+          <Card className="shadow-sm border-neutral-100">
+            <CardContent className="p-4 flex items-center justify-between h-full">
+              <div className="text-xs font-bold text-emerald-600 self-start">Terkirim</div>
+              <RingChart
+                percentage={avgTerkirim}
+                color="#10b981" // emerald-500
+                label="Rata-rata"
+                subLabel={`${itemsTerkirimCount} / ${totalItemsCount} item`}
+              />
+            </CardContent>
+          </Card>
+          <Card className="shadow-sm border-neutral-100">
+            <CardContent className="p-4 flex items-center justify-between h-full">
+              <div className="text-xs font-bold text-orange-600 self-start">Belum Tersetting</div>
+              <RingChart
+                percentage={totalItemsCount > 0 ? (itemsBelumTersettingCount / totalItemsCount) * 100 : 0}
+                color="#f97316" // orange-500
+                label="Rata-rata"
+                subLabel={`${itemsBelumTersettingCount} / ${totalItemsCount} item`}
+              />
+            </CardContent>
+          </Card>
+          <Card className="shadow-sm border-neutral-100">
+            <CardContent className="p-4 flex items-center justify-between h-full">
+              <div className="text-xs font-bold text-emerald-600 self-start">Tersetting</div>
+              <RingChart
+                percentage={avgTersetting}
+                color="#10b981" // emerald-500
+                label="Rata-rata"
+                subLabel={`${itemsTersettingCount} / ${totalItemsCount} item`}
+              />
+            </CardContent>
+          </Card>
+        </div> */}
 
       {/* Middle Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
