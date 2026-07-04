@@ -1512,18 +1512,33 @@ export default function PerencanaanDetailPage() {
                     }}
                   />
                 </TableHead>
-                <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>Floor/Room</TableHead>
-                <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>Item Name</TableHead>
-                <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>Vol/Dim</TableHead>
+                <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>Lantai | Ruang</TableHead>
+                <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>Nama Item</TableHead>
+                <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>Vol | Dim</TableHead>
                 <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>Qty</TableHead>
                 <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>PO Divisi</TableHead>
                 <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>Gk MDL</TableHead>
                 <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>GK Custom</TableHead>
                 <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>Material</TableHead>
                 <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>Produksi</TableHead>
-                <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>B. Jadi</TableHead>
-                <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>B Keluar</TableHead>
-                <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>B Tersetting</TableHead>
+                <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>
+                  <div className='flex flex-col'>
+                    <span>Barang</span>
+                    <span>Jadi</span>
+                  </div>
+                </TableHead>
+                <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>
+                  <div className='flex flex-col'>
+                    <span>Barang</span>
+                    <span>Terkirim</span>
+                  </div>
+                </TableHead>
+                <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>
+                  <div className='flex flex-col'>
+                    <span>Barang</span>
+                    <span>Tersetting</span>
+                  </div>
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
