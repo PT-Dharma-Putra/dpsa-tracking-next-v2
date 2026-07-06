@@ -3169,10 +3169,11 @@ export function ProjectsV2Table({
                               </span>
                             )}
                           </TableCell>
-                          <TableCell className='font-medium text-blue-600'>
-                            {project.spk_number ||
-                              project.spk?.nomor_spk ||
-                              '-'}
+                          <TableCell
+                            className='font-medium text-blue-600 max-w-[100px] truncate'
+                            title={project.spk?.nomor_spk}
+                          >
+                            {project.spk?.nomor_spk || '-'}
                           </TableCell>
                           <TableCell>
                             {project.spk?.tanggal_masuk
@@ -3442,10 +3443,11 @@ export function ProjectsV2Table({
                             </TableCell>
                           )}
                           {(!showSPD || showEngineer) && (
-                            <TableCell className='font-medium text-blue-600'>
-                              {project.spk_number ||
-                                project.spk?.nomor_spk ||
-                                '-'}
+                            <TableCell
+                              className='max-w-[50px] truncate'
+                              title={project.spk?.nomor_spk}
+                            >
+                              {project.spk?.nomor_spk || '-'}
                             </TableCell>
                           )}
                           {showPiutang && (
@@ -3468,7 +3470,10 @@ export function ProjectsV2Table({
                             !showPurchasing &&
                             !showPengirimanV2 &&
                             !showQC && (
-                              <TableCell>
+                              <TableCell
+                                className='max-w-[50px] truncate'
+                                title={project.sph?.nomor_sph}
+                              >
                                 {project.sph?.nomor_sph || '-'}
                               </TableCell>
                             )}
