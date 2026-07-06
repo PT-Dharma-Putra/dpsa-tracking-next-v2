@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import {
   useQuery,
   useMutation,
@@ -154,6 +154,8 @@ export function ProjectsV2Table({
   showMarketingFilter?: boolean;
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
   const queryClient = useQueryClient();
   const [page, setPage] = React.useState(1);
   const [search, setSearch] = React.useState('');
@@ -201,7 +203,11 @@ export function ProjectsV2Table({
     | 'urgent'
     | 'po_supplier'
     | null
-  >(null);
+  >(searchParams.get('dashboard_filter') as any || null);
+
+  React.useEffect(() => {
+    setDashboardFilter(searchParams.get('dashboard_filter') as any || null);
+  }, [searchParams]);
 
   const handleDashboardFilterClick = (
     filter:
@@ -217,11 +223,24 @@ export function ProjectsV2Table({
       | 'po_supplier'
       | null
   ) => {
+    let newFilter = filter;
     if (filter === null) {
-      setDashboardFilter(null);
+      newFilter = null;
     } else {
-      setDashboardFilter((prev) => (prev === filter ? null : filter));
+      newFilter = dashboardFilter === filter ? null : filter;
     }
+    
+    setDashboardFilter(newFilter);
+    
+    const params = new URLSearchParams(searchParams.toString());
+    if (newFilter) {
+      params.set('dashboard_filter', newFilter);
+    } else {
+      params.delete('dashboard_filter');
+    }
+    // ensure page is reset in url if we had it, but we aren't managing page in url yet, just to be safe
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+
     setSpkFilterActive(false);
     setPoDivisiFilter(null);
     setGambarKerjaFilter(null);
@@ -727,6 +746,54 @@ export function ProjectsV2Table({
                 <span className='font-medium leading-tight'>Terbit SPK</span>
                 <span className='font-bold shrink-0 ml-1'>
                   {stats.total_spk}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Pengiriman */}
+          <div className='flex flex-col gap-2 p-4 rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md'>
+            <div className='flex items-center gap-2 border-b border-slate-100 pb-2'>
+              <div className='h-6 w-6 rounded bg-blue-100 flex items-center justify-center text-blue-600 shrink-0'>
+                <Truck className='h-3.5 w-3.5' />
+              </div>
+              <p className='text-[10px] font-bold text-slate-500 uppercase tracking-wider'>
+                Pengiriman
+              </p>
+            </div>
+
+            <div className='flex flex-row gap-1.5 mt-auto'>
+              {/* Terkirim 100% */}
+              <div
+                onClick={() => handlePengirimanStatusFilterClick('completed')}
+                className={cn(
+                  'flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  pengirimanStatusFilter === 'completed'
+                    ? 'border-blue-500 bg-blue-50 text-blue-700 font-semibold'
+                    : 'border-slate-100 hover:border-slate-300 text-slate-600'
+                )}
+              >
+                <span className='truncate mr-1'>Terkirim 100%</span>
+                <span className='font-bold'>
+                  {stats.pengiriman_completed ?? 0}
+                </span>
+              </div>
+
+              {/* Belum 100% */}
+              <div
+                onClick={() =>
+                  handlePengirimanStatusFilterClick('not_completed')
+                }
+                className={cn(
+                  'flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  pengirimanStatusFilter === 'not_completed'
+                    ? 'border-rose-500 bg-rose-50 text-rose-700 font-semibold'
+                    : 'border-slate-100 hover:border-slate-300 text-slate-600'
+                )}
+              >
+                <span className='truncate mr-1'>Belum 100%</span>
+                <span className='font-bold'>
+                  {stats.pengiriman_not_completed ?? 0}
                 </span>
               </div>
             </div>
@@ -2340,33 +2407,37 @@ export function ProjectsV2Table({
                         </TableHead>
                       )}
                       {showPiutang && (
-                        <TableHead
-                          className='cursor-pointer hover:bg-neutral-100 transition-colors group'
-                          onClick={() => {
-                            if (sortBy === 'progres_produksi') {
-                              setSortOrder(
-                                sortOrder === 'asc' ? 'desc' : 'asc'
-                              );
-                            } else {
-                              setSortBy('progres_produksi');
-                              setSortOrder('asc');
-                            }
-                            setPage(1);
-                          }}
-                        >
-                          <div className='flex items-center gap-1'>
-                            PROGRES PRODUKSI
-                            {sortBy === 'progres_produksi' ? (
-                              sortOrder === 'asc' ? (
-                                <ArrowUp className='h-3 w-3' />
-                              ) : (
-                                <ArrowDown className='h-3 w-3' />
-                              )
+                    <TableHead
+                      className='text-center cursor-pointer hover:bg-neutral-100 transition-colors group'
+                      onClick={() => {
+                        if (sortBy === 'progres_produksi') {
+                          setSortOrder(
+                            sortOrder === 'asc' ? 'desc' : 'asc'
+                          );
+                        } else {
+                          setSortBy('progres_produksi');
+                          setSortOrder('asc');
+                        }
+                        setPage(1);
+                      }}
+                    >
+                      <div className="flex items-center">
+                        <div className="flex flex-col items-center">
+                          <span>PROGRES</span>
+                          <span>PRODUKSI</span>
+                        </div>
+
+                        {sortBy === 'progres_produksi' ? (
+                            sortOrder === 'asc' ? (
+                              <ArrowUp className='h-3 w-3' />
                             ) : (
-                              <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
-                            )}
-                          </div>
-                        </TableHead>
+                              <ArrowDown className='h-3 w-3' />
+                            )
+                          ) : (
+                            <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
+                          )}
+                      </div>
+                    </TableHead>
                       )}
                       {showPiutang && (
                         <TableHead
@@ -2383,8 +2454,11 @@ export function ProjectsV2Table({
                             setPage(1);
                           }}
                         >
-                          <div className='flex items-center gap-1'>
-                            PROGRES PENGIRIMAN
+                      <div className="flex items-center">
+                        <div className="flex flex-col items-center">
+                          <span>PROGRES</span>
+                          <span>PENGIRIMAN</span>
+                        </div>
                             {sortBy === 'progres_pengiriman' ? (
                               sortOrder === 'asc' ? (
                                 <ArrowUp className='h-3 w-3' />
@@ -2412,8 +2486,11 @@ export function ProjectsV2Table({
                             setPage(1);
                           }}
                         >
-                          <div className='flex items-center gap-1'>
-                            TOTAL PENAGIHAN
+                      <div className="flex items-center">
+                        <div className="flex flex-col items-center">
+                          <span>TOTAL</span>
+                          <span>PENAGIHAN</span>
+                        </div>
                             {sortBy === 'total_penagihan' ? (
                               sortOrder === 'asc' ? (
                                 <ArrowUp className='h-3 w-3' />
@@ -2508,8 +2585,11 @@ export function ProjectsV2Table({
                           setPage(1);
                         }}
                       >
-                        <div className='flex items-center gap-1'>
-                          PAKAI DESAIN
+                      <div className="flex items-center">
+                        <div className="flex flex-col items-center">
+                          <span>PAKAI</span>
+                          <span>DESAIN</span>
+                        </div>
                           {sortBy === 'need_design' ? (
                             sortOrder === 'asc' ? (
                               <ArrowUp className='h-3 w-3' />
@@ -2526,11 +2606,70 @@ export function ProjectsV2Table({
                     <TableHead>JADWAL KIRIM</TableHead>
                   )}
                   {(showPengirimanV2 || showQC) && (
-                    <TableHead>PROGRES PRODUKSI</TableHead>
+                    <TableHead
+                      className='text-center cursor-pointer hover:bg-neutral-100 transition-colors group'
+                      onClick={() => {
+                        if (sortBy === 'progres_produksi') {
+                          setSortOrder(
+                            sortOrder === 'asc' ? 'desc' : 'asc'
+                          );
+                        } else {
+                          setSortBy('progres_produksi');
+                          setSortOrder('asc');
+                        }
+                        setPage(1);
+                      }}
+                    >
+                      <div className="flex items-center">
+                        <div className="flex flex-col items-center">
+                          <span>PROGRES</span>
+                          <span>PRODUKSI</span>
+                        </div>
+
+                        {sortBy === 'progres_produksi' ? (
+                            sortOrder === 'asc' ? (
+                              <ArrowUp className='h-3 w-3' />
+                            ) : (
+                              <ArrowDown className='h-3 w-3' />
+                            )
+                          ) : (
+                            <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
+                          )}
+                      </div>
+                    </TableHead>
                   )}
                   {showQC && <TableHead>PROGRES QC</TableHead>}
                   {showPengirimanV2 && (
-                    <TableHead>PROGRES PENGIRIMAN</TableHead>
+                    <TableHead
+                          className='cursor-pointer hover:bg-neutral-100 transition-colors group'
+                          onClick={() => {
+                            if (sortBy === 'progres_pengiriman') {
+                              setSortOrder(
+                                sortOrder === 'asc' ? 'desc' : 'asc'
+                              );
+                            } else {
+                              setSortBy('progres_pengiriman');
+                              setSortOrder('asc');
+                            }
+                            setPage(1);
+                          }}
+                        >
+                      <div className="flex items-center">
+                        <div className="flex flex-col items-center">
+                          <span>PROGRES</span>
+                          <span>PENGIRIMAN</span>
+                        </div>
+                            {sortBy === 'progres_pengiriman' ? (
+                              sortOrder === 'asc' ? (
+                                <ArrowUp className='h-3 w-3' />
+                              ) : (
+                                <ArrowDown className='h-3 w-3' />
+                              )
+                            ) : (
+                              <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
+                            )}
+                          </div>
+                        </TableHead>
                   )}
 
                   {showAllDashboard && (
@@ -2548,8 +2687,11 @@ export function ProjectsV2Table({
                           setPage(1);
                         }}
                       >
-                        <div className='flex items-center gap-1'>
-                          PROGRES KERJA
+                      <div className="flex items-center">
+                        <div className="flex flex-col items-center">
+                          <span>PROGRES</span>
+                          <span>KERJA</span>
+                        </div>
                           {sortBy === 'persentase_kerja' ? (
                             sortOrder === 'asc' ? (
                               <ArrowUp className='h-3 w-3' />
@@ -2586,39 +2728,37 @@ export function ProjectsV2Table({
                   )}
 
                   {(showProduksi || showPurchasing) && (
-
-
                     <TableHead
-                          className='cursor-pointer hover:bg-neutral-100 transition-colors group'
-                          onClick={() => {
-                            if (sortBy === 'progres_produksi') {
-                              setSortOrder(
-                                sortOrder === 'asc' ? 'desc' : 'asc'
-                              );
-                            } else {
-                              setSortBy('progres_produksi');
-                              setSortOrder('asc');
-                            }
-                            setPage(1);
-                          }}
-                        >
-                          <div className="flex items-center">
-                            <div className="flex flex-col items-center">
-                              <span>PROGRES</span>
-                              <span>PRODUKSI</span>
-                            </div>
+                      className='text-center cursor-pointer hover:bg-neutral-100 transition-colors group'
+                      onClick={() => {
+                        if (sortBy === 'progres_produksi') {
+                          setSortOrder(
+                            sortOrder === 'asc' ? 'desc' : 'asc'
+                          );
+                        } else {
+                          setSortBy('progres_produksi');
+                          setSortOrder('asc');
+                        }
+                        setPage(1);
+                      }}
+                    >
+                      <div className="flex items-center">
+                        <div className="flex flex-col items-center">
+                          <span>PROGRES</span>
+                          <span>PRODUKSI</span>
+                        </div>
 
-                            {sortBy === 'progres_produksi' ? (
-                                sortOrder === 'asc' ? (
-                                  <ArrowUp className='h-3 w-3' />
-                                ) : (
-                                  <ArrowDown className='h-3 w-3' />
-                                )
-                              ) : (
-                                <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
-                              )}
-                          </div>
-                        </TableHead>
+                        {sortBy === 'progres_produksi' ? (
+                            sortOrder === 'asc' ? (
+                              <ArrowUp className='h-3 w-3' />
+                            ) : (
+                              <ArrowDown className='h-3 w-3' />
+                            )
+                          ) : (
+                            <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
+                          )}
+                      </div>
+                    </TableHead>
                   )}
                   {showProduksi && (
                     <TableHead
@@ -2668,8 +2808,11 @@ export function ProjectsV2Table({
                             setPage(1);
                           }}
                         >
-                          <div className='flex items-center gap-1'>
-                            PROGRES KERJA
+                      <div className="flex items-center">
+                        <div className="flex flex-col items-center">
+                          <span>PROGRES</span>
+                          <span>KERJA</span>
+                        </div>
                             {sortBy === 'persentase_kerja' ? (
                               sortOrder === 'asc' ? (
                                 <ArrowUp className='h-3 w-3' />
@@ -2681,7 +2824,14 @@ export function ProjectsV2Table({
                             )}
                           </div>
                         </TableHead>
-                        <TableHead>PROGRES AKHIR</TableHead>
+                        <TableHead>
+                      <div className="flex">
+                        <div className="flex items-center flex-col ">
+                          <span>PROGRES</span>
+                          <span>AKHIR</span>
+                        </div>
+                      </div>
+                        </TableHead>
                       </>
                     )}
                   </TableRow>
@@ -3345,14 +3495,14 @@ export function ProjectsV2Table({
                         </>
                       )}
                       {showPiutang && (
-                        <TableCell>
+                        <TableCell className="text-center">
                           <span className='text-xs font-bold text-neutral-700'>
                             {Math.round(project.progres_produksi || 0)}%
                           </span>
                         </TableCell>
                       )}
                       {showPiutang && (
-                        <TableCell>
+                        <TableCell className="text-center">
                           <span className='text-xs font-bold text-neutral-700'>
                             {Math.round(project.progres_kerja?.pengiriman || 0)}%
                           </span>
@@ -3360,7 +3510,7 @@ export function ProjectsV2Table({
                       )}
                       {showAllDashboard && <></>}
                       {!showAllDashboard && showPiutang && (
-                        <TableCell>
+                        <TableCell className="text-center">
                           <Badge
                             variant='outline'
                             className='bg-amber-50 text-amber-700 border-amber-200 font-bold'
@@ -4173,14 +4323,14 @@ export function ProjectsV2Table({
                       )}
 
                       {(showProduksi || showPurchasing) && (
-                        <TableCell>
+                        <TableCell className="text-center">
                           <span className='text-xs font-bold text-neutral-700'>
                             {Math.round(project.progres_produksi || 0)}%
                           </span>
                         </TableCell>
                       )}
                       {showProduksi && (
-                        <TableCell>
+                        <TableCell className="text-center">
                           {project.progres_kerja ? (
                             <span
                               className={cn(
