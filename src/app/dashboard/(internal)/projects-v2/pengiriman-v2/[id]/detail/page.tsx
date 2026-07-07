@@ -29,7 +29,10 @@ import {
   BarChart3,
   History,
   Search,
+  QrCode,
+  Printer,
 } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 import { format } from 'date-fns';
 import Link from 'next/link';
 
@@ -129,6 +132,249 @@ export default function PerencanaanDetailPage() {
   // Items Search State
   const [searchQuery, setSearchQuery] = React.useState('');
   const [showBelumTerkirim, setShowBelumTerkirim] = React.useState(false);
+
+  // QR Code per-item State
+  const [isItemQrDialogOpen, setIsItemQrDialogOpen] = React.useState(false);
+  const [qrItem, setQrItem] = React.useState<ProjectItemV2 | null>(null);
+  const [qrParts, setQrParts] = React.useState<number>(1);
+  const hiddenQrRef = React.useRef<HTMLDivElement>(null);
+
+  const openItemQrDialog = (item: ProjectItemV2) => {
+    setQrItem(item);
+    setQrParts(1);
+    setIsItemQrDialogOpen(true);
+  };
+
+  const handlePrintItemQR = () => {
+    if (!qrItem) return;
+
+    const qrCodeValue = qrItem.id.toString();
+
+    // Capture the already-rendered QR SVG from hidden div
+    const svgEl = hiddenQrRef.current?.querySelector('svg');
+    const svgString = svgEl?.outerHTML ?? '';
+
+    const total = qrItem.jumlah;
+    const spkYear = project?.spk?.tanggal_spk
+      ? new Date(project.spk.tanggal_spk).getFullYear()
+      : project?.created_at
+      ? new Date(project.created_at).getFullYear()
+      : '';
+    const spkValue =
+      [project?.spk?.nomor_spk, spkYear].filter(Boolean).join(' / ') || '-';
+
+    // Builds one label cell
+    const makeLabelHTML = (itemIndex: number, partIndex: number) => {
+      const rows: [string, string][] = [
+        ['NAMA ITEM', qrItem.item || '-'],
+        [
+          'UKURAN',
+          `${qrItem.panjang || '-'} x ${qrItem.lebar || '-'} x ${
+            qrItem.tinggi || '-'
+          }`,
+        ],
+        ['JUMLAH', `${itemIndex + 1}/${total} ${qrItem.satuan || ''}`.trim()],
+      ];
+      
+      if (qrParts > 1) {
+        rows.push(['BAGIAN', `${partIndex + 1}/${qrParts}`]);
+      }
+      
+      rows.push(
+        ['RUANG', qrItem.ruang || '-'],
+        ['RUMAH SAKIT', project?.client?.name || '-'],
+        ['NO. SPK/TAHUN', spkValue]
+      );
+
+      return `
+        <div class="label">
+          <div class="hdr">
+            <div class="logo"><img src="${
+              window.location.origin
+            }/Logo.png" alt="Logo"/></div>
+            <div class="co">
+              <p class="n">PT DHARMA PUTERA SEJAHTERA ABADI</p>
+              <p class="it">Interior &amp; Furniture Manufaktur</p>
+              <p>Jl. Matraman No. 88, Ringinsari, Maguwoharjo, Depok, Sleman, Yogyakarta</p>
+              <p>Telepon : (0274) 2800089&nbsp;&nbsp;Fax : (0274) 433 2248</p>
+              <p>E-mail : piutang.dpsa@gmail.com&nbsp;Website : www.dpm-jogja.com</p>
+            </div>
+            <div class="dc">
+              <div class="dr">PROD</div><div class="dr b">003</div>
+              <div class="db"><span>Rev:00</span><span>Terbit:<br>08/25</span></div>
+            </div>
+          </div>
+          <div class="bd">
+            <div class="info">
+              ${rows
+                .map(
+                  ([l, v], ri) =>
+                    `<div class="row${
+                      ri === rows.length - 1 ? ' last' : ''
+                    }"><div class="lbl">${l}</div><div class="sep">:</div><div class="val">${v}</div></div>`
+                )
+                .join('')}
+            </div>
+            <div class="qr">${svgString}<p>${qrCodeValue}</p></div>
+          </div>
+        </div>`;
+    };
+
+    const labelsData = [];
+    for (let i = 0; i < total; i++) {
+      for (let p = 0; p < qrParts; p++) {
+        labelsData.push(makeLabelHTML(i, p));
+      }
+    }
+
+    const printWindow = window.open('', '', 'width=800,height=600');
+    if (!printWindow) return;
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Print Label Produksi</title>
+          <style>
+            @page { size: auto; margin: 0; }
+            body { 
+              margin: 0; 
+              padding: 0; 
+              font-family: Arial, sans-serif;
+              display: flex;
+              flex-direction: column;
+              gap: 8px;
+            }
+            * { box-sizing: border-box; }
+            
+            .label {
+              width: 100mm;
+              height: 50mm;
+              border: 1px solid #000;
+              margin: 4px auto;
+              page-break-inside: avoid;
+              display: flex;
+              flex-direction: column;
+              background: #fff;
+              position: relative;
+            }
+            .hdr {
+              display: flex;
+              border-bottom: 1px solid #000;
+              height: 14mm;
+            }
+            .logo {
+              width: 14mm;
+              border-right: 1px solid #000;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              padding: 2px;
+            }
+            .logo img {
+              width: 12mm;
+              height: 12mm;
+              object-fit: contain;
+            }
+            .co {
+              flex: 1;
+              border-right: 1px solid #000;
+              text-align: center;
+              padding: 2px 4px;
+              display: flex;
+              flex-direction: column;
+              justify-content: center;
+            }
+            .co p { margin: 0; font-size: 5px; line-height: 1.1; color: #333; }
+            .co p.n { font-size: 7px; font-weight: 900; color: #000; letter-spacing: 0.5px; }
+            .co p.it { font-style: italic; margin-bottom: 1px; }
+            .dc {
+              width: 16mm;
+              display: flex;
+              flex-direction: column;
+              font-size: 5.5px;
+              text-align: center;
+            }
+            .dr { border-bottom: 1px solid #000; font-weight: bold; padding: 1px; }
+            .dr.b { font-size: 7.5px; }
+            .db {
+              display: flex;
+              flex: 1;
+            }
+            .db span {
+              flex: 1;
+              padding: 1px;
+            }
+            .db span:first-child { border-right: 1px solid #000; }
+            
+            .bd {
+              display: flex;
+              flex: 1;
+            }
+            .info {
+              flex: 1;
+              border-right: 1px solid #000;
+              display: flex;
+              flex-direction: column;
+            }
+            .row {
+              display: flex;
+              border-bottom: 1px solid #000;
+            }
+            .row.last { border-bottom: none; }
+            .lbl {
+              width: 24mm;
+              font-weight: bold;
+              font-size: 6.5px;
+              padding: 2px;
+              border-right: 1px solid #000;
+            }
+            .sep {
+              width: 3mm;
+              text-align: center;
+              padding: 2px 0;
+              font-size: 6.5px;
+              border-right: 1px solid #000;
+            }
+            .val {
+              flex: 1;
+              padding: 2px;
+              font-size: 6.5px;
+            }
+            .qr {
+              width: 22mm;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: center;
+              padding: 2px;
+            }
+            .qr svg { width: 16mm; height: 16mm; }
+            .qr p { 
+              margin: 2px 0 0; 
+              font-size: 6px; 
+              font-family: monospace;
+              font-weight: bold; 
+            }
+            
+            @media print {
+              body { padding: 0; background: none; }
+              .label { margin: 0; box-shadow: none; border: none; }
+            }
+          </style>
+        </head>
+        <body>
+          ${labelsData.join('')}
+          <script>
+            window.onload = function() {
+              window.print();
+              setTimeout(() => window.close(), 500);
+            };
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
 
   const handleExportBelumTerkirim = () => {
     const belumTerkirimItems = (items ?? []).filter((item) => {
@@ -1823,13 +2069,16 @@ export default function PerencanaanDetailPage() {
                 <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>
                   B Tersetting
                 </TableHead>
+                <TableHead className='text-[10px] uppercase font-bold text-neutral-500 text-center w-14'>
+                  Actions
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoadingItems ? (
                 <TableRow>
                   <TableCell
-                    colSpan={11}
+                    colSpan={12}
                     className='h-32 text-center text-muted-foreground'
                   >
                     <Loader2 className='h-6 w-6 animate-spin mx-auto' />
@@ -1838,7 +2087,7 @@ export default function PerencanaanDetailPage() {
               ) : items?.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={11}
+                    colSpan={12}
                     className='h-32 text-center text-muted-foreground'
                   >
                     No items recorded for this project.
@@ -2104,6 +2353,17 @@ export default function PerencanaanDetailPage() {
                           );
                         })()}
                       </TableCell>
+                      <TableCell className='text-center'>
+                        <Button
+                          size='sm'
+                          variant='outline'
+                          className='h-7 px-2 gap-1.5 text-[11px]'
+                          onClick={() => openItemQrDialog(item)}
+                        >
+                          <QrCode className='h-3.5 w-3.5' />
+                          QR
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))
               )}
@@ -2111,6 +2371,186 @@ export default function PerencanaanDetailPage() {
           </Table>
         </div>
       </div>
+
+      {/* Hidden QR Code for Printing (Rendered off-screen) */}
+      <div className='absolute -left-[9999px] top-0 opacity-0 pointer-events-none' aria-hidden='true'>
+        <div ref={hiddenQrRef}>
+          {qrItem?.id && (
+            <QRCodeSVG
+              value={qrItem.id.toString()}
+              size={120}
+              bgColor='#ffffff'
+              fgColor='#000000'
+              level='M'
+              includeMargin={false}
+            />
+          )}
+        </div>
+      </div>
+
+      {/* Per-Item QR Code Dialog - Label Format */}
+      <AlertDialog
+        open={isItemQrDialogOpen}
+        onOpenChange={setIsItemQrDialogOpen}
+      >
+        <AlertDialogContent className='max-w-4xl'>
+          <AlertDialogHeader>
+            <AlertDialogTitle className='flex items-center gap-2 text-base'>
+              <QrCode className='h-4 w-4 text-blue-600' />
+              Label Produksi — {qrItem?.item}
+            </AlertDialogTitle>
+            <AlertDialogDescription className='text-xs'>
+              Preview label cetak. Klik <strong>Print Label</strong> untuk
+              mencetak.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          {/* Label Preview */}
+          <div
+            id='qr-item-print-area'
+            className='border border-black font-sans text-neutral-900 bg-white text-[11px] mt-2'
+          >
+            {/* ── Header ── */}
+            <div className='flex border-b border-black'>
+              {/* Logo */}
+              <div className='flex items-center justify-center p-2 border-r border-black w-20 shrink-0'>
+                <img
+                  src='/Logo.png'
+                  alt='Logo DPM'
+                  className='w-14 h-14 object-contain'
+                />
+              </div>
+
+              {/* Company Info */}
+              <div className='flex-1 text-center py-2 px-4 border-r border-black'>
+                <p className='font-extrabold text-blue-700 text-[13px] tracking-wide uppercase leading-tight'>
+                  PT DHARMA PUTERA SEJAHTERA ABADI
+                </p>
+                <p className='italic text-[10px] text-neutral-600 mt-0.5'>
+                  Interior &amp; Furniture Manufaktur
+                </p>
+                <p className='text-[10px] text-neutral-600 mt-0.5'>
+                  Jl. Matraman No. 88, Ringinsari, Maguwoharjo, Depok, Sleman,
+                  Yogyakarta
+                </p>
+                <p className='text-[10px] text-neutral-600'>
+                  Telepon : (0274) 2800089&nbsp;&nbsp;&nbsp;Fax : (0274) 433
+                  2248
+                </p>
+                <p className='text-[10px] text-neutral-600'>
+                  E-mail : piutang.dpsa@gmail.com&nbsp;&nbsp;Website :
+                  www.dpm-jogja.com
+                </p>
+              </div>
+
+              {/* Doc Code Box */}
+              <div className='w-24 shrink-0 flex flex-col text-[10px] text-center'>
+                <div className='border-b border-black py-0.5 px-1 font-bold'>
+                  PROD
+                </div>
+                <div className='border-b border-black py-0.5 px-1 font-bold text-[13px]'>
+                  003
+                </div>
+                <div className='flex flex-1'>
+                  <div className='flex-1 border-r border-black py-0.5 px-1'>
+                    Rev:00
+                  </div>
+                  <div className='flex-1 py-0.5 px-1 leading-tight'>
+                    Terbit:
+                    <br />
+                    08/25
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* ── Info Fields + QR ── */}
+            <div className='flex'>
+              {/* Left: info rows */}
+              <div className='flex-1 border-r border-black'>
+                {[
+                  {
+                    label: 'NAMA ITEM',
+                    value: qrItem?.item || '-',
+                  },
+                  {
+                    label: 'UKURAN',
+                    value: `${qrItem?.panjang || '-'} x ${
+                      qrItem?.lebar || '-'
+                    } x ${qrItem?.tinggi || '-'}`,
+                  },
+                  {
+                    label: 'JUMLAH',
+                    value: qrItem?.jumlah
+                      ? `${qrItem.jumlah} ${qrItem.satuan || ''}`.trim()
+                      : '-',
+                  },
+                  ...(qrParts > 1 ? [{
+                    label: 'BAGIAN',
+                    value: `1/${qrParts}`,
+                  }] : []),
+                  {
+                    label: 'RUANG',
+                    value: qrItem?.ruang || '-',
+                  },
+                  {
+                    label: 'RUMAH SAKIT',
+                    value: project?.client?.name || '-',
+                  },
+                  {
+                    label: 'NO. SPK/TAHUN',
+                    value: project?.spk?.nomor_spk || '-',
+                  },
+                ].map((row) => (
+                  <div
+                    key={row.label}
+                    className='flex border-b border-black last:border-b-0'
+                  >
+                    <div className='w-36 font-bold py-2 px-2 border-r border-black shrink-0'>
+                      {row.label}
+                    </div>
+                    <div className='w-5 text-center py-2 border-r border-black shrink-0'>
+                      :
+                    </div>
+                    <div className='flex-1 py-2 px-2'>{row.value}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <AlertDialogFooter className='mt-4 flex-col sm:flex-row items-start sm:items-center gap-2'>
+            <div className='flex items-center gap-2'>
+              <Label className='text-xs'>Bagian per Qty:</Label>
+              <Input
+                type='number'
+                min={1}
+                value={qrParts}
+                onChange={(e) => setQrParts(Math.max(1, parseInt(e.target.value) || 1))}
+                className='h-8 w-16 text-xs'
+              />
+            </div>
+            {qrItem?.jumlah && (
+              <p className='text-xs text-muted-foreground flex-1 ml-2'>
+                Akan mencetak <strong>{qrItem.jumlah * qrParts} label</strong> 
+                ({qrItem.jumlah} Qty × {qrParts} Bagian)
+              </p>
+            )}
+            <div className='flex gap-2 ml-auto'>
+              <AlertDialogCancel onClick={() => setIsItemQrDialogOpen(false)}>
+                Tutup
+              </AlertDialogCancel>
+              <Button
+                className='bg-blue-600 hover:bg-blue-700 text-white gap-2'
+                onClick={handlePrintItemQR}
+              >
+                <Printer className='h-4 w-4' />
+                Print {qrItem?.jumlah ? qrItem.jumlah * qrParts : ''} Label
+              </Button>
+            </div>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Gambar Kerja Upload Dialog */}
       <AlertDialog open={isGkDialogOpen} onOpenChange={setIsGkDialogOpen}>
