@@ -1355,7 +1355,7 @@ export default function ProduksiDetailPage() {
             <div>
               <AlertDialogTitle className='flex items-center gap-2 text-lg sm:text-2xl font-bold tracking-tight text-neutral-800'>
                 <BarChart3 className='h-6 w-6 text-orange-500' />
-                Update Progress Produksi
+                Update Progres Produksi
               </AlertDialogTitle>
               <AlertDialogDescription className='text-sm text-neutral-500 mt-1'>
                 Input jumlah item yang telah selesai di setiap tahapan untuk:{' '}
@@ -1421,6 +1421,7 @@ export default function ProduksiDetailPage() {
                     min={0}
                     max={produksiData.jumlah_order}
                     disabled={skippedFields.cold_press}
+                    onFocus={(e) => e.target.select()}
                     value={
                       skippedFields.cold_press
                         ? '-'
@@ -1468,6 +1469,7 @@ export default function ProduksiDetailPage() {
                     min={0}
                     max={produksiData.jumlah_order}
                     disabled={skippedFields.running_saw}
+                    onFocus={(e) => e.target.select()}
                     value={
                       skippedFields.running_saw
                         ? '-'
@@ -1513,6 +1515,7 @@ export default function ProduksiDetailPage() {
                     min={0}
                     max={produksiData.jumlah_order}
                     disabled={skippedFields.edging}
+                    onFocus={(e) => e.target.select()}
                     value={
                       skippedFields.edging
                         ? '-'
@@ -1558,6 +1561,7 @@ export default function ProduksiDetailPage() {
                     min={0}
                     max={produksiData.jumlah_order}
                     disabled={skippedFields.cnc}
+                    onFocus={(e) => e.target.select()}
                     value={
                       skippedFields.cnc
                         ? '-'
@@ -1614,6 +1618,7 @@ export default function ProduksiDetailPage() {
                     min={0}
                     max={produksiData.jumlah_order}
                     disabled={skippedFields.tukang_kayu}
+                    onFocus={(e) => e.target.select()}
                     value={
                       skippedFields.tukang_kayu
                         ? '-'
@@ -1659,6 +1664,7 @@ export default function ProduksiDetailPage() {
                     min={0}
                     max={produksiData.jumlah_order}
                     disabled={skippedFields.tukang_jok}
+                    onFocus={(e) => e.target.select()}
                     value={
                       skippedFields.tukang_jok
                         ? '-'
@@ -1704,6 +1710,7 @@ export default function ProduksiDetailPage() {
                     min={0}
                     max={produksiData.jumlah_order}
                     disabled={skippedFields.rakit}
+                    onFocus={(e) => e.target.select()}
                     value={
                       skippedFields.rakit
                         ? '-'
@@ -1749,6 +1756,7 @@ export default function ProduksiDetailPage() {
                     min={0}
                     max={produksiData.jumlah_order}
                     disabled={skippedFields.finishing}
+                    onFocus={(e) => e.target.select()}
                     value={
                       skippedFields.finishing
                         ? '-'
@@ -1783,6 +1791,7 @@ export default function ProduksiDetailPage() {
                   type='number'
                   min={0}
                   max={produksiData.jumlah_order}
+                  onFocus={(e) => e.target.select()}
                   value={
                     produksiData.menggunakan_stok === 0
                       ? ''
@@ -1847,7 +1856,7 @@ export default function ProduksiDetailPage() {
                 ) : (
                   <CheckCircle2 className='w-4 h-4 mr-2' />
                 )}
-                Update Progress
+                Update Progres
               </Button>
             </div>
           </div>
