@@ -54,6 +54,7 @@ import {
   BarangSupplier,
 } from '@/features/projects/services/project-v2-service';
 import { QRCodeSVG } from 'qrcode.react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 
@@ -173,6 +174,196 @@ export default function ProduksiDetailPage() {
   const [qrParts, setQrParts] = React.useState<number>(1);
   const hiddenQrRef = React.useRef<HTMLDivElement>(null);
 
+  // Mass QR Print State
+  const [selectedQrItemIds, setSelectedQrItemIds] = React.useState<number[]>([]);
+  const [isMassQrDialogOpen, setIsMassQrDialogOpen] = React.useState(false);
+  const [massQrPartsConfig, setMassQrPartsConfig] = React.useState<Record<number, number>>({});
+  const hiddenMassQrRef = React.useRef<HTMLDivElement>(null);
+
+  const toggleSelectQrItem = (id: number) => {
+    setSelectedQrItemIds((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    );
+  };
+
+  const handleSelectAllQrItems = (checked: boolean) => {
+    if (checked && items) {
+      const filteredItems = items.filter((item) => {
+        if (!searchQuery.trim()) return true;
+        const q = searchQuery.toLowerCase();
+        return (
+          item.item?.toLowerCase().includes(q) ||
+          (item.lantai ?? '').toLowerCase().includes(q) ||
+          (item.ruang ?? '').toLowerCase().includes(q) ||
+          (item.keterangan ?? '').toLowerCase().includes(q)
+        );
+      });
+      setSelectedQrItemIds(filteredItems.map(i => i.id));
+    } else {
+      setSelectedQrItemIds([]);
+    }
+  };
+
+  const openMassQrDialog = () => {
+    const initialConfig: Record<number, number> = {};
+    selectedQrItemIds.forEach(id => {
+      initialConfig[id] = 1;
+    });
+    setMassQrPartsConfig(initialConfig);
+    setIsMassQrDialogOpen(true);
+  };
+
+  const handlePrintMassQR = () => {
+    if (selectedQrItemIds.length === 0 || !items) return;
+
+    const selectedItems = items.filter(i => selectedQrItemIds.includes(i.id));
+
+    const spkYear = project?.spk?.tanggal_spk
+      ? new Date(project.spk.tanggal_spk).getFullYear()
+      : project?.created_at
+      ? new Date(project.created_at).getFullYear()
+      : '';
+    const spkValue = [project?.spk?.nomor_spk, spkYear].filter(Boolean).join(' / ') || '-';
+
+    const labelsData: string[] = [];
+
+    selectedItems.forEach(item => {
+      const parts = massQrPartsConfig[item.id] || 1;
+      const total = item.jumlah;
+      const qrCodeValue = item.id.toString();
+
+      const svgEl = hiddenMassQrRef.current?.querySelector(`#qr-svg-${item.id} svg`);
+      const svgString = svgEl?.outerHTML ?? '';
+
+      const makeLabelHTML = (itemIndex: number, partIndex: number) => {
+        const rows: [string, string][] = [
+          ['NAMA ITEM', item.item || '-'],
+          ['UKURAN', `${item.panjang || '-'} x ${item.lebar || '-'} x ${item.tinggi || '-'}`],
+          ['JUMLAH', `${itemIndex + 1}/${total} ${item.satuan || ''}`.trim()],
+        ];
+        
+        if (parts > 1) {
+          rows.push(['BAGIAN', `${partIndex + 1}/${parts}`]);
+        }
+        
+        rows.push(
+          ['RUANG', item.ruang || '-'],
+          ['RUMAH SAKIT', project?.client?.name || '-'],
+          ['NO. SPK/TAHUN', spkValue]
+        );
+
+        return `
+          <div class="label">
+            <div class="hdr">
+              <div class="logo"><img src="${window.location.origin}/Logo.png" alt="Logo"/></div>
+              <div class="co">
+                <p class="n">PT DHARMA PUTERA SEJAHTERA ABADI</p>
+                <p class="it">Interior &amp; Furniture Manufaktur</p>
+                <p>Jl. Matraman No. 88, Ringinsari, Maguwoharjo, Depok, Sleman, Yogyakarta</p>
+                <p>Telepon : (0274) 2800089&nbsp;&nbsp;Fax : (0274) 433 2248</p>
+                <p>E-mail : piutang.dpsa@gmail.com&nbsp;Website : www.dpm-jogja.com</p>
+              </div>
+              <div class="dc">
+                <div class="dr">PROD</div><div class="dr b">003</div>
+                <div class="db"><span>Rev:00</span><span>Terbit:<br>08/25</span></div>
+              </div>
+            </div>
+            <div class="bd">
+              <div class="info">
+                ${rows
+                  .map(
+                    ([l, v], ri) =>
+                      `<div class="row${
+                        ri === rows.length - 1 ? ' last' : ''
+                      }"><div class="lbl">${l}</div><div class="sep">:</div><div class="val">${v}</div></div>`
+                  )
+                  .join('')}
+              </div>
+              <div class="qr">${svgString}<p>${qrCodeValue}</p></div>
+            </div>
+          </div>`;
+      };
+
+      for (let i = 0; i < total; i++) {
+        for (let p = 0; p < parts; p++) {
+          labelsData.push(makeLabelHTML(i, p));
+        }
+      }
+    });
+
+    const pages: string[][] = [];
+    for (let i = 0; i < labelsData.length; i += 10) {
+      pages.push(labelsData.slice(i, i + 10));
+    }
+
+    const printWindow = window.open('', '', 'width=800,height=600');
+    if (!printWindow) return;
+
+    printWindow.document.write(`<!DOCTYPE html><html><head>
+      <title>Print Label Produksi Massal</title>
+      <style>
+        @page { size: A4 portrait; margin: 5mm; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: Arial, sans-serif; font-size: 9px; color: #171717; background: #fff; }
+        .pg {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          grid-template-rows: auto auto;
+          gap: 3mm;
+          width: 100%;
+          page-break-after: always;
+          break-after: page;
+        }
+        .pg.last { page-break-after: auto; break-after: auto; }
+        .empty { border: 1px dashed #ccc; }
+        .label { border: 1px solid #000; }
+        .hdr { display: flex; border-bottom: 1px solid #000; }
+        .logo { width: 44px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; padding: 4px; border-right: 1px solid #000; }
+        .logo img { width: 34px; height: 34px; object-fit: contain; }
+        .co { flex: 1; text-align: center; padding: 3px 5px; border-right: 1px solid #000; }
+        .co .n  { font-weight: 900; color: #1d4ed8; font-size: 8.5px; text-transform: uppercase; line-height: 1.2; }
+        .co .it { font-style: italic; font-size: 7.5px; color: #525252; }
+        .co p   { font-size: 7.5px; color: #525252; line-height: 1.3; }
+        .dc { width: 58px; flex-shrink: 0; display: flex; flex-direction: column; text-align: center; font-size: 7.5px; }
+        .dr { border-bottom: 1px solid #000; padding: 1px 2px; font-weight: 700; }
+        .dr.b { font-size: 11px; }
+        .db { display: flex; }
+        .db span { flex: 1; padding: 1px 2px; line-height: 1.2; }
+        .db span:first-child { border-right: 1px solid #000; }
+        .bd { display: flex; }
+        .info { flex: 1; border-right: 1px solid #000; }
+        .row { display: flex; border-bottom: 1px solid #000; }
+        .row.last { border-bottom: none; }
+        .lbl { width: 78px; font-weight: 700; padding: 3px 4px; border-right: 1px solid #000; flex-shrink: 0; font-size: 8px; }
+        .sep { width: 12px; text-align: center; padding: 3px 0; border-right: 1px solid #000; flex-shrink: 0; }
+        .val { flex: 1; padding: 3px 4px; font-size: 8px; word-break: break-word; }
+        .qr  { width: 94px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 4px; padding: 6px 5px; }
+        .qr svg { display: block; width: 76px !important; height: 76px !important; }
+        .qr p { font-family: monospace; font-weight: 700; text-align: center; word-break: break-all; font-size: 7.5px; }
+      </style>
+    </head><body>
+      ${pages
+        .map(
+          (page, pi) => `
+        <div class="pg${pi === pages.length - 1 ? ' last' : ''}">
+          ${page.join('')}
+          ${Array.from(
+            { length: 10 - page.length },
+            () => '<div class="empty"></div>'
+          ).join('')}
+        </div>`
+        )
+        .join('')}
+      <script>
+        window.onload = function() {
+          window.print();
+          setTimeout(() => window.close(), 500);
+        };
+      </script>
+    </body></html>`);
+    printWindow.document.close();
+  };
+
   const openItemQrDialog = (item: ProjectItemV2) => {
     setQrItem(item);
     setQrParts(1);
@@ -263,10 +454,10 @@ export default function ProduksiDetailPage() {
       }
     }
 
-    // Group indices into pages of 4
+    // Group indices into pages of 10
     const pages: any[][] = [];
-    for (let i = 0; i < labelsData.length; i += 4) {
-      pages.push(labelsData.slice(i, i + 4));
+    for (let i = 0; i < labelsData.length; i += 10) {
+      pages.push(labelsData.slice(i, i + 10));
     }
 
     const html = `<!DOCTYPE html><html><head>
@@ -323,7 +514,7 @@ export default function ProduksiDetailPage() {
         <div class="pg${pi === pages.length - 1 ? ' last' : ''}">
           ${page.map((data) => makeLabelHTML(data.itemIndex, data.partIndex)).join('')}
           ${Array.from(
-            { length: 4 - page.length },
+            { length: 10 - page.length },
             () => '<div class="empty"></div>'
           ).join('')}
         </div>`
@@ -1030,6 +1221,17 @@ export default function ProduksiDetailPage() {
               <QrCode className='h-4 w-4' />
               Generate QR
             </Button>
+            {selectedQrItemIds.length > 0 && (
+              <Button
+                size='sm'
+                variant='default'
+                className='gap-2 h-8 bg-blue-600 hover:bg-blue-700'
+                onClick={openMassQrDialog}
+              >
+                <Printer className='h-4 w-4' />
+                Print QR Massal ({selectedQrItemIds.length})
+              </Button>
+            )}
           </div>
         </div>
 
@@ -1057,7 +1259,29 @@ export default function ProduksiDetailPage() {
                 <TableHead>Produksi</TableHead>
                 <TableHead>QC Cek</TableHead>
                 <TableHead>B. Jadi</TableHead>
-                <TableHead className='text-center'>Actions</TableHead>
+                <TableHead className='text-center'>
+                  <div className='flex items-center justify-center gap-2'>
+                    <Checkbox
+                      checked={
+                        items && items.length > 0
+                          ? items.filter((item) => {
+                              if (!searchQuery.trim()) return true;
+                              const q = searchQuery.toLowerCase();
+                              return (
+                                item.item?.toLowerCase().includes(q) ||
+                                (item.lantai ?? '').toLowerCase().includes(q) ||
+                                (item.ruang ?? '').toLowerCase().includes(q) ||
+                                (item.keterangan ?? '').toLowerCase().includes(q)
+                              );
+                            }).length === selectedQrItemIds.length && selectedQrItemIds.length > 0
+                          : false
+                      }
+                      onCheckedChange={handleSelectAllQrItems}
+                      className='bg-white'
+                    />
+                    Aksi
+                  </div>
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -1318,15 +1542,21 @@ export default function ProduksiDetailPage() {
                       </div>
                     </TableCell>
                     <TableCell className='text-center'>
-                      <Button
-                        size='sm'
-                        variant='outline'
-                        className='h-7 px-2 gap-1.5 text-[11px]'
-                        onClick={() => openItemQrDialog(item)}
-                      >
-                        <QrCode className='h-3.5 w-3.5' />
-                        QR
-                      </Button>
+                      <div className='flex items-center justify-center gap-2'>
+                        <Checkbox
+                          checked={selectedQrItemIds.includes(item.id)}
+                          onCheckedChange={() => toggleSelectQrItem(item.id)}
+                        />
+                        <Button
+                          size='sm'
+                          variant='outline'
+                          className='h-7 px-2 gap-1.5 text-[11px]'
+                          onClick={() => openItemQrDialog(item)}
+                        >
+                          <QrCode className='h-3.5 w-3.5' />
+                          QR
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
@@ -2409,6 +2639,112 @@ export default function ProduksiDetailPage() {
               <Printer className='h-4 w-4' />
               Print QR Codes
             </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Hidden QR Code for Mass Printing */}
+      <div className='absolute -left-[9999px] top-0 opacity-0 pointer-events-none' aria-hidden='true'>
+        <div ref={hiddenMassQrRef}>
+          {items
+            ?.filter(i => selectedQrItemIds.includes(i.id))
+            .map((item) => (
+              <div key={item.id} id={`qr-svg-${item.id}`}>
+                <QRCodeSVG
+                  value={item.id.toString()}
+                  size={120}
+                  bgColor='#ffffff'
+                  fgColor='#000000'
+                  level='M'
+                  includeMargin={false}
+                />
+              </div>
+            ))}
+        </div>
+      </div>
+
+      {/* Mass QR Code Print Dialog */}
+      <AlertDialog
+        open={isMassQrDialogOpen}
+        onOpenChange={setIsMassQrDialogOpen}
+      >
+        <AlertDialogContent className='max-w-2xl'>
+          <AlertDialogHeader>
+            <AlertDialogTitle className='flex items-center gap-2 text-base'>
+              <Printer className='h-4 w-4 text-blue-600' />
+              Print Massal Label Produksi
+            </AlertDialogTitle>
+            <AlertDialogDescription className='text-xs'>
+              Atur bagian per item untuk <strong>{selectedQrItemIds.length}</strong> item yang dipilih.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <div className='max-h-[60vh] overflow-y-auto border border-neutral-200 rounded-md mt-2'>
+            <Table>
+              <TableHeader className='bg-neutral-50'>
+                <TableRow>
+                  <TableHead className='text-xs'>Item</TableHead>
+                  <TableHead className='text-xs text-center'>Qty</TableHead>
+                  <TableHead className='text-xs text-center'>Bagian per Qty</TableHead>
+                  <TableHead className='text-xs text-center'>Total Label</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {items
+                  ?.filter(i => selectedQrItemIds.includes(i.id))
+                  .map(item => {
+                    const parts = massQrPartsConfig[item.id] || 1;
+                    return (
+                      <TableRow key={item.id}>
+                        <TableCell className='text-xs font-medium'>
+                          {item.item}
+                          <div className='text-[10px] text-muted-foreground'>
+                            {item.panjang}x{item.lebar}x{item.tinggi}
+                          </div>
+                        </TableCell>
+                        <TableCell className='text-xs text-center'>{item.jumlah}</TableCell>
+                        <TableCell className='text-xs text-center'>
+                          <Input
+                            type='number'
+                            min={1}
+                            value={parts}
+                            onChange={(e) => {
+                              const val = Math.max(1, parseInt(e.target.value) || 1);
+                              setMassQrPartsConfig(prev => ({ ...prev, [item.id]: val }));
+                            }}
+                            className='h-7 w-16 text-xs mx-auto text-center'
+                          />
+                        </TableCell>
+                        <TableCell className='text-xs text-center font-bold text-blue-600'>
+                          {item.jumlah * parts}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+              </TableBody>
+            </Table>
+          </div>
+
+          <AlertDialogFooter className='mt-4 flex items-center justify-between'>
+            <div className='text-xs text-muted-foreground font-medium'>
+              Total Label Keseluruhan: <span className='text-blue-600 font-bold'>
+                {items
+                  ?.filter(i => selectedQrItemIds.includes(i.id))
+                  .reduce((sum, item) => sum + (item.jumlah * (massQrPartsConfig[item.id] || 1)), 0)}
+              </span>
+            </div>
+            <div className='flex gap-2'>
+              <AlertDialogCancel onClick={() => setIsMassQrDialogOpen(false)}>
+                Batal
+              </AlertDialogCancel>
+              <Button
+                className='bg-blue-600 hover:bg-blue-700 text-white gap-2'
+                onClick={handlePrintMassQR}
+              >
+                <Printer className='h-4 w-4' />
+                Print Massal
+              </Button>
+            </div>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
