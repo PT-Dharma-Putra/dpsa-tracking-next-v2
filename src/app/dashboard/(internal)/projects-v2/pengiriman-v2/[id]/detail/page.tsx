@@ -673,6 +673,9 @@ export default function PerencanaanDetailPage() {
   const [suratJalanPengirimanId, setSuratJalanPengirimanId] = React.useState<
     number | null
   >(null);
+  const [previewSjDialogOpen, setPreviewSjDialogOpen] = React.useState(false);
+  const [previewSjUrl, setPreviewSjUrl] = React.useState<string | null>(null);
+  const [previewSjPengirimanId, setPreviewSjPengirimanId] = React.useState<number | null>(null);
   const [suratJalanFile, setSuratJalanFile] = React.useState<File | null>(null);
 
   const updateSuratJalanMutation = useMutation({
@@ -693,6 +696,9 @@ export default function PerencanaanDetailPage() {
   const [setrimPengirimanId, setSetrimPengirimanId] = React.useState<
     number | null
   >(null);
+  const [previewSetrimDialogOpen, setPreviewSetrimDialogOpen] = React.useState(false);
+  const [previewSetrimUrl, setPreviewSetrimUrl] = React.useState<string | null>(null);
+  const [previewSetrimPengirimanId, setPreviewSetrimPengirimanId] = React.useState<number | null>(null);
   const [setrimFile, setSetrimFile] = React.useState<File | null>(null);
 
   const updateSetrimMutation = useMutation({
@@ -1408,19 +1414,19 @@ export default function PerencanaanDetailPage() {
                                   </span>
                                 )}
                                 {p.surat_jalan ? (
-                                  <a
-                                    href={`${(
-                                      process.env.NEXT_PUBLIC_API_URL ||
-                                      'http://localhost:8000'
-                                    ).replace('/api', '')}/storage/${
-                                      p.surat_jalan
-                                    }`}
-                                    target='_blank'
-                                    rel='noreferrer'
+                                  <button
+                                    onClick={() => {
+                                      setPreviewSjUrl(`${(
+                                        process.env.NEXT_PUBLIC_API_URL ||
+                                        'http://localhost:8000'
+                                      ).replace('/api', '')}/storage/${p.surat_jalan}`);
+                                      setPreviewSjPengirimanId(p.id);
+                                      setPreviewSjDialogOpen(true);
+                                    }}
                                     className='text-[9px] font-semibold text-neutral-600 bg-neutral-100 px-1.5 py-0.5 rounded hover:bg-neutral-200 flex items-center gap-0.5'
                                   >
                                     <Eye className='h-2.5 w-2.5' /> Lihat SJ
-                                  </a>
+                                  </button>
                                 ) : (
                                   <button
                                     className='text-[9px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded hover:bg-amber-100 transition-colors'
@@ -1434,17 +1440,19 @@ export default function PerencanaanDetailPage() {
                                   </button>
                                 )}
                                 {p.setrim ? (
-                                  <a
-                                    href={`${(
-                                      process.env.NEXT_PUBLIC_API_URL ||
-                                      'http://localhost:8000'
-                                    ).replace('/api', '')}/storage/${p.setrim}`}
-                                    target='_blank'
-                                    rel='noreferrer'
+                                  <button
+                                    onClick={() => {
+                                      setPreviewSetrimUrl(`${(
+                                        process.env.NEXT_PUBLIC_API_URL ||
+                                        'http://localhost:8000'
+                                      ).replace('/api', '')}/storage/${p.setrim}`);
+                                      setPreviewSetrimPengirimanId(p.id);
+                                      setPreviewSetrimDialogOpen(true);
+                                    }}
                                     className='text-[9px] font-semibold text-neutral-600 bg-neutral-100 px-1.5 py-0.5 rounded hover:bg-neutral-200 flex items-center gap-0.5'
                                   >
                                     <Eye className='h-2.5 w-2.5' /> Lihat Setrim
-                                  </a>
+                                  </button>
                                 ) : (
                                   <button
                                     className='text-[9px] font-bold text-blue-600 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded hover:bg-blue-100 transition-colors'
@@ -3191,6 +3199,56 @@ export default function PerencanaanDetailPage() {
         }
       />
 
+      {/* Preview Surat Jalan Dialog */}
+      <AlertDialog
+        open={previewSjDialogOpen}
+        onOpenChange={setPreviewSjDialogOpen}
+      >
+        <AlertDialogContent className='max-w-4xl'>
+          <AlertDialogHeader>
+            <AlertDialogTitle className='flex items-center justify-between gap-2 w-full pr-4'>
+              <div className='flex items-center gap-2'>
+                <FileText className='h-5 w-5 text-amber-500' />
+                Preview Surat Jalan
+              </div>
+              <Button
+                variant='outline'
+                size='sm'
+                className='gap-2 h-8'
+                onClick={() => {
+                  setPreviewSjDialogOpen(false);
+                  setSuratJalanPengirimanId(previewSjPengirimanId);
+                  setSuratJalanFile(null);
+                  setSuratJalanDialogOpen(true);
+                }}
+              >
+                <Pencil className='h-3.5 w-3.5' /> Edit Dokumen
+              </Button>
+            </AlertDialogTitle>
+          </AlertDialogHeader>
+          <div className='py-4 min-h-[60vh]'>
+            {previewSjUrl && (
+              <iframe
+                src={previewSjUrl}
+                className='w-full h-[60vh] border rounded-md'
+                title='Preview Surat Jalan'
+              />
+            )}
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => {
+                setPreviewSjDialogOpen(false);
+                setPreviewSjUrl(null);
+                setPreviewSjPengirimanId(null);
+              }}
+            >
+              Tutup
+            </AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Upload Surat Jalan Dialog */}
       <AlertDialog
         open={suratJalanDialogOpen}
@@ -3249,6 +3307,56 @@ export default function PerencanaanDetailPage() {
               )}
               Simpan
             </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Preview Setrim Dialog */}
+      <AlertDialog
+        open={previewSetrimDialogOpen}
+        onOpenChange={setPreviewSetrimDialogOpen}
+      >
+        <AlertDialogContent className='max-w-4xl'>
+          <AlertDialogHeader>
+            <AlertDialogTitle className='flex items-center justify-between gap-2 w-full pr-4'>
+              <div className='flex items-center gap-2'>
+                <FileText className='h-5 w-5 text-blue-500' />
+                Preview Setrim
+              </div>
+              <Button
+                variant='outline'
+                size='sm'
+                className='gap-2 h-8'
+                onClick={() => {
+                  setPreviewSetrimDialogOpen(false);
+                  setSetrimPengirimanId(previewSetrimPengirimanId);
+                  setSetrimFile(null);
+                  setSetrimDialogOpen(true);
+                }}
+              >
+                <Pencil className='h-3.5 w-3.5' /> Edit Dokumen
+              </Button>
+            </AlertDialogTitle>
+          </AlertDialogHeader>
+          <div className='py-4 min-h-[60vh]'>
+            {previewSetrimUrl && (
+              <iframe
+                src={previewSetrimUrl}
+                className='w-full h-[60vh] border rounded-md'
+                title='Preview Setrim'
+              />
+            )}
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => {
+                setPreviewSetrimDialogOpen(false);
+                setPreviewSetrimUrl(null);
+                setPreviewSetrimPengirimanId(null);
+              }}
+            >
+              Tutup
+            </AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
