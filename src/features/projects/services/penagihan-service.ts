@@ -22,6 +22,7 @@ export interface Penagihan {
     nominal_dibayar: number | string | null;
     file: string | null;
     termin?: Termin;
+    project?: any;
     created_at: string;
     updated_at: string;
 }
@@ -65,6 +66,11 @@ export const penagihanService = {
     },
 
     // Penagihan CRUD
+    getAllPenagihan: async (): Promise<Penagihan[]> => {
+        const { data } = await apiClient.get<Penagihan[]>('/penagihan/all');
+        return data;
+    },
+
     getPenagihanByProject: async (projectId: number): Promise<Penagihan[]> => {
         const { data } = await apiClient.get<Penagihan[]>(`/projects-v2/${projectId}/penagihan`);
         return data;
