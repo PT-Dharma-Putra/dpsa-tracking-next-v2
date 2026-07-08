@@ -167,6 +167,64 @@ export default function ProduksiDetailPage() {
 
   // Items Search State
   const [searchQuery, setSearchQuery] = React.useState('');
+  const [isGrouped, setIsGrouped] = React.useState(false);
+
+  const filteredItems = React.useMemo(() => {
+    if (!items) return [];
+    if (!searchQuery.trim()) return items;
+    const query = searchQuery.toLowerCase();
+    return items.filter(
+      (item) =>
+        item.item?.toLowerCase().includes(query) ||
+        (item.ruang && item.ruang.toLowerCase().includes(query)) ||
+        (item.lantai && item.lantai.toLowerCase().includes(query)) ||
+        (item.keterangan && item.keterangan.toLowerCase().includes(query))
+    );
+  }, [items, searchQuery]);
+
+  const displayItems = React.useMemo(() => {
+    if (!isGrouped) return filteredItems;
+    
+    const grouped = new Map<string, ProjectItemV2 & { groupedItems?: { id: number, jumlah: number }[] }>();
+    
+    filteredItems.forEach(item => {
+      const key = (item.item || '').toLowerCase();
+      if (grouped.has(key)) {
+        const existing = grouped.get(key)!;
+        existing.jumlah += item.jumlah;
+        
+        const existingVol = parseFloat(existing.volume || '0');
+        const itemVol = parseFloat(item.volume || '0');
+        if (!isNaN(existingVol) && !isNaN(itemVol)) {
+          existing.volume = (existingVol + itemVol).toFixed(3).replace(/\.?0+$/, '');
+        }
+
+        if (existing.produksi && item.produksi) {
+          const fields = [
+            'menggunakan_stok', 'cold_press', 'running_saw', 'edging', 'cnc',
+            'tukang_kayu', 'tukang_jok', 'finishing', 'rakit', 'quality_control', 'packing'
+          ];
+          fields.forEach(f => {
+            if (typeof (item.produksi as any)[f] === 'number') {
+              (existing.produksi as any)[f] = ((existing.produksi as any)[f] || 0) + (item.produksi as any)[f];
+            }
+          });
+        } else if (!existing.produksi && item.produksi) {
+          existing.produksi = { ...item.produksi };
+        }
+
+        if (existing.groupedItems) {
+          existing.groupedItems.push({ id: item.id, jumlah: item.jumlah });
+        }
+      } else {
+        const newItem = { ...item, groupedItems: [{ id: item.id, jumlah: item.jumlah }] };
+        if (newItem.produksi) newItem.produksi = { ...newItem.produksi };
+        grouped.set(key, newItem);
+      }
+    });
+    
+    return Array.from(grouped.values());
+  }, [filteredItems, isGrouped]);
 
   // QR Code per-item State
   const [isItemQrDialogOpen, setIsItemQrDialogOpen] = React.useState(false);
@@ -568,8 +626,9 @@ export default function ProduksiDetailPage() {
   };
 
   const updateProduksiMutation = useMutation({
-    mutationFn: (payload: Partial<Produksi>) =>
-      projectV2Service.updateProduksi(produksiItem!.id, payload),
+    mutationFn: async (payload: { items: { id: number, data: Partial<Produksi> }[] }) => {
+      await Promise.all(payload.items.map(item => projectV2Service.updateProduksi(item.id, item.data)));
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ['project-v2-items', projectId],
@@ -588,10 +647,32 @@ export default function ProduksiDetailPage() {
     const skippedList = Object.keys(skippedFields).filter(
       (k) => skippedFields[k]
     );
-    updateProduksiMutation.mutate({
-      ...produksiData,
-      skipped_fields: skippedList,
+
+    const isGroup = !!(produksiItem as any).groupedItems && (produksiItem as any).groupedItems.length > 1;
+    const groupedItems = isGroup 
+      ? (produksiItem as any).groupedItems as { id: number, jumlah: number }[] 
+      : [{ id: produksiItem.id, jumlah: produksiItem.jumlah }];
+    
+    const fieldsToDistribute = [
+      'menggunakan_stok', 'cold_press', 'running_saw', 'edging', 'cnc',
+      'tukang_kayu', 'tukang_jok', 'finishing', 'rakit', 'quality_control', 'packing'
+    ];
+
+    const updates = groupedItems.map(gItem => {
+      const itemData = { ...produksiData, jumlah_order: gItem.jumlah, skipped_fields: skippedList };
+      return { id: gItem.id, data: itemData, capacity: gItem.jumlah };
     });
+
+    fieldsToDistribute.forEach(field => {
+      let remaining = (produksiData as any)[field] || 0;
+      updates.forEach(update => {
+        const allocate = Math.min(remaining, update.capacity);
+        (update.data as any)[field] = allocate;
+        remaining -= allocate;
+      });
+    });
+
+    updateProduksiMutation.mutate({ items: updates.map(u => ({ id: u.id, data: u.data })) });
   };
 
   // Supplier Confirm State
@@ -1202,6 +1283,14 @@ export default function ProduksiDetailPage() {
             Project Items
           </h2>
           <div className='flex items-center gap-2'>
+            <Button
+              variant={isGrouped ? 'default' : 'outline'}
+              onClick={() => setIsGrouped(!isGrouped)}
+              className='shadow-sm h-8 text-xs'
+            >
+              <Package className='w-4 h-4 mr-2' />
+              Kelompokkan Item
+            </Button>
             <div className='relative w-64'>
               <Search className='absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-neutral-400 pointer-events-none' />
               <Input
@@ -1251,27 +1340,22 @@ export default function ProduksiDetailPage() {
                 <TableHead>QC Cek</TableHead>
                 <TableHead>B. Jadi</TableHead>
                 <TableHead className='text-center'>
-                  <div className='flex items-center justify-center gap-2'>
-                    <Checkbox
-                      checked={
-                        items && items.length > 0
-                          ? items.filter((item) => {
-                              if (!searchQuery.trim()) return true;
-                              const q = searchQuery.toLowerCase();
-                              return (
-                                item.item?.toLowerCase().includes(q) ||
-                                (item.lantai ?? '').toLowerCase().includes(q) ||
-                                (item.ruang ?? '').toLowerCase().includes(q) ||
-                                (item.keterangan ?? '').toLowerCase().includes(q)
-                              );
-                            }).length === selectedQrItemIds.length && selectedQrItemIds.length > 0
-                          : false
-                      }
-                      onCheckedChange={handleSelectAllQrItems}
-                      className='bg-white'
-                    />
-                    Aksi
-                  </div>
+                  {isGrouped ? (
+                    <div className='text-center font-medium'>Aksi</div>
+                  ) : (
+                    <div className='flex items-center justify-center gap-2'>
+                      <Checkbox
+                        checked={
+                          displayItems && displayItems.length > 0
+                            ? displayItems.length === selectedQrItemIds.length && selectedQrItemIds.length > 0
+                            : false
+                        }
+                        onCheckedChange={handleSelectAllQrItems}
+                        className='bg-white'
+                      />
+                      Aksi
+                    </div>
+                  )}
                 </TableHead>
               </TableRow>
             </TableHeader>
@@ -1285,7 +1369,7 @@ export default function ProduksiDetailPage() {
                     <Loader2 className='h-6 w-6 animate-spin mx-auto' />
                   </TableCell>
                 </TableRow>
-              ) : items?.length === 0 ? (
+              ) : displayItems.length === 0 ? (
                 <TableRow>
                   <TableCell
                     colSpan={18}
@@ -1295,18 +1379,7 @@ export default function ProduksiDetailPage() {
                   </TableCell>
                 </TableRow>
               ) : (
-                [...(items ?? [])]
-                  .filter((item) => {
-                    if (!searchQuery.trim()) return true;
-                    const q = searchQuery.toLowerCase();
-                    return (
-                      item.item?.toLowerCase().includes(q) ||
-                      (item.lantai ?? '').toLowerCase().includes(q) ||
-                      (item.ruang ?? '').toLowerCase().includes(q) ||
-                      (item.keterangan ?? '').toLowerCase().includes(q)
-                    );
-                  })
-                  .map((item, index) => (
+                displayItems.map((item, index) => (
                   <TableRow
                     key={item.id}
                     className='hover:bg-neutral-50/50 transition-colors'
@@ -1472,82 +1545,100 @@ export default function ProduksiDetailPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div
-                        className='cursor-pointer hover:bg-neutral-100 p-2 rounded-lg transition-colors group flex items-center gap-2'
-                        onClick={() => openQcView(item)}
-                      >
-                        {item.qc_cek ? (
-                          <>
-                            <span className='text-[10px] font-bold text-neutral-600'>
-                              {item.qc_cek.qty} Unit
-                            </span>
-                            {item.qc_cek.file && (
-                              <Button
-                                variant='ghost'
-                                size='icon'
-                                className='h-6 w-6 text-blue-600'
-                                asChild
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <a
-                                  href={`${(
-                                    process.env.NEXT_PUBLIC_API_URL ||
-                                    'http://localhost:8000'
-                                  ).replace('/api', '')}/storage/${
-                                    item.qc_cek.file
-                                  }`}
-                                  target='_blank'
-                                  rel='noopener noreferrer'
+                      {isGrouped ? (
+                        <span className='text-[10px] text-muted-foreground italic text-center block w-full'>
+                          -
+                        </span>
+                      ) : (
+                        <div
+                          className='cursor-pointer hover:bg-neutral-100 p-2 rounded-lg transition-colors group flex items-center gap-2'
+                          onClick={() => openQcView(item)}
+                        >
+                          {item.qc_cek ? (
+                            <>
+                              <span className='text-[10px] font-bold text-neutral-600'>
+                                {item.qc_cek.qty} Unit
+                              </span>
+                              {item.qc_cek.file && (
+                                <Button
+                                  variant='ghost'
+                                  size='icon'
+                                  className='h-6 w-6 text-blue-600'
+                                  asChild
+                                  onClick={(e) => e.stopPropagation()}
                                 >
-                                  <Eye className='h-3.5 w-3.5' />
-                                </a>
-                              </Button>
-                            )}
-                          </>
-                        ) : (
-                          <span className='text-[10px] text-muted-foreground italic'>
-                            -
-                          </span>
-                        )}
-                      </div>
+                                  <a
+                                    href={`${(
+                                      process.env.NEXT_PUBLIC_API_URL ||
+                                      'http://localhost:8000'
+                                    ).replace('/api', '')}/storage/${
+                                      item.qc_cek.file
+                                    }`}
+                                    target='_blank'
+                                    rel='noopener noreferrer'
+                                  >
+                                    <Eye className='h-3.5 w-3.5' />
+                                  </a>
+                                </Button>
+                              )}
+                            </>
+                          ) : (
+                            <span className='text-[10px] text-muted-foreground italic'>
+                              -
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </TableCell>
                     <TableCell>
-                      <div
-                        className='cursor-pointer p-1 rounded transition-colors flex flex-col gap-0.5'
-                        onClick={() => openBjDialog(item)}
-                      >
-                        {item.barang_jadi_masuk &&
-                        item.barang_jadi_masuk.length > 0 ? (
-                          <Badge className='bg-blue-600 text-white border-none font-bold text-[10px] h-5 px-1.5 shadow-sm w-fit'>
-                            {item.barang_jadi_masuk.reduce(
-                              (sum, bj) => sum + Number(bj.jumlah),
-                              0
-                            )}{' '}
-                            / {item.jumlah}
-                          </Badge>
-                        ) : (
-                          <span className='text-[9px] text-muted-foreground italic hover:text-blue-600 transition-colors'>
-                            Record
-                          </span>
-                        )}
-                      </div>
+                      {isGrouped ? (
+                        <span className='text-[10px] text-muted-foreground italic text-center block w-full'>
+                          -
+                        </span>
+                      ) : (
+                        <div
+                          className='cursor-pointer p-1 rounded transition-colors flex flex-col gap-0.5'
+                          onClick={() => openBjDialog(item)}
+                        >
+                          {item.barang_jadi_masuk &&
+                          item.barang_jadi_masuk.length > 0 ? (
+                            <Badge className='bg-blue-600 text-white border-none font-bold text-[10px] h-5 px-1.5 shadow-sm w-fit'>
+                              {item.barang_jadi_masuk.reduce(
+                                (sum, bj) => sum + Number(bj.jumlah),
+                                0
+                              )}{' '}
+                              / {item.jumlah}
+                            </Badge>
+                          ) : (
+                            <span className='text-[9px] text-muted-foreground italic hover:text-blue-600 transition-colors'>
+                              Record
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </TableCell>
                     <TableCell className='text-center'>
-                      <div className='flex items-center justify-center gap-2'>
-                        <Checkbox
-                          checked={selectedQrItemIds.includes(item.id)}
-                          onCheckedChange={() => toggleSelectQrItem(item.id)}
-                        />
-                        <Button
-                          size='sm'
-                          variant='outline'
-                          className='h-7 px-2 gap-1.5 text-[11px]'
-                          onClick={() => openItemQrDialog(item)}
-                        >
-                          <QrCode className='h-3.5 w-3.5' />
-                          QR
-                        </Button>
-                      </div>
+                      {isGrouped ? (
+                        <span className='text-[10px] text-muted-foreground italic text-center block w-full'>
+                          -
+                        </span>
+                      ) : (
+                        <div className='flex items-center justify-center gap-2'>
+                          <Checkbox
+                            checked={selectedQrItemIds.includes(item.id)}
+                            onCheckedChange={() => toggleSelectQrItem(item.id)}
+                          />
+                          <Button
+                            size='sm'
+                            variant='outline'
+                            className='h-7 px-2 gap-1.5 text-[11px]'
+                            onClick={() => openItemQrDialog(item)}
+                          >
+                            <QrCode className='h-3.5 w-3.5' />
+                            QR
+                          </Button>
+                        </div>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))
