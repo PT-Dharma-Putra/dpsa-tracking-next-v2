@@ -73,6 +73,7 @@ export default function PurchasingDetailPage() {
 
   // Search State
   const [searchQuery, setSearchQuery] = React.useState('');
+  const [isGrouped, setIsGrouped] = React.useState(false);
 
   const filteredItems = React.useMemo(() => {
     if (!items) return [];
@@ -86,6 +87,50 @@ export default function PurchasingDetailPage() {
         (item.keterangan && item.keterangan.toLowerCase().includes(query))
     );
   }, [items, searchQuery]);
+
+  const displayItems = React.useMemo(() => {
+    if (!isGrouped) return filteredItems;
+    
+    const grouped = new Map<string, ProjectItemV2 & { groupedItems?: { id: number, jumlah: number }[] }>();
+    
+    filteredItems.forEach(item => {
+      const key = item.item.toLowerCase();
+      if (grouped.has(key)) {
+        const existing = grouped.get(key)!;
+        existing.jumlah += item.jumlah;
+        
+        const existingVol = parseFloat(existing.volume || '0');
+        const itemVol = parseFloat(item.volume || '0');
+        if (!isNaN(existingVol) && !isNaN(itemVol)) {
+          existing.volume = (existingVol + itemVol).toFixed(3).replace(/\.?0+$/, '');
+        }
+
+        if (existing.produksi && item.produksi) {
+          const fields = [
+            'menggunakan_stok', 'cold_press', 'running_saw', 'edging', 'cnc',
+            'tukang_kayu', 'tukang_jok', 'finishing', 'rakit', 'quality_control', 'packing'
+          ];
+          fields.forEach(f => {
+            if (typeof (item.produksi as any)[f] === 'number') {
+              (existing.produksi as any)[f] = ((existing.produksi as any)[f] || 0) + (item.produksi as any)[f];
+            }
+          });
+        } else if (!existing.produksi && item.produksi) {
+          existing.produksi = { ...item.produksi };
+        }
+
+        if (existing.groupedItems) {
+          existing.groupedItems.push({ id: item.id, jumlah: item.jumlah });
+        }
+      } else {
+        const newItem = { ...item, groupedItems: [{ id: item.id, jumlah: item.jumlah }] };
+        if (newItem.produksi) newItem.produksi = { ...newItem.produksi };
+        grouped.set(key, newItem);
+      }
+    });
+    
+    return Array.from(grouped.values());
+  }, [filteredItems, isGrouped]);
 
   // Produksi State
   const [isProduksiDialogOpen, setIsProduksiDialogOpen] = React.useState(false);
@@ -175,8 +220,9 @@ export default function PurchasingDetailPage() {
   };
 
   const updateProduksiMutation = useMutation({
-    mutationFn: (payload: Partial<Produksi>) =>
-      projectV2Service.updateProduksi(produksiItem!.id, payload),
+    mutationFn: async (payload: { items: { id: number, data: Partial<Produksi> }[] }) => {
+      await Promise.all(payload.items.map(item => projectV2Service.updateProduksi(item.id, item.data)));
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ['project-v2-items', projectId],
@@ -193,7 +239,32 @@ export default function PurchasingDetailPage() {
   const handleProduksiUpdate = () => {
     if (!produksiItem) return;
     const skippedList = Object.keys(skippedFields).filter((k) => skippedFields[k]);
-    updateProduksiMutation.mutate({ ...produksiData, skipped_fields: skippedList });
+    
+    const isGroup = !!(produksiItem as any).groupedItems && (produksiItem as any).groupedItems.length > 1;
+    const groupedItems = isGroup 
+      ? (produksiItem as any).groupedItems as { id: number, jumlah: number }[] 
+      : [{ id: produksiItem.id, jumlah: produksiItem.jumlah }];
+    
+    const fieldsToDistribute = [
+      'menggunakan_stok', 'cold_press', 'running_saw', 'edging', 'cnc',
+      'tukang_kayu', 'tukang_jok', 'finishing', 'rakit', 'quality_control', 'packing'
+    ];
+
+    const updates = groupedItems.map(gItem => {
+      const itemData = { ...produksiData, jumlah_order: gItem.jumlah, skipped_fields: skippedList };
+      return { id: gItem.id, data: itemData, capacity: gItem.jumlah };
+    });
+
+    fieldsToDistribute.forEach(field => {
+      let remaining = (produksiData as any)[field] || 0;
+      updates.forEach(update => {
+        const allocate = Math.min(remaining, update.capacity);
+        (update.data as any)[field] = allocate;
+        remaining -= allocate;
+      });
+    });
+
+    updateProduksiMutation.mutate({ items: updates.map(u => ({ id: u.id, data: u.data })) });
   };
 
   // Supplier Confirm State
@@ -735,14 +806,24 @@ export default function PurchasingDetailPage() {
             <ListChecks className='h-5 w-5 text-neutral-400' />
             Project Items
           </h2>
-          <div className='relative w-64'>
-            <Search className='absolute left-2.5 top-2.5 h-4 w-4 text-neutral-500' />
-            <Input
-              placeholder='Cari item, ruang, atau lantai...'
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className='pl-9 bg-white shadow-sm'
-            />
+          <div className='flex items-center gap-2'>
+            <Button
+              variant={isGrouped ? 'default' : 'outline'}
+              onClick={() => setIsGrouped(!isGrouped)}
+              className='shadow-sm'
+            >
+              <Package className='w-4 h-4 mr-2' />
+              Kelompokkan Item
+            </Button>
+            <div className='relative w-64'>
+              <Search className='absolute left-2.5 top-2.5 h-4 w-4 text-neutral-500' />
+              <Input
+                placeholder='Cari item, ruang, atau lantai...'
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className='pl-9 bg-white shadow-sm'
+              />
+            </div>
           </div>
         </div>
 
@@ -774,7 +855,7 @@ export default function PurchasingDetailPage() {
                     <Loader2 className='h-6 w-6 animate-spin mx-auto' />
                   </TableCell>
                 </TableRow>
-              ) : filteredItems.length === 0 ? (
+              ) : displayItems.length === 0 ? (
                 <TableRow>
                   <TableCell
                     colSpan={12}
@@ -784,7 +865,7 @@ export default function PurchasingDetailPage() {
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredItems.map((item, index) => (
+                displayItems.map((item, index) => (
                   <TableRow
                     key={item.id}
                     className='hover:bg-neutral-50/50 transition-colors'
@@ -853,25 +934,31 @@ export default function PurchasingDetailPage() {
                     </TableCell>
 
                     <TableCell>
-                      <div
-                        className='cursor-pointer p-1 rounded transition-colors flex flex-col gap-0.5'
-                        onClick={() => openBjDialog(item)}
-                      >
-                        {item.barang_jadi_masuk &&
-                        item.barang_jadi_masuk.length > 0 ? (
-                          <Badge className='bg-blue-600 text-white border-none font-bold text-[10px] h-5 px-1.5 shadow-sm w-fit'>
-                            {item.barang_jadi_masuk.reduce(
-                              (sum, bj) => sum + Number(bj.jumlah),
-                              0
-                            )}{' '}
-                            / {item.jumlah}
-                          </Badge>
-                        ) : (
-                          <span className='text-[9px] text-muted-foreground italic hover:text-blue-600 transition-colors'>
-                            Record
-                          </span>
-                        )}
-                      </div>
+                      {isGrouped ? (
+                        <span className='text-[10px] text-muted-foreground italic text-center block w-full'>
+                          -
+                        </span>
+                      ) : (
+                        <div
+                          className='cursor-pointer p-1 rounded transition-colors flex flex-col gap-0.5'
+                          onClick={() => openBjDialog(item)}
+                        >
+                          {item.barang_jadi_masuk &&
+                          item.barang_jadi_masuk.length > 0 ? (
+                            <Badge className='bg-blue-600 text-white border-none font-bold text-[10px] h-5 px-1.5 shadow-sm w-fit'>
+                              {item.barang_jadi_masuk.reduce(
+                                (sum, bj) => sum + Number(bj.jumlah),
+                                0
+                              )}{' '}
+                              / {item.jumlah}
+                            </Badge>
+                          ) : (
+                            <span className='text-[9px] text-muted-foreground italic hover:text-blue-600 transition-colors'>
+                              Record
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))
