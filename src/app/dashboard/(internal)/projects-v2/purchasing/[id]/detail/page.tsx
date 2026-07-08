@@ -18,6 +18,7 @@ import {
   FileDown,
   X,
   Truck,
+  Search,
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -69,6 +70,22 @@ export default function PurchasingDetailPage() {
     queryKey: ['project-v2-items', projectId],
     queryFn: () => projectV2Service.getProjectItems(projectId),
   });
+
+  // Search State
+  const [searchQuery, setSearchQuery] = React.useState('');
+
+  const filteredItems = React.useMemo(() => {
+    if (!items) return [];
+    if (!searchQuery) return items;
+    const query = searchQuery.toLowerCase();
+    return items.filter(
+      (item) =>
+        item.item.toLowerCase().includes(query) ||
+        (item.ruang && item.ruang.toLowerCase().includes(query)) ||
+        (item.lantai && item.lantai.toLowerCase().includes(query)) ||
+        (item.keterangan && item.keterangan.toLowerCase().includes(query))
+    );
+  }, [items, searchQuery]);
 
   // Produksi State
   const [isProduksiDialogOpen, setIsProduksiDialogOpen] = React.useState(false);
@@ -718,6 +735,15 @@ export default function PurchasingDetailPage() {
             <ListChecks className='h-5 w-5 text-neutral-400' />
             Project Items
           </h2>
+          <div className='relative w-64'>
+            <Search className='absolute left-2.5 top-2.5 h-4 w-4 text-neutral-500' />
+            <Input
+              placeholder='Cari item, ruang, atau lantai...'
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className='pl-9 bg-white shadow-sm'
+            />
+          </div>
         </div>
 
         <div className='rounded-xl border border-neutral-200 bg-white overflow-hidden shadow-sm'>
@@ -725,7 +751,6 @@ export default function PurchasingDetailPage() {
             <TableHeader className='bg-neutral-50/80'>
               <TableRow>
                 <TableHead className='w-[50px]'>#</TableHead>
-                <TableHead>Kode Barang</TableHead>
                 <TableHead>Floor</TableHead>
                 <TableHead>Room</TableHead>
                 <TableHead>Item Name</TableHead>
@@ -734,12 +759,8 @@ export default function PurchasingDetailPage() {
                 <TableHead>Vol</TableHead>
                 <TableHead>Qty</TableHead>
                 <TableHead>Satuan</TableHead>
-                <TableHead>GK MDL</TableHead>
-                <TableHead>GK Custom</TableHead>
                 <TableHead>PO Divisi</TableHead>
-                <TableHead>Stok Material</TableHead>
                 <TableHead>Persentase Produksi</TableHead>
-                <TableHead>QC Cek</TableHead>
                 <TableHead>Barang Jadi</TableHead>
               </TableRow>
             </TableHeader>
@@ -747,23 +768,23 @@ export default function PurchasingDetailPage() {
               {isLoadingItems ? (
                 <TableRow>
                   <TableCell
-                    colSpan={17}
+                    colSpan={12}
                     className='h-32 text-center text-muted-foreground'
                   >
                     <Loader2 className='h-6 w-6 animate-spin mx-auto' />
                   </TableCell>
                 </TableRow>
-              ) : items?.length === 0 ? (
+              ) : filteredItems.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={17}
+                    colSpan={12}
                     className='h-32 text-center text-muted-foreground'
                   >
-                    No items recorded for this project.
+                    No items found.
                   </TableCell>
                 </TableRow>
               ) : (
-                items?.map((item, index) => (
+                filteredItems.map((item, index) => (
                   <TableRow
                     key={item.id}
                     className='hover:bg-neutral-50/50 transition-colors'
@@ -771,9 +792,7 @@ export default function PurchasingDetailPage() {
                     <TableCell className='text-muted-foreground font-medium'>
                       {index + 1}
                     </TableCell>
-                    <TableCell className='text-xs font-mono text-neutral-600'>
-                      {item.mdl_item?.kode_barang || '-'}
-                    </TableCell>
+
                     <TableCell className='text-xs font-medium'>
                       {item.lantai || '-'}
                     </TableCell>
@@ -798,54 +817,7 @@ export default function PurchasingDetailPage() {
                     <TableCell className='text-[10px] text-muted-foreground'>
                       {item.satuan}
                     </TableCell>
-                    <TableCell>
-                      {item.mdl_item?.link_gambar_kerja ? (
-                        <Button
-                          variant='ghost'
-                          size='icon'
-                          className='h-6 w-6 text-blue-600'
-                          asChild
-                        >
-                          <a
-                            href={`${
-                              item.mdl_item.link_gambar_kerja
-                            }`}
-                            target='_blank'
-                            rel='noopener noreferrer'
-                          >
-                            <Eye className='h-3.5 w-3.5' />
-                          </a>
-                        </Button>
-                      ) : (
-                        <span className='text-[10px] text-muted-foreground italic'>
-                          -
-                        </span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {item.gambar_kerja?.file ? (
-                        <div className='flex items-center gap-2'>
-                          <Button
-                            variant='ghost'
-                            size='icon'
-                            className='h-6 w-6 text-blue-600'
-                            asChild
-                          >
-                            <a
-                              href={`${item.gambar_kerja.file}`}
-                              target='_blank'
-                              rel='noopener noreferrer'
-                            >
-                              <Eye className='h-3.5 w-3.5' />
-                            </a>
-                          </Button>
-                        </div>
-                      ) : (
-                        <span className='text-[10px] text-muted-foreground italic'>
-                          -
-                        </span>
-                      )}
-                    </TableCell>
+
                     <TableCell>
                       {item.divisi ? (
                         <Badge
@@ -860,35 +832,7 @@ export default function PurchasingDetailPage() {
                         </span>
                       )}
                     </TableCell>
-                    <TableCell>
-                      {item.bahan_baku ? (
-                        <div className='space-y-1 p-1'>
-                          <Badge
-                            variant='outline'
-                            className={`font-bold ${
-                              item.bahan_baku.ketersediaan_stok === 'Tersedia' ||
-                              item.bahan_baku.ketersediaan_stok === 'Lengkap'
-                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                : item.bahan_baku.ketersediaan_stok === 'Belum Tersedia' ||
-                                  item.bahan_baku.ketersediaan_stok === 'Belum Lengkap'
-                                ? 'bg-red-50 text-red-700 border-red-200'
-                                : 'bg-amber-50 text-amber-700 border-amber-200'
-                            }`}
-                          >
-                            {item.bahan_baku.ketersediaan_stok}
-                          </Badge>
-                          {item.bahan_baku.pic && (
-                            <p className='text-[9px] text-muted-foreground'>
-                              PIC: {item.bahan_baku.pic.nama}
-                            </p>
-                          )}
-                        </div>
-                      ) : (
-                        <span className='text-[10px] text-muted-foreground italic'>
-                          -
-                        </span>
-                      )}
-                    </TableCell>
+
                     <TableCell>
                       <div
                         className='cursor-pointer hover:bg-neutral-100 p-2 rounded-lg transition-colors group'
@@ -907,42 +851,7 @@ export default function PurchasingDetailPage() {
                         />
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <div
-                        className='cursor-pointer hover:bg-neutral-100 p-2 rounded-lg transition-colors group flex items-center gap-2'
-                        onClick={() => openQcView(item)}
-                      >
-                        {item.qc_cek ? (
-                          <>
-                            <span className='text-[10px] font-bold text-neutral-600'>
-                              {item.qc_cek.qty} Unit
-                            </span>
-                            {item.qc_cek.file && (
-                              <Button
-                                variant='ghost'
-                                size='icon'
-                                className='h-6 w-6 text-blue-600'
-                                asChild
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <a
-                                  href={`${(
-                                    process.env.NEXT_PUBLIC_API_URL ||
-                                    'http://localhost:8000'
-                                  ).replace('/api', '')}/storage/${item.qc_cek.file}`}
-                                  target='_blank'
-                                  rel='noopener noreferrer'
-                                >
-                                  <Eye className='h-3.5 w-3.5' />
-                                </a>
-                              </Button>
-                            )}
-                          </>
-                        ) : (
-                          <span className='text-[10px] text-muted-foreground italic'>-</span>
-                        )}
-                      </div>
-                    </TableCell>
+
                     <TableCell>
                       <div
                         className='cursor-pointer p-1 rounded transition-colors flex flex-col gap-0.5'
