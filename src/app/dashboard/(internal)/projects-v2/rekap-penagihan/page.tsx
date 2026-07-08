@@ -819,23 +819,6 @@ export default function RekapPenagihanPage() {
 
             <div className='grid grid-cols-2 gap-4'>
               <div className='space-y-2'>
-                <Label>Tanggal Kirim Berkas</Label>
-                <Input
-                  type='date'
-                  value={
-                    form.tanggal_kirim
-                      ? format(new Date(form.tanggal_kirim), 'yyyy-MM-dd')
-                      : ''
-                  }
-                  onChange={(e) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      tanggal_kirim: e.target.value,
-                    }))
-                  }
-                />
-              </div>
-              <div className='space-y-2'>
                 <Label>Tanggal Invoice</Label>
                 <Input
                   type='date'
@@ -861,9 +844,6 @@ export default function RekapPenagihanPage() {
                   }}
                 />
               </div>
-            </div>
-
-            <div className='grid grid-cols-2 gap-4'>
               <div className='space-y-2'>
                 <Label>Jatuh Tempo</Label>
                 <Input
@@ -881,20 +861,21 @@ export default function RekapPenagihanPage() {
                   }
                 />
               </div>
-              <div className='space-y-2'>
-                <Label>File Scan / Bukti (Opsional)</Label>
-                <Input
-                  type='file'
-                  accept='.pdf,.jpg,.jpeg,.png,.doc,.docx'
-                  className='cursor-pointer text-xs'
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      setForm((prev) => ({ ...prev, file }));
-                    }
-                  }}
-                />
-              </div>
+            </div>
+
+            <div className='space-y-2'>
+              <Label>File Scan / Bukti (Opsional)</Label>
+              <Input
+                type='file'
+                accept='.pdf,.jpg,.jpeg,.png,.doc,.docx'
+                className='cursor-pointer text-xs'
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    setForm((prev) => ({ ...prev, file }));
+                  }
+                }}
+              />
             </div>
 
             <div className='space-y-2 pt-2 border-t border-neutral-100'>
