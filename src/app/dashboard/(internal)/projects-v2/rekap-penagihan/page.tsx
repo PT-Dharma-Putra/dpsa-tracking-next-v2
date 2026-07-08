@@ -298,21 +298,21 @@ export default function RekapPenagihanPage() {
             <TableHeader className='bg-neutral-50/80'>
               <TableRow>
                 <TableHead className='w-[50px]'>No</TableHead>
-                <TableHead>Proyek / Klien</TableHead>
-                <TableHead>No SPK</TableHead>
-                <TableHead>No Invoice</TableHead>
-                <TableHead>Tgl Invoice</TableHead>
-                <TableHead>Termin</TableHead>
-                <TableHead>Deskripsi</TableHead>
-                <TableHead>Persentase</TableHead>
-                <TableHead>Nominal</TableHead>
-                <TableHead>Take Out</TableHead>
-                <TableHead>Jatuh Tempo</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Tgl Dibayar</TableHead>
-                <TableHead>Umur Penagihan</TableHead>
-                <TableHead>File</TableHead>
-                <TableHead className='text-right'>Aksi</TableHead>
+                <TableHead>NO INVOICE</TableHead>
+                <TableHead>TGL INVOICE</TableHead>
+                <TableHead>CLIENT</TableHead>
+                <TableHead>NO SPK</TableHead>
+                <TableHead>TERMIN</TableHead>
+                <TableHead>DESKRIPSI</TableHead>
+                <TableHead>PERSENTASE</TableHead>
+                <TableHead>NOMINAL</TableHead>
+                <TableHead>TAKE OUT</TableHead>
+                <TableHead>JATUH TEMPO</TableHead>
+                <TableHead>STATUS</TableHead>
+                <TableHead>TGL DIBAYAR</TableHead>
+                <TableHead>UMUR PENAGIHAN</TableHead>
+                <TableHead>FILE</TableHead>
+                <TableHead className='text-right'>AKSI</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -340,24 +340,19 @@ export default function RekapPenagihanPage() {
                     <TableCell className='text-muted-foreground font-medium'>
                       {index + 1}
                     </TableCell>
-                    <TableCell>
-                      <div className='font-bold text-neutral-800 text-sm'>
-                        {item.project?.name || '-'}
-                      </div>
-                      <div className='text-[10px] text-neutral-500'>
-                        {item.project?.client?.name || '-'}
-                      </div>
-                    </TableCell>
-                    <TableCell className='text-sm font-medium text-neutral-700 whitespace-nowrap'>
-                      {item.project?.spk?.nomor_spk || '-'}
-                    </TableCell>
                     <TableCell className='text-sm font-medium text-neutral-700 whitespace-nowrap'>
                       {item.nomor_invoice || '-'}
                     </TableCell>
-                    <TableCell className='text-sm'>
+                    <TableCell className='text-sm font-medium text-neutral-700 whitespace-nowrap'>
                       {item.tanggal_invoice
                         ? format(new Date(item.tanggal_invoice), 'dd MMM yyyy')
                         : '-'}
+                    </TableCell>
+                    <TableCell className='text-sm font-medium text-neutral-700 whitespace-nowrap'>
+                      {item.project?.client?.name || '-'}
+                    </TableCell>
+                    <TableCell className='text-sm font-medium text-neutral-700 whitespace-nowrap'>
+                      {item.project?.spk?.nomor_spk || '-'}
                     </TableCell>
                     <TableCell className='font-semibold'>
                       {item.termin?.nama || '-'}
