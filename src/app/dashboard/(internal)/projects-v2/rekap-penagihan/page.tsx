@@ -66,6 +66,7 @@ import {
   CheckCircle2,
   X,
   Search,
+  ArrowUpDown,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -113,6 +114,9 @@ export default function RekapPenagihanPage() {
   const queryClient = useQueryClient();
 
   const [search, setSearch] = React.useState('');
+  const [sortInvoiceDirection, setSortInvoiceDirection] = React.useState<'asc' | 'desc'>('asc');
+  const [filterMonth, setFilterMonth] = React.useState<string>('all');
+  const [filterYear, setFilterYear] = React.useState<string>('all');
   const [isFormOpen, setIsFormOpen] = React.useState(false);
   const [editingId, setEditingId] = React.useState<number | null>(null);
   const [deleteTarget, setDeleteTarget] = React.useState<Penagihan | null>(null);
@@ -257,16 +261,47 @@ export default function RekapPenagihanPage() {
   };
 
   // Filter based on search
-  const filteredPenagihans = penagihanList.filter((p) => {
-    const searchLower = search.toLowerCase();
-    const projectName = (p.project?.name || '').toLowerCase();
-    const clientName = (p.project?.client?.name || '').toLowerCase();
-    const spk = (p.project?.spk?.nomor_spk || '').toLowerCase();
-    const invoice = (p.nomor_invoice || '').toLowerCase();
-    const deskripsi = (p.deskripsi || '').toLowerCase();
-    
-    return projectName.includes(searchLower) || clientName.includes(searchLower) || spk.includes(searchLower) || invoice.includes(searchLower) || deskripsi.includes(searchLower);
-  });
+  const filteredPenagihans = penagihanList
+    .filter((p) => {
+      const searchLower = search.toLowerCase();
+      const projectName = (p.project?.name || '').toLowerCase();
+      const clientName = (p.project?.client?.name || '').toLowerCase();
+      const spk = (p.project?.spk?.nomor_spk || '').toLowerCase();
+      const invoice = (p.nomor_invoice || '').toLowerCase();
+      const deskripsi = (p.deskripsi || '').toLowerCase();
+      
+      const matchesSearch = projectName.includes(searchLower) || clientName.includes(searchLower) || spk.includes(searchLower) || invoice.includes(searchLower) || deskripsi.includes(searchLower);
+
+      let matchesMonth = true;
+      let matchesYear = true;
+
+      if (filterMonth !== 'all' || filterYear !== 'all') {
+        const invDateStr = p.tanggal_invoice;
+        if (!invDateStr) {
+          matchesMonth = filterMonth === 'all';
+          matchesYear = filterYear === 'all';
+        } else {
+          const invDate = new Date(invDateStr);
+          if (filterMonth !== 'all') {
+            matchesMonth = (invDate.getMonth() + 1).toString() === filterMonth;
+          }
+          if (filterYear !== 'all') {
+            matchesYear = invDate.getFullYear().toString() === filterYear;
+          }
+        }
+      }
+
+      return matchesSearch && matchesMonth && matchesYear;
+    })
+    .sort((a, b) => {
+      const getNum = (inv: string | null | undefined) => {
+        if (!inv) return Number.MAX_SAFE_INTEGER;
+        const match = inv.match(/^(\d+)/);
+        return match ? parseInt(match[1], 10) : Number.MAX_SAFE_INTEGER;
+      };
+      const diff = getNum(a.nomor_invoice) - getNum(b.nomor_invoice);
+      return sortInvoiceDirection === 'asc' ? diff : -diff;
+    });
 
   return (
     <div className='p-6 max-w-[1600px] mx-auto space-y-6'>
@@ -280,6 +315,42 @@ export default function RekapPenagihanPage() {
           </p>
         </div>
         <div className='flex items-center gap-2'>
+          <Select value={filterMonth} onValueChange={setFilterMonth}>
+            <SelectTrigger className="w-[140px] bg-white">
+              <SelectValue placeholder="Semua Bulan" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Semua Bulan</SelectItem>
+              <SelectItem value="1">Januari</SelectItem>
+              <SelectItem value="2">Februari</SelectItem>
+              <SelectItem value="3">Maret</SelectItem>
+              <SelectItem value="4">April</SelectItem>
+              <SelectItem value="5">Mei</SelectItem>
+              <SelectItem value="6">Juni</SelectItem>
+              <SelectItem value="7">Juli</SelectItem>
+              <SelectItem value="8">Agustus</SelectItem>
+              <SelectItem value="9">September</SelectItem>
+              <SelectItem value="10">Oktober</SelectItem>
+              <SelectItem value="11">November</SelectItem>
+              <SelectItem value="12">Desember</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={filterYear} onValueChange={setFilterYear}>
+            <SelectTrigger className="w-[120px] bg-white">
+              <SelectValue placeholder="Semua Tahun" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Semua Tahun</SelectItem>
+              {[0, 1, 2, 3].map((offset) => {
+                const year = new Date().getFullYear() - offset;
+                return (
+                  <SelectItem key={year} value={year.toString()}>
+                    {year}
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
           <div className='relative w-64'>
             <Search className='absolute left-2.5 top-2.5 h-4 w-4 text-neutral-500' />
             <Input
@@ -298,14 +369,22 @@ export default function RekapPenagihanPage() {
             <TableHeader className='bg-neutral-50/80'>
               <TableRow>
                 <TableHead className='w-[50px]'>No</TableHead>
-                <TableHead>NO INVOICE</TableHead>
+                <TableHead 
+                  className='cursor-pointer hover:bg-neutral-200/50 transition-colors'
+                  onClick={() => setSortInvoiceDirection(prev => prev === 'asc' ? 'desc' : 'asc')}
+                >
+                  <div className='flex items-center gap-2'>
+                    NO INVOICE
+                    <ArrowUpDown className='h-3 w-3 text-neutral-400' />
+                  </div>
+                </TableHead>
                 <TableHead>TGL INVOICE</TableHead>
                 <TableHead>CLIENT</TableHead>
-                <TableHead>NO SPK</TableHead>
                 <TableHead>TERMIN</TableHead>
                 <TableHead>DESKRIPSI</TableHead>
                 <TableHead>PERSENTASE</TableHead>
                 <TableHead>NOMINAL</TableHead>
+                <TableHead>NO SPK</TableHead>
                 <TableHead>TAKE OUT</TableHead>
                 <TableHead>JATUH TEMPO</TableHead>
                 <TableHead>STATUS</TableHead>
@@ -351,9 +430,6 @@ export default function RekapPenagihanPage() {
                     <TableCell className='text-sm font-medium text-neutral-700 whitespace-nowrap'>
                       {item.project?.client?.name || '-'}
                     </TableCell>
-                    <TableCell className='text-sm font-medium text-neutral-700 whitespace-nowrap'>
-                      {item.project?.spk?.nomor_spk || '-'}
-                    </TableCell>
                     <TableCell className='font-semibold'>
                       {item.termin?.nama || '-'}
                     </TableCell>
@@ -367,6 +443,9 @@ export default function RekapPenagihanPage() {
                       {item.nominal_penagihan
                         ? formatRupiah(item.nominal_penagihan)
                         : '-'}
+                    </TableCell>
+                    <TableCell className='text-sm font-medium text-neutral-700 whitespace-nowrap'>
+                      {item.project?.spk?.nomor_spk || '-'}
                     </TableCell>
                     <TableCell className='font-semibold text-amber-700'>
                       {item.take_out ? formatRupiah(item.take_out) : '-'}
