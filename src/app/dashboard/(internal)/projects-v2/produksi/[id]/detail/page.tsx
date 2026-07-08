@@ -1211,16 +1211,7 @@ export default function ProduksiDetailPage() {
                 className='pl-8 h-8 text-xs'
               />
             </div>
-            <Button
-              size='sm'
-              variant='outline'
-              className='gap-2 h-8'
-              onClick={() => setIsQrDialogOpen(true)}
-              disabled={!items || items.length === 0}
-            >
-              <QrCode className='h-4 w-4' />
-              Generate QR
-            </Button>
+
             {selectedQrItemIds.length > 0 && (
               <Button
                 size='sm'
