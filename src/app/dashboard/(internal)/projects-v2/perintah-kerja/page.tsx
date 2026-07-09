@@ -6,15 +6,13 @@ export default function PerintahKerjaPage() {
     return (
         <div className="space-y-6">
             <div>
-                <h1 className="text-2xl font-semibold tracking-tight pt-4">Project V2 | Perintah Kerja</h1>
+                <h1 className="text-2xl font-semibold tracking-tight pt-4">Project V2 | Desainer</h1>
                 <p className="text-sm text-muted-foreground">
                     View project tracking list with design specifications (SPD).
                 </p>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-neutral-200">
-                <ProjectsV2Table showSPD={true} onlyShowDetail={true} />
-            </div>
+            <ProjectsV2Table showSPD={true} onlyShowDetail={true} />
         </div>
     )
 }

@@ -157,7 +157,34 @@ export function ProjectsV2Table({
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const queryClient = useQueryClient();
-  const [page, setPage] = React.useState(1);
+  const [page, setPage] = React.useState(() => Number(searchParams.get('page')) || 1);
+
+  React.useEffect(() => {
+    const urlPage = Number(searchParams.get('page')) || 1;
+    if (urlPage !== page) {
+      setPage(urlPage);
+    }
+  }, [searchParams]);
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+    const params = new URLSearchParams(searchParams.toString());
+    if (newPage > 1) {
+      params.set('page', newPage.toString());
+    } else {
+      params.delete('page');
+    }
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+  };
+
+  React.useEffect(() => {
+    const params = new URLSearchParams(searchParams.toString());
+    const urlPage = Number(params.get('page')) || 1;
+    if (page === 1 && urlPage > 1) {
+      params.delete('page');
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    }
+  }, [page, pathname, router, searchParams]);
   const [search, setSearch] = React.useState('');
   const [searchInput, setSearchInput] = React.useState('');
   const [clientId, setClientId] = React.useState<string>('all');
@@ -202,6 +229,7 @@ export function ProjectsV2Table({
     | 'overdue'
     | 'urgent'
     | 'po_supplier'
+    | 'pakai_desain'
     | null
   >(searchParams.get('dashboard_filter') as any || null);
 
@@ -221,6 +249,7 @@ export function ProjectsV2Table({
       | 'overdue'
       | 'urgent'
       | 'po_supplier'
+      | 'pakai_desain'
       | null
   ) => {
     let newFilter = filter;
@@ -620,36 +649,138 @@ export function ProjectsV2Table({
 
   return (
     <div className='space-y-6 w-full max-w-full overflow-hidden'>
-      {showEngineer && stats && (
-        <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4'>
-          {/* Total SPK */}
+      {showSPD && !showEngineer && stats && (
+        <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 w-full'>
+          {/* Total Project */}
+          <div className='flex flex-col gap-2 p-4 rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md'>
+            <div className='flex items-center gap-2 border-b border-slate-100 pb-2'>
+              <div className='h-6 w-6 rounded bg-slate-100 flex items-center justify-center text-slate-600 shrink-0'>
+                <Briefcase className='h-3.5 w-3.5' />
+              </div>
+              <p className='text-[10px] font-bold text-slate-500 uppercase tracking-wider'>
+                Total Projek
+              </p>
+              <span className='ml-auto text-lg font-bold text-slate-800'>
+                {stats.total_project}
+              </span>
+            </div>
+
+            <div className='grid grid-cols-2 gap-1.5 mt-auto'>
+              {/* Terbit SPH */}
+              <div
+                onClick={() => handleDashboardFilterClick('sph_only')}
+                className={cn(
+                  'flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  dashboardFilter === 'sph_only'
+                    ? 'border-amber-500 bg-amber-50 text-amber-700 font-semibold'
+                    : 'border-amber-100 bg-amber-50/50 hover:border-amber-300 text-amber-700'
+                )}
+              >
+                <span className='font-medium leading-tight'>Terbit SPH</span>
+                <span className='font-bold shrink-0 ml-1'>
+                  {stats.sph_only ?? 0}
+                </span>
+              </div>
+
+              {/* Terbit SPK */}
+              <div
+                onClick={() => handleDashboardFilterClick('spk')}
+                className={cn(
+                  'flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  dashboardFilter === 'spk'
+                    ? 'border-indigo-500 bg-indigo-50 text-indigo-700 font-semibold'
+                    : 'border-indigo-100 bg-indigo-50/50 hover:border-indigo-300 text-indigo-700'
+                )}
+              >
+                <span className='font-medium leading-tight'>Terbit SPK</span>
+                <span className='font-bold shrink-0 ml-1'>
+                  {stats.total_spk}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Pakai Desain */}
           <div
-            onClick={() => handleFilterClick('spk')}
+            onClick={() => handleDashboardFilterClick('pakai_desain')}
             className={cn(
-              'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-indigo-400 select-none',
-              spkFilterActive
-                ? 'border-indigo-500 bg-indigo-50/50 ring-2 ring-indigo-500/20'
-                : 'border-indigo-200 bg-white'
+              'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-emerald-400 select-none',
+              dashboardFilter === 'pakai_desain'
+                ? 'border-emerald-500 bg-emerald-50/50 ring-2 ring-emerald-500/20'
+                : 'border-emerald-200 bg-white'
             )}
           >
             <div className='flex items-center gap-3'>
-              <div className='h-10 w-10 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600 shrink-0'>
-                <FileText className='h-5 w-5' />
+              <div className='h-10 w-10 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0'>
+                <Eye className='h-5 w-5' />
               </div>
               <div>
-                <p className='text-[10px] font-bold text-indigo-600 uppercase tracking-wider'>
-                  Total SPK
+                <p className='text-[10px] font-bold text-emerald-600 uppercase tracking-wider'>
+                  Pakai Desain
                 </p>
-                <p className='text-xl font-bold text-slate-800'>
-                  {stats.total_spk}
+                <p className='text-xl font-bold text-emerald-800'>
+                  {stats.pakai_desain ?? 0}
                 </p>
               </div>
             </div>
-            {spkFilterActive && (
-              <span className='text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
+            {dashboardFilter === 'pakai_desain' && (
+              <span className='text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
                 Active
               </span>
             )}
+          </div>
+        </div>
+      )}
+
+      {showEngineer && stats && (
+        <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4'>
+          {/* Total Project */}
+          <div className='flex flex-col gap-2 p-4 rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md'>
+            <div className='flex items-center gap-2 border-b border-slate-100 pb-2'>
+              <div className='h-6 w-6 rounded bg-slate-100 flex items-center justify-center text-slate-600 shrink-0'>
+                <Briefcase className='h-3.5 w-3.5' />
+              </div>
+              <p className='text-[10px] font-bold text-slate-500 uppercase tracking-wider'>
+                Total Projek
+              </p>
+              <span className='ml-auto text-lg font-bold text-slate-800'>
+                {stats.total_project}
+              </span>
+            </div>
+
+            <div className='grid grid-cols-2 gap-1.5 mt-auto'>
+              {/* Terbit SPH */}
+              <div
+                onClick={() => handleDashboardFilterClick('sph_only')}
+                className={cn(
+                  'flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  dashboardFilter === 'sph_only'
+                    ? 'border-amber-500 bg-amber-50 text-amber-700 font-semibold'
+                    : 'border-amber-100 bg-amber-50/50 hover:border-amber-300 text-amber-700'
+                )}
+              >
+                <span className='font-medium leading-tight'>Terbit SPH</span>
+                <span className='font-bold shrink-0 ml-1'>
+                  {stats.sph_only ?? 0}
+                </span>
+              </div>
+
+              {/* Terbit SPK */}
+              <div
+                onClick={() => handleDashboardFilterClick('spk')}
+                className={cn(
+                  'flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  dashboardFilter === 'spk'
+                    ? 'border-indigo-500 bg-indigo-50 text-indigo-700 font-semibold'
+                    : 'border-indigo-100 bg-indigo-50/50 hover:border-indigo-300 text-indigo-700'
+                )}
+              >
+                <span className='font-medium leading-tight'>Terbit SPK</span>
+                <span className='font-bold shrink-0 ml-1'>
+                  {stats.total_spk}
+                </span>
+              </div>
+            </div>
           </div>
 
           {/* Order Gambar */}
@@ -2033,6 +2164,7 @@ export function ProjectsV2Table({
             showPengirimanV2 ||
             showQC ||
             showMarketingFilter ||
+            showSPD ||
             showPiutang) &&
             'bg-white rounded-xl shadow-sm border border-neutral-200'
         )}
@@ -4371,7 +4503,7 @@ export function ProjectsV2Table({
               <Button
                 variant='outline'
                 size='sm'
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                onClick={() => handlePageChange(Math.max(1, page - 1))}
                 disabled={page === 1}
               >
                 Previous
@@ -4382,7 +4514,7 @@ export function ProjectsV2Table({
               <Button
                 variant='outline'
                 size='sm'
-                onClick={() => setPage((p) => Math.min(data.last_page, p + 1))}
+                onClick={() => handlePageChange(Math.min(data.last_page, page + 1))}
                 disabled={page === data.last_page}
               >
                 Next
