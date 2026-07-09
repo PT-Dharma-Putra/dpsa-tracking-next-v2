@@ -229,6 +229,7 @@ export function ProjectsV2Table({
     | 'overdue'
     | 'urgent'
     | 'po_supplier'
+    | 'pakai_desain'
     | null
   >(searchParams.get('dashboard_filter') as any || null);
 
@@ -248,6 +249,7 @@ export function ProjectsV2Table({
       | 'overdue'
       | 'urgent'
       | 'po_supplier'
+      | 'pakai_desain'
       | null
   ) => {
     let newFilter = filter;
@@ -696,6 +698,36 @@ export function ProjectsV2Table({
                 </span>
               </div>
             </div>
+          </div>
+
+          {/* Pakai Desain */}
+          <div
+            onClick={() => handleDashboardFilterClick('pakai_desain')}
+            className={cn(
+              'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-emerald-400 select-none',
+              dashboardFilter === 'pakai_desain'
+                ? 'border-emerald-500 bg-emerald-50/50 ring-2 ring-emerald-500/20'
+                : 'border-emerald-200 bg-white'
+            )}
+          >
+            <div className='flex items-center gap-3'>
+              <div className='h-10 w-10 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0'>
+                <Eye className='h-5 w-5' />
+              </div>
+              <div>
+                <p className='text-[10px] font-bold text-emerald-600 uppercase tracking-wider'>
+                  Pakai Desain
+                </p>
+                <p className='text-xl font-bold text-emerald-800'>
+                  {stats.pakai_desain ?? 0}
+                </p>
+              </div>
+            </div>
+            {dashboardFilter === 'pakai_desain' && (
+              <span className='text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
+                Active
+              </span>
+            )}
           </div>
         </div>
       )}

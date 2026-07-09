@@ -203,6 +203,7 @@ export interface ProjectV2Stats {
   pengiriman_not_completed: number;
   qc_completed: number;
   qc_not_completed: number;
+  pakai_desain: number;
 }
 
 interface GetProjectsV2Params {
