@@ -29,6 +29,7 @@ import {
   Check,
   ChevronsUpDown,
   Copy,
+  Search,
 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { format, differenceInDays } from 'date-fns';
@@ -172,6 +173,7 @@ export default function EngineerDetailPage() {
     null
   );
   const [selectedItemIds, setSelectedItemIds] = React.useState<number[]>([]);
+  const [searchQuery, setSearchQuery] = React.useState('');
 
   // Quick PIC Creation States
   const [isNewPicDialogOpen, setIsNewPicDialogOpen] = React.useState(false);
@@ -191,6 +193,20 @@ export default function EngineerDetailPage() {
     queryKey: ['project-v2-items', projectId],
     queryFn: () => projectV2Service.getProjectItems(projectId),
   });
+
+  const filteredItems = React.useMemo(() => {
+    if (!items) return [];
+    if (!searchQuery.trim()) return items;
+    const q = searchQuery.toLowerCase();
+    return items.filter(
+      (item) =>
+        item.item?.toLowerCase().includes(q) ||
+        (item.ruang && item.ruang.toLowerCase().includes(q)) ||
+        (item.lantai && item.lantai.toLowerCase().includes(q)) ||
+        (item.keterangan && item.keterangan.toLowerCase().includes(q)) ||
+        (item.mdl_item?.kode_barang && item.mdl_item.kode_barang.toLowerCase().includes(q))
+    );
+  }, [items, searchQuery]);
 
   const { data: stages, isLoading: isLoadingStages } = useQuery({
     queryKey: ['design-stages'],
@@ -912,18 +928,30 @@ export default function EngineerDetailPage() {
       {/* Items Table */}
       <Card className='border shadow-sm overflow-hidden'>
         <CardHeader className='pb-0 flex flex-row items-center justify-between bg-neutral-50/50 border-b'>
-          <div className='py-4 px-2'>
-            <CardTitle className='text-lg font-bold text-neutral-800 flex items-center gap-2'>
-              <Package className='h-5 w-5 text-orange-500' />
-              Project Items
-            </CardTitle>
-            <p className='text-xs text-muted-foreground'>
-              Manage items and technical drawings
-            </p>
+          <div className='py-4 px-2 flex flex-col sm:flex-row sm:items-center gap-4 w-full sm:w-auto'>
+            <div>
+              <CardTitle className='text-lg font-bold text-neutral-800 flex items-center gap-2'>
+                <Package className='h-5 w-5 text-orange-500' />
+                Project Items
+              </CardTitle>
+              <p className='text-xs text-muted-foreground'>
+                Manage items and technical drawings
+              </p>
+            </div>
           </div>
-          {selectedItemIds.length > 0 && (
-            <div className='flex items-center gap-3 pr-2'>
-              <span className='text-xs text-muted-foreground font-medium'>{selectedItemIds.length} item dipilih</span>
+          <div className='flex items-center gap-3 pr-2 flex-wrap sm:flex-nowrap justify-end w-full sm:w-auto pb-4 sm:pb-0'>
+            <div className='relative w-full sm:w-64'>
+              <Search className='absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-neutral-400 pointer-events-none' />
+              <Input
+                placeholder='Cari item, lantai, ruang...'
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className='pl-8 h-8 text-xs bg-white'
+              />
+            </div>
+            {selectedItemIds.length > 0 && (
+              <>
+                <span className='text-xs text-muted-foreground font-medium whitespace-nowrap'>{selectedItemIds.length} item dipilih</span>
               <Button 
                 size='sm' 
                 variant='outline' 
@@ -962,8 +990,9 @@ export default function EngineerDetailPage() {
                   </Command>
                 </PopoverContent>
               </Popover>
-            </div>
-          )}
+              </>
+            )}
+          </div>
         </CardHeader>
         <CardContent className='p-0'>
           <div className='overflow-x-auto'>
@@ -971,33 +1000,33 @@ export default function EngineerDetailPage() {
               <TableHeader className='bg-neutral-50/50'>
                 <TableRow>
                   <TableHead className='w-[60px] text-center'>#</TableHead>
-                  <TableHead>Kode Barang</TableHead>
-                  <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>Lantai | Ruang</TableHead>
-                  <TableHead>Item Name</TableHead>
-                  <TableHead>Spesifikasi</TableHead>
-                  <TableHead className='text-center'>Ukuran</TableHead>
-                  <TableHead className='text-center'>Volume</TableHead>
-                  <TableHead className='text-center'>Qty</TableHead>
-                  <TableHead className='text-center'>Satuan</TableHead>
-                  <TableHead>PO Divisi</TableHead>
+                  <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>Kode Barang</TableHead>
+                  <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>Lantai | Ruang</TableHead>
+                  <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>Nama Item</TableHead>
+                  <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>Spesifikasi</TableHead>
+                  <TableHead className='text-[12px] text-center uppercase font-bold text-neutral-500'>Ukuran</TableHead>
+                  <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>Volume</TableHead>
+                  <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>Qty</TableHead>
+                  <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>Satuan</TableHead>
+                  <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>PO Divisi</TableHead>
                   <TableHead className='w-[40px] text-center'>
                     <Checkbox
-                      checked={!!items && items.length > 0 && selectedItemIds.length === items.length}
+                      checked={!!filteredItems && filteredItems.length > 0 && selectedItemIds.length === filteredItems.length}
                       onCheckedChange={(checked) => {
-                        if (checked && items) {
-                          setSelectedItemIds(items.map((i) => i.id));
+                        if (checked && filteredItems) {
+                          setSelectedItemIds(filteredItems.map((i) => i.id));
                         } else {
                           setSelectedItemIds([]);
                         }
                       }}
                     />
                   </TableHead>
-                  <TableHead className='text-center'>PIC</TableHead>
-                  <TableHead>GK MDL</TableHead>
-                  <TableHead>Gambar Kerja</TableHead>
-                  <TableHead>Submit</TableHead>
-                  <TableHead>Timeline Drawing</TableHead>
-                  <TableHead>Tepat Waktu</TableHead>
+                  <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>PIC</TableHead>
+                  <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>GK MDL</TableHead>
+                  <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>Gambar Kerja</TableHead>
+                  <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>Submit</TableHead>
+                  <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>Timeline Drawing</TableHead>
+                  <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>Tepat Waktu</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -1007,17 +1036,17 @@ export default function EngineerDetailPage() {
                       <Loader2 className='h-6 w-6 animate-spin mx-auto text-neutral-300' />
                     </TableCell>
                   </TableRow>
-                ) : items?.length === 0 ? (
+                ) : filteredItems.length === 0 ? (
                   <TableRow>
                     <TableCell
                       colSpan={19}
                       className='h-32 text-center text-muted-foreground italic'
                     >
-                      No items added to this project yet.
+                      No items found.
                     </TableCell>
                   </TableRow>
                 ) : (
-                  items?.map((item, index) => (
+                  filteredItems.map((item, index) => (
                     <TableRow
                       key={item.id}
                       className='group hover:bg-neutral-50/50 transition-colors'
@@ -1034,17 +1063,28 @@ export default function EngineerDetailPage() {
                           </span>
                         )}
                       </TableCell>
-                    <TableCell>
-                      <div className='flex flex-col gap-0.5'>
-                        <span className='text-xs font-bold text-neutral-800'>{item.lantai || '-'}</span>
-                        <span className='text-[12px] text-muted-foreground truncate max-w-[120px]'>{item.ruang || '-'}</span>
-                      </div>
-                    </TableCell>
                       <TableCell>
+                        <div className='flex flex-col gap-0.5'>
+                          <span className='text-xs font-bold text-neutral-800'>{item.lantai || '-'}</span>
+                          <span className='text-[12px] text-muted-foreground truncate max-w-[120px]'>{item.ruang || '-'}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className='max-w-[200px]'>
                         <div className='flex flex-col'>
                           <div className='flex items-center gap-2'>
-                            <span className='font-bold text-neutral-900'>
-                              {item.item}
+                            <span className='font-bold text-neutral-900 line-clamp-2'>
+                              {item.item ? (
+                                <span
+                                  className='line-clamp-2'
+                                  title={item.item}
+                                >
+                                  {item.item}
+                                </span>
+                              ) : (
+                                <span className='text-muted-foreground italic'>
+                                  -
+                                </span>
+                              )}
                             </span>
                             {item.custom && (
                               <Badge
@@ -1055,9 +1095,6 @@ export default function EngineerDetailPage() {
                               </Badge>
                             )}
                           </div>
-                          <span className='text-[10px] text-muted-foreground uppercase tracking-tight'>
-                            {item.material_utama}
-                          </span>
                         </div>
                       </TableCell>
                       <TableCell className='text-sm text-neutral-600 max-w-[160px]'>
