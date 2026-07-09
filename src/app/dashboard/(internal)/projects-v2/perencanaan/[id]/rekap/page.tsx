@@ -230,7 +230,10 @@ export default function PerencanaanRekapPage() {
     const qty = item.jumlah;
 
     // Produksi
-    const progressProduksi = Number(item.produksi?.persen) || 0;
+    const isSupplier = item.produksi?.is_supplier;
+    const progressProduksi = isSupplier 
+      ? Number(item.barang_supplier?.persen) || 0
+      : Number(item.produksi?.persen) || 0;
     if (progressProduksi > 0) itemsProduksiCount++;
     totalProduksiProgress += progressProduksi;
 
