@@ -157,7 +157,34 @@ export function ProjectsV2Table({
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const queryClient = useQueryClient();
-  const [page, setPage] = React.useState(1);
+  const [page, setPage] = React.useState(() => Number(searchParams.get('page')) || 1);
+
+  React.useEffect(() => {
+    const urlPage = Number(searchParams.get('page')) || 1;
+    if (urlPage !== page) {
+      setPage(urlPage);
+    }
+  }, [searchParams]);
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+    const params = new URLSearchParams(searchParams.toString());
+    if (newPage > 1) {
+      params.set('page', newPage.toString());
+    } else {
+      params.delete('page');
+    }
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+  };
+
+  React.useEffect(() => {
+    const params = new URLSearchParams(searchParams.toString());
+    const urlPage = Number(params.get('page')) || 1;
+    if (page === 1 && urlPage > 1) {
+      params.delete('page');
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    }
+  }, [page, pathname, router, searchParams]);
   const [search, setSearch] = React.useState('');
   const [searchInput, setSearchInput] = React.useState('');
   const [clientId, setClientId] = React.useState<string>('all');
@@ -4371,7 +4398,7 @@ export function ProjectsV2Table({
               <Button
                 variant='outline'
                 size='sm'
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                onClick={() => handlePageChange(Math.max(1, page - 1))}
                 disabled={page === 1}
               >
                 Previous
@@ -4382,7 +4409,7 @@ export function ProjectsV2Table({
               <Button
                 variant='outline'
                 size='sm'
-                onClick={() => setPage((p) => Math.min(data.last_page, p + 1))}
+                onClick={() => handlePageChange(Math.min(data.last_page, page + 1))}
                 disabled={page === data.last_page}
               >
                 Next
