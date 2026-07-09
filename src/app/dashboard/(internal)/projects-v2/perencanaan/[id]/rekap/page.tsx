@@ -967,7 +967,7 @@ export default function PerencanaanRekapPage() {
                         {isSkipped ? (
                           <Badge variant='secondary' className='text-[9px] bg-neutral-100 text-neutral-400 border-none'>SKIPPED</Badge>
                         ) : (
-                          <span className='text-sm font-bold text-neutral-900'>{(typeof val === 'number' ? val : 0)} <span className='text-[10px] text-neutral-400 font-normal'>/ {order}</span></span>
+                          <span className='text-sm font-bold text-neutral-900'>{Number(val) || 0} <span className='text-[10px] text-neutral-400 font-normal'>/ {order}</span></span>
                         )}
                       </div>
                     </div>
