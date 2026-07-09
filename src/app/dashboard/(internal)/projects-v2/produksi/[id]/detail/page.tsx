@@ -196,7 +196,7 @@ export default function ProduksiDetailPage() {
         const existingVol = Number(existing.volume || 0);
         const itemVol = Number(item.volume || 0);
         if (!isNaN(existingVol) && !isNaN(itemVol)) {
-          existing.volume = (existingVol + itemVol).toFixed(3).replace(/\.?0+$/, '');
+          existing.volume = Number((existingVol + itemVol).toFixed(3));
         }
 
         if (existing.produksi && item.produksi) {
