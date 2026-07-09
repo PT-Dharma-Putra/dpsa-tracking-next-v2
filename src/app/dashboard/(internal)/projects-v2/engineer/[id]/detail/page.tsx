@@ -972,7 +972,7 @@ export default function EngineerDetailPage() {
                 <TableRow>
                   <TableHead className='w-[60px] text-center'>#</TableHead>
                   <TableHead>Kode Barang</TableHead>
-                  <TableHead>Location / Floor</TableHead>
+                  <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>Lantai | Ruang</TableHead>
                   <TableHead>Item Name</TableHead>
                   <TableHead>Spesifikasi</TableHead>
                   <TableHead className='text-center'>Ukuran</TableHead>
@@ -993,11 +993,11 @@ export default function EngineerDetailPage() {
                     />
                   </TableHead>
                   <TableHead className='text-center'>PIC</TableHead>
-                  <TableHead>Submit</TableHead>
-                  <TableHead>Tepat Waktu</TableHead>
                   <TableHead>GK MDL</TableHead>
                   <TableHead>Gambar Kerja</TableHead>
+                  <TableHead>Submit</TableHead>
                   <TableHead>Timeline Drawing</TableHead>
+                  <TableHead>Tepat Waktu</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -1034,21 +1034,12 @@ export default function EngineerDetailPage() {
                           </span>
                         )}
                       </TableCell>
-                      <TableCell>
-                        <div className='flex flex-col gap-0.5'>
-                          <span className='text-xs text-neutral-700'>
-                            {item.lokasi || '-'}
-                          </span>
-                          {item.lantai && (
-                            <Badge
-                              variant='secondary'
-                              className='w-fit text-[9px] h-4 px-1.5 font-normal bg-neutral-100'
-                            >
-                              Floor {item.lantai}
-                            </Badge>
-                          )}
-                        </div>
-                      </TableCell>
+                    <TableCell>
+                      <div className='flex flex-col gap-0.5'>
+                        <span className='text-xs font-bold text-neutral-800'>{item.lantai || '-'}</span>
+                        <span className='text-[12px] text-muted-foreground truncate max-w-[120px]'>{item.ruang || '-'}</span>
+                      </div>
+                    </TableCell>
                       <TableCell>
                         <div className='flex flex-col'>
                           <div className='flex items-center gap-2'>
@@ -1221,43 +1212,7 @@ export default function EngineerDetailPage() {
                           </PopoverContent>
                         </Popover>
                       </TableCell>
-                      <TableCell className='text-xs text-neutral-600'>
-                        {item.gambar_kerja?.tanggal_selesai
-                          ? format(
-                              new Date(item.gambar_kerja.tanggal_selesai),
-                              'MMM d, yyyy'
-                            )
-                          : '-'}
-                      </TableCell>
-                      <TableCell className='text-center'>
-                        {(() => {
-                          const target =
-                            project?.order_gambar_kerja?.[0]?.target_selesai;
-                          const submit = item.gambar_kerja?.tanggal_selesai;
-                          if (!target || !submit)
-                            return (
-                              <span className='text-[10px] text-muted-foreground italic'>
-                                -
-                              </span>
-                            );
-
-                          const isOnTime = new Date(submit) <= new Date(target);
-                          return (
-                            <Badge
-                              variant='outline'
-                              className={cn(
-                                'font-bold text-[10px]',
-                                isOnTime
-                                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                  : 'bg-red-50 text-red-700 border-red-200'
-                              )}
-                            >
-                              {isOnTime ? 'Ya' : 'Tidak'}
-                            </Badge>
-                          );
-                        })()}
-                      </TableCell>
-                      <TableCell>
+                                            <TableCell>
                         {!item.custom ? (
                           item.mdl_item?.link_gambar_kerja ? (
                             <Button
@@ -1339,6 +1294,14 @@ export default function EngineerDetailPage() {
                           </Button>
                         )}
                       </TableCell>
+                      <TableCell className='text-xs text-neutral-600'>
+                        {item.gambar_kerja?.tanggal_selesai
+                          ? format(
+                              new Date(item.gambar_kerja.tanggal_selesai),
+                              'MMM d, yyyy'
+                            )
+                          : '-'}
+                      </TableCell>
                       <TableCell>
                         {item.gambar_kerja?.tanggal_mulai ? (
                           <div className='flex flex-col gap-0.5'>
@@ -1370,6 +1333,35 @@ export default function EngineerDetailPage() {
                           </span>
                         )}
                       </TableCell>
+                      <TableCell className='text-center'>
+                        {(() => {
+                          const target =
+                            project?.order_gambar_kerja?.[0]?.target_selesai;
+                          const submit = item.gambar_kerja?.tanggal_selesai;
+                          if (!target || !submit)
+                            return (
+                              <span className='text-[10px] text-muted-foreground italic'>
+                                -
+                              </span>
+                            );
+
+                          const isOnTime = new Date(submit) <= new Date(target);
+                          return (
+                            <Badge
+                              variant='outline'
+                              className={cn(
+                                'font-bold text-[10px]',
+                                isOnTime
+                                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                  : 'bg-red-50 text-red-700 border-red-200'
+                              )}
+                            >
+                              {isOnTime ? 'Ya' : 'Tidak'}
+                            </Badge>
+                          );
+                        })()}
+                      </TableCell>
+
                     </TableRow>
                   ))
                 )}
