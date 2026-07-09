@@ -1302,7 +1302,7 @@ export default function EngineerDetailPage() {
                             )
                           : '-'}
                       </TableCell>
-                                            <TableCell>
+                      <TableCell>
                         {item.gambar_kerja?.tanggal_mulai ? (
                           <div className='flex flex-col gap-0.5'>
                             <span className='text-[10px] text-neutral-600 flex items-center gap-1'>
