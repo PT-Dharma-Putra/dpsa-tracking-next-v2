@@ -292,7 +292,7 @@ export default function PerencanaanRekapPage() {
       qty,
       poDivisi: item.divisi?.nama || '-',
       produksi: { progress: progressProduksi, text: progressProduksi > 0 ? `${progressProduksi}%` : '' },
-      packing: { progress: progressBarangJadi, text: qtyBarangJadi > 0 ? `${qtyBarangJadi}/${qty}` : 'Record' },
+      packing: { progress: progressBarangJadi, text: qtyBarangJadi > 0 ? `${qtyBarangJadi}/${qty}` : '-' },
       terkirim: { progress: progressTerkirim, text: qtyTerkirim > 0 ? `${qtyTerkirim}/${qty}` : '-' },
       tersetting: { progress: progressTersetting, text: qtyTersetting > 0 ? `${qtyTersetting}/${qty}` : '-' },
       statusAkhir,
@@ -380,7 +380,7 @@ export default function PerencanaanRekapPage() {
           { v: row.qty, t: 'n', s: dataStyleCenter },
           { v: row.poDivisi, t: 's', s: dataStyleCenter },
           { v: row.produksi.text || '0%', t: 's', s: dataStyleCenter },
-          { v: row.packing.text === 'Record' ? '-' : row.packing.text, t: 's', s: dataStyleCenter },
+          { v: row.packing.text === '-' ? '-' : row.packing.text, t: 's', s: dataStyleCenter },
           { v: row.terkirim.text, t: 's', s: dataStyleCenter },
           { v: row.tersetting.text, t: 's', s: dataStyleCenter },
           { v: row.statusAkhir, t: 's', s: dataStyleCenter },
@@ -750,8 +750,8 @@ export default function PerencanaanRekapPage() {
                     </TableCell>
                     {/* Packing Progress */}
                     <TableCell className="text-center">
-                      {row.packing.text === 'Record' && row.packing.progress === 0 ? (
-                        <span className="text-[10px] text-neutral-400">Record</span>
+                      {row.packing.text === '-' && row.packing.progress === 0 ? (
+                        <span className="text-[10px] text-neutral-400">-</span>
                       ) : row.packing.text ? (
                         <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 px-2 py-0 h-5 text-[10px]">{row.packing.text}</Badge>
                       ) : (
