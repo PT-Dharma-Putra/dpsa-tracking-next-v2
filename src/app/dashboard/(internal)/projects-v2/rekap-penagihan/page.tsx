@@ -459,7 +459,10 @@ export default function RekapPenagihanPage() {
                     <TableCell className='font-semibold'>
                       {item.termin?.nama || '-'}
                     </TableCell>
-                    <TableCell className='text-sm text-neutral-600 max-w-[200px] truncate'>
+                    <TableCell 
+                      className='text-sm text-neutral-600 max-w-[200px] truncate'
+                      title={item?.deskripsi || '-'}
+                    >
                       {item.deskripsi || '-'}
                     </TableCell>
                     <TableCell>
@@ -496,7 +499,9 @@ export default function RekapPenagihanPage() {
                         ? formatRupiah(item.nominal_penagihan)
                         : '-'}
                     </TableCell>
-                    <TableCell className='text-sm font-medium text-neutral-700 whitespace-nowrap max-w-[100px] truncate'>
+                    <TableCell className='text-sm font-medium text-neutral-700 whitespace-nowrap max-w-[100px] truncate'
+                      title={item?.project?.spk?.nomor_spk || '-'}
+                    >
                       {item.project?.spk?.nomor_spk || '-'}
                     </TableCell>
                     {/* <TableCell className='font-semibold text-amber-700'>
