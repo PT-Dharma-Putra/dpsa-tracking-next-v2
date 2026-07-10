@@ -118,6 +118,8 @@ export default function RekapPenagihanPage() {
   const [filterMonth, setFilterMonth] = React.useState<string>('all');
   const [filterYear, setFilterYear] = React.useState<string>('all');
   const [isFormOpen, setIsFormOpen] = React.useState(false);
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const itemsPerPage = 10;
   const [editingId, setEditingId] = React.useState<number | null>(null);
   const [deleteTarget, setDeleteTarget] = React.useState<Penagihan | null>(null);
 
@@ -303,18 +305,42 @@ export default function RekapPenagihanPage() {
       return sortInvoiceDirection === 'asc' ? diff : -diff;
     });
 
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [search, filterMonth, filterYear]);
+
+  const totalPages = Math.ceil(filteredPenagihans.length / itemsPerPage);
+  const paginatedPenagihans = filteredPenagihans.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   return (
-    <div className='p-6 max-w-[1600px] mx-auto space-y-6'>
-      <div className='flex flex-col md:flex-row md:items-center justify-between gap-4'>
-        <div>
-          <h1 className='text-2xl font-bold tracking-tight text-neutral-900'>
-            Rekap Penagihan
-          </h1>
-          <p className='text-sm text-neutral-500'>
-            Daftar seluruh penagihan dari semua proyek
-          </p>
-        </div>
-        <div className='flex items-center gap-2'>
+    <div className='space-y-6 max-w-[1600px] mx-auto p-6'>
+      <div>
+        <h1 className='text-2xl font-semibold tracking-tight pt-4'>
+          Rekap Penagihan
+        </h1>
+        <p className='text-sm text-muted-foreground'>
+          Daftar seluruh penagihan dari semua proyek
+        </p>
+      </div>
+
+      <div className='bg-white rounded-xl shadow-sm border border-neutral-200'>
+        <div className='p-6 space-y-4'>
+          <div className='flex flex-col md:flex-row md:items-center justify-between gap-4'>
+            <div className='flex items-center gap-3'>
+              <div className='h-9 w-9 rounded-lg bg-blue-100 flex items-center justify-center'>
+                <Receipt className='h-5 w-5 text-blue-600' />
+              </div>
+              <div>
+                <p className='text-sm font-semibold text-neutral-800'>Daftar Penagihan</p>
+                <p className='text-xs text-muted-foreground'>
+                  {filteredPenagihans.length} tagihan terdaftar
+                </p>
+              </div>
+            </div>
+            <div className='flex flex-wrap items-center gap-2'>
           <Select value={filterMonth} onValueChange={setFilterMonth}>
             <SelectTrigger className="w-[140px] bg-white">
               <SelectValue placeholder="Semua Bulan" />
@@ -411,13 +437,13 @@ export default function RekapPenagihanPage() {
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredPenagihans.map((item, index) => (
+                paginatedPenagihans.map((item, index) => (
                   <TableRow
                     key={item.id}
                     className='hover:bg-neutral-50/50 transition-colors'
                   >
                     <TableCell className='text-muted-foreground font-medium'>
-                      {index + 1}
+                      {(currentPage - 1) * itemsPerPage + index + 1}
                     </TableCell>
                     <TableCell className='text-sm font-medium text-neutral-700 whitespace-nowrap'>
                       {item.nomor_invoice || '-'}
@@ -556,6 +582,54 @@ export default function RekapPenagihanPage() {
             </TableBody>
           </Table>
         </div>
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className='flex flex-col sm:flex-row sm:items-center justify-between pt-4 gap-4'>
+            <div className='text-sm text-muted-foreground'>
+              Menampilkan {((currentPage - 1) * itemsPerPage) + 1} hingga {Math.min(currentPage * itemsPerPage, filteredPenagihans.length)} dari {filteredPenagihans.length} data
+            </div>
+            <div className='flex items-center gap-2'>
+              <Button
+                variant='outline'
+                size='sm'
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+              >
+                Sebelumnya
+              </Button>
+              <div className='flex items-center gap-1'>
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter((p) => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
+                  .map((page, index, array) => (
+                    <React.Fragment key={page}>
+                      {index > 0 && array[index - 1] !== page - 1 && (
+                        <span className='px-2 text-neutral-400'>...</span>
+                      )}
+                      <Button
+                        variant={currentPage === page ? 'default' : 'outline'}
+                        size='sm'
+                        className={currentPage === page ? 'bg-blue-600 text-white hover:bg-blue-700' : ''}
+                        onClick={() => setCurrentPage(page)}
+                      >
+                        {page}
+                      </Button>
+                    </React.Fragment>
+                  ))}
+              </div>
+              <Button
+                variant='outline'
+                size='sm'
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+              >
+                Selanjutnya
+              </Button>
+            </div>
+          </div>
+        )}
+        </div>
+      </div>
       </div>
 
       {/* Form Dialog */}
