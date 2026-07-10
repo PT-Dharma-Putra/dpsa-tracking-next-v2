@@ -30,6 +30,8 @@ import {
   ChevronsUpDown,
   Copy,
   Search,
+  ArrowUp,
+  ArrowDown,
 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { format, differenceInDays } from 'date-fns';
@@ -174,6 +176,22 @@ export default function EngineerDetailPage() {
   );
   const [selectedItemIds, setSelectedItemIds] = React.useState<number[]>([]);
   const [searchQuery, setSearchQuery] = React.useState('');
+  const [sortConfig, setSortConfig] = React.useState<{
+    key: string;
+    direction: 'asc' | 'desc';
+  } | null>(null);
+
+  const handleSort = (key: string) => {
+    setSortConfig((current) => {
+      if (!current || current.key !== key) {
+        return { key, direction: 'asc' };
+      }
+      if (current.direction === 'asc') {
+        return { key, direction: 'desc' };
+      }
+      return null;
+    });
+  };
 
   // Quick PIC Creation States
   const [isNewPicDialogOpen, setIsNewPicDialogOpen] = React.useState(false);
@@ -196,17 +214,37 @@ export default function EngineerDetailPage() {
 
   const filteredItems = React.useMemo(() => {
     if (!items) return [];
-    if (!searchQuery.trim()) return items;
-    const q = searchQuery.toLowerCase();
-    return items.filter(
-      (item) =>
-        item.item?.toLowerCase().includes(q) ||
-        (item.ruang && item.ruang.toLowerCase().includes(q)) ||
-        (item.lantai && item.lantai.toLowerCase().includes(q)) ||
-        (item.keterangan && item.keterangan.toLowerCase().includes(q)) ||
-        (item.mdl_item?.kode_barang && item.mdl_item.kode_barang.toLowerCase().includes(q))
-    );
-  }, [items, searchQuery]);
+    
+    let result = items;
+    
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(
+        (item) =>
+          item.item?.toLowerCase().includes(q) ||
+          (item.ruang && item.ruang.toLowerCase().includes(q)) ||
+          (item.lantai && item.lantai.toLowerCase().includes(q)) ||
+          (item.keterangan && item.keterangan.toLowerCase().includes(q)) ||
+          (item.mdl_item?.kode_barang && item.mdl_item.kode_barang.toLowerCase().includes(q))
+      );
+    }
+
+    if (sortConfig) {
+      result = [...result].sort((a, b) => {
+        let aValue = '';
+        let bValue = '';
+        if (sortConfig.key === 'divisi') {
+          aValue = a.divisi?.nama || '';
+          bValue = b.divisi?.nama || '';
+        }
+        if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+
+    return result;
+  }, [items, searchQuery, sortConfig]);
 
   const { data: stages, isLoading: isLoadingStages } = useQuery({
     queryKey: ['design-stages'],
@@ -1008,7 +1046,23 @@ export default function EngineerDetailPage() {
                   <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>Volume</TableHead>
                   <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>Qty</TableHead>
                   <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>Satuan</TableHead>
-                  <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>PO Divisi</TableHead>
+                  <TableHead 
+                    className='text-[12px] uppercase font-bold text-neutral-500 cursor-pointer hover:bg-neutral-100 transition-colors select-none'
+                    onClick={() => handleSort('divisi')}
+                  >
+                    <div className='flex items-center gap-1'>
+                      PO Divisi
+                      {sortConfig?.key === 'divisi' ? (
+                        sortConfig.direction === 'asc' ? (
+                          <ArrowUp className='h-3.5 w-3.5' />
+                        ) : (
+                          <ArrowDown className='h-3.5 w-3.5' />
+                        )
+                      ) : (
+                        <ChevronsUpDown className='h-3.5 w-3.5 opacity-50' />
+                      )}
+                    </div>
+                  </TableHead>
                   <TableHead className='w-[40px] text-center'>
                     <Checkbox
                       checked={!!filteredItems && filteredItems.length > 0 && selectedItemIds.length === filteredItems.length}
