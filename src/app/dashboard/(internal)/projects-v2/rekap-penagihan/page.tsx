@@ -382,12 +382,12 @@ export default function RekapPenagihanPage() {
                 <TableHead>CLIENT</TableHead>
                 <TableHead>TERMIN</TableHead>
                 <TableHead>DESKRIPSI</TableHead>
+                <TableHead>STATUS</TableHead>
                 <TableHead>PERSENTASE</TableHead>
                 <TableHead>NOMINAL</TableHead>
                 <TableHead>NO SPK</TableHead>
-                <TableHead>TAKE OUT</TableHead>
+                {/* <TableHead>TAKE OUT</TableHead> */}
                 <TableHead>JATUH TEMPO</TableHead>
-                <TableHead>STATUS</TableHead>
                 <TableHead>TGL DIBAYAR</TableHead>
                 <TableHead>UMUR PENAGIHAN</TableHead>
                 <TableHead>FILE</TableHead>
@@ -436,25 +436,6 @@ export default function RekapPenagihanPage() {
                     <TableCell className='text-sm text-neutral-600 max-w-[200px] truncate'>
                       {item.deskripsi || '-'}
                     </TableCell>
-                    <TableCell className='font-bold text-blue-600'>
-                      {item.persentase}%
-                    </TableCell>
-                    <TableCell className='font-semibold text-emerald-700'>
-                      {item.nominal_penagihan
-                        ? formatRupiah(item.nominal_penagihan)
-                        : '-'}
-                    </TableCell>
-                    <TableCell className='text-sm font-medium text-neutral-700 whitespace-nowrap'>
-                      {item.project?.spk?.nomor_spk || '-'}
-                    </TableCell>
-                    <TableCell className='font-semibold text-amber-700'>
-                      {item.take_out ? formatRupiah(item.take_out) : '-'}
-                    </TableCell>
-                    <TableCell className='text-sm'>
-                      {item.jatuh_tempo
-                        ? format(new Date(item.jatuh_tempo), 'dd MMM yyyy')
-                        : '-'}
-                    </TableCell>
                     <TableCell>
                       <Badge
                         variant='outline'
@@ -471,6 +452,25 @@ export default function RekapPenagihanPage() {
                             )}
                           </div>
                         )}
+                    </TableCell>
+                    <TableCell className='font-bold text-blue-600'>
+                      {item.persentase}%
+                    </TableCell>
+                    <TableCell className='font-semibold text-emerald-700'>
+                      {item.nominal_penagihan
+                        ? formatRupiah(item.nominal_penagihan)
+                        : '-'}
+                    </TableCell>
+                    <TableCell className='text-sm font-medium text-neutral-700 whitespace-nowrap max-w-[100px] truncate'>
+                      {item.project?.spk?.nomor_spk || '-'}
+                    </TableCell>
+                    {/* <TableCell className='font-semibold text-amber-700'>
+                      {item.take_out ? formatRupiah(item.take_out) : '-'}
+                    </TableCell> */}
+                    <TableCell className='text-sm'>
+                      {item.jatuh_tempo
+                        ? format(new Date(item.jatuh_tempo), 'dd MMM yyyy')
+                        : '-'}
                     </TableCell>
                     <TableCell className='text-sm'>
                       {item.tanggal_dibayar
