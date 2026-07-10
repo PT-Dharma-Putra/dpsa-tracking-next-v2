@@ -452,6 +452,15 @@ export default function RekapPenagihanPage() {
                             )}
                           </div>
                         )}
+
+                        <Button
+                          variant='ghost'
+                          size='icon'
+                          className='h-8 w-8 text-neutral-500 hover:text-blue-600'
+                          onClick={() => openEdit(item)}
+                        >
+                          <Pencil className='h-3.5 w-3.5' />
+                        </Button>
                     </TableCell>
                     <TableCell className='font-bold text-blue-600'>
                       {item.persentase}%
