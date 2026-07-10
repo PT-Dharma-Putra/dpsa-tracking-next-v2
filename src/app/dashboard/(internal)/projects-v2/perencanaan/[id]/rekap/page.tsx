@@ -387,6 +387,20 @@ export default function PerencanaanRekapPage() {
         ]);
       });
 
+      // Tambahkan baris summary rata-rata persentase di paling bawah
+      wsData.push([
+        { v: '', t: 's', s: headerStyle },
+        { v: 'RATA-RATA PROGRESS', t: 's', s: headerStyle },
+        { v: '', t: 's', s: headerStyle },
+        { v: '', t: 's', s: headerStyle },
+        { v: '', t: 's', s: headerStyle },
+        { v: `${avgProduksi.toFixed(1)}%`, t: 's', s: headerStyle },
+        { v: `${avgPacking.toFixed(1)}%`, t: 's', s: headerStyle },
+        { v: `${avgTerkirim.toFixed(1)}%`, t: 's', s: headerStyle },
+        { v: `${avgTersetting.toFixed(1)}%`, t: 's', s: headerStyle },
+        { v: '', t: 's', s: headerStyle },
+      ]);
+
       const ws = XLSX.utils.aoa_to_sheet(wsData);
 
       ws['!cols'] = [
