@@ -2142,7 +2142,7 @@ export default function ProjectItemsPage() {
             </div>
             <div className='space-y-1.5'>
               <Label className='text-xs font-medium text-emerald-700'>
-                Bukti ACC (File pdf design fix)
+                Bukti ACC (File pdf design fix) (Maks 8MB)
               </Label>
               <Input
                 type='file'
