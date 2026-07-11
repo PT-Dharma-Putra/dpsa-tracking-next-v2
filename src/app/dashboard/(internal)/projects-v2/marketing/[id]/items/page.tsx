@@ -2149,8 +2149,8 @@ export default function ProjectItemsPage() {
                 onChange={(e) => {
                   const file = e.target.files?.[0] || null;
                   if (file) {
-                    if (file.size > 5 * 1024 * 1024) {
-                      toast.error('Ukuran file tidak boleh melebihi 5 MB');
+                    if (file.size > 8 * 1024 * 1024) {
+                      toast.error('Ukuran file tidak boleh melebihi 8 MB');
                       e.target.value = '';
                       setBuktiAccFile(null);
                       return;
