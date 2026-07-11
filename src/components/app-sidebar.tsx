@@ -91,6 +91,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             url: '/dashboard/projects-v2/marketing',
           },
           {
+            title: 'Rekap Penagihan',
+            url: '/dashboard/projects-v2/rekap-penagihan',
+          },
+          {
             title: 'Clients',
             url: '/dashboard/master-data/clients',
           },
