@@ -326,7 +326,7 @@ export default function PerencanaanDetailPage() {
             .lbl {
               width: 32mm;
               font-weight: bold;
-              font-size: 11px;
+              font-size: 12px;
               padding: 8px 5px;
               border-right: 1px solid #000;
             }
@@ -334,13 +334,13 @@ export default function PerencanaanDetailPage() {
               width: 5mm;
               text-align: center;
               padding: 8px 0;
-              font-size: 11px;
+              font-size: 12px;
               border-right: 1px solid #000;
             }
             .val {
               flex: 1;
               padding: 8px 5px;
-              font-size: 11px;
+              font-size: 12px;
             }
             
             @media print {
@@ -524,7 +524,7 @@ export default function PerencanaanDetailPage() {
             .lbl {
               width: 32mm;
               font-weight: bold;
-              font-size: 11px;
+              font-size: 12px;
               padding: 8px 5px;
               border-right: 1px solid #000;
             }
@@ -532,13 +532,13 @@ export default function PerencanaanDetailPage() {
               width: 5mm;
               text-align: center;
               padding: 8px 0;
-              font-size: 11px;
+              font-size: 12px;
               border-right: 1px solid #000;
             }
             .val {
               flex: 1;
               padding: 8px 5px;
-              font-size: 11px;
+              font-size: 12px;
             }
             
             @media print {
