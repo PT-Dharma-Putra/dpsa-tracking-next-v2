@@ -4141,7 +4141,7 @@ export default function PerencanaanDetailPage() {
         open={isMassLabelDialogOpen}
         onOpenChange={setIsMassLabelDialogOpen}
       >
-        <AlertDialogContent className='max-w-2xl max-h-[80vh] overflow-y-auto'>
+        <AlertDialogContent className='max-w-2xl'>
           <AlertDialogHeader>
             <AlertDialogTitle className='flex items-center gap-2 text-base'>
               <Printer className='h-4 w-4 text-blue-600' />
@@ -4152,7 +4152,7 @@ export default function PerencanaanDetailPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
 
-          <div className='mt-4 space-y-4'>
+          <div className='mt-4 space-y-4 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar'>
             {items
               ?.filter((i) => selectedLabelItemIds.includes(i.id))
               .map((item) => (
