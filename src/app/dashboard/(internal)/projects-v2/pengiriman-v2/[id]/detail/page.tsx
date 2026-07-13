@@ -201,47 +201,54 @@ export default function PerencanaanDetailPage() {
     const labelsData: string[] = [];
 
     selectedItems.forEach(item => {
-      const customJumlah = massLabelConfig[item.id] ?? item.jumlah.toString();
-      
-      const rows: [string, string][] = [
-        ['NAMA ITEM', item.item || '-'],
-        ['UKURAN', `${item.panjang || '-'} x ${item.lebar || '-'} x ${item.tinggi || '-'}`],
-        ['JUMLAH', customJumlah ? `${customJumlah} ${item.satuan || ''}`.trim() : '-'],
-        ['RUANG', item.ruang || '-'],
-        ['RUMAH SAKIT', project?.client?.name || '-'],
-        ['NO. SPK/TAHUN', spkValue]
-      ];
+      const customJumlahText = massLabelConfig[item.id] ?? item.jumlah.toString();
+      const itemPerPacking = Math.max(1, parseInt(customJumlahText) || 1);
+      const numLabels = Math.ceil(item.jumlah / itemPerPacking);
 
-      const html = `
-        <div class="label">
-          <div class="hdr">
-            <div class="logo"><img src="${window.location.origin}/Logo.png" alt="Logo"/></div>
-            <div class="co">
-              <p class="n">PT DHARMA PUTERA SEJAHTERA ABADI</p>
-              <p class="it">Interior &amp; Furniture Manufaktur</p>
-              <p>Jl. Matraman No. 88, Ringinsari, Maguwoharjo, Depok, Sleman, Yogyakarta</p>
-              <p>Telepon : (0274) 2800089&nbsp;&nbsp;Fax : (0274) 433 2248</p>
-              <p>E-mail : piutang.dpsa@gmail.com&nbsp;Website : www.dpm-jogja.com</p>
+      for (let i = 0; i < numLabels; i++) {
+        const remaining = item.jumlah - (i * itemPerPacking);
+        const qtyForThisLabel = Math.min(itemPerPacking, remaining);
+
+        const rows: [string, string][] = [
+          ['NAMA ITEM', item.item || '-'],
+          ['UKURAN', `${item.panjang || '-'} x ${item.lebar || '-'} x ${item.tinggi || '-'}`],
+          ['JUMLAH', qtyForThisLabel > 0 ? `${qtyForThisLabel} ${item.satuan || ''}`.trim() : '-'],
+          ['RUANG', item.ruang || '-'],
+          ['RUMAH SAKIT', project?.client?.name || '-'],
+          ['NO. SPK/TAHUN', spkValue]
+        ];
+
+        const html = `
+          <div class="label">
+            <div class="hdr">
+              <div class="logo"><img src="${window.location.origin}/Logo.png" alt="Logo"/></div>
+              <div class="co">
+                <p class="n">PT DHARMA PUTERA SEJAHTERA ABADI</p>
+                <p class="it">Interior &amp; Furniture Manufaktur</p>
+                <p>Jl. Matraman No. 88, Ringinsari, Maguwoharjo, Depok, Sleman, Yogyakarta</p>
+                <p>Telepon : (0274) 2800089&nbsp;&nbsp;Fax : (0274) 433 2248</p>
+                <p>E-mail : piutang.dpsa@gmail.com&nbsp;Website : www.dpm-jogja.com</p>
+              </div>
+              <div class="dc">
+                <div class="dr">PROD</div><div class="dr b">003</div>
+                <div class="db"><span>Rev:00</span><span>Terbit:<br>08/25</span></div>
+              </div>
             </div>
-            <div class="dc">
-              <div class="dr">PROD</div><div class="dr b">003</div>
-              <div class="db"><span>Rev:00</span><span>Terbit:<br>08/25</span></div>
+            <div class="bd">
+              <div class="info">
+                ${rows
+                  .map(
+                    ([l, v], ri) =>
+                      `<div class="row${
+                        ri === rows.length - 1 ? ' last' : ''
+                      }"><div class="lbl">${l}</div><div class="sep">:</div><div class="val">${v}</div></div>`
+                  )
+                  .join('')}
+              </div>
             </div>
-          </div>
-          <div class="bd">
-            <div class="info">
-              ${rows
-                .map(
-                  ([l, v], ri) =>
-                    `<div class="row${
-                      ri === rows.length - 1 ? ' last' : ''
-                    }"><div class="lbl">${l}</div><div class="sep">:</div><div class="val">${v}</div></div>`
-                )
-                .join('')}
-            </div>
-          </div>
-        </div>`;
-      labelsData.push(html);
+          </div>`;
+        labelsData.push(html);
+      }
     });
 
     const pages: string[][] = [];
@@ -4148,54 +4155,99 @@ export default function PerencanaanDetailPage() {
               Konfigurasi Print Label Massal
             </AlertDialogTitle>
             <AlertDialogDescription className='text-xs'>
-              Sesuaikan nilai <strong>Jumlah</strong> untuk setiap item. Secara default terisi sesuai Qty pesanan.
+              Sesuaikan nilai <strong>Item per packing</strong> untuk setiap item. Secara default terisi sesuai Qty pesanan.
             </AlertDialogDescription>
           </AlertDialogHeader>
 
-          <div className='mt-4 space-y-4 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar'>
-            {items
-              ?.filter((i) => selectedLabelItemIds.includes(i.id))
-              .map((item) => (
-                <div key={item.id} className='flex items-center justify-between border-b pb-2 last:border-b-0'>
-                  <div className='flex flex-col gap-1 pr-4 max-w-[70%]'>
-                    <span className='font-bold text-sm'>{item.item}</span>
-                    <span className='text-xs text-muted-foreground'>
-                      Lantai/Ruang: {item.lantai || '-'} / {item.ruang || '-'}
-                    </span>
-                    <span className='text-[10px] text-muted-foreground uppercase'>
-                      Qty Asli: {item.jumlah} {item.satuan}
-                    </span>
-                  </div>
-                  <div className='flex items-center gap-2 shrink-0'>
-                    <Label className='text-xs'>Jumlah:</Label>
-                    <Input
-                      type='text'
-                      className='w-24 text-center'
-                      value={massLabelConfig[item.id] ?? ''}
-                      onChange={(e) => setMassLabelConfig((prev) => ({
-                        ...prev,
-                        [item.id]: e.target.value
-                      }))}
-                    />
-                  </div>
-                </div>
-              ))}
+          <div className='max-h-[60vh] overflow-y-auto border border-neutral-200 rounded-md mt-4'>
+            <Table>
+              <TableHeader className='bg-neutral-50'>
+                <TableRow>
+                  <TableHead className='text-xs'>Item</TableHead>
+                  <TableHead className='text-xs text-center'>Qty</TableHead>
+                  <TableHead className='text-xs text-center'>Item per packing</TableHead>
+                  <TableHead className='text-xs text-center'>Total Label</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {items
+                  ?.filter((i) => selectedLabelItemIds.includes(i.id))
+                  .map((item) => {
+                    const customJumlahText = massLabelConfig[item.id] ?? item.jumlah.toString();
+                    const itemPerPacking = Math.max(1, parseInt(customJumlahText) || 1);
+                    const totalLabel = Math.ceil(item.jumlah / itemPerPacking);
+
+                    return (
+                      <TableRow key={item.id}>
+                        <TableCell className='text-xs font-medium'>
+                          {item.item}
+                          <div className='text-[10px] text-muted-foreground'>
+                            Lantai/Ruang: {item.lantai || '-'} / {item.ruang || '-'}
+                          </div>
+                        </TableCell>
+                        <TableCell className='text-xs text-center'>
+                          {item.jumlah} <span className='text-[10px] text-muted-foreground'>{item.satuan}</span>
+                        </TableCell>
+                        <TableCell className='text-xs text-center'>
+                          <Input
+                            type='number'
+                            min={1}
+                            max={item.jumlah}
+                            className='h-7 w-16 text-xs mx-auto text-center'
+                            value={massLabelConfig[item.id] ?? ''}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (val === '') {
+                                setMassLabelConfig((prev) => ({ ...prev, [item.id]: '' }));
+                              } else {
+                                const num = parseInt(val);
+                                if (!isNaN(num)) {
+                                  setMassLabelConfig((prev) => ({
+                                    ...prev,
+                                    [item.id]: Math.min(num, item.jumlah).toString(),
+                                  }));
+                                }
+                              }
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell className='text-xs text-center font-bold text-blue-600'>
+                          {totalLabel}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+              </TableBody>
+            </Table>
           </div>
 
-          <AlertDialogFooter className='mt-6 flex-col sm:flex-row gap-2'>
-            <AlertDialogCancel onClick={() => setIsMassLabelDialogOpen(false)} className='sm:mt-0'>
-              Batal
-            </AlertDialogCancel>
-            <Button
-              className='bg-blue-600 hover:bg-blue-700'
-              onClick={() => {
-                setIsMassLabelDialogOpen(false);
-                handlePrintMassLabel();
-              }}
-            >
-              <Printer className='mr-2 h-4 w-4' />
-              Print Label ({selectedLabelItemIds.length})
-            </Button>
+          <AlertDialogFooter className='mt-4 flex items-center justify-between'>
+            <div className='text-xs text-muted-foreground font-medium'>
+              Total Label Keseluruhan: <span className='text-blue-600 font-bold'>
+                {items
+                  ?.filter((i) => selectedLabelItemIds.includes(i.id))
+                  .reduce((sum, item) => {
+                    const customJumlahText = massLabelConfig[item.id] ?? item.jumlah.toString();
+                    const itemPerPacking = Math.max(1, parseInt(customJumlahText) || 1);
+                    return sum + Math.ceil(item.jumlah / itemPerPacking);
+                  }, 0)}
+              </span>
+            </div>
+            <div className='flex gap-2'>
+              <AlertDialogCancel onClick={() => setIsMassLabelDialogOpen(false)}>
+                Batal
+              </AlertDialogCancel>
+              <Button
+                className='bg-blue-600 hover:bg-blue-700 text-white'
+                onClick={() => {
+                  setIsMassLabelDialogOpen(false);
+                  handlePrintMassLabel();
+                }}
+              >
+                <Printer className='mr-2 h-4 w-4' />
+                Print Label
+              </Button>
+            </div>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
