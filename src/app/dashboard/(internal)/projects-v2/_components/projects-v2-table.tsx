@@ -177,20 +177,52 @@ export function ProjectsV2Table({
     router.push(`${pathname}?${params.toString()}`, { scroll: false });
   };
 
-  React.useEffect(() => {
-    const params = new URLSearchParams(searchParams.toString());
-    const urlPage = Number(params.get('page')) || 1;
-    if (page === 1 && urlPage > 1) {
-      params.delete('page');
-      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-    }
-  }, [page, pathname, router, searchParams]);
   const [search, setSearch] = React.useState('');
   const [searchInput, setSearchInput] = React.useState('');
   const [clientId, setClientId] = React.useState<string>('all');
   const [marketingId, setMarketingId] = React.useState<string>('all');
-  const [sortBy, setSortBy] = React.useState<string>('created_at');
-  const [sortOrder, setSortOrder] = React.useState<'asc' | 'desc'>('desc');
+  const [sortBy, setSortBy] = React.useState<string>(searchParams.get('sort_by') || 'created_at');
+  const [sortOrder, setSortOrder] = React.useState<'asc' | 'desc'>((searchParams.get('sort_order') as 'asc' | 'desc') || 'desc');
+
+  React.useEffect(() => {
+    const params = new URLSearchParams(searchParams.toString());
+    let shouldUpdate = false;
+    let pushOrReplace = 'push';
+
+    const urlPage = Number(params.get('page')) || 1;
+    if (page === 1 && urlPage > 1) {
+      params.delete('page');
+      shouldUpdate = true;
+      pushOrReplace = 'replace';
+    }
+
+    if (sortBy !== (params.get('sort_by') || 'created_at')) {
+      if (sortBy === 'created_at') params.delete('sort_by');
+      else params.set('sort_by', sortBy);
+      shouldUpdate = true;
+    }
+
+    if (sortOrder !== (params.get('sort_order') || 'desc')) {
+      if (sortOrder === 'desc') params.delete('sort_order');
+      else params.set('sort_order', sortOrder);
+      shouldUpdate = true;
+    }
+
+    if (shouldUpdate) {
+      if (pushOrReplace === 'replace') {
+        router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+      } else {
+        router.push(`${pathname}?${params.toString()}`, { scroll: false });
+      }
+    }
+  }, [page, sortBy, sortOrder, pathname, router, searchParams]);
+
+  React.useEffect(() => {
+    const urlSortBy = searchParams.get('sort_by') || 'created_at';
+    const urlSortOrder = (searchParams.get('sort_order') as 'asc' | 'desc') || 'desc';
+    if (urlSortBy !== sortBy) setSortBy(urlSortBy);
+    if (urlSortOrder !== sortOrder) setSortOrder(urlSortOrder);
+  }, [searchParams]);
   const [selectedMonth, setSelectedMonth] = React.useState<string>('all');
   const [selectedYear, setSelectedYear] = React.useState<string>('all');
   const [poDivisiFilter, setPoDivisiFilter] = React.useState<
