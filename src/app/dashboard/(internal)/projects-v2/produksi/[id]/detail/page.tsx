@@ -350,8 +350,8 @@ export default function ProduksiDetailPage() {
     });
 
     const pages: string[][] = [];
-    for (let i = 0; i < labelsData.length; i += 10) {
-      pages.push(labelsData.slice(i, i + 10));
+    for (let i = 0; i < labelsData.length; i += 12) {
+      pages.push(labelsData.slice(i, i + 12));
     }
 
     const printWindow = window.open('', '', 'width=800,height=600');
@@ -406,7 +406,7 @@ export default function ProduksiDetailPage() {
         <div class="pg${pi === pages.length - 1 ? ' last' : ''}">
           ${page.join('')}
           ${Array.from(
-            { length: 10 - page.length },
+            { length: 12 - page.length },
             () => '<div class="empty"></div>'
           ).join('')}
         </div>`
@@ -512,10 +512,10 @@ export default function ProduksiDetailPage() {
       }
     }
 
-    // Group indices into pages of 10
+    // Group indices into pages of 12
     const pages: any[][] = [];
-    for (let i = 0; i < labelsData.length; i += 10) {
-      pages.push(labelsData.slice(i, i + 10));
+    for (let i = 0; i < labelsData.length; i += 12) {
+      pages.push(labelsData.slice(i, i + 12));
     }
 
     const html = `<!DOCTYPE html><html><head>
@@ -572,7 +572,7 @@ export default function ProduksiDetailPage() {
         <div class="pg${pi === pages.length - 1 ? ' last' : ''}">
           ${page.map((data) => makeLabelHTML(data.itemIndex, data.partIndex)).join('')}
           ${Array.from(
-            { length: 10 - page.length },
+            { length: 12 - page.length },
             () => '<div class="empty"></div>'
           ).join('')}
         </div>`
