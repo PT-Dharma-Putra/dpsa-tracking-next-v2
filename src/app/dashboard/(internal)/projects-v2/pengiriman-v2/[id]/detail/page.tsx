@@ -449,30 +449,44 @@ export default function PerencanaanDetailPage() {
       labelsData.push(makeLabelHTML(qtyForThisLabel));
     }
 
+    const pages: string[][] = [];
+    for (let i = 0; i < labelsData.length; i += 8) {
+      pages.push(labelsData.slice(i, i + 8));
+    }
+
     const printWindow = window.open('', '', 'width=800,height=600');
     if (!printWindow) return;
 
-    printWindow.document.write(`
+    printWindow.document.write(`<!DOCTYPE html>
       <html>
         <head>
           <title>Print Label Packing</title>
           <style>
-            @page { size: auto; margin: 3mm; }
+            @page { size: A4 portrait; margin: 3mm; }
             body { 
               margin: 0; 
               padding: 0; 
               font-family: Arial, sans-serif;
-              display: flex;
-              flex-direction: column;
-              gap: 8px;
+              background: #fff;
             }
             * { box-sizing: border-box; }
             
+            .pg {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              grid-auto-rows: min-content;
+              gap: 3mm;
+              width: 100%;
+              page-break-after: always;
+              break-after: page;
+            }
+            .pg.last { page-break-after: auto; break-after: auto; }
+            .empty { border: 1px dashed #ccc; }
+
             .label {
-              width: 100mm;
+              width: 100%;
               height: auto;
               border: 1px solid #000;
-              margin: 4px auto;
               page-break-inside: avoid;
               display: flex;
               flex-direction: column;
@@ -526,30 +540,25 @@ export default function PerencanaanDetailPage() {
               padding: 8px 5px;
               font-size: 11px;
             }
-            .qr {
-              width: 26mm;
-              display: flex;
-              flex-direction: column;
-              align-items: center;
-              justify-content: center;
-              padding: 2px;
-            }
-            .qr svg { width: 20mm; height: 20mm; }
-            .qr p { 
-              margin: 2px 0 0; 
-              font-size: 8px; 
-              font-family: monospace;
-              font-weight: bold; 
-            }
             
             @media print {
-              body { padding: 3mm; background: none; }
-              .label { margin: 0; box-shadow: none; border: 1px solid #000; }
+              body { padding: 0; }
             }
           </style>
         </head>
         <body>
-          ${labelsData.join('')}
+          ${pages
+            .map(
+              (page, pi) => `
+            <div class="pg${pi === pages.length - 1 ? ' last' : ''}">
+              ${page.join('')}
+              ${Array.from(
+                { length: 8 - page.length },
+                () => '<div class="empty"></div>'
+              ).join('')}
+            </div>`
+            )
+            .join('')}
           <script>
             window.onload = function() {
               window.print();
