@@ -391,7 +391,7 @@ export default function PerencanaanDetailPage() {
       [project?.spk?.nomor_spk, spkYear].filter(Boolean).join(' / ') || '-';
 
     // Builds one label cell
-    const makeLabelHTML = () => {
+    const makeLabelHTML = (qtyForThisLabel: number) => {
       const rows: [string, string][] = [
         ['NAMA ITEM', qrItem.item || '-'],
         [
@@ -400,7 +400,7 @@ export default function PerencanaanDetailPage() {
             qrItem.tinggi || '-'
           }`,
         ],
-        ['JUMLAH', qrJumlah ? `${qrJumlah} ${qrItem.satuan || ''}`.trim() : '-'],
+        ['JUMLAH', qtyForThisLabel > 0 ? `${qtyForThisLabel} ${qrItem.satuan || ''}`.trim() : '-'],
         ['RUANG', qrItem.ruang || '-'],
         ['RUMAH SAKIT', project?.client?.name || '-'],
         ['NO. SPK/TAHUN', spkValue]
@@ -439,7 +439,15 @@ export default function PerencanaanDetailPage() {
         </div>`;
     };
 
-    const labelsData = [makeLabelHTML()];
+    const labelsData: string[] = [];
+    const itemPerPacking = Math.max(1, parseInt(qrJumlah) || 1);
+    const numLabels = Math.ceil(qrItem.jumlah / itemPerPacking);
+
+    for (let i = 0; i < numLabels; i++) {
+      const remaining = qrItem.jumlah - (i * itemPerPacking);
+      const qtyForThisLabel = Math.min(itemPerPacking, remaining);
+      labelsData.push(makeLabelHTML(qtyForThisLabel));
+    }
 
     const printWindow = window.open('', '', 'width=800,height=600');
     if (!printWindow) return;
@@ -447,7 +455,7 @@ export default function PerencanaanDetailPage() {
     printWindow.document.write(`
       <html>
         <head>
-          <title>Print Label Produksi</title>
+          <title>Print Label Packing</title>
           <style>
             @page { size: auto; margin: 3mm; }
             body { 
@@ -2606,7 +2614,7 @@ export default function PerencanaanDetailPage() {
           <AlertDialogHeader>
             <AlertDialogTitle className='flex items-center gap-2 text-base'>
               <Printer className='h-4 w-4 text-blue-600' />
-              Label Produksi — {qrItem?.item}
+              Label Packing — {qrItem?.item}
             </AlertDialogTitle>
             <AlertDialogDescription className='text-xs'>
               Preview label cetak. Klik <strong>Print Label</strong> untuk
@@ -2724,12 +2732,23 @@ export default function PerencanaanDetailPage() {
 
           <AlertDialogFooter className='mt-4 flex-col sm:flex-row items-start sm:items-center gap-2'>
             <div className='flex items-center gap-2 flex-1'>
-              <Label className='text-xs'>Jumlah:</Label>
+              <Label className='text-xs'>Item per packing:</Label>
               <Input
                 type='number'
                 min={1}
+                max={qrItem?.jumlah || 1}
                 value={qrJumlah}
-                onChange={(e) => setQrJumlah(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === '') {
+                    setQrJumlah('');
+                  } else {
+                    const num = parseInt(val);
+                    if (!isNaN(num)) {
+                      setQrJumlah(Math.min(num, qrItem?.jumlah || Infinity).toString());
+                    }
+                  }
+                }}
                 className='h-8 w-24 text-xs'
                 placeholder='Misal: 3'
               />
@@ -2743,7 +2762,7 @@ export default function PerencanaanDetailPage() {
                 onClick={handlePrintItemQR}
               >
                 <Printer className='h-4 w-4' />
-                Print 1 Label
+                Print Label
               </Button>
             </div>
           </AlertDialogFooter>
