@@ -316,7 +316,7 @@ export default function RekapPenagihanPage() {
   );
 
   return (
-    <div className='space-y-6 max-w-[1600px] mx-auto p-6'>
+    <div className='space-y-6 w-full max-w-full overflow-hidden'>
       <div>
         <h1 className='text-2xl font-semibold tracking-tight pt-4'>
           Rekap Penagihan
@@ -389,7 +389,7 @@ export default function RekapPenagihanPage() {
         </div>
       </div>
 
-      <div className='rounded-xl border border-neutral-200 bg-white overflow-hidden shadow-sm'>
+      <div className='rounded-xl overflow-hidden shadow-sm'>
         <div className='overflow-x-auto max-w-full'>
           <Table>
             <TableHeader className='bg-neutral-50/80'>
@@ -412,6 +412,7 @@ export default function RekapPenagihanPage() {
                 <TableHead>PERSENTASE</TableHead>
                 <TableHead>NOMINAL</TableHead>
                 <TableHead>NO SPK</TableHead>
+                <TableHead>NO SPH</TableHead>
                 {/* <TableHead>TAKE OUT</TableHead> */}
                 <TableHead>JATUH TEMPO</TableHead>
                 <TableHead>TGL DIBAYAR</TableHead>
@@ -503,6 +504,11 @@ export default function RekapPenagihanPage() {
                       title={item?.project?.spk?.nomor_spk || '-'}
                     >
                       {item.project?.spk?.nomor_spk || '-'}
+                    </TableCell>
+                    <TableCell className='text-sm font-medium text-neutral-700 whitespace-nowrap max-w-[150px] truncate'
+                      title={item?.project?.sph?.nomor_sph || '-'}
+                    >
+                      {item.project?.sph?.nomor_sph || '-'}
                     </TableCell>
                     {/* <TableCell className='font-semibold text-amber-700'>
                       {item.take_out ? formatRupiah(item.take_out) : '-'}
