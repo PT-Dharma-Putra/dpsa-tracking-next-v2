@@ -177,8 +177,8 @@ export function ProjectsV2Table({
     router.push(`${pathname}?${params.toString()}`, { scroll: false });
   };
 
-  const [search, setSearch] = React.useState('');
-  const [searchInput, setSearchInput] = React.useState('');
+  const [search, setSearch] = React.useState(searchParams.get('search') || '');
+  const [searchInput, setSearchInput] = React.useState(searchParams.get('search') || '');
   const [clientId, setClientId] = React.useState<string>('all');
   const [marketingId, setMarketingId] = React.useState<string>('all');
   const [sortBy, setSortBy] = React.useState<string>(searchParams.get('sort_by') || 'created_at');
@@ -208,6 +208,13 @@ export function ProjectsV2Table({
       shouldUpdate = true;
     }
 
+    if (search !== (params.get('search') || '')) {
+      if (search) params.set('search', search);
+      else params.delete('search');
+      shouldUpdate = true;
+      pushOrReplace = 'replace';
+    }
+
     if (shouldUpdate) {
       if (pushOrReplace === 'replace') {
         router.replace(`${pathname}?${params.toString()}`, { scroll: false });
@@ -215,13 +222,18 @@ export function ProjectsV2Table({
         router.push(`${pathname}?${params.toString()}`, { scroll: false });
       }
     }
-  }, [page, sortBy, sortOrder, pathname, router, searchParams]);
+  }, [page, sortBy, sortOrder, search, pathname, router, searchParams]);
 
   React.useEffect(() => {
     const urlSortBy = searchParams.get('sort_by') || 'created_at';
     const urlSortOrder = (searchParams.get('sort_order') as 'asc' | 'desc') || 'desc';
+    const urlSearch = searchParams.get('search') || '';
     if (urlSortBy !== sortBy) setSortBy(urlSortBy);
     if (urlSortOrder !== sortOrder) setSortOrder(urlSortOrder);
+    if (urlSearch !== search) {
+      setSearch(urlSearch);
+      setSearchInput(urlSearch);
+    }
   }, [searchParams]);
   const [selectedMonth, setSelectedMonth] = React.useState<string>('all');
   const [selectedYear, setSelectedYear] = React.useState<string>('all');
@@ -462,11 +474,13 @@ export function ProjectsV2Table({
   // Debounce search
   React.useEffect(() => {
     const timer = setTimeout(() => {
-      setSearch(searchInput);
-      setPage(1);
+      if (search !== searchInput) {
+        setSearch(searchInput);
+        setPage(1);
+      }
     }, 500);
     return () => clearTimeout(timer);
-  }, [searchInput]);
+  }, [searchInput, search]);
 
   const { data, isLoading } = useQuery({
     queryKey: [
