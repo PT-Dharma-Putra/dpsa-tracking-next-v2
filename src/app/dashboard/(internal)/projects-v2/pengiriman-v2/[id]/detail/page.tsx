@@ -137,11 +137,13 @@ export default function PerencanaanDetailPage() {
   const [isItemQrDialogOpen, setIsItemQrDialogOpen] = React.useState(false);
   const [qrItem, setQrItem] = React.useState<ProjectItemV2 | null>(null);
   const [qrJumlah, setQrJumlah] = React.useState<string>('');
+  const [qrBagian, setQrBagian] = React.useState<string>('1');
 
   // Mass Label Print State
   const [selectedLabelItemIds, setSelectedLabelItemIds] = React.useState<number[]>([]);
   const [isMassLabelDialogOpen, setIsMassLabelDialogOpen] = React.useState(false);
   const [massLabelConfig, setMassLabelConfig] = React.useState<Record<number, string>>({});
+  const [massLabelBagianConfig, setMassLabelBagianConfig] = React.useState<Record<number, string>>({});
 
   const toggleSelectLabelItem = (id: number) => {
     setSelectedLabelItemIds((prev) =>
@@ -178,11 +180,14 @@ export default function PerencanaanDetailPage() {
 
   const openMassLabelDialog = () => {
     const initialConfig: Record<number, string> = {};
+    const initialBagianConfig: Record<number, string> = {};
     selectedLabelItemIds.forEach(id => {
       const item = items?.find(i => i.id === id);
       initialConfig[id] = item ? item.jumlah.toString() : '';
+      initialBagianConfig[id] = '1';
     });
     setMassLabelConfig(initialConfig);
+    setMassLabelBagianConfig(initialBagianConfig);
     setIsMassLabelDialogOpen(true);
   };
 
@@ -203,9 +208,12 @@ export default function PerencanaanDetailPage() {
     selectedItems.forEach(item => {
       const customJumlahText = massLabelConfig[item.id] ?? item.jumlah.toString();
       const itemPerPacking = Math.max(1, parseInt(customJumlahText) || 1);
-      const numLabels = Math.ceil(item.jumlah / itemPerPacking);
+      const bagianText = massLabelBagianConfig[item.id] ?? '1';
+      const pengaliBagian = Math.max(1, parseInt(bagianText) || 1);
+      const numLabelsBase = Math.ceil(item.jumlah / itemPerPacking);
 
-      for (let i = 0; i < numLabels; i++) {
+      for (let j = 0; j < pengaliBagian; j++) {
+        for (let i = 0; i < numLabelsBase; i++) {
         const remaining = item.jumlah - (i * itemPerPacking);
         const qtyForThisLabel = Math.min(itemPerPacking, remaining);
 
@@ -248,6 +256,7 @@ export default function PerencanaanDetailPage() {
             </div>
           </div>`;
         labelsData.push(html);
+        }
       }
     });
 
@@ -376,6 +385,7 @@ export default function PerencanaanDetailPage() {
   const openItemQrDialog = (item: ProjectItemV2) => {
     setQrItem(item);
     setQrJumlah(item.jumlah.toString());
+    setQrBagian('1');
     setIsItemQrDialogOpen(true);
   };
 
@@ -441,12 +451,15 @@ export default function PerencanaanDetailPage() {
 
     const labelsData: string[] = [];
     const itemPerPacking = Math.max(1, parseInt(qrJumlah) || 1);
-    const numLabels = Math.ceil(qrItem.jumlah / itemPerPacking);
+    const numLabelsBase = Math.ceil(qrItem.jumlah / itemPerPacking);
+    const pengaliBagian = Math.max(1, parseInt(qrBagian) || 1);
 
-    for (let i = 0; i < numLabels; i++) {
-      const remaining = qrItem.jumlah - (i * itemPerPacking);
-      const qtyForThisLabel = Math.min(itemPerPacking, remaining);
-      labelsData.push(makeLabelHTML(qtyForThisLabel));
+    for (let j = 0; j < pengaliBagian; j++) {
+      for (let i = 0; i < numLabelsBase; i++) {
+        const remaining = qrItem.jumlah - (i * itemPerPacking);
+        const qtyForThisLabel = Math.min(itemPerPacking, remaining);
+        labelsData.push(makeLabelHTML(qtyForThisLabel));
+      }
     }
 
     const pages: string[][] = [];
@@ -2740,27 +2753,53 @@ export default function PerencanaanDetailPage() {
           </div>
 
           <AlertDialogFooter className='mt-4 flex-col sm:flex-row items-start sm:items-center gap-2'>
-            <div className='flex items-center gap-2 flex-1'>
-              <Label className='text-xs'>Item per packing:</Label>
-              <Input
-                type='number'
-                min={1}
-                max={qrItem?.jumlah || 1}
-                value={qrJumlah}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  if (val === '') {
-                    setQrJumlah('');
-                  } else {
-                    const num = parseInt(val);
-                    if (!isNaN(num)) {
-                      setQrJumlah(Math.min(num, qrItem?.jumlah || Infinity).toString());
+            <div className='flex items-center gap-4 flex-1 flex-wrap'>
+              <div className='flex items-center gap-2'>
+                <Label className='text-xs'>Item per packing:</Label>
+                <Input
+                  type='number'
+                  min={1}
+                  max={qrItem?.jumlah || 1}
+                  value={qrJumlah}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === '') {
+                      setQrJumlah('');
+                    } else {
+                      const num = parseInt(val);
+                      if (!isNaN(num)) {
+                        setQrJumlah(Math.min(num, qrItem?.jumlah || Infinity).toString());
+                      }
                     }
-                  }
-                }}
-                className='h-8 w-24 text-xs'
-                placeholder='Misal: 3'
-              />
+                  }}
+                  className='h-8 w-24 text-xs'
+                  placeholder='Misal: 3'
+                />
+              </div>
+              <div className='flex items-center gap-2'>
+                <Label className='text-xs'>Bagian:</Label>
+                <Input
+                  type='number'
+                  min={1}
+                  value={qrBagian}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === '') {
+                      setQrBagian('');
+                    } else {
+                      const num = parseInt(val);
+                      if (!isNaN(num) && num > 0) {
+                        setQrBagian(num.toString());
+                      }
+                    }
+                  }}
+                  className='h-8 w-20 text-xs'
+                  placeholder='Misal: 1'
+                />
+              </div>
+              <div className='text-xs font-bold text-blue-600 sm:border-l sm:pl-4'>
+                Total Label: {Math.ceil((qrItem?.jumlah || 0) / Math.max(1, parseInt(qrJumlah) || 1)) * Math.max(1, parseInt(qrBagian) || 1)}
+              </div>
             </div>
             <div className='flex gap-2 ml-auto'>
               <AlertDialogCancel onClick={() => setIsItemQrDialogOpen(false)}>
@@ -4194,6 +4233,7 @@ export default function PerencanaanDetailPage() {
                   <TableHead className='text-xs'>Item</TableHead>
                   <TableHead className='text-xs text-center'>Qty</TableHead>
                   <TableHead className='text-xs text-center'>Item per packing</TableHead>
+                  <TableHead className='text-xs text-center'>Bagian</TableHead>
                   <TableHead className='text-xs text-center'>Total Label</TableHead>
                 </TableRow>
               </TableHeader>
@@ -4203,7 +4243,9 @@ export default function PerencanaanDetailPage() {
                   .map((item) => {
                     const customJumlahText = massLabelConfig[item.id] ?? item.jumlah.toString();
                     const itemPerPacking = Math.max(1, parseInt(customJumlahText) || 1);
-                    const totalLabel = Math.ceil(item.jumlah / itemPerPacking);
+                    const bagianText = massLabelBagianConfig[item.id] ?? '1';
+                    const pengaliBagian = Math.max(1, parseInt(bagianText) || 1);
+                    const totalLabel = Math.ceil(item.jumlah / itemPerPacking) * pengaliBagian;
 
                     return (
                       <TableRow key={item.id}>
@@ -4239,6 +4281,28 @@ export default function PerencanaanDetailPage() {
                             }}
                           />
                         </TableCell>
+                        <TableCell className='text-xs text-center'>
+                          <Input
+                            type='number'
+                            min={1}
+                            className='h-7 w-16 text-xs mx-auto text-center'
+                            value={massLabelBagianConfig[item.id] ?? '1'}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (val === '') {
+                                setMassLabelBagianConfig((prev) => ({ ...prev, [item.id]: '' }));
+                              } else {
+                                const num = parseInt(val);
+                                if (!isNaN(num) && num > 0) {
+                                  setMassLabelBagianConfig((prev) => ({
+                                    ...prev,
+                                    [item.id]: num.toString(),
+                                  }));
+                                }
+                              }
+                            }}
+                          />
+                        </TableCell>
                         <TableCell className='text-xs text-center font-bold text-blue-600'>
                           {totalLabel}
                         </TableCell>
@@ -4257,7 +4321,9 @@ export default function PerencanaanDetailPage() {
                   .reduce((sum, item) => {
                     const customJumlahText = massLabelConfig[item.id] ?? item.jumlah.toString();
                     const itemPerPacking = Math.max(1, parseInt(customJumlahText) || 1);
-                    return sum + Math.ceil(item.jumlah / itemPerPacking);
+                    const bagianText = massLabelBagianConfig[item.id] ?? '1';
+                    const pengaliBagian = Math.max(1, parseInt(bagianText) || 1);
+                    return sum + (Math.ceil(item.jumlah / itemPerPacking) * pengaliBagian);
                   }, 0)}
               </span>
             </div>
