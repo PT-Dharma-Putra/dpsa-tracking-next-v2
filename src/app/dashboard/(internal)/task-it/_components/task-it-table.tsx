@@ -430,7 +430,7 @@ export function TaskItTable({ statusFilter, onClearFilter }: TaskItTableProps = 
                                         {getStatusSelect(task)}
                                     </TableCell>
                                     <TableCell className="text-xs text-neutral-600">
-                                        {task.created_at ? format(new Date(task.created_at), "d MMM yyyy HH:mm") : <span className="text-muted-foreground italic">-</span>}
+                                        {task.created_at ? format(new Date(task.created_at), "d MMM yyyy") : <span className="text-muted-foreground italic">-</span>}
                                     </TableCell>
                                     <TableCell className="text-xs text-neutral-600">
                                         {task.tanggal_selesai ? format(new Date(task.tanggal_selesai), "d MMM yyyy HH:mm") : <span className="text-muted-foreground italic">-</span>}

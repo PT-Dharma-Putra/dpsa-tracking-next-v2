@@ -412,6 +412,7 @@ export default function RekapPenagihanPage() {
                 <TableHead>PERSENTASE</TableHead>
                 <TableHead>NOMINAL</TableHead>
                 <TableHead>NO SPK</TableHead>
+                <TableHead>NO SPH</TableHead>
                 {/* <TableHead>TAKE OUT</TableHead> */}
                 <TableHead>JATUH TEMPO</TableHead>
                 <TableHead>TGL DIBAYAR</TableHead>
@@ -503,6 +504,11 @@ export default function RekapPenagihanPage() {
                       title={item?.project?.spk?.nomor_spk || '-'}
                     >
                       {item.project?.spk?.nomor_spk || '-'}
+                    </TableCell>
+                    <TableCell className='text-sm font-medium text-neutral-700 whitespace-nowrap max-w-[150px] truncate'
+                      title={item?.project?.sph?.nomor_sph || '-'}
+                    >
+                      {item.project?.sph?.nomor_sph || '-'}
                     </TableCell>
                     {/* <TableCell className='font-semibold text-amber-700'>
                       {item.take_out ? formatRupiah(item.take_out) : '-'}
