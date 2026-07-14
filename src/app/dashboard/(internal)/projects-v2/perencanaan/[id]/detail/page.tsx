@@ -491,6 +491,63 @@ export default function PerencanaanDetailPage() {
     },
   });
 
+  const bulkUpdateStokMutation = useMutation({
+    mutationFn: async (payload: {
+      ketersediaan_stok?: string;
+      tanggal_menerima_dokubah?: string;
+      tanggal_keluar?: string;
+      pic_id?: number;
+      new_pic_name?: string;
+      new_pic_jabatan?: string;
+      deskripsi_belum_lengkap?: string;
+    }) => {
+      const promises = selectedItemIds.map(itemId => 
+        projectV2Service.updateBahanBaku(itemId, payload)
+      );
+      await Promise.all(promises);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['project-v2-items', projectId],
+      });
+      toast.success('Stok Material massal berhasil diupdate');
+      setSelectedItemIds([]);
+    },
+    onError: () => {
+      toast.error('Gagal mengupdate Stok Material massal');
+    },
+  });
+
+  const [isBulkStokDialogOpen, setIsBulkStokDialogOpen] = React.useState(false);
+
+  const handleBulkStokUpdate = () => {
+    bulkUpdateStokMutation.mutate({
+      ketersediaan_stok: stokStatus || undefined,
+      tanggal_menerima_dokubah: stokMenerima || undefined,
+      tanggal_keluar: stokKeluar || undefined,
+      pic_id: isManualPic ? undefined : (stokPicId ? parseInt(stokPicId) : undefined),
+      new_pic_name: isManualPic ? newPicName : undefined,
+      new_pic_jabatan: isManualPic ? newPicJabatan : undefined,
+      deskripsi_belum_lengkap: stokStatus === 'Belum Lengkap' ? stokDeskripsiBelumLengkap : '',
+    }, {
+      onSuccess: () => {
+        setIsBulkStokDialogOpen(false);
+      }
+    });
+  };
+
+  const openBulkStokDialog = () => {
+    setStokStatus('');
+    setStokMenerima('');
+    setStokKeluar('');
+    setStokPicId('');
+    setStokDeskripsiBelumLengkap('');
+    setIsManualPic(false);
+    setNewPicName('');
+    setNewPicJabatan('');
+    setIsBulkStokDialogOpen(true);
+  };
+
   const [isSphCollapsed, setIsSphCollapsed] = React.useState(true);
   const [isDivisiCollapsed, setIsDivisiCollapsed] = React.useState(true);
   const [isGkCollapsed, setIsGkCollapsed] = React.useState(true);
@@ -1513,6 +1570,21 @@ export default function PerencanaanDetailPage() {
                     </Command>
                   </PopoverContent>
                 </Popover>
+
+                <Button 
+                  size='sm' 
+                  variant='outline' 
+                  className='h-8 bg-white'
+                  disabled={bulkUpdateStokMutation.isPending}
+                  onClick={openBulkStokDialog}
+                >
+                  {bulkUpdateStokMutation.isPending ? (
+                    <Loader2 className='h-3.5 w-3.5 mr-2 animate-spin' />
+                  ) : (
+                    <Activity className='h-3.5 w-3.5 mr-2' />
+                  )}
+                  Set Stok Massal
+                </Button>
               </div>
             )}
             <div className='relative w-64'>
@@ -2222,6 +2294,181 @@ export default function PerencanaanDetailPage() {
                 <CheckCircle2 className='mr-2 h-4 w-4' />
               )}
               Update Stok
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Stok Material Massal Dialog */}
+      <AlertDialog open={isBulkStokDialogOpen} onOpenChange={setIsBulkStokDialogOpen}>
+        <AlertDialogContent className='max-w-md'>
+          <AlertDialogHeader>
+            <AlertDialogTitle className='flex items-center gap-2'>
+              <Activity className='h-5 w-5 text-emerald-500' />
+              Update Stok Material Massal
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Update ketersediaan stok untuk <strong>{selectedItemIds.length}</strong> item terpilih.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className='grid gap-4 py-4'>
+            <div className='space-y-2'>
+              <Label>Ketersediaan Stok</Label>
+              <div className='flex p-1 bg-neutral-100 rounded-lg border border-neutral-200'>
+                {[
+                  { value: 'Belum Lengkap', label: 'Belum Lengkap', color: 'bg-red-500' },
+                  { value: 'Lengkap', label: 'Lengkap', color: 'bg-emerald-500' }
+                ].map((option) => (
+                  <button
+                    key={option.value}
+                    type='button'
+                    onClick={() => setStokStatus(option.value)}
+                    className={cn(
+                      'flex-1 py-1.5 text-[10px] font-bold rounded-md transition-all duration-200',
+                      stokStatus === option.value
+                        ? `${option.color} text-white shadow-sm`
+                        : 'text-neutral-500 hover:text-neutral-700 hover:bg-white/50'
+                    )}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {stokStatus === 'Belum Lengkap' && (
+              <div className='space-y-2'>
+                <Label htmlFor='bulk_deskripsi_belum_lengkap'>Deskripsi Bahan Belum Lengkap</Label>
+                <Textarea
+                  id='bulk_deskripsi_belum_lengkap'
+                  placeholder='Masukkan deskripsi jika bahan belum lengkap...'
+                  value={stokDeskripsiBelumLengkap}
+                  onChange={(e) => setStokDeskripsiBelumLengkap(e.target.value)}
+                  className='text-xs resize-none'
+                  rows={3}
+                />
+              </div>
+            )}
+            <div className='grid grid-cols-2 gap-4'>
+              <div className='space-y-2'>
+                <Label>Tgl Menerima Dokubah</Label>
+                <Input
+                  type='date'
+                  value={stokMenerima}
+                  onChange={(e) => setStokMenerima(e.target.value)}
+                  className='text-xs'
+                />
+              </div>
+              <div className='space-y-2'>
+                <Label>Tgl Keluar</Label>
+                <Input
+                  type='date'
+                  value={stokKeluar}
+                  onChange={(e) => setStokKeluar(e.target.value)}
+                  className='text-xs'
+                />
+              </div>
+            </div>
+            <div className='space-y-2'>
+              <div className='flex items-center justify-between'>
+                <Label>PIC</Label>
+                <Button 
+                  variant='ghost' 
+                  size='sm' 
+                  className='h-6 text-[9px] text-blue-600 gap-1 px-1.5'
+                  onClick={() => {
+                    setIsManualPic(!isManualPic);
+                    setStokPicId('');
+                  }}
+                >
+                  {isManualPic ? (
+                    'Back to List'
+                  ) : (
+                    <>
+                      <Plus className='h-2.5 w-2.5' />
+                      Input Manual
+                    </>
+                  )}
+                </Button>
+              </div>
+              
+              {!isManualPic ? (
+                <Popover open={stokPicOpen} onOpenChange={setStokPicOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={stokPicOpen}
+                      className="w-full justify-between text-xs font-normal h-9"
+                    >
+                      {stokPicId
+                        ? pics?.find((p) => p.id.toString() === stokPicId)?.nama
+                        : "Pilih PIC..."}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0" align="start">
+                    <Command className="w-full">
+                      <CommandInput placeholder="Cari PIC..." className="h-8" />
+                      <CommandList>
+                        <CommandEmpty>PIC tidak ditemukan.</CommandEmpty>
+                        <CommandGroup>
+                          {pics?.map((p) => (
+                            <CommandItem
+                              key={p.id}
+                              value={p.nama}
+                              onSelect={() => {
+                                setStokPicId(p.id.toString());
+                                setStokPicOpen(false);
+                              }}
+                              className="text-xs"
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  stokPicId === p.id.toString() ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              {p.nama} ({p.jabatan})
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              ) : (
+                <div className='grid grid-cols-2 gap-2'>
+                  <Input 
+                    placeholder='Nama PIC...'
+                    value={newPicName}
+                    onChange={(e) => setNewPicName(e.target.value)}
+                    className='text-xs h-9'
+                  />
+                  <Input 
+                    placeholder='Jabatan...'
+                    value={newPicJabatan}
+                    onChange={(e) => setNewPicJabatan(e.target.value)}
+                    className='text-xs h-9'
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setIsBulkStokDialogOpen(false)}>
+              Cancel
+            </AlertDialogCancel>
+            <Button
+              className='bg-emerald-600 hover:bg-emerald-700'
+              onClick={handleBulkStokUpdate}
+              disabled={bulkUpdateStokMutation.isPending}
+            >
+              {bulkUpdateStokMutation.isPending ? (
+                <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+              ) : (
+                <CheckCircle2 className='mr-2 h-4 w-4' />
+              )}
+              Update Stok Massal
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
