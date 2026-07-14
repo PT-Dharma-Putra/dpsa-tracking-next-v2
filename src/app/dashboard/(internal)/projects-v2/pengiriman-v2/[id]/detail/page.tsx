@@ -85,7 +85,6 @@ import {
 } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
 import { Check, ChevronsUpDown, Plus, ClipboardList } from 'lucide-react';
-
 import {
   projectV2Service,
   ProjectItemV2,
@@ -2636,7 +2635,7 @@ export default function PerencanaanDetailPage() {
           <AlertDialogHeader>
             <AlertDialogTitle className='flex items-center gap-2 text-base'>
               <Printer className='h-4 w-4 text-blue-600' />
-              Label Packing — {qrItem?.item}
+              Label Packing -— {qrItem?.item}
             </AlertDialogTitle>
             <AlertDialogDescription className='text-xs'>
               Preview label cetak. Klik <strong>Print Label</strong> untuk
