@@ -656,6 +656,31 @@ export default function PerencanaanDetailPage() {
     }
   };
 
+  const filteredItems = React.useMemo(() => {
+    if (!items) return [];
+    return [...items]
+      .filter((item) => {
+        if (!searchQuery.trim()) return true;
+        const q = searchQuery.toLowerCase();
+        return (
+          item.item?.toLowerCase().includes(q) ||
+          (item.lantai ?? '').toLowerCase().includes(q) ||
+          (item.ruang ?? '').toLowerCase().includes(q) ||
+          (item.keterangan ?? '').toLowerCase().includes(q) ||
+          (item.material_utama ?? '').toLowerCase().includes(q)
+        );
+      })
+      .sort((a, b) => {
+        const lantaiA = a.lantai ?? '';
+        const lantaiB = b.lantai ?? '';
+        const lantaiCmp = lantaiA.localeCompare(lantaiB, undefined, { numeric: true, sensitivity: 'base' });
+        if (lantaiCmp !== 0) return lantaiCmp;
+        const ruangA = a.ruang ?? '';
+        const ruangB = b.ruang ?? '';
+        return ruangA.localeCompare(ruangB, undefined, { numeric: true, sensitivity: 'base' });
+      });
+  }, [items, searchQuery]);
+
   if (isLoadingProject) {
     return (
       <div className='flex h-[400px] items-center justify-center'>
@@ -764,30 +789,7 @@ export default function PerencanaanDetailPage() {
     },
   ];
 
-  const filteredItems = React.useMemo(() => {
-    if (!items) return [];
-    return [...items]
-      .filter((item) => {
-        if (!searchQuery.trim()) return true;
-        const q = searchQuery.toLowerCase();
-        return (
-          item.item?.toLowerCase().includes(q) ||
-          (item.lantai ?? '').toLowerCase().includes(q) ||
-          (item.ruang ?? '').toLowerCase().includes(q) ||
-          (item.keterangan ?? '').toLowerCase().includes(q) ||
-          (item.material_utama ?? '').toLowerCase().includes(q)
-        );
-      })
-      .sort((a, b) => {
-        const lantaiA = a.lantai ?? '';
-        const lantaiB = b.lantai ?? '';
-        const lantaiCmp = lantaiA.localeCompare(lantaiB, undefined, { numeric: true, sensitivity: 'base' });
-        if (lantaiCmp !== 0) return lantaiCmp;
-        const ruangA = a.ruang ?? '';
-        const ruangB = b.ruang ?? '';
-        return ruangA.localeCompare(ruangB, undefined, { numeric: true, sensitivity: 'base' });
-      });
-  }, [items, searchQuery]);
+
 
   return (
     <div className='flex flex-col gap-6 p-6 max-w-[1600px] mx-auto w-full'>
