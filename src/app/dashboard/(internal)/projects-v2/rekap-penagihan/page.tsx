@@ -316,7 +316,7 @@ export default function RekapPenagihanPage() {
   );
 
   return (
-    <div className='space-y-6 max-w-[1600px] mx-auto p-6'>
+    <div className='space-y-6 w-full max-w-full overflow-hidden'>
       <div>
         <h1 className='text-2xl font-semibold tracking-tight pt-4'>
           Rekap Penagihan
@@ -389,7 +389,7 @@ export default function RekapPenagihanPage() {
         </div>
       </div>
 
-      <div className='rounded-xl border border-neutral-200 bg-white overflow-hidden shadow-sm'>
+      <div className='rounded-xl overflow-hidden shadow-sm'>
         <div className='overflow-x-auto max-w-full'>
           <Table>
             <TableHeader className='bg-neutral-50/80'>
