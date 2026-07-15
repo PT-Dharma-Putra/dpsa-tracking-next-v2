@@ -229,15 +229,15 @@ export default function PurchasingDetailPage() {
 
     selectedItems.forEach((item) => {
       if (item.produksi) {
-        initialProduksiData.cold_press += item.produksi.cold_press || 0;
-        initialProduksiData.running_saw += item.produksi.running_saw || 0;
-        initialProduksiData.edging += item.produksi.edging || 0;
-        initialProduksiData.cnc += item.produksi.cnc || 0;
-        initialProduksiData.tukang_kayu += item.produksi.tukang_kayu || 0;
-        initialProduksiData.tukang_jok += item.produksi.tukang_jok || 0;
-        initialProduksiData.rakit += item.produksi.rakit || 0;
-        initialProduksiData.finishing += item.produksi.finishing || 0;
-        initialProduksiData.menggunakan_stok += item.produksi.menggunakan_stok || 0;
+        initialProduksiData.cold_press += parseInt(item.produksi.cold_press as any, 10) || 0;
+        initialProduksiData.running_saw += parseInt(item.produksi.running_saw as any, 10) || 0;
+        initialProduksiData.edging += parseInt(item.produksi.edging as any, 10) || 0;
+        initialProduksiData.cnc += parseInt(item.produksi.cnc as any, 10) || 0;
+        initialProduksiData.tukang_kayu += parseInt(item.produksi.tukang_kayu as any, 10) || 0;
+        initialProduksiData.tukang_jok += parseInt(item.produksi.tukang_jok as any, 10) || 0;
+        initialProduksiData.rakit += parseInt(item.produksi.rakit as any, 10) || 0;
+        initialProduksiData.finishing += parseInt(item.produksi.finishing as any, 10) || 0;
+        initialProduksiData.menggunakan_stok += parseInt(item.produksi.menggunakan_stok as any, 10) || 0;
       }
     });
 
@@ -252,11 +252,11 @@ export default function PurchasingDetailPage() {
 
     selectedItems.forEach((item) => {
       if (item.barang_supplier) {
-        initialSupplierData.barang_dipesan += item.barang_supplier.barang_dipesan || 0;
-        initialSupplierData.barang_tersedia += item.barang_supplier.barang_tersedia || 0;
-        initialSupplierData.rakit += item.barang_supplier.rakit || 0;
-        initialSupplierData.packing += item.barang_supplier.packing || 0;
-        initialSupplierData.terkirim += item.barang_supplier.terkirim || 0;
+        initialSupplierData.barang_dipesan += parseInt(item.barang_supplier.barang_dipesan as any, 10) || 0;
+        initialSupplierData.barang_tersedia += parseInt(item.barang_supplier.barang_tersedia as any, 10) || 0;
+        initialSupplierData.rakit += parseInt(item.barang_supplier.rakit as any, 10) || 0;
+        initialSupplierData.packing += parseInt(item.barang_supplier.packing as any, 10) || 0;
+        initialSupplierData.terkirim += parseInt(item.barang_supplier.terkirim as any, 10) || 0;
       }
     });
 
