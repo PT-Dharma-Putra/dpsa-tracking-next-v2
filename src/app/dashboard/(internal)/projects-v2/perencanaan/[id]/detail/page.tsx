@@ -669,15 +669,6 @@ export default function PerencanaanDetailPage() {
           (item.keterangan ?? '').toLowerCase().includes(q) ||
           (item.material_utama ?? '').toLowerCase().includes(q)
         );
-      })
-      .sort((a, b) => {
-        const lantaiA = a.lantai ?? '';
-        const lantaiB = b.lantai ?? '';
-        const lantaiCmp = lantaiA.localeCompare(lantaiB, undefined, { numeric: true, sensitivity: 'base' });
-        if (lantaiCmp !== 0) return lantaiCmp;
-        const ruangA = a.ruang ?? '';
-        const ruangB = b.ruang ?? '';
-        return ruangA.localeCompare(ruangB, undefined, { numeric: true, sensitivity: 'base' });
       });
   }, [items, searchQuery]);
 
