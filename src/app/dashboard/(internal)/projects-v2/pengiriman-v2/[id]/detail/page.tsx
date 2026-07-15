@@ -4214,24 +4214,26 @@ export default function PerencanaanDetailPage() {
         open={isMassLabelDialogOpen}
         onOpenChange={setIsMassLabelDialogOpen}
       >
-        <AlertDialogContent className='max-w-2xl'>
+        <AlertDialogContent className='w-[95vw] max-w-5xl'>
           <AlertDialogHeader>
             <AlertDialogTitle className='flex items-center gap-2 text-base'>
               <Printer className='h-4 w-4 text-blue-600' />
-              Konfigurasi Print Label Massal
+              Konfigurasi Print Label Massal ya
             </AlertDialogTitle>
             <AlertDialogDescription className='text-xs'>
               Sesuaikan nilai <strong>Item per packing</strong> untuk setiap item. Secara default terisi sesuai Qty pesanan.
             </AlertDialogDescription>
           </AlertDialogHeader>
 
-          <div className='max-h-[60vh] overflow-y-auto border border-neutral-200 rounded-md mt-4'>
-            <Table>
-              <TableHeader className='bg-neutral-50'>
+            <Table containerClassName='max-h-[60vh] overflow-x-scroll overflow-y-auto border border-neutral-200 rounded-md mt-4 custom-scrollbar'>
+              <TableHeader className='bg-neutral-50 sticky top-0 z-10 shadow-sm shadow-neutral-200/50'>
                 <TableRow>
                   <TableHead className='text-xs'>Item</TableHead>
                   <TableHead className='text-xs text-center'>Qty</TableHead>
-                  <TableHead className='text-xs text-center'>Item per packing</TableHead>
+                  <TableHead className='text-xs text-center'>
+                    <span className='block'>Item</span>
+                    <span className='block'>Per Packing</span>
+                  </TableHead>
                   <TableHead className='text-xs text-center'>Bagian</TableHead>
                   <TableHead className='text-xs text-center'>Total Label</TableHead>
                 </TableRow>
@@ -4255,7 +4257,7 @@ export default function PerencanaanDetailPage() {
                           </div>
                         </TableCell>
                         <TableCell className='text-xs text-center'>
-                          {item.jumlah} <span className='text-[10px] text-muted-foreground'>{item.satuan}</span>
+                          {item.jumlah}
                         </TableCell>
                         <TableCell className='text-xs text-center'>
                           <Input
@@ -4310,7 +4312,6 @@ export default function PerencanaanDetailPage() {
                   })}
               </TableBody>
             </Table>
-          </div>
 
           <AlertDialogFooter className='mt-4 flex items-center justify-between'>
             <div className='text-xs text-muted-foreground font-medium'>
