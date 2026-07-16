@@ -438,7 +438,6 @@ export default function ProjectItemsPage() {
       file,
       number,
       deadline,
-      prioritas,
       tanggal_masuk,
       nominal_dpp,
       tanggal_spk,
