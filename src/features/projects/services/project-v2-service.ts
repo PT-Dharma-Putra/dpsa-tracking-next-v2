@@ -269,6 +269,7 @@ export const projectV2Service = {
     deadline?: string;
     tanggal_selesai?: string | null;
     need_design?: number;
+    prioritas?: 'Normal' | 'Urgent';
   }) => {
     const { data } = await apiClient.post<ProjectV2>('/projects-v2', payload);
     return data;
@@ -283,6 +284,7 @@ export const projectV2Service = {
       deadline?: string;
       tanggal_selesai?: string | null;
       need_design?: number;
+      prioritas?: 'Normal' | 'Urgent';
     }
   ) => {
     const { data } = await apiClient.put<ProjectV2>(

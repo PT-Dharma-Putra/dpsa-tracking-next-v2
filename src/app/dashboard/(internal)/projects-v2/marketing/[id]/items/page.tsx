@@ -379,9 +379,6 @@ export default function ProjectItemsPage() {
   const [spkNumber, setSpkNumber] = React.useState<string>('');
   const [spkTanggalSpk, setSpkTanggalSpk] = React.useState<string>('');
   const [spkDeadline, setSpkDeadline] = React.useState<string>('');
-  const [spkPrioritas, setSpkPrioritas] = React.useState<'Normal' | 'Urgent'>(
-    'Normal'
-  );
   const [spkTanggalMasuk, setSpkTanggalMasuk] = React.useState<string>('');
   const [spkNominal, setSpkNominal] = React.useState<string>('');
   const [spkPpn, setSpkPpn] = React.useState<string>('');
@@ -452,7 +449,6 @@ export default function ProjectItemsPage() {
       file: File;
       number: string;
       deadline?: string;
-      prioritas?: string;
       tanggal_masuk?: string;
       nominal_dpp?: string;
       tanggal_spk?: string;
@@ -465,7 +461,7 @@ export default function ProjectItemsPage() {
         file,
         number,
         deadline,
-        prioritas,
+        undefined, // prioritas is no longer passed from this form
         tanggal_masuk,
         nominal_dpp,
         tanggal_spk,
@@ -480,7 +476,6 @@ export default function ProjectItemsPage() {
       setSpkNumber('');
       setSpkTanggalSpk('');
       setSpkDeadline('');
-      setSpkPrioritas('Normal');
       setSpkTanggalMasuk('');
       setSpkNominal('');
       setSpkPpn('');
@@ -501,7 +496,6 @@ export default function ProjectItemsPage() {
       file: spkFile,
       number: spkNumber,
       deadline: spkDeadline,
-      prioritas: spkPrioritas,
       tanggal_masuk: spkTanggalMasuk,
       nominal_dpp: parseRawNumber(spkNominal),
       tanggal_spk: spkTanggalSpk,
@@ -557,11 +551,7 @@ export default function ProjectItemsPage() {
   const [editSpkNumber, setEditSpkNumber] = React.useState<string>('');
   const [editSpkTanggalSpk, setEditSpkTanggalSpk] = React.useState<string>('');
   const [editSpkDeadline, setEditSpkDeadline] = React.useState<string>('');
-  const [editSpkPrioritas, setEditSpkPrioritas] = React.useState<
-    'Normal' | 'Urgent'
-  >('Normal');
-  const [editSpkTanggalMasuk, setEditSpkTanggalMasuk] =
-    React.useState<string>('');
+  const [editSpkTanggalMasuk, setEditSpkTanggalMasuk] = React.useState<string>('');
   const [editSpkNominal, setEditSpkNominal] = React.useState<string>('');
   const [editSpkPpn, setEditSpkPpn] = React.useState<string>('');
   const [editSpkGrandTotal, setEditSpkGrandTotal] = React.useState<string>('');
@@ -574,7 +564,6 @@ export default function ProjectItemsPage() {
         file: editSpkFile,
         tanggal_spk: editSpkTanggalSpk || undefined,
         deadline: editSpkDeadline || undefined,
-        prioritas: editSpkPrioritas,
         tanggal_masuk: editSpkTanggalMasuk || undefined,
         nominal_dpp: editSpkNominal ? parseRawNumber(editSpkNominal) : undefined,
         ppn: editSpkPpn || undefined,
@@ -600,9 +589,6 @@ export default function ProjectItemsPage() {
       setEditSpkNumber(existingSpk.nomor_spk || '');
       setEditSpkTanggalSpk(toDateInput(existingSpk.tanggal_spk));
       setEditSpkDeadline(toDateInput(project?.deadline));
-      setEditSpkPrioritas(
-        (project?.prioritas as 'Normal' | 'Urgent') || 'Normal'
-      );
       setEditSpkTanggalMasuk(toDateInput(existingSpk.tanggal_masuk));
       setEditSpkNominal(
         existingSpk.nominal_dpp ? formatRupiah(String(existingSpk.nominal_dpp)) : ''
@@ -2583,35 +2569,7 @@ export default function ProjectItemsPage() {
                 className='h-9 text-xs font-mono border-purple-200'
               />
             </div>
-            <div className='space-y-1.5'>
-              <Label className='text-xs font-medium text-purple-700'>
-                Prioritas Pekerjaan
-              </Label>
-              <div className='flex rounded-md border border-purple-200 overflow-hidden h-9'>
-                <button
-                  type='button'
-                  onClick={() => setEditSpkPrioritas('Normal')}
-                  className={`flex-1 text-xs font-semibold transition-colors ${
-                    editSpkPrioritas === 'Normal'
-                      ? 'bg-purple-600 text-white'
-                      : 'bg-white text-neutral-500 hover:bg-purple-50'
-                  }`}
-                >
-                  Normal
-                </button>
-                <button
-                  type='button'
-                  onClick={() => setEditSpkPrioritas('Urgent')}
-                  className={`flex-1 text-xs font-semibold border-l border-purple-200 transition-colors ${
-                    editSpkPrioritas === 'Urgent'
-                      ? 'bg-red-500 text-white'
-                      : 'bg-white text-neutral-500 hover:bg-red-50'
-                  }`}
-                >
-                  Urgent
-                </button>
-              </div>
-            </div>
+
             <div className='space-y-1.5'>
               <Label className='text-xs font-medium text-purple-700'>
                 Diterbitkan Oleh
@@ -2815,35 +2773,7 @@ export default function ProjectItemsPage() {
                 className='h-9 text-xs font-mono border-purple-200'
               />
             </div>
-            <div className='space-y-1.5'>
-              <Label className='text-xs font-medium text-purple-700'>
-                Prioritas Pekerjaan
-              </Label>
-              <div className='flex rounded-md border border-purple-200 overflow-hidden h-9'>
-                <button
-                  type='button'
-                  onClick={() => setSpkPrioritas('Normal')}
-                  className={`flex-1 text-xs font-semibold transition-colors ${
-                    spkPrioritas === 'Normal'
-                      ? 'bg-purple-600 text-white'
-                      : 'bg-white text-neutral-500 hover:bg-purple-50'
-                  }`}
-                >
-                  Normal
-                </button>
-                <button
-                  type='button'
-                  onClick={() => setSpkPrioritas('Urgent')}
-                  className={`flex-1 text-xs font-semibold border-l border-purple-200 transition-colors ${
-                    spkPrioritas === 'Urgent'
-                      ? 'bg-red-500 text-white'
-                      : 'bg-white text-neutral-500 hover:bg-red-50'
-                  }`}
-                >
-                  Urgent
-                </button>
-              </div>
-            </div>
+
             <div className='space-y-1.5'>
               <Label className='text-xs font-medium text-purple-700'>
                 Diterbitkan Oleh

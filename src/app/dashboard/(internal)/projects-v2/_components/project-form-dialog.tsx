@@ -51,6 +51,7 @@ const formSchema = z.object({
     client_id: z.string().min(1, "Client is required"),
     tanggal_selesai: z.date().optional().nullable(),
     need_design: z.number(),
+    prioritas: z.enum(['Normal', 'Urgent']).default('Normal'),
 })
 
 type FormValues = z.infer<typeof formSchema>
@@ -118,6 +119,7 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
             client_id: "",
             tanggal_selesai: null,
             need_design: 1,
+            prioritas: "Normal",
         },
     })
 
@@ -129,6 +131,7 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
                     client_id: project.client_id.toString(),
                     tanggal_selesai: project.tanggal_selesai ? new Date(project.tanggal_selesai) : null,
                     need_design: project.need_design ?? 1,
+                    prioritas: project.prioritas || "Normal",
                 })
             } else {
                 form.reset({
@@ -136,6 +139,7 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
                     client_id: "",
                     tanggal_selesai: null,
                     need_design: 1,
+                    prioritas: "Normal",
                 })
             }
         }
@@ -148,6 +152,7 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
                 client_id: parseInt(values.client_id),
                 tanggal_selesai: values.tanggal_selesai ? format(values.tanggal_selesai, "yyyy-MM-dd") : null,
                 need_design: values.need_design,
+                prioritas: values.prioritas,
             }
 
             if (isEdit) {
@@ -265,6 +270,33 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
                                             </Command>
                                         </PopoverContent>
                                     </Popover>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        <FormField
+                            control={form.control}
+                            name="prioritas"
+                            render={({ field }) => (
+                                <FormItem className="space-y-3">
+                                    <FormLabel>Prioritas Pekerjaan</FormLabel>
+                                    <FormControl>
+                                        <RadioGroup
+                                            onValueChange={field.onChange}
+                                            value={field.value}
+                                            className="flex gap-4"
+                                        >
+                                            <div className="flex items-center space-x-2">
+                                                <RadioGroupItem value="Normal" id="prioritas-normal" />
+                                                <Label htmlFor="prioritas-normal" className="font-normal cursor-pointer">Normal</Label>
+                                            </div>
+                                            <div className="flex items-center space-x-2">
+                                                <RadioGroupItem value="Urgent" id="prioritas-urgent" />
+                                                <Label htmlFor="prioritas-urgent" className="font-normal cursor-pointer">Urgent</Label>
+                                            </div>
+                                        </RadioGroup>
+                                    </FormControl>
                                     <FormMessage />
                                 </FormItem>
                             )}
