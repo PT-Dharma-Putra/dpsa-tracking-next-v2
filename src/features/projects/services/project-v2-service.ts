@@ -71,7 +71,7 @@ export interface ProjectV2 {
     note_revision: string | null;
     created_at: string;
   };
-  spk?: {
+    spk?: {
     id: number;
     nomor_spk?: string;
     nominal?: string | number | null;
@@ -83,6 +83,11 @@ export interface ProjectV2 {
     spk_status: string | null;
     tanggal_masuk: string | null;
     tanggal_spk?: string | null;
+    penerbit_id?: number | null;
+    penerbit?: {
+      id: number;
+      name: string;
+    } | null;
     created_at: string;
   };
   list_furnitur?: {
@@ -507,6 +512,7 @@ export const projectV2Service = {
       nominal_dpp?: string;
       ppn?: string;
       grand_total?: string;
+      penerbit_id?: string;
       file?: File | null;
     }
   ) => {
@@ -522,6 +528,7 @@ export const projectV2Service = {
     if (payload.nominal_dpp) formData.append('nominal_dpp', payload.nominal_dpp);
     if (payload.ppn) formData.append('ppn', payload.ppn);
     if (payload.grand_total) formData.append('grand_total', payload.grand_total);
+    if (payload.penerbit_id) formData.append('penerbit_id', payload.penerbit_id);
     const { data } = await apiClient.post(
       `/projects-v2/${projectId}/update-spk`,
       formData
@@ -539,7 +546,8 @@ export const projectV2Service = {
     nominal_dpp?: string,
     tanggal_spk?: string,
     ppn?: string,
-    grand_total?: string
+    grand_total?: string,
+    penerbit_id?: string
   ) => {
     const formData = new FormData();
     formData.append('file', file);
@@ -550,6 +558,7 @@ export const projectV2Service = {
     if (nominal_dpp) formData.append('nominal_dpp', nominal_dpp);
     if (ppn) formData.append('ppn', ppn);
     if (grand_total) formData.append('grand_total', grand_total);
+    if (penerbit_id) formData.append('penerbit_id', penerbit_id);
     if (tanggal_spk) formData.append('tanggal_spk', tanggal_spk);
     const { data } = await apiClient.post(
       `/projects-v2/${projectId}/upload-spk`,

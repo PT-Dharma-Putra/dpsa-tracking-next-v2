@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
 import {
   Plus,
   Pencil,
@@ -83,6 +83,18 @@ import { ProjectItemImportDialog } from '../../../_components/project-item-impor
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import { ClientService } from '@/features/clients/services/client-service';
+import { cn } from '@/lib/utils';
+import { Check } from 'lucide-react';
 
 const formatRupiah = (value: string | number) => {
   if (value === null || value === undefined || value === '') return '';
@@ -374,6 +386,55 @@ export default function ProjectItemsPage() {
   const [spkNominal, setSpkNominal] = React.useState<string>('');
   const [spkPpn, setSpkPpn] = React.useState<string>('');
   const [spkGrandTotal, setSpkGrandTotal] = React.useState<string>('');
+  const [spkPenerbitId, setSpkPenerbitId] = React.useState<string>('');
+
+  const [clientPopoverOpen, setClientPopoverOpen] = React.useState(false);
+  const [editClientPopoverOpen, setEditClientPopoverOpen] = React.useState(false);
+  const [searchQuery, setSearchQuery] = React.useState('');
+  const [debouncedSearch, setDebouncedSearch] = React.useState('');
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchQuery), 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  const {
+    data: clientsData,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading: isLoadingClients,
+  } = useInfiniteQuery({
+    queryKey: ['clients', debouncedSearch],
+    queryFn: ({ pageParam = 1 }) =>
+      ClientService.getClients({ page: pageParam, search: debouncedSearch }),
+    getNextPageParam: (lastPage: any) => {
+      const current_page = lastPage.meta?.current_page;
+      const last_page = lastPage.meta?.last_page;
+      return current_page < last_page ? current_page + 1 : undefined;
+    },
+    initialPageParam: 1,
+  });
+
+  const clientsRaw = clientsData?.pages.flatMap((page) => page.data) || [];
+  const clients = Array.from(new Map(clientsRaw.map((c: any) => [c.id, c])).values());
+
+  const observerRef = React.useRef<IntersectionObserver>(null);
+  const loadMoreRef = React.useCallback(
+    (node: HTMLDivElement | null) => {
+      if (isFetchingNextPage) return;
+      if (observerRef.current) observerRef.current.disconnect();
+
+      observerRef.current = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting && hasNextPage) {
+          fetchNextPage();
+        }
+      });
+
+      if (node) observerRef.current.observe(node);
+    },
+    [isFetchingNextPage, hasNextPage, fetchNextPage]
+  );
 
   const uploadSpkMutation = useMutation({
     mutationFn: ({
@@ -386,6 +447,7 @@ export default function ProjectItemsPage() {
       tanggal_spk,
       ppn,
       grand_total,
+      penerbit_id,
     }: {
       file: File;
       number: string;
@@ -396,6 +458,7 @@ export default function ProjectItemsPage() {
       tanggal_spk?: string;
       ppn?: string;
       grand_total?: string;
+      penerbit_id?: string;
     }) =>
       projectV2Service.uploadSPK(
         projectId,
@@ -407,7 +470,8 @@ export default function ProjectItemsPage() {
         nominal_dpp,
         tanggal_spk,
         ppn,
-        grand_total
+        grand_total,
+        penerbit_id
       ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects-v2', projectId] });
@@ -421,6 +485,7 @@ export default function ProjectItemsPage() {
       setSpkNominal('');
       setSpkPpn('');
       setSpkGrandTotal('');
+      setSpkPenerbitId('');
     },
     onError: () => {
       toast.error('Failed to upload SPK');
@@ -442,6 +507,7 @@ export default function ProjectItemsPage() {
       tanggal_spk: spkTanggalSpk,
       ppn: spkPpn,
       grand_total: spkGrandTotal,
+      penerbit_id: spkPenerbitId || undefined,
     });
   };
 
@@ -499,6 +565,7 @@ export default function ProjectItemsPage() {
   const [editSpkNominal, setEditSpkNominal] = React.useState<string>('');
   const [editSpkPpn, setEditSpkPpn] = React.useState<string>('');
   const [editSpkGrandTotal, setEditSpkGrandTotal] = React.useState<string>('');
+  const [editSpkPenerbitId, setEditSpkPenerbitId] = React.useState<string>('');
 
   const updateSpkMutation = useMutation({
     mutationFn: () =>
@@ -512,6 +579,7 @@ export default function ProjectItemsPage() {
         nominal_dpp: editSpkNominal ? parseRawNumber(editSpkNominal) : undefined,
         ppn: editSpkPpn || undefined,
         grand_total: editSpkGrandTotal ? parseRawNumber(editSpkGrandTotal) : undefined,
+        penerbit_id: editSpkPenerbitId || undefined,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects-v2', projectId] });
@@ -543,6 +611,7 @@ export default function ProjectItemsPage() {
       setEditSpkGrandTotal(
         existingSpk.nominal ? formatRupiah(String(existingSpk.nominal)) : ''
       );
+      setEditSpkPenerbitId(existingSpk.penerbit_id ? String(existingSpk.penerbit_id) : '');
     }
     setIsEditSpkModalOpen(true);
   };
@@ -2544,6 +2613,74 @@ export default function ProjectItemsPage() {
               </div>
             </div>
             <div className='space-y-1.5'>
+              <Label className='text-xs font-medium text-purple-700'>
+                Diterbitkan Oleh
+              </Label>
+              <Popover open={editClientPopoverOpen} onOpenChange={setEditClientPopoverOpen}>
+                  <PopoverTrigger asChild>
+                      <Button
+                          variant="outline"
+                          role="combobox"
+                          className={cn(
+                              "w-full justify-between h-9 text-xs border-purple-200 font-normal",
+                              !editSpkPenerbitId && "text-muted-foreground"
+                          )}
+                      >
+                          {editSpkPenerbitId && clients.length > 0
+                              ? clients.find(
+                                    (client) => client.id.toString() === editSpkPenerbitId
+                                )?.name || "Pilih Penerbit..."
+                              : "Pilih Penerbit..."}
+                          <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[400px] p-0" align="start">
+                      <Command shouldFilter={false}>
+                          <CommandInput 
+                              placeholder="Cari client..." 
+                              value={searchQuery}
+                              onValueChange={setSearchQuery}
+                              className="text-xs h-9"
+                          />
+                          <CommandList>
+                              <CommandEmpty className="text-xs p-2 text-center text-muted-foreground">
+                                  {isLoadingClients ? 'Loading...' : 'Tidak ditemukan.'}
+                              </CommandEmpty>
+                              <CommandGroup>
+                                  {clients.map((client) => (
+                                      <CommandItem
+                                          value={client.id.toString()}
+                                          key={client.id}
+                                          onSelect={() => {
+                                              setEditSpkPenerbitId(client.id.toString());
+                                              setEditClientPopoverOpen(false);
+                                          }}
+                                          className="text-xs"
+                                      >
+                                          <Check
+                                              className={cn(
+                                                  "mr-2 h-4 w-4",
+                                                  client.id.toString() === editSpkPenerbitId
+                                                      ? "opacity-100"
+                                                      : "opacity-0"
+                                              )}
+                                          />
+                                          {client.name}
+                                      </CommandItem>
+                                  ))}
+                              </CommandGroup>
+                              {hasNextPage && (
+                                  <div ref={loadMoreRef} className="py-2 flex justify-center items-center">
+                                      <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+                                      <span className="ml-2 text-[10px] text-muted-foreground">Loading more...</span>
+                                  </div>
+                              )}
+                          </CommandList>
+                      </Command>
+                  </PopoverContent>
+              </Popover>
+            </div>
+            <div className='space-y-1.5'>
               <Label className='text-xs font-medium'>
                 Ganti File{' '}
                 <span className='text-neutral-400 font-normal'>
@@ -2706,6 +2843,74 @@ export default function ProjectItemsPage() {
                   Urgent
                 </button>
               </div>
+            </div>
+            <div className='space-y-1.5'>
+              <Label className='text-xs font-medium text-purple-700'>
+                Diterbitkan Oleh
+              </Label>
+              <Popover open={clientPopoverOpen} onOpenChange={setClientPopoverOpen}>
+                  <PopoverTrigger asChild>
+                      <Button
+                          variant="outline"
+                          role="combobox"
+                          className={cn(
+                              "w-full justify-between h-9 text-xs border-purple-200 font-normal",
+                              !spkPenerbitId && "text-muted-foreground"
+                          )}
+                      >
+                          {spkPenerbitId && clients.length > 0
+                              ? clients.find(
+                                    (client) => client.id.toString() === spkPenerbitId
+                                )?.name || "Pilih Penerbit..."
+                              : "Pilih Penerbit..."}
+                          <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[400px] p-0" align="start">
+                      <Command shouldFilter={false}>
+                          <CommandInput 
+                              placeholder="Cari client..." 
+                              value={searchQuery}
+                              onValueChange={setSearchQuery}
+                              className="text-xs h-9"
+                          />
+                          <CommandList>
+                              <CommandEmpty className="text-xs p-2 text-center text-muted-foreground">
+                                  {isLoadingClients ? 'Loading...' : 'Tidak ditemukan.'}
+                              </CommandEmpty>
+                              <CommandGroup>
+                                  {clients.map((client) => (
+                                      <CommandItem
+                                          value={client.id.toString()}
+                                          key={client.id}
+                                          onSelect={() => {
+                                              setSpkPenerbitId(client.id.toString());
+                                              setClientPopoverOpen(false);
+                                          }}
+                                          className="text-xs"
+                                      >
+                                          <Check
+                                              className={cn(
+                                                  "mr-2 h-4 w-4",
+                                                  client.id.toString() === spkPenerbitId
+                                                      ? "opacity-100"
+                                                      : "opacity-0"
+                                              )}
+                                          />
+                                          {client.name}
+                                      </CommandItem>
+                                  ))}
+                              </CommandGroup>
+                              {hasNextPage && (
+                                  <div ref={loadMoreRef} className="py-2 flex justify-center items-center">
+                                      <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+                                      <span className="ml-2 text-[10px] text-muted-foreground">Loading more...</span>
+                                  </div>
+                              )}
+                          </CommandList>
+                      </Command>
+                  </PopoverContent>
+              </Popover>
             </div>
             <div className='space-y-1.5'>
               <Label className='text-xs font-medium'>
