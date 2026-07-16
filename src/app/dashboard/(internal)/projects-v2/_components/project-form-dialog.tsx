@@ -51,7 +51,7 @@ const formSchema = z.object({
     client_id: z.string().min(1, "Client is required"),
     tanggal_selesai: z.date().optional().nullable(),
     need_design: z.number(),
-    prioritas: z.enum(['Normal', 'Urgent']).default('Normal'),
+    prioritas: z.enum(['Normal', 'Urgent']),
 })
 
 type FormValues = z.infer<typeof formSchema>
