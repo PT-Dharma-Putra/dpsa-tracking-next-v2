@@ -2241,24 +2241,23 @@ export default function ProjectItemsPage() {
             </div>
             <div className='space-y-1.5'>
               <Label className='text-xs font-medium text-blue-700'>
-                PPN (%)
+                PPN 12% (11/12 x 12%)
               </Label>
-              <Input
-                type='number'
-                placeholder='Contoh: 11 atau 12'
-                value={editSphPpn}
-                onChange={(e) => {
-                  const pct = e.target.value;
-                  setEditSphPpn(pct);
-                  const nominalNum = parseInt(parseRawNumber(editSphNominal) || '0', 10);
-                  const ppnAmount = Math.round(nominalNum * (parseFloat(pct || '0') / 100));
-                  setEditSphGrandTotal((nominalNum + ppnAmount) > 0 ? formatRupiah((nominalNum + ppnAmount).toString()) : '');
-                }}
-                className='h-9 text-xs border-blue-200'
-                min='0'
-                max='100'
-                step='0.1'
-              />
+              <div className='flex items-center gap-3 h-9'>
+                <Switch
+                  checked={editSphPpn === '11'}
+                  onCheckedChange={(checked) => {
+                    const pct = checked ? '11' : '0';
+                    setEditSphPpn(pct);
+                    const nominalNum = parseInt(parseRawNumber(editSphNominal) || '0', 10);
+                    const ppnAmount = Math.round(nominalNum * (parseFloat(pct || '0') / 100));
+                    setEditSphGrandTotal((nominalNum + ppnAmount) > 0 ? formatRupiah((nominalNum + ppnAmount).toString()) : '');
+                  }}
+                />
+                <span className='text-xs font-medium text-neutral-600'>
+                  {editSphPpn === '11' ? 'Ya' : 'Tidak'}
+                </span>
+              </div>
             </div>
             <div className='space-y-1.5'>
               <Label className='text-xs font-medium text-blue-700'>
@@ -2351,23 +2350,22 @@ export default function ProjectItemsPage() {
             </div>
 
             <div className='space-y-1.5'>
-              <Label className='text-xs font-medium'>PPN (%)</Label>
-              <Input
-                type='number'
-                placeholder='Contoh: 11 atau 12'
-                value={sphPpn}
-                onChange={(e) => {
-                  const pct = e.target.value;
-                  setSphPpn(pct);
-                  const nominalNum = parseInt(sphNominal || '0', 10);
-                  const ppnAmount = Math.round(nominalNum * (parseFloat(pct || '0') / 100));
-                  setSphGrandTotal((nominalNum + ppnAmount) > 0 ? (nominalNum + ppnAmount).toString() : '');
-                }}
-                className='h-9 text-xs'
-                min='0'
-                max='100'
-                step='0.1'
-              />
+              <Label className='text-xs font-medium'>PPN 12% (11/12 x 12%)</Label>
+              <div className='flex items-center gap-3 h-9'>
+                <Switch
+                  checked={sphPpn === '11'}
+                  onCheckedChange={(checked) => {
+                    const pct = checked ? '11' : '0';
+                    setSphPpn(pct);
+                    const nominalNum = parseInt(sphNominal || '0', 10);
+                    const ppnAmount = Math.round(nominalNum * (parseFloat(pct || '0') / 100));
+                    setSphGrandTotal((nominalNum + ppnAmount) > 0 ? (nominalNum + ppnAmount).toString() : '');
+                  }}
+                />
+                <span className='text-xs font-medium text-neutral-600'>
+                  {sphPpn === '11' ? 'Ya' : 'Tidak'}
+                </span>
+              </div>
             </div>
 
             <div className='space-y-1.5'>
