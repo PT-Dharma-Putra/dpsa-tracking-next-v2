@@ -878,7 +878,7 @@ export function ProjectsV2Table({
       )}
 
       {showPiutang && stats && (
-        <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8 gap-4'>
+        <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 w-full'>
           {/* Total Project */}
           <div className='flex flex-col gap-2 p-4 rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md'>
             <div className='flex items-center gap-2 border-b border-slate-100 pb-2'>
