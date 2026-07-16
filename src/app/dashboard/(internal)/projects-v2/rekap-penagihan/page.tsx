@@ -406,17 +406,22 @@ export default function RekapPenagihanPage() {
                 </TableHead>
                 <TableHead>TGL INVOICE</TableHead>
                 <TableHead>CLIENT</TableHead>
-                <TableHead>TERMIN</TableHead>
+                {/* <TableHead>TERMIN</TableHead> */}
                 <TableHead>DESKRIPSI</TableHead>
                 <TableHead>STATUS</TableHead>
-                <TableHead>PERSENTASE</TableHead>
+                {/* <TableHead>PERSENTASE</TableHead> */}
                 <TableHead>NOMINAL</TableHead>
                 <TableHead>NO SPK</TableHead>
                 <TableHead>NO SPH</TableHead>
                 {/* <TableHead>TAKE OUT</TableHead> */}
                 <TableHead>JATUH TEMPO</TableHead>
                 <TableHead>TGL DIBAYAR</TableHead>
-                <TableHead>UMUR PENAGIHAN</TableHead>
+                <TableHead>
+                  <div className='flex flex-col items-center'>
+                    <span>UMUR</span> 
+                    <span>PENAGIHAN</span>
+                  </div>
+                </TableHead>
                 <TableHead>FILE</TableHead>
                 <TableHead className='text-right'>AKSI</TableHead>
               </TableRow>
@@ -457,9 +462,9 @@ export default function RekapPenagihanPage() {
                     <TableCell className='text-sm font-medium text-neutral-700 whitespace-nowrap'>
                       {item.project?.client?.name || '-'}
                     </TableCell>
-                    <TableCell className='font-semibold'>
+                    {/* <TableCell className='font-semibold'>
                       {item.termin?.nama || '-'}
-                    </TableCell>
+                    </TableCell> */}
                     <TableCell 
                       className='text-sm text-neutral-600 max-w-[200px] truncate'
                       title={item?.deskripsi || '-'}
@@ -492,9 +497,9 @@ export default function RekapPenagihanPage() {
                           <Pencil className='h-3.5 w-3.5' />
                         </Button>
                     </TableCell>
-                    <TableCell className='font-bold text-blue-600'>
+                    {/* <TableCell className='font-bold text-blue-600'>
                       {item.persentase}%
-                    </TableCell>
+                    </TableCell> */}
                     <TableCell className='font-semibold text-emerald-700'>
                       {item.nominal_penagihan
                         ? formatRupiah(item.nominal_penagihan)
@@ -505,7 +510,7 @@ export default function RekapPenagihanPage() {
                     >
                       {item.project?.spk?.nomor_spk || '-'}
                     </TableCell>
-                    <TableCell className='text-sm font-medium text-neutral-700 whitespace-nowrap max-w-[150px] truncate'
+                    <TableCell className='text-sm font-medium text-neutral-700 whitespace-nowrap max-w-[100px] truncate'
                       title={item?.project?.sph?.nomor_sph || '-'}
                     >
                       {item.project?.sph?.nomor_sph || '-'}
