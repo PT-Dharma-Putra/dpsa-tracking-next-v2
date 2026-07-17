@@ -1120,7 +1120,7 @@ export default function EngineerDetailPage() {
                       <TableCell>
                         <div className='flex flex-col gap-0.5'>
                           <span className='text-xs font-bold text-neutral-800'>{item.lantai || '-'}</span>
-                          <span className='text-[12px] text-muted-foreground truncate max-w-[120px]'>{item.ruang || '-'}</span>
+                          <span className='text-[12px] text-muted-foreground truncate max-w-[120px]' title={item.ruang}>{item.ruang || '-'}</span>
                         </div>
                       </TableCell>
                       <TableCell className='max-w-[200px]'>
