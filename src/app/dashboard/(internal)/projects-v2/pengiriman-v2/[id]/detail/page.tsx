@@ -4218,7 +4218,7 @@ export default function PerencanaanDetailPage() {
           <AlertDialogHeader>
             <AlertDialogTitle className='flex items-center gap-2 text-base'>
               <Printer className='h-4 w-4 text-blue-600' />
-              Konfigurasi Print Label Massal ya
+              Konfigurasi Print Label Massal
             </AlertDialogTitle>
             <AlertDialogDescription className='text-xs'>
               Sesuaikan nilai <strong>Item per packing</strong> untuk setiap item. Secara default terisi sesuai Qty pesanan.
@@ -4235,7 +4235,10 @@ export default function PerencanaanDetailPage() {
                     <span className='block'>Per Packing</span>
                   </TableHead>
                   <TableHead className='text-xs text-center'>Bagian</TableHead>
-                  <TableHead className='text-xs text-center'>Total Label</TableHead>
+                  <TableHead className='text-xs text-center'>
+                    <span className='block'>Jumlah</span>
+                    <span className='block'>Label</span>
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

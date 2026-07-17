@@ -64,11 +64,11 @@ export default function QuoteModal({ username = "John Doe" }: QuoteModalProps) {
         console.error("Error fetching quote:", error);
         // Fallback jika API bermasalah/offline
         setQuote({
-          text: "Hidup ini simple jangan dibuat susah.",
-          author: "Michael Jordan",
+          text: "Hidup ini simple jangan dibuat susah, berbahagialah.",
+          author: "Unknown",
         });
       } finally {
-        setIsLoading(false);
+        setIsLoading(false);  
       }
     }
 
