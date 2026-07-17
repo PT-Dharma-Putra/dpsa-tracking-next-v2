@@ -71,7 +71,7 @@ export function ClientFormDialog({ open, onOpenChange, client }: ClientFormDialo
         e.preventDefault()
         mutation.mutate({
             name,
-            email,
+            email: email || undefined,
             phone: phone || undefined,
             address: address || undefined,
             hermina: isHermina ? 1 : 0
@@ -108,7 +108,6 @@ export function ClientFormDialog({ open, onOpenChange, client }: ClientFormDialo
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     placeholder="contact@company.com"
-                                    required
                                 />
                             </div>
                             <div className="grid gap-2">
