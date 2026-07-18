@@ -1281,7 +1281,9 @@ export default function ProduksiDetailPage() {
           <h2 className='text-xl font-bold flex items-center gap-2'>
             <ListChecks className='h-5 w-5 text-neutral-400' />
             Project Items
+            <Badge variant='outline' className='ml-2 bg-neutral-50 text-neutral-600 border-neutral-200'>{items?.length} Items</Badge>
           </h2>
+
           <div className='flex items-center gap-2'>
             <Button
               variant={isGrouped ? 'default' : 'outline'}
@@ -1315,9 +1317,9 @@ export default function ProduksiDetailPage() {
           </div>
         </div>
 
-        <div className='rounded-xl border border-neutral-200 bg-white overflow-x-auto shadow-sm'>
-          <Table className='min-w-max'>
-            <TableHeader className='bg-neutral-50/80'>
+        <div className='rounded-xl border border-neutral-200 bg-white overflow-hidden shadow-sm'>
+          <Table className='min-w-max' containerClassName='max-h-[600px] overflow-auto'>
+            <TableHeader className='bg-neutral-50/80 sticky top-0 z-10 shadow-sm shadow-neutral-200/50'>
               <TableRow>
                 <TableHead className='w-[50px]'>#</TableHead>
                 {/* <TableHead>Kode Barang</TableHead> */}

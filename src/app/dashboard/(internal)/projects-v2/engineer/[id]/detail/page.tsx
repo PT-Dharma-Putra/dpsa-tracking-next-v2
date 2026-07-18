@@ -104,6 +104,12 @@ import {
 } from '@/features/projects/services/project-v2-service';
 import { ProjectItemFormDialog } from '../../../_components/project-item-form-dialog';
 import { Badge } from '@/components/ui/badge';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 function CopyableCode({ code }: { code: string }) {
   const [copied, setCopied] = React.useState(false);
@@ -1034,14 +1040,13 @@ export default function EngineerDetailPage() {
         </CardHeader>
         <CardContent className='p-0'>
           <div className='overflow-x-auto'>
-            <Table>
-              <TableHeader className='bg-neutral-50/50'>
+            <Table className='min-w-max' containerClassName='max-h-[600px] overflow-auto'>
+              <TableHeader className='bg-neutral-50/80 sticky top-0 z-10 shadow-sm shadow-neutral-200/50'>
                 <TableRow>
                   <TableHead className='w-[60px] text-center'>#</TableHead>
                   <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>Kode Barang</TableHead>
                   <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>Lantai | Ruang</TableHead>
                   <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>Nama Item</TableHead>
-                  <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>Spesifikasi</TableHead>
                   <TableHead className='text-[12px] text-center uppercase font-bold text-neutral-500'>Ukuran</TableHead>
                   <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>Volume</TableHead>
                   <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>Qty</TableHead>
@@ -1123,46 +1128,26 @@ export default function EngineerDetailPage() {
                           <span className='text-[12px] text-muted-foreground truncate max-w-[120px]' title={item.ruang}>{item.ruang || '-'}</span>
                         </div>
                       </TableCell>
-                      <TableCell className='max-w-[200px]'>
-                        <div className='flex flex-col'>
-                          <div className='flex items-center gap-2'>
-                            <span className='font-bold text-neutral-900 line-clamp-2'>
-                              {item.item ? (
-                                <span
-                                  className='line-clamp-2'
-                                  title={item.item}
-                                >
-                                  {item.item}
-                                </span>
-                              ) : (
-                                <span className='text-muted-foreground italic'>
-                                  -
-                                </span>
-                              )}
-                            </span>
-                            {item.custom && (
-                              <Badge
-                                variant='destructive'
-                                className='text-[8px] h-3.5 px-1 font-bold uppercase'
-                              >
-                                Custom
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className='text-sm text-neutral-600 max-w-[160px]'>
+
+                      <TableCell>
                         {item.keterangan ? (
-                          <span
-                            className='line-clamp-2'
-                            title={item.keterangan}
-                          >
-                            {item.keterangan}
-                          </span>
+                          <TooltipProvider delayDuration={200}>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className='flex flex-col gap-0.5 cursor-help'>
+                                  <span className='text-sm font-bold text-neutral-900 group-hover:text-blue-600 transition-colors'>{item.item}</span>
+                                    <span className='text-sm text-muted-foreground truncate max-w-[200px]'>{item.keterangan || '-'}</span>
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="max-w-[300px] break-words">
+                                <p className="text-xs">{item.keterangan}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                         ) : (
-                          <span className='text-muted-foreground italic'>
-                            -
-                          </span>
+                          <div className='flex flex-col gap-0.5'>
+                            <span className='text-xs font-bold text-neutral-900 group-hover:text-blue-600 transition-colors'>{item.item}</span>
+                          </div>
                         )}
                       </TableCell>
 
