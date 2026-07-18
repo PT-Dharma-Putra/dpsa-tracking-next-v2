@@ -54,6 +54,12 @@ import {
 } from '@/features/projects/services/project-v2-service';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 export default function PurchasingDetailPage() {
   const params = useParams();
@@ -1150,8 +1156,8 @@ export default function PurchasingDetailPage() {
         </div>
 
         <div className='rounded-xl border border-neutral-200 bg-white overflow-hidden shadow-sm'>
-          <Table>
-            <TableHeader className='bg-neutral-50/80'>
+          <Table className='min-w-max' containerClassName='max-h-[600px] overflow-auto'>
+            <TableHeader className='bg-neutral-50/80 sticky top-0 z-10 shadow-sm shadow-neutral-200/50'>
               <TableRow>
                 <TableHead className='w-[50px]'>#</TableHead>
                 <TableHead className='w-[40px] text-center'>
@@ -1181,17 +1187,15 @@ export default function PurchasingDetailPage() {
                     }}
                   />
                 </TableHead>
-                <TableHead>Floor</TableHead>
-                <TableHead>Room</TableHead>
-                <TableHead>Item Name</TableHead>
-                <TableHead>Desc</TableHead>
-                <TableHead>Dimensions</TableHead>
-                <TableHead>Vol</TableHead>
-                <TableHead>Qty</TableHead>
-                <TableHead>Satuan</TableHead>
-                <TableHead>PO Divisi</TableHead>
-                <TableHead>Persentase Produksi</TableHead>
-                <TableHead>Barang Jadi</TableHead>
+                <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>Lantai | Ruang</TableHead>
+                <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>Nama Item</TableHead>
+                <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>Dimensi</TableHead>
+                <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>Volume</TableHead>
+                <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>Qty</TableHead>
+                <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>Satuan</TableHead>
+                <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>PO Divisi</TableHead>
+                <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>Persentase Produksi</TableHead>
+                <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>Barang Jadi</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -1243,18 +1247,35 @@ export default function PurchasingDetailPage() {
                       />
                     </TableCell>
 
-                    <TableCell className='text-xs font-medium'>
-                      {item.lantai || '-'}
+                    <TableCell>
+                      <div className='flex flex-col gap-0.5'>
+                        <span className='text-xs font-bold text-neutral-800'>{item.lantai || '-'}</span>
+                        <span className='text-[12px] text-muted-foreground truncate max-w-[120px]' title={item.ruang}>{item.ruang || '-'}</span>
+                      </div>
                     </TableCell>
-                    <TableCell className='text-xs max-w-[120px] truncate'>
-                      {item.ruang || '-'}
+                    
+                     <TableCell>
+                      {item.keterangan ? (
+                        <TooltipProvider delayDuration={200}>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className='flex flex-col gap-0.5'>
+                                <span className='text-sm font-bold text-neutral-900 group-hover:text-blue-600 transition-colors'>{item.item}</span>
+                                  <span className='text-sm text-muted-foreground truncate max-w-[200px]'>{item.keterangan || '-'}</span>
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="max-w-[300px] break-words">
+                              <p className="text-xs">{item.keterangan}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      ) : (
+                        <div className='flex flex-col gap-0.5'>
+                          <span className='text-xs font-bold text-neutral-900 group-hover:text-blue-600 transition-colors'>{item.item}</span>
+                        </div>
+                      )}
                     </TableCell>
-                    <TableCell className='font-bold text-neutral-800'>
-                      {item.item}
-                    </TableCell>
-                    <TableCell className='max-w-[150px] truncate text-xs text-muted-foreground'>
-                      {item.keterangan || '-'}
-                    </TableCell>
+
                     <TableCell className='text-xs text-muted-foreground'>
                       {item.panjang || '-'}x{item.lebar || '-'}x
                       {item.tinggi || '-'}
