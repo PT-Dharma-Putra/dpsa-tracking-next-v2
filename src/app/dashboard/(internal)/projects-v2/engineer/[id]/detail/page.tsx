@@ -459,6 +459,7 @@ export default function EngineerDetailPage() {
   const [gkFile, setGkFile] = React.useState<File | string | null>(null);
   const [gkStart, setGkStart] = React.useState<string>('');
   const [gkEnd, setGkEnd] = React.useState<string>('');
+  const [gkInputType, setGkInputType] = React.useState<'url' | 'file'>('url');
 
   const uploadGkMutation = useMutation({
     mutationFn: (payload: {
@@ -484,6 +485,7 @@ export default function EngineerDetailPage() {
   const [bulkGkFile, setBulkGkFile] = React.useState<File | string | null>(null);
   const [bulkGkStart, setBulkGkStart] = React.useState<string>('');
   const [bulkGkEnd, setBulkGkEnd] = React.useState<string>('');
+  const [bulkGkInputType, setBulkGkInputType] = React.useState<'url' | 'file'>('url');
 
   const bulkUploadGkMutation = useMutation({
     mutationFn: async (payload: {
@@ -557,7 +559,15 @@ export default function EngineerDetailPage() {
     setGkItem(item);
     setGkStart(item.gambar_kerja?.tanggal_mulai || '');
     setGkEnd(item.gambar_kerja?.tanggal_selesai || '');
-    setGkFile(item.gambar_kerja?.file || null);
+    const fileValue = item.gambar_kerja?.file || null;
+    setGkFile(fileValue);
+    
+    if (fileValue && !fileValue.startsWith('http')) {
+      setGkInputType('file');
+    } else {
+      setGkInputType('url');
+    }
+    
     setIsGkDialogOpen(true);
   };
 
@@ -1481,15 +1491,67 @@ export default function EngineerDetailPage() {
               </div>
             </div>
             <div className='space-y-2'>
-              <Label>Link Gambar Kerja</Label>
-              <Input
-                type='text'
-                value={typeof gkFile === 'string' ? gkFile : ''}
-                onChange={(e) => setGkFile(e.target.value)}
-                placeholder='Paste link here...'
-                className='text-xs'
-              />
+              <Label>Metode Input</Label>
+              <div className='flex gap-2 p-1 bg-neutral-100 rounded-md w-full'>
+                <button 
+                  type='button'
+                  className={`flex-1 text-xs py-1.5 rounded-sm transition-colors ${gkInputType === 'url' ? 'bg-white shadow-sm font-semibold text-neutral-900' : 'text-neutral-500 hover:text-neutral-700'}`} 
+                  onClick={() => { setGkInputType('url'); setGkFile(null); }}
+                >
+                  URL Tautan
+                </button>
+                <button 
+                  type='button'
+                  className={`flex-1 text-xs py-1.5 rounded-sm transition-colors ${gkInputType === 'file' ? 'bg-white shadow-sm font-semibold text-neutral-900' : 'text-neutral-500 hover:text-neutral-700'}`} 
+                  onClick={() => { setGkInputType('file'); setGkFile(null); }}
+                >
+                  Upload File
+                </button>
+              </div>
             </div>
+            {gkInputType === 'url' ? (
+              <div key="url-input" className='space-y-2'>
+                <Label>Link Gambar Kerja</Label>
+                <Input
+                  type='text'
+                  value={typeof gkFile === 'string' ? gkFile : ''}
+                  onChange={(e) => setGkFile(e.target.value)}
+                  placeholder='Paste link here...'
+                  className='text-xs'
+                />
+              </div>
+            ) : (
+              <div key="file-input" className='space-y-2'>
+                <Label>File Gambar Kerja</Label>
+                <div className='relative group border-2 border-dashed border-neutral-300 rounded-lg p-6 hover:bg-orange-50/50 hover:border-orange-500 transition-colors flex flex-col items-center justify-center gap-1 text-center'>
+                  <input
+                    type='file'
+                    className='absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10'
+                    onChange={(e) => setGkFile(e.target.files?.[0] || null)}
+                  />
+                  <Upload className='h-8 w-8 text-neutral-400 group-hover:text-orange-500 transition-colors mb-2' />
+                  {gkFile && typeof gkFile !== 'string' ? (
+                    <>
+                      <div className='text-sm font-semibold text-neutral-900 truncate max-w-[280px]'>
+                        {gkFile.name}
+                      </div>
+                      <div className='text-xs text-neutral-500'>
+                        {(gkFile.size / 1024 / 1024).toFixed(2)} MB
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className='text-sm font-medium text-neutral-700'>
+                        Klik atau drag file ke area ini
+                      </div>
+                      <div className='text-xs text-neutral-500'>
+                        Mendukung upload dokumen atau gambar
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setIsGkDialogOpen(false)}>
@@ -1498,7 +1560,7 @@ export default function EngineerDetailPage() {
             <Button
               className='bg-orange-600 hover:bg-orange-700'
               onClick={handleGkUpload}
-              disabled={uploadGkMutation.isPending}
+              disabled={uploadGkMutation.isPending || !gkStart || !gkEnd || !gkFile}
             >
               {uploadGkMutation.isPending && (
                 <Loader2 className='mr-2 h-4 w-4 animate-spin' />
@@ -1543,15 +1605,67 @@ export default function EngineerDetailPage() {
               </div>
             </div>
             <div className='space-y-2'>
-              <Label>Link Gambar Kerja</Label>
-              <Input
-                type='text'
-                value={typeof bulkGkFile === 'string' ? bulkGkFile : ''}
-                onChange={(e) => setBulkGkFile(e.target.value)}
-                placeholder='Paste link here...'
-                className='text-xs'
-              />
+              <Label>Metode Input</Label>
+              <div className='flex gap-2 p-1 bg-neutral-100 rounded-md w-full'>
+                <button 
+                  type='button'
+                  className={`flex-1 text-xs py-1.5 rounded-sm transition-colors ${bulkGkInputType === 'url' ? 'bg-white shadow-sm font-semibold text-neutral-900' : 'text-neutral-500 hover:text-neutral-700'}`} 
+                  onClick={() => { setBulkGkInputType('url'); setBulkGkFile(null); }}
+                >
+                  URL Tautan
+                </button>
+                <button 
+                  type='button'
+                  className={`flex-1 text-xs py-1.5 rounded-sm transition-colors ${bulkGkInputType === 'file' ? 'bg-white shadow-sm font-semibold text-neutral-900' : 'text-neutral-500 hover:text-neutral-700'}`} 
+                  onClick={() => { setBulkGkInputType('file'); setBulkGkFile(null); }}
+                >
+                  Upload File
+                </button>
+              </div>
             </div>
+            {bulkGkInputType === 'url' ? (
+              <div key="bulk-url-input" className='space-y-2'>
+                <Label>Link Gambar Kerja</Label>
+                <Input
+                  type='text'
+                  value={typeof bulkGkFile === 'string' ? bulkGkFile : ''}
+                  onChange={(e) => setBulkGkFile(e.target.value)}
+                  placeholder='Paste link here...'
+                  className='text-xs'
+                />
+              </div>
+            ) : (
+              <div key="bulk-file-input" className='space-y-2'>
+                <Label>File Gambar Kerja</Label>
+                <div className='relative group border-2 border-dashed border-neutral-300 rounded-lg p-6 hover:bg-orange-50/50 hover:border-orange-500 transition-colors flex flex-col items-center justify-center gap-1 text-center'>
+                  <input
+                    type='file'
+                    className='absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10'
+                    onChange={(e) => setBulkGkFile(e.target.files?.[0] || null)}
+                  />
+                  <Upload className='h-8 w-8 text-neutral-400 group-hover:text-orange-500 transition-colors mb-2' />
+                  {bulkGkFile && typeof bulkGkFile !== 'string' ? (
+                    <>
+                      <div className='text-sm font-semibold text-neutral-900 truncate max-w-[280px]'>
+                        {bulkGkFile.name}
+                      </div>
+                      <div className='text-xs text-neutral-500'>
+                        {(bulkGkFile.size / 1024 / 1024).toFixed(2)} MB
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className='text-sm font-medium text-neutral-700'>
+                        Klik atau drag file ke area ini
+                      </div>
+                      <div className='text-xs text-neutral-500'>
+                        Mendukung upload dokumen atau gambar
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setIsBulkGkDialogOpen(false)}>
@@ -1566,7 +1680,7 @@ export default function EngineerDetailPage() {
                   tanggal_selesai: bulkGkEnd || undefined,
                 });
               }}
-              disabled={bulkUploadGkMutation.isPending}
+              disabled={bulkUploadGkMutation.isPending || !bulkGkStart || !bulkGkEnd || !bulkGkFile}
             >
               {bulkUploadGkMutation.isPending && (
                 <Loader2 className='mr-2 h-4 w-4 animate-spin' />
