@@ -104,6 +104,12 @@ import {
 } from '@/features/projects/services/project-v2-service';
 import { ProjectItemFormDialog } from '../../../_components/project-item-form-dialog';
 import { Badge } from '@/components/ui/badge';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 function CopyableCode({ code }: { code: string }) {
   const [copied, setCopied] = React.useState(false);
@@ -453,6 +459,7 @@ export default function EngineerDetailPage() {
   const [gkFile, setGkFile] = React.useState<File | string | null>(null);
   const [gkStart, setGkStart] = React.useState<string>('');
   const [gkEnd, setGkEnd] = React.useState<string>('');
+  const [gkInputType, setGkInputType] = React.useState<'url' | 'file'>('url');
 
   const uploadGkMutation = useMutation({
     mutationFn: (payload: {
@@ -478,6 +485,7 @@ export default function EngineerDetailPage() {
   const [bulkGkFile, setBulkGkFile] = React.useState<File | string | null>(null);
   const [bulkGkStart, setBulkGkStart] = React.useState<string>('');
   const [bulkGkEnd, setBulkGkEnd] = React.useState<string>('');
+  const [bulkGkInputType, setBulkGkInputType] = React.useState<'url' | 'file'>('url');
 
   const bulkUploadGkMutation = useMutation({
     mutationFn: async (payload: {
@@ -551,7 +559,15 @@ export default function EngineerDetailPage() {
     setGkItem(item);
     setGkStart(item.gambar_kerja?.tanggal_mulai || '');
     setGkEnd(item.gambar_kerja?.tanggal_selesai || '');
-    setGkFile(item.gambar_kerja?.file || null);
+    const fileValue = item.gambar_kerja?.file || null;
+    setGkFile(fileValue);
+    
+    if (fileValue && !fileValue.startsWith('http')) {
+      setGkInputType('file');
+    } else {
+      setGkInputType('url');
+    }
+    
     setIsGkDialogOpen(true);
   };
 
@@ -1034,14 +1050,13 @@ export default function EngineerDetailPage() {
         </CardHeader>
         <CardContent className='p-0'>
           <div className='overflow-x-auto'>
-            <Table>
-              <TableHeader className='bg-neutral-50/50'>
+            <Table className='min-w-max' containerClassName='max-h-[600px] overflow-auto'>
+              <TableHeader className='bg-neutral-50/80 sticky top-0 z-10 shadow-sm shadow-neutral-200/50'>
                 <TableRow>
                   <TableHead className='w-[60px] text-center'>#</TableHead>
                   <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>Kode Barang</TableHead>
                   <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>Lantai | Ruang</TableHead>
                   <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>Nama Item</TableHead>
-                  <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>Spesifikasi</TableHead>
                   <TableHead className='text-[12px] text-center uppercase font-bold text-neutral-500'>Ukuran</TableHead>
                   <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>Volume</TableHead>
                   <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>Qty</TableHead>
@@ -1123,46 +1138,26 @@ export default function EngineerDetailPage() {
                           <span className='text-[12px] text-muted-foreground truncate max-w-[120px]' title={item.ruang}>{item.ruang || '-'}</span>
                         </div>
                       </TableCell>
-                      <TableCell className='max-w-[200px]'>
-                        <div className='flex flex-col'>
-                          <div className='flex items-center gap-2'>
-                            <span className='font-bold text-neutral-900 line-clamp-2'>
-                              {item.item ? (
-                                <span
-                                  className='line-clamp-2'
-                                  title={item.item}
-                                >
-                                  {item.item}
-                                </span>
-                              ) : (
-                                <span className='text-muted-foreground italic'>
-                                  -
-                                </span>
-                              )}
-                            </span>
-                            {item.custom && (
-                              <Badge
-                                variant='destructive'
-                                className='text-[8px] h-3.5 px-1 font-bold uppercase'
-                              >
-                                Custom
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className='text-sm text-neutral-600 max-w-[160px]'>
+
+                      <TableCell>
                         {item.keterangan ? (
-                          <span
-                            className='line-clamp-2'
-                            title={item.keterangan}
-                          >
-                            {item.keterangan}
-                          </span>
+                          <TooltipProvider delayDuration={200}>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className='flex flex-col gap-0.5 cursor-help'>
+                                  <span className='text-sm font-bold text-neutral-900 group-hover:text-blue-600 transition-colors'>{item.item}</span>
+                                    <span className='text-sm text-muted-foreground truncate max-w-[200px]'>{item.keterangan || '-'}</span>
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="max-w-[300px] break-words">
+                                <p className="text-xs">{item.keterangan}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                         ) : (
-                          <span className='text-muted-foreground italic'>
-                            -
-                          </span>
+                          <div className='flex flex-col gap-0.5'>
+                            <span className='text-xs font-bold text-neutral-900 group-hover:text-blue-600 transition-colors'>{item.item}</span>
+                          </div>
                         )}
                       </TableCell>
 
@@ -1496,15 +1491,67 @@ export default function EngineerDetailPage() {
               </div>
             </div>
             <div className='space-y-2'>
-              <Label>Link Gambar Kerja</Label>
-              <Input
-                type='text'
-                value={typeof gkFile === 'string' ? gkFile : ''}
-                onChange={(e) => setGkFile(e.target.value)}
-                placeholder='Paste link here...'
-                className='text-xs'
-              />
+              <Label>Metode Input</Label>
+              <div className='flex gap-2 p-1 bg-neutral-100 rounded-md w-full'>
+                <button 
+                  type='button'
+                  className={`flex-1 text-xs py-1.5 rounded-sm transition-colors ${gkInputType === 'url' ? 'bg-white shadow-sm font-semibold text-neutral-900' : 'text-neutral-500 hover:text-neutral-700'}`} 
+                  onClick={() => { setGkInputType('url'); setGkFile(null); }}
+                >
+                  URL Tautan
+                </button>
+                <button 
+                  type='button'
+                  className={`flex-1 text-xs py-1.5 rounded-sm transition-colors ${gkInputType === 'file' ? 'bg-white shadow-sm font-semibold text-neutral-900' : 'text-neutral-500 hover:text-neutral-700'}`} 
+                  onClick={() => { setGkInputType('file'); setGkFile(null); }}
+                >
+                  Upload File
+                </button>
+              </div>
             </div>
+            {gkInputType === 'url' ? (
+              <div key="url-input" className='space-y-2'>
+                <Label>Link Gambar Kerja</Label>
+                <Input
+                  type='text'
+                  value={typeof gkFile === 'string' ? gkFile : ''}
+                  onChange={(e) => setGkFile(e.target.value)}
+                  placeholder='Paste link here...'
+                  className='text-xs'
+                />
+              </div>
+            ) : (
+              <div key="file-input" className='space-y-2'>
+                <Label>File Gambar Kerja</Label>
+                <div className='relative group border-2 border-dashed border-neutral-300 rounded-lg p-6 hover:bg-orange-50/50 hover:border-orange-500 transition-colors flex flex-col items-center justify-center gap-1 text-center'>
+                  <input
+                    type='file'
+                    className='absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10'
+                    onChange={(e) => setGkFile(e.target.files?.[0] || null)}
+                  />
+                  <Upload className='h-8 w-8 text-neutral-400 group-hover:text-orange-500 transition-colors mb-2' />
+                  {gkFile && typeof gkFile !== 'string' ? (
+                    <>
+                      <div className='text-sm font-semibold text-neutral-900 truncate max-w-[280px]'>
+                        {gkFile.name}
+                      </div>
+                      <div className='text-xs text-neutral-500'>
+                        {(gkFile.size / 1024 / 1024).toFixed(2)} MB
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className='text-sm font-medium text-neutral-700'>
+                        Klik atau drag file ke area ini
+                      </div>
+                      <div className='text-xs text-neutral-500'>
+                        Mendukung upload dokumen atau gambar
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setIsGkDialogOpen(false)}>
@@ -1513,7 +1560,7 @@ export default function EngineerDetailPage() {
             <Button
               className='bg-orange-600 hover:bg-orange-700'
               onClick={handleGkUpload}
-              disabled={uploadGkMutation.isPending}
+              disabled={uploadGkMutation.isPending || !gkStart || !gkEnd || !gkFile}
             >
               {uploadGkMutation.isPending && (
                 <Loader2 className='mr-2 h-4 w-4 animate-spin' />
@@ -1558,15 +1605,67 @@ export default function EngineerDetailPage() {
               </div>
             </div>
             <div className='space-y-2'>
-              <Label>Link Gambar Kerja</Label>
-              <Input
-                type='text'
-                value={typeof bulkGkFile === 'string' ? bulkGkFile : ''}
-                onChange={(e) => setBulkGkFile(e.target.value)}
-                placeholder='Paste link here...'
-                className='text-xs'
-              />
+              <Label>Metode Input</Label>
+              <div className='flex gap-2 p-1 bg-neutral-100 rounded-md w-full'>
+                <button 
+                  type='button'
+                  className={`flex-1 text-xs py-1.5 rounded-sm transition-colors ${bulkGkInputType === 'url' ? 'bg-white shadow-sm font-semibold text-neutral-900' : 'text-neutral-500 hover:text-neutral-700'}`} 
+                  onClick={() => { setBulkGkInputType('url'); setBulkGkFile(null); }}
+                >
+                  URL Tautan
+                </button>
+                <button 
+                  type='button'
+                  className={`flex-1 text-xs py-1.5 rounded-sm transition-colors ${bulkGkInputType === 'file' ? 'bg-white shadow-sm font-semibold text-neutral-900' : 'text-neutral-500 hover:text-neutral-700'}`} 
+                  onClick={() => { setBulkGkInputType('file'); setBulkGkFile(null); }}
+                >
+                  Upload File
+                </button>
+              </div>
             </div>
+            {bulkGkInputType === 'url' ? (
+              <div key="bulk-url-input" className='space-y-2'>
+                <Label>Link Gambar Kerja</Label>
+                <Input
+                  type='text'
+                  value={typeof bulkGkFile === 'string' ? bulkGkFile : ''}
+                  onChange={(e) => setBulkGkFile(e.target.value)}
+                  placeholder='Paste link here...'
+                  className='text-xs'
+                />
+              </div>
+            ) : (
+              <div key="bulk-file-input" className='space-y-2'>
+                <Label>File Gambar Kerja</Label>
+                <div className='relative group border-2 border-dashed border-neutral-300 rounded-lg p-6 hover:bg-orange-50/50 hover:border-orange-500 transition-colors flex flex-col items-center justify-center gap-1 text-center'>
+                  <input
+                    type='file'
+                    className='absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10'
+                    onChange={(e) => setBulkGkFile(e.target.files?.[0] || null)}
+                  />
+                  <Upload className='h-8 w-8 text-neutral-400 group-hover:text-orange-500 transition-colors mb-2' />
+                  {bulkGkFile && typeof bulkGkFile !== 'string' ? (
+                    <>
+                      <div className='text-sm font-semibold text-neutral-900 truncate max-w-[280px]'>
+                        {bulkGkFile.name}
+                      </div>
+                      <div className='text-xs text-neutral-500'>
+                        {(bulkGkFile.size / 1024 / 1024).toFixed(2)} MB
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className='text-sm font-medium text-neutral-700'>
+                        Klik atau drag file ke area ini
+                      </div>
+                      <div className='text-xs text-neutral-500'>
+                        Mendukung upload dokumen atau gambar
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setIsBulkGkDialogOpen(false)}>
@@ -1581,7 +1680,7 @@ export default function EngineerDetailPage() {
                   tanggal_selesai: bulkGkEnd || undefined,
                 });
               }}
-              disabled={bulkUploadGkMutation.isPending}
+              disabled={bulkUploadGkMutation.isPending || !bulkGkStart || !bulkGkEnd || !bulkGkFile}
             >
               {bulkUploadGkMutation.isPending && (
                 <Loader2 className='mr-2 h-4 w-4 animate-spin' />
