@@ -346,7 +346,7 @@ export default function PurchasingDetailPage() {
     if (!bjItem) return;
 
     const currentTotal =
-      bjItem.barang_jadi_masuk?.reduce((sum, bj) => sum + bj.jumlah, 0) || 0;
+      bjItem.barang_jadi_masuk?.reduce((sum, bj) => sum + Number(bj.jumlah), 0) || 0;
     if (currentTotal + bjJumlah > bjItem.jumlah) {
       toast.error(
         `Total barang (${
@@ -1246,7 +1246,7 @@ export default function PurchasingDetailPage() {
                         }}
                       />
                     </TableCell>
-
+                    
                     <TableCell>
                       <div className='flex flex-col gap-0.5'>
                         <span className='text-xs font-bold text-neutral-800'>{item.lantai || '-'}</span>
@@ -2033,7 +2033,7 @@ export default function PurchasingDetailPage() {
                       <span>Total Saat Ini</span>
                       <span className='text-neutral-900'>
                         {bjItem.barang_jadi_masuk.reduce(
-                          (sum, r) => sum + r.jumlah,
+                          (sum, r) => sum + Number(r.jumlah),
                           0
                         )}{' '}
                         / {bjItem.jumlah}
@@ -2063,7 +2063,7 @@ export default function PurchasingDetailPage() {
                     bjItem
                       ? bjItem.jumlah -
                         (bjItem.barang_jadi_masuk?.reduce(
-                          (sum, bj) => sum + bj.jumlah,
+                          (sum, bj) => sum + Number(bj.jumlah),
                           0
                         ) || 0)
                       : undefined
@@ -2073,7 +2073,7 @@ export default function PurchasingDetailPage() {
                   Sisa:{' '}
                   {(bjItem?.jumlah || 0) -
                     (bjItem?.barang_jadi_masuk?.reduce(
-                      (sum, bj) => sum + bj.jumlah,
+                      (sum, bj) => sum + Number(bj.jumlah),
                       0
                     ) || 0)}
                 </span>
@@ -2101,7 +2101,7 @@ export default function PurchasingDetailPage() {
                 bjJumlah >
                   (bjItem?.jumlah || 0) -
                     (bjItem?.barang_jadi_masuk?.reduce(
-                      (sum, bj) => sum + bj.jumlah,
+                      (sum, bj) => sum + Number(bj.jumlah),
                       0
                     ) || 0)
               }
@@ -2155,7 +2155,7 @@ export default function PurchasingDetailPage() {
                     <span>Total Packed</span>
                     <span className='text-neutral-900'>
                       {packingViewItem.barang_jadi_terpacking.reduce(
-                        (sum, r) => sum + r.jumlah,
+                        (sum, r) => sum + Number(r.jumlah),
                         0
                       )}{' '}
                       / {packingViewItem.jumlah}
