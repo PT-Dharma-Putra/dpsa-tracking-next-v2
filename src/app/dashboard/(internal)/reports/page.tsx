@@ -176,7 +176,7 @@ export default function ReportsDashboard() {
                       dataKey="value"
                       stroke="none"
                     >
-                      {statusData.map((entry, index) => (
+                      {statusData.map((entry: any, index: number) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
@@ -190,7 +190,7 @@ export default function ReportsDashboard() {
               </div>
               <div className="flex-1 pl-2">
                 <div className="space-y-3">
-                  {statusData.map((item, i) => (
+                  {statusData.map((item: any, i: number) => (
                     <div key={i} className="flex items-center text-xs">
                       <div className="w-2.5 h-2.5 rounded-full mr-2 shrink-0" style={{ backgroundColor: item.color }}></div>
                       <span className="text-slate-600 flex-1">{item.name}</span>
@@ -226,7 +226,7 @@ export default function ReportsDashboard() {
                     dataKey="value"
                     stroke="none"
                   >
-                    {progressData.map((entry, index) => (
+                    {progressData.map((entry: any, index: number) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
@@ -376,7 +376,7 @@ export default function ReportsDashboard() {
                       dataKey="value"
                       stroke="none"
                     >
-                      {deadlineData.map((entry, index) => (
+                      {deadlineData.map((entry: any, index: number) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
@@ -384,7 +384,7 @@ export default function ReportsDashboard() {
                 </ResponsiveContainer>
               </div>
               <div className="flex-1 pl-4 space-y-3">
-                {deadlineData.map((item, i) => (
+                {deadlineData.map((item: any, i: number) => (
                   <div key={i} className="flex items-center text-xs">
                     <div className="w-2.5 h-2.5 rounded-full mr-2 shrink-0" style={{ backgroundColor: item.color }}></div>
                     <span className="text-slate-600 flex-1 leading-tight">{item.name}</span>
