@@ -14,7 +14,7 @@ import {
   ArrowUp,
   ChevronDown
 } from "lucide-react"
-import { 
+import {
   PieChart, 
   Pie, 
   Cell, 
@@ -26,44 +26,9 @@ import {
   Tooltip, 
   ResponsiveContainer 
 } from "recharts"
-
-// --- MOCK DATA ---
-
-const statusData = [
-  { name: 'Selesai', value: 13, color: '#10b981', percentage: '22.4%' },
-  { name: 'On Progress', value: 22, color: '#3b82f6', percentage: '37.9%' },
-  { name: 'Deadline Dekat', value: 8, color: '#f59e0b', percentage: '13.8%' },
-  { name: 'Overdue', value: 19, color: '#ef4444', percentage: '32.8%' },
-]
-
-const progressData = [
-  { name: 'Progress', value: 36, color: '#2563eb' },
-  { name: 'Remaining', value: 64, color: '#f1f5f9' },
-]
-
-const spkData = [
-  { name: "Jan '26", value: 2.1 },
-  { name: "Feb '26", value: 2.8 },
-  { name: "Mar '26", value: 3.5 },
-  { name: "Apr '26", value: 4.2 },
-  { name: "May '26", value: 3.1 },
-  { name: "Jun '26", value: 3.8 },
-  { name: "Jul '26", value: 2.6 },
-]
-
-const deadlineData = [
-  { name: 'Overdue', value: 19, color: '#ef4444', percentage: '32.8%' },
-  { name: 'Deadline Dekat (≤ 7 hari)', value: 8, color: '#f59e0b', percentage: '13.8%' },
-  { name: 'Aman (> 7 hari)', value: 31, color: '#3b82f6', percentage: '53.4%' },
-]
-
-const overdueProjects = [
-  { id: 1, name: "LEMARI PIRING KOTOR RWI PA...", deadline: "Jul 9, 2026", days: "23 hari" },
-  { id: 2, name: "CHARGER STATION RUANG TUN...", deadline: "Jul 23, 2026", days: "9 hari" },
-  { id: 3, name: "FURNITURE LOBBY LT 1", deadline: "Aug 21, 2026", days: "-20 hari" },
-  { id: 4, name: "BUSA RANJANG PERIKSA K...", deadline: "May 25, 2026", days: "-47 hari" },
-  { id: 5, name: "ADDENDUM FURNITURE IG...", deadline: "Apr 13, 2026", days: "-89 hari" },
-]
+import { useQuery } from "@tanstack/react-query"
+import { getReportsData } from "@/features/dashboard/services/dashboard-reports-service"
+import { Skeleton } from "@/components/ui/skeleton"
 
 // Custom Label for Center of Donut Chart
 const renderCustomizedLabel = ({ cx, cy, value, text1, text2 }: any) => {
@@ -82,11 +47,77 @@ const renderCustomizedLabel = ({ cx, cy, value, text1, text2 }: any) => {
 export default function ReportsDashboard() {
   const [mounted, setMounted] = useState(false)
 
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['dashboard-reports'],
+    queryFn: getReportsData
+  })
+
   useEffect(() => {
     setMounted(true)
   }, [])
 
   if (!mounted) return null
+
+  if (isLoading) {
+    return (
+      <div className="p-6 bg-slate-50/50 min-h-screen space-y-6">
+        <Skeleton className="h-12 w-64 mb-8" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Skeleton className="h-72 w-full rounded-xl" />
+          <Skeleton className="h-72 w-full rounded-xl" />
+          <Skeleton className="h-72 w-full rounded-xl" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Skeleton className="h-72 w-full rounded-xl" />
+          <Skeleton className="h-72 w-full rounded-xl" />
+          <Skeleton className="h-72 w-full rounded-xl" />
+        </div>
+      </div>
+    )
+  }
+
+  const {
+    statusData = [],
+    progressData = [],
+    piutang = { total_tagihan: 0, total_terbayar: 0, sisa_piutang: 0, persentase_sisa: 0 },
+    spkData = [],
+    totalSpkPeriode = 0,
+    deadlineData = [],
+    overdueProjects = [],
+    totalActive = 0,
+    totalDeadline = 0
+  } = data || {}
+
+  // Format currency
+  const formatCurrency = (val: number) => {
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(val)
+  }
+
+  // Format to M (Milyar) or Jt (Juta) for charts
+  const formatShortValue = (val: number) => {
+    if (val >= 1000000000) return `${(val / 1000000000).toFixed(1)} M`
+    if (val >= 1000000) return `${(val / 1000000).toFixed(1)} Jt`
+    return `${val}`
+  }
+
+  // Format array for recharts nominal SPK
+  const formattedSpkData = spkData.map((item: any) => ({
+    name: item.name,
+    raw_value: item.raw_value,
+    value: item.raw_value >= 1000000000 ? (item.raw_value / 1000000000).toFixed(2) : (item.raw_value >= 1000000 ? (item.raw_value / 1000000).toFixed(2) : item.raw_value),
+    label: item.raw_value >= 1000000000 ? 'M' : (item.raw_value >= 1000000 ? 'Jt' : '')
+  }))
+
+  const overduesCount = deadlineData.find((d: any) => d.name === 'Overdue')?.value || 0
+  const dlDekatCount = deadlineData.find((d: any) => d.name.includes('Deadline Dekat'))?.value || 0
+  const totalWarning = overduesCount + dlDekatCount
+  const warningPct = totalDeadline > 0 ? ((totalWarning / totalDeadline) * 100).toFixed(1) : 0
+
 
   return (
     <div className="p-6 bg-slate-50/50 min-h-screen space-y-6">
@@ -153,7 +184,7 @@ export default function ReportsDashboard() {
                 </ResponsiveContainer>
                 {/* Center Text absolute */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                  <span className="text-3xl font-bold text-slate-900 leading-none">58</span>
+                  <span className="text-3xl font-bold text-slate-900 leading-none">{totalActive}</span>
                   <span className="text-[10px] text-slate-500 mt-1">Total Proyek</span>
                 </div>
               </div>
@@ -202,7 +233,7 @@ export default function ReportsDashboard() {
                 </PieChart>
               </ResponsiveContainer>
               <div className="absolute bottom-0 left-0 right-0 flex flex-col items-center justify-end pointer-events-none pb-2">
-                <span className="text-4xl font-bold text-slate-900 leading-none">36%</span>
+                <span className="text-4xl font-bold text-slate-900 leading-none">{progressData[0]?.value || 0}%</span>
                 <span className="text-xs text-slate-500 mt-1">Rata-rata Progres</span>
               </div>
             </div>
@@ -230,7 +261,7 @@ export default function ReportsDashboard() {
                   </div>
                   <span className="text-[10px] font-bold text-blue-600 tracking-wider">TAGIHAN LUNCUR</span>
                 </div>
-                <div className="text-xl font-bold text-slate-900 mb-1">Rp 8.75 M</div>
+                <div className="text-xl font-bold text-slate-900 mb-1">{formatShortValue(piutang.total_tagihan)}</div>
                 <div className="text-[10px] text-slate-500">Total Tagihan</div>
               </div>
               <div className="bg-emerald-50/50 border border-emerald-100 rounded-lg p-4">
@@ -240,7 +271,7 @@ export default function ReportsDashboard() {
                   </div>
                   <span className="text-[10px] font-bold text-emerald-600 tracking-wider">NOMINAL TERBAYARKAN</span>
                 </div>
-                <div className="text-xl font-bold text-slate-900 mb-1">Rp 4.25 M</div>
+                <div className="text-xl font-bold text-slate-900 mb-1">{formatShortValue(piutang.total_terbayar)}</div>
                 <div className="text-[10px] text-slate-500">Total Terbayar</div>
               </div>
             </div>
@@ -252,10 +283,10 @@ export default function ReportsDashboard() {
                   </div>
                   <span className="text-[10px] font-bold text-amber-700 tracking-wider">SISA PIUTANG</span>
                 </div>
-                <div className="text-2xl font-bold text-slate-900">Rp 4.50 M</div>
+                <div className="text-2xl font-bold text-slate-900">{formatShortValue(piutang.sisa_piutang)}</div>
               </div>
               <div className="text-right">
-                <div className="text-xl font-bold text-amber-700">51.4%</div>
+                <div className="text-xl font-bold text-amber-700">{piutang.persentase_sisa}%</div>
                 <div className="text-[10px] text-slate-500">dari total tagihan</div>
               </div>
             </div>
@@ -276,7 +307,7 @@ export default function ReportsDashboard() {
           <CardContent className="pt-2 flex flex-col h-[280px]">
             <div className="flex-1 w-full -ml-4">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={spkData} margin={{ top: 15, right: 15, left: 0, bottom: 0 }}>
+                <LineChart data={formattedSpkData} margin={{ top: 15, right: 15, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                   <XAxis 
                     dataKey="name" 
@@ -289,13 +320,12 @@ export default function ReportsDashboard() {
                     axisLine={false} 
                     tickLine={false} 
                     tick={{ fontSize: 10, fill: '#64748b' }}
-                    tickFormatter={(val) => `${val} M`}
-                    domain={[0, 5]}
-                    ticks={[0, 1, 2, 3, 4, 5]}
+                    tickFormatter={(val) => `${val}`}
+                    domain={[0, 'auto']}
                   />
                   <Tooltip 
                     contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                    formatter={(value: number) => [`Rp ${value} M`, 'Nominal']}
+                    formatter={(value: number, name: string, props: any) => [`Rp ${value} ${props.payload.label}`, 'Nominal']}
                   />
                   <Line 
                     type="linear" 
@@ -304,7 +334,7 @@ export default function ReportsDashboard() {
                     strokeWidth={2}
                     dot={{ r: 4, fill: '#3b82f6', strokeWidth: 2, stroke: '#fff' }}
                     activeDot={{ r: 6 }}
-                    label={{ position: 'top', fill: '#3b82f6', fontSize: 10, fontWeight: 600, formatter: (val: any) => `${val} M`, dy: -10 }}
+                    label={{ position: 'top', fill: '#3b82f6', fontSize: 10, fontWeight: 600, formatter: (val: any) => `${val}`, dy: -10 }}
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -316,11 +346,12 @@ export default function ReportsDashboard() {
               <div>
                 <div className="text-[10px] text-slate-500 mb-0.5">Total Nominal SPK (Periode)</div>
                 <div className="flex items-center gap-3">
-                  <span className="text-lg font-bold text-slate-900 leading-none">22.1 M</span>
-                  <div className="flex items-center gap-1 bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded text-[10px] font-medium">
+                  <span className="text-lg font-bold text-slate-900 leading-none">{formatShortValue(totalSpkPeriode)}</span>
+                  {/* Badge placeholder for period diff. Optional depending on API capability */}
+                  {/* <div className="flex items-center gap-1 bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded text-[10px] font-medium">
                     <ArrowUp className="w-3 h-3" />
                     12.4% <span className="text-emerald-600/70 ml-1 font-normal">dari periode lalu</span>
-                  </div>
+                  </div> */}
                 </div>
               </div>
             </div>
@@ -366,7 +397,7 @@ export default function ReportsDashboard() {
             <div className="mt-auto bg-red-50/50 border border-red-100 rounded-lg p-3 flex items-start gap-3">
               <AlertTriangle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
               <p className="text-xs text-red-700/80 leading-relaxed">
-                <span className="font-semibold text-red-700">27 proyek (46.6%)</span> memiliki deadline dalam 7 hari ke depan atau sudah melewati deadline.
+                <span className="font-semibold text-red-700">{totalWarning} proyek ({warningPct}%)</span> memiliki deadline dalam 7 hari ke depan atau sudah melewati deadline.
               </p>
             </div>
           </CardContent>
@@ -386,14 +417,18 @@ export default function ReportsDashboard() {
                 <div className="text-right">TERLAMBAT</div>
               </div>
               <div className="flex flex-col">
-                {overdueProjects.map((project, i) => (
-                  <div key={project.id} className="grid grid-cols-[30px_1fr_90px_80px] gap-2 px-6 py-3.5 border-b border-slate-50 last:border-0 hover:bg-slate-50/50 transition-colors items-center">
-                    <div className="text-slate-500">{project.id}</div>
-                    <div className="font-medium text-slate-700 truncate" title={project.name}>{project.name}</div>
-                    <div className="text-slate-500">{project.deadline}</div>
-                    <div className="text-right font-medium text-red-500">{project.days}</div>
-                  </div>
-                ))}
+                {overdueProjects.length > 0 ? (
+                  overdueProjects.map((project: any, i: number) => (
+                    <div key={project.id} className="grid grid-cols-[30px_1fr_90px_80px] gap-2 px-6 py-3.5 border-b border-slate-50 last:border-0 hover:bg-slate-50/50 transition-colors items-center">
+                      <div className="text-slate-500">{project.id}</div>
+                      <div className="font-medium text-slate-700 truncate" title={project.name}>{project.name}</div>
+                      <div className="text-slate-500">{project.deadline}</div>
+                      <div className="text-right font-medium text-red-500">{project.days}</div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-6 text-slate-500 text-sm">Tidak ada proyek overdue</div>
+                )}
               </div>
             </div>
           </CardContent>
@@ -409,7 +444,9 @@ export default function ReportsDashboard() {
         <div>
           <h3 className="font-bold text-indigo-950 mb-1">Insight Utama</h3>
           <p className="text-sm text-indigo-900/80 leading-relaxed">
-            Sebagian besar proyek (37.9%) masih dalam tahap On Progress. 19 proyek (32.8%) sudah melewati deadline, mohon segera ditindaklanjuti.
+            {overduesCount > 0 
+              ? `Sebagian besar proyek masih berjalan. Terdapat ${overduesCount} proyek sudah melewati deadline, mohon segera ditindaklanjuti.` 
+              : 'Semua proyek berjalan sesuai timeline dan belum ada proyek yang melewati deadline.'}
           </p>
         </div>
       </div>
