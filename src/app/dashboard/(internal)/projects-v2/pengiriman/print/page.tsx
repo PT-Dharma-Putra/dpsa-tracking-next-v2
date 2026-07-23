@@ -999,9 +999,13 @@ export default function PrintSuratJalanPage() {
           {/* Metadata Section (Right-aligned info only) */}
           <div className='flex justify-between items-start mb-6 text-sm'>
             <div className='w-40 border border-black text-[10px] grid grid-cols-2 text-center bg-white'>
-              <div className='border-r border-b border-black py-0.5 font-semibold'>PPIC</div>
+              <div className='border-r border-b border-black py-0.5 font-semibold'>
+                PPIC
+              </div>
               <div className='border-b border-black py-0.5'>Rev : 00</div>
-              <div className='border-r border-black py-0.5 font-semibold'>004</div>
+              <div className='border-r border-black py-0.5 font-semibold'>
+                004
+              </div>
               <div className='py-0.5'>Terbit : 8/25</div>
             </div>
 
@@ -1037,22 +1041,16 @@ export default function PrintSuratJalanPage() {
                   NO
                 </th>
                 <th
-                  className='p-2 border-r border-black font-semibold w-16 text-center'
+                  className='p-2 border-r border-black font-semibold w-20'
                   rowSpan={2}
                 >
-                  LANTAI
+                  NO. SPK
                 </th>
                 <th
                   className='p-2 border-r border-black font-semibold w-24'
                   rowSpan={2}
                 >
                   RUANG
-                </th>
-                <th
-                  className='p-2 border-r border-black font-semibold w-28'
-                  rowSpan={2}
-                >
-                  NO. SPK
                 </th>
                 <th
                   className='p-2 border-r border-black font-semibold'
@@ -1103,16 +1101,6 @@ export default function PrintSuratJalanPage() {
             <tbody>
               {pengiriman.details &&
                 pengiriman.details.map((detail, index) => {
-                  const panjang = detail.project_item?.panjang;
-                  const lebar = detail.project_item?.lebar;
-                  const tinggi = detail.project_item?.tinggi;
-                  const dimensi =
-                    (panjang !== null && panjang !== undefined) ||
-                    (lebar !== null && lebar !== undefined) ||
-                    (tinggi !== null && tinggi !== undefined)
-                      ? `${panjang || '-'} x ${lebar || '-'} x ${tinggi || '-'}`
-                      : '-';
-
                   return (
                     <tr
                       key={detail.id || index}
@@ -1121,14 +1109,11 @@ export default function PrintSuratJalanPage() {
                       <td className='p-2 border-r border-black text-center'>
                         {index + 1}
                       </td>
-                      <td className='p-2 border-r border-black text-center'>
-                        {detail.project_item?.lantai || '-'}
+                      <td className='p-2 border-r border-black font-medium'>
+                        {detail.project_item?.project?.spk_number || '-'}
                       </td>
                       <td className='p-2 border-r border-black'>
                         {detail.project_item?.ruang || '-'}
-                      </td>
-                      <td className='p-2 border-r border-black font-medium'>
-                        {detail.project_item?.project?.spk_number || '-'}
                       </td>
                       <td className='p-2 border-r border-black'>
                         {detail.project_item?.item || '-'}
