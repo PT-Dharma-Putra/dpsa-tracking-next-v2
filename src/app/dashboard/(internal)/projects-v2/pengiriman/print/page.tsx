@@ -997,7 +997,14 @@ export default function PrintSuratJalanPage() {
           </div>
 
           {/* Metadata Section (Right-aligned info only) */}
-          <div className='flex justify-end mb-6 text-sm'>
+          <div className='flex justify-between items-start mb-6 text-sm'>
+            <div className='w-40 border border-black text-[10px] grid grid-cols-2 text-center bg-white'>
+              <div className='border-r border-b border-black py-0.5 font-semibold'>PPIC</div>
+              <div className='border-b border-black py-0.5'>Rev : 00</div>
+              <div className='border-r border-black py-0.5 font-semibold'>004</div>
+              <div className='py-0.5'>Terbit : 8/25</div>
+            </div>
+
             {/* Pengiriman Info */}
             <div className='space-y-1 text-xs w-72'>
               <div className='grid grid-cols-3 gap-2'>
@@ -1448,6 +1455,34 @@ export default function PrintSuratJalanPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+
+          {/* SETRIM Note */}
+          <div className='flex flex-row gap-1 text-[11px] text-left mb-8 px-4'>
+            <div className='flex flex-col items-center'>
+              <div>
+                <p>
+                  <i>Note: </i>
+                </p>
+              </div>
+            </div>
+            <div className='flex flex-col items-center'>
+              <div>
+                <p>
+                  <i>
+                    **) Item / perabot yang ditulis harus sama dengan yang
+                    tertulis di SPK/SPH jika barang yang dikirim tidak dalam
+                    satu SPK/SP/RAB, harus dibuatkan di lembar yang berbeda
+                    (sesuai SPK/SPH) Rangkap 2 : (Asli untuk konsumen)(lembar ke
+                    2 setelah di ttd konsumen kemudian diserahkan ke Keuangan)
+                    Untuk setiap barang yang sudah dikirim harus
+                    diserahterimakan dan ditandatangani oleh pihak jangum
+                    Apabila surat sudah ditandatangani mohon difoto sebagai
+                    bukti dan dikirim ke nomor (wa)085712330344
+                  </i>
+                </p>
+              </div>
+            </div>
           </div>
 
           {/* SETRIM Footer */}
