@@ -18,6 +18,8 @@ export default function PrintSuratJalanPage() {
   const [editedSetrimNo, setEditedSetrimNo] = React.useState<string | null>(
     null
   );
+  const [preparedByName, setPreparedByName] = React.useState<string>('');
+  const [preparedByDate, setPreparedByDate] = React.useState<string>('');
 
   // Fetch Pengiriman Detail
   const { data: pengiriman, isLoading } = useQuery({
@@ -985,7 +987,7 @@ export default function PrintSuratJalanPage() {
       {activeTab === 'surat-jalan' ? (
         <div
           id='print-area'
-          className='max-w-[800px] mx-auto p-4 border border-neutral-300 md:border-0 rounded-lg md:rounded-none bg-white pt-24'
+          className='max-w-[800px] mx-auto p-4 bg-white pt-24'
         >
           {/* Header (SURAT JALAN Title & No only) */}
           <div className='flex justify-center mb-6 pt-24'>
@@ -1230,7 +1232,7 @@ export default function PrintSuratJalanPage() {
       ) : (
         <div
           id='print-area'
-          className='max-w-[800px] mx-auto p-4 border border-neutral-300 md:border-0 rounded-lg md:rounded-none bg-white pt-12 relative font-sans text-black'
+          className='max-w-[800px] mx-auto p-4 bg-white pt-12 relative font-sans text-black'
         >
           {/* SETRIM Header */}
           <div className='flex justify-between items-start mb-6 pt-12 relative'>
@@ -1245,7 +1247,7 @@ export default function PrintSuratJalanPage() {
           <div className='space-y-3 text-[11px] mb-6 px-4'>
             <div className='flex items-start justify-between'>
               <div className='flex items-center'>
-                <span className='w-48 font-semibold'>Nomor Surat</span>
+                <span className='w-36 font-semibold'>Nomor Surat</span>
                 <span className='mr-2'>:</span>
                 <div className='border border-black px-2 py-0.5 w-48 min-h-[22px] flex items-center group relative focus-within:ring-1 focus-within:ring-black'>
                   <input
@@ -1281,7 +1283,7 @@ export default function PrintSuratJalanPage() {
             </div>
 
             <div className='flex items-center'>
-              <span className='w-48 font-semibold'>
+              <span className='w-36 font-semibold'>
                 Tujuan Pengiriman/Penerima
               </span>
               <span className='mr-2'>:</span>
@@ -1291,7 +1293,7 @@ export default function PrintSuratJalanPage() {
             </div>
             <div className='flex items-center justify-between'>
               <div className='flex items-center shrink-0'>
-                <span className='w-48 font-semibold shrink-0'>
+                <span className='w-36 font-semibold shrink-0'>
                   Tanggal Terima Barang*)
                 </span>
                 <span className='mr-2 shrink-0'>:</span>
@@ -1301,7 +1303,7 @@ export default function PrintSuratJalanPage() {
                 <span className='font-semibold mr-4 text-[10px] whitespace-nowrap shrink-0'>
                   No. SPK/SPH
                 </span>
-                <div className='border border-black px-2 py-0.5 w-40 min-h-[22px] flex items-center font-bold shrink-0'>
+                <div className='border border-black px-2 py-0.5 w-54 min-h-[22px] flex items-center font-bold shrink-0'>
                   {pengiriman.details?.[0]?.project_item?.project?.spk_number ||
                     '-'}
                 </div>
@@ -1473,11 +1475,31 @@ export default function PrintSuratJalanPage() {
           {/* SETRIM Footer */}
           <div className='grid grid-cols-3 gap-4 text-[11px] text-center mt-12 mb-8 px-12'>
             <div className='flex flex-col items-center'>
-              <span className='font-semibold mb-16'>Disiapkan oleh,</span>
-              <div className='w-32 border-b border-black mb-1 relative'></div>
-              <div className='flex w-32 text-left mt-1'>
-                <span className='font-semibold mr-1 text-[10px]'>Tgl.</span>
-                <span className='flex-1 border-b border-black border-dashed'></span>
+              <span className='font-semibold mb-12'>Disiapkan oleh,</span>
+              <div className='w-32 border-b border-black mb-1 relative group focus-within:ring-1 focus-within:ring-black'>
+                <input
+                  type='text'
+                  value={preparedByName}
+                  onChange={(e) => setPreparedByName(e.target.value)}
+                  className='bg-transparent border-none outline-none w-full p-0 m-0 text-[11px] font-sans text-black text-center'
+                  placeholder='Nama'
+                />
+                <Pencil className='w-3 h-3 absolute -right-5 bottom-0.5 text-neutral-400 opacity-0 group-hover:opacity-100 transition-opacity no-print pointer-events-none' />
+              </div>
+              <div className='flex w-32 text-left mt-1 items-end'>
+                <span className='font-semibold mr-1 text-[10px] mb-0.5'>
+                  Tgl.
+                </span>
+                <div className='flex-1 border-b border-black border-dashed relative group focus-within:ring-1 focus-within:ring-black'>
+                  <input
+                    type='text'
+                    value={preparedByDate}
+                    onChange={(e) => setPreparedByDate(e.target.value)}
+                    className='bg-transparent border-none outline-none w-full p-0 m-0 text-[10px] font-sans text-black text-center'
+                    placeholder='DD/MM/YY'
+                  />
+                  <Pencil className='w-3 h-3 absolute -right-5 bottom-0.5 text-neutral-400 opacity-0 group-hover:opacity-100 transition-opacity no-print pointer-events-none' />
+                </div>
               </div>
             </div>
             <div className='flex flex-col items-center'>
