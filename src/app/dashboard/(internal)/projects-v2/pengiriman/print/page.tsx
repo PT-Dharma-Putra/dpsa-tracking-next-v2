@@ -169,8 +169,8 @@ export default function PrintSuratJalanPage() {
           { v: 'NO. SPK', t: 's', s: headerStyle },
           { v: 'ITEM/PERABOT', t: 's', s: headerStyle },
           { v: 'DIMENSI (METER)', t: 's', s: headerStyle },
-          '',
-          '',
+          { v: '', t: 's', s: headerStyle },
+          { v: '', t: 's', s: headerStyle },
           { v: 'VOL', t: 's', s: headerStyle },
           { v: 'SAT', t: 's', s: headerStyle },
           { v: 'JML', t: 's', s: headerStyle },
@@ -422,6 +422,39 @@ export default function PrintSuratJalanPage() {
           '',
           '',
           '',
+          '',
+          '',
+        ]); // 2 (r: 1)
+        merges.push({ s: { r: 1, c: 0 }, e: { r: 1, c: 9 } });
+
+        wsData.push([]); // 4
+
+        const defaultNoSrt =
+          pengiriman.surat_jalan?.replace('/SJ/', '/SERTRIM/') ||
+          pengiriman.surat_jalan ||
+          '-';
+        const noSrt = editedSetrimNo !== null ? editedSetrimNo : defaultNoSrt;
+        wsData.push([
+          { v: 'Nomor Surat', t: 's', s: boldStyle },
+          '',
+          {
+            v: noSrt,
+            t: 's',
+            s: {
+              ...normalStyle,
+              border: {
+                top: borderThin,
+                bottom: borderThin,
+                left: borderThin,
+                right: borderThin,
+              },
+            },
+          },
+          '',
+          '',
+          '',
+          '',
+          '',
           {
             v: 'PPIC',
             t: 's',
@@ -452,8 +485,13 @@ export default function PrintSuratJalanPage() {
           },
         ]); // 2 (r: 1)
         merges.push({ s: { r: 1, c: 0 }, e: { r: 1, c: 6 } });
+        // ]); // 5 (r:4)
+        let rNomor = wsData.length - 1;
+        merges.push({ s: { r: rNomor, c: 0 }, e: { r: rNomor, c: 1 } });
+        merges.push({ s: { r: rNomor, c: 3 }, e: { r: rNomor, c: 6 } });
 
         wsData.push([
+          '',
           '',
           '',
           '',
@@ -489,46 +527,11 @@ export default function PrintSuratJalanPage() {
               },
             },
           },
-        ]); // 3 (r: 2)
-
-        wsData.push([]); // 4
-
-        const defaultNoSrt =
-          pengiriman.surat_jalan?.replace('/SJ/', '/SERTRIM/') ||
-          pengiriman.surat_jalan ||
-          '-';
-        const noSrt = editedSetrimNo !== null ? editedSetrimNo : defaultNoSrt;
-        wsData.push([
-          { v: 'Nomor Surat', t: 's', s: boldStyle },
-          '',
-          { v: ':', t: 's', s: normalStyle },
-          {
-            v: noSrt,
-            t: 's',
-            s: {
-              ...normalStyle,
-              border: {
-                top: borderThin,
-                bottom: borderThin,
-                left: borderThin,
-                right: borderThin,
-              },
-            },
-          },
-          '',
-          '',
-          '',
-          '',
-          '',
-          '',
-        ]); // 5 (r:4)
-        merges.push({ s: { r: 4, c: 0 }, e: { r: 4, c: 1 } });
-        merges.push({ s: { r: 4, c: 3 }, e: { r: 4, c: 6 } });
+        ]); // Jarak 1 baris
 
         wsData.push([
           { v: 'Tujuan Pengiriman/Penerima', t: 's', s: boldStyle },
           '',
-          { v: ':', t: 's', s: normalStyle },
           {
             v: pengiriman.client?.name || '-',
             t: 's',
@@ -549,13 +552,15 @@ export default function PrintSuratJalanPage() {
           '',
           '',
         ]); // 6 (r:5)
-        merges.push({ s: { r: 5, c: 0 }, e: { r: 5, c: 1 } });
-        merges.push({ s: { r: 5, c: 3 }, e: { r: 5, c: 6 } });
+        let rTujuan = wsData.length - 1;
+        merges.push({ s: { r: rTujuan, c: 0 }, e: { r: rTujuan, c: 1 } });
+        merges.push({ s: { r: rTujuan, c: 3 }, e: { r: rTujuan, c: 6 } });
+
+        wsData.push([]); // Jarak 1 baris
 
         wsData.push([
           { v: 'Tanggal Terima Barang*)', t: 's', s: boldStyle },
           '',
-          { v: ':', t: 's', s: normalStyle },
           {
             v: '',
             t: 's',
@@ -571,6 +576,7 @@ export default function PrintSuratJalanPage() {
           '',
           '',
           { v: 'No. SPK/SPH', t: 's', s: boldStyle },
+          { v: ':', t: 's', s: normalStyle },
           {
             v:
               pengiriman.details?.[0]?.project_item?.project?.spk_number || '-',
@@ -585,13 +591,39 @@ export default function PrintSuratJalanPage() {
               },
             },
           },
+          {
+            v: '',
+            t: 's',
+            s: {
+              border: {
+                top: borderThin,
+                bottom: borderThin,
+                left: borderThin,
+                right: borderThin,
+              },
+            },
+          },
+          {
+            v: '',
+            t: 's',
+            s: {
+              border: {
+                top: borderThin,
+                bottom: borderThin,
+                left: borderThin,
+                right: borderThin,
+              },
+            },
+          },
           '',
         ]); // 7 (r:6)
-        merges.push({ s: { r: 6, c: 0 }, e: { r: 6, c: 1 } });
-        merges.push({ s: { r: 6, c: 3 }, e: { r: 6, c: 5 } });
-        merges.push({ s: { r: 6, c: 7 }, e: { r: 6, c: 8 } });
+        let rTanggal = wsData.length - 1;
+        merges.push({ s: { r: rTanggal, c: 0 }, e: { r: rTanggal, c: 1 } });
+        merges.push({ s: { r: rTanggal, c: 5 }, e: { r: rTanggal, c: 6 } });
+        merges.push({ s: { r: rTanggal, c: 7 }, e: { r: rTanggal, c: 9 } });
 
-        wsData.push([]); // 8
+        wsData.push([]);
+
         wsData.push([
           {
             v: 'Telah diterima barang - barang pesanan dari PT DHARMA PUTRA SEJAHTERA ABADI, berupa:',
@@ -608,7 +640,10 @@ export default function PrintSuratJalanPage() {
           '',
           '',
         ]); // 9 (r: 8)
-        merges.push({ s: { r: 8, c: 0 }, e: { r: 8, c: 9 } });
+        let rTelah = wsData.length - 1;
+        merges.push({ s: { r: rTelah, c: 0 }, e: { r: rTelah, c: 9 } });
+
+        wsData.push([]); // Jarak 1 baris sebelum tabel
 
         // Table Header
         wsData.push([
@@ -616,35 +651,37 @@ export default function PrintSuratJalanPage() {
           { v: 'RUANG', t: 's', s: headerStyle },
           { v: 'ITEM/PERABOT**)', t: 's', s: headerStyle },
           { v: 'DIMENSI (METER)', t: 's', s: headerStyle },
-          '',
-          '',
+          { v: '', t: 's', s: headerStyle },
+          { v: '', t: 's', s: headerStyle },
           { v: 'VOL', t: 's', s: headerStyle },
           { v: 'SAT', t: 's', s: headerStyle },
           { v: 'JML', t: 's', s: headerStyle },
           { v: 'KET', t: 's', s: headerStyle },
         ]); // 10 (r: 9)
+        let rHeader1 = wsData.length - 1;
 
         wsData.push([
-          '',
-          '',
+          { v: '', t: 's', s: headerStyle },
+          { v: '', t: 's', s: headerStyle },
           '',
           { v: 'P', t: 's', s: headerStyle },
           { v: 'L', t: 's', s: headerStyle },
           { v: 'T', t: 's', s: headerStyle },
           '',
+          { v: '', t: 's', s: headerStyle },
           '',
-          '',
-          '',
+          { v: '', t: 's', s: headerStyle },
         ]); // 11 (r: 10)
+        let rHeader2 = wsData.length - 1;
 
-        merges.push({ s: { r: 9, c: 0 }, e: { r: 10, c: 0 } }); // NO
-        merges.push({ s: { r: 9, c: 1 }, e: { r: 10, c: 1 } }); // RUANG
-        merges.push({ s: { r: 9, c: 2 }, e: { r: 10, c: 2 } }); // ITEM
-        merges.push({ s: { r: 9, c: 3 }, e: { r: 9, c: 5 } }); // DIMENSI
-        merges.push({ s: { r: 9, c: 6 }, e: { r: 10, c: 6 } }); // VOL
-        merges.push({ s: { r: 9, c: 7 }, e: { r: 10, c: 7 } }); // SAT
-        merges.push({ s: { r: 9, c: 8 }, e: { r: 10, c: 8 } }); // JML
-        merges.push({ s: { r: 9, c: 9 }, e: { r: 10, c: 9 } }); // KET
+        merges.push({ s: { r: rHeader1, c: 0 }, e: { r: rHeader2, c: 0 } }); // NO
+        merges.push({ s: { r: rHeader1, c: 1 }, e: { r: rHeader2, c: 1 } }); // RUANG
+        merges.push({ s: { r: rHeader1, c: 2 }, e: { r: rHeader2, c: 2 } }); // ITEM
+        merges.push({ s: { r: rHeader1, c: 3 }, e: { r: rHeader1, c: 5 } }); // DIMENSI
+        merges.push({ s: { r: rHeader1, c: 6 }, e: { r: rHeader2, c: 6 } }); // VOL
+        merges.push({ s: { r: rHeader1, c: 7 }, e: { r: rHeader2, c: 7 } }); // SAT
+        merges.push({ s: { r: rHeader1, c: 8 }, e: { r: rHeader2, c: 8 } }); // JML
+        merges.push({ s: { r: rHeader1, c: 9 }, e: { r: rHeader2, c: 9 } }); // KET
 
         const totalDetails = pengiriman.details ? pengiriman.details.length : 0;
         const minRows = Math.max(15, totalDetails);
@@ -705,6 +742,114 @@ export default function PrintSuratJalanPage() {
         }
 
         wsData.push([]);
+
+        // SETRIM Note
+        wsData.push([
+          { v: 'Note:', t: 's', s: { font: { italic: true, sz: 10 } } },
+          {
+            v: '**) Item / perabot yang ditulis harus sama dengan yang tertulis di SPK/SPH jika barang yang dikirim tidak dalam',
+            t: 's',
+            s: { font: { italic: true, sz: 10 } },
+          },
+          '',
+          '',
+          '',
+          '',
+          '',
+          '',
+          '',
+          '',
+        ]);
+        merges.push({
+          s: { r: wsData.length - 1, c: 1 },
+          e: { r: wsData.length - 1, c: 9 },
+        });
+
+        wsData.push([
+          '',
+          {
+            v: 'satu SPK/SP/RAB, harus dibuatkan di lembar yang berbeda (sesuai SPK/SPH)',
+            t: 's',
+            s: { font: { italic: true, sz: 10 } },
+          },
+          '',
+          '',
+          '',
+          '',
+          '',
+          '',
+          '',
+          '',
+        ]);
+        merges.push({
+          s: { r: wsData.length - 1, c: 1 },
+          e: { r: wsData.length - 1, c: 9 },
+        });
+
+        wsData.push([
+          '',
+          {
+            v: 'Rangkap 2 : (Asli untuk konsumen)(lembar ke 2 setelah di ttd konsumen kemudian diserahkan ke Keuangan)',
+            t: 's',
+            s: { font: { italic: true, sz: 10 } },
+          },
+          '',
+          '',
+          '',
+          '',
+          '',
+          '',
+          '',
+          '',
+        ]);
+        merges.push({
+          s: { r: wsData.length - 1, c: 1 },
+          e: { r: wsData.length - 1, c: 9 },
+        });
+
+        wsData.push([
+          '',
+          {
+            v: 'Untuk setiap barang yang sudah dikirim harus diserahterimakan dan ditandatangani oleh pihak jangum',
+            t: 's',
+            s: { font: { italic: true, sz: 10 } },
+          },
+          '',
+          '',
+          '',
+          '',
+          '',
+          '',
+          '',
+          '',
+        ]);
+        merges.push({
+          s: { r: wsData.length - 1, c: 1 },
+          e: { r: wsData.length - 1, c: 9 },
+        });
+
+        wsData.push([
+          '',
+          {
+            v: 'Apabila surat sudah ditandatangani mohon difoto sebagai bukti dan dikirim ke nomor (wa)085712330344',
+            t: 's',
+            s: { font: { italic: true, sz: 10 } },
+          },
+          '',
+          '',
+          '',
+          '',
+          '',
+          '',
+          '',
+          '',
+        ]);
+        merges.push({
+          s: { r: wsData.length - 1, c: 1 },
+          e: { r: wsData.length - 1, c: 9 },
+        });
+
+        wsData.push([]);
         wsData.push([]);
 
         const centerStyle = {
@@ -736,7 +881,36 @@ export default function PrintSuratJalanPage() {
         wsData.push([], [], []);
 
         wsData.push([
-          { v: 'Tgl. _________________', t: 's', s: centerStyle },
+          {
+            v: preparedByName
+              ? preparedByName
+              : '( ............................ )',
+            t: 's',
+            s: centerStyle,
+          },
+          '',
+          '',
+          { v: '( ............................ )', t: 's', s: centerStyle },
+          '',
+          '',
+          { v: '( ............................ )', t: 's', s: centerStyle },
+          '',
+          '',
+          '',
+        ]);
+        const sigRowName = wsData.length - 1;
+        merges.push({ s: { r: sigRowName, c: 0 }, e: { r: sigRowName, c: 2 } });
+        merges.push({ s: { r: sigRowName, c: 3 }, e: { r: sigRowName, c: 5 } });
+        merges.push({ s: { r: sigRowName, c: 6 }, e: { r: sigRowName, c: 8 } });
+
+        wsData.push([
+          {
+            v: preparedByDate
+              ? `Tgl. ${preparedByDate}`
+              : 'Tgl. _________________',
+            t: 's',
+            s: centerStyle,
+          },
           '',
           '',
           { v: 'Tgl. _________________', t: 's', s: centerStyle },
@@ -769,7 +943,7 @@ export default function PrintSuratJalanPage() {
           { wch: 8 }, // VOL
           { wch: 8 }, // SAT
           { wch: 8 }, // JML
-          { wch: 25 }, // KET
+          { wch: 15 }, // KET
         ];
       } else {
         ws['!cols'] = [
@@ -782,7 +956,7 @@ export default function PrintSuratJalanPage() {
           { wch: 8 }, // VOL
           { wch: 8 }, // SAT
           { wch: 8 }, // JML
-          { wch: 25 }, // KET
+          { wch: 15 }, // KET
         ];
       }
 
