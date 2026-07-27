@@ -176,19 +176,19 @@ export default function ProjectItemsPage() {
   };
 
   const [spdFile, setSpdFile] = React.useState<File | null>(null);
-  const [spdPendukungFiles, setSpdPendukungFiles] = React.useState<(File | null)[]>([]);
+  const [spdPendukungUrl, setSpdPendukungUrl] = React.useState<string>('');
   const [targetSelesaiDate, setTargetSelesaiDate] = React.useState<string>(
     format(new Date(), 'yyyy-MM-dd')
   );
 
   const uploadSpdMutation = useMutation({
-    mutationFn: ({ file, date, pendukung }: { file: File; date: string; pendukung?: File[] }) =>
+    mutationFn: ({ file, date, pendukung }: { file?: File | null; date: string; pendukung?: string }) =>
       projectV2Service.uploadSPD(projectId, file, date, pendukung),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects-v2', projectId] });
       toast.success('SPD uploaded successfully');
       setSpdFile(null);
-      setSpdPendukungFiles([]);
+      setSpdPendukungUrl('');
     },
     onError: () => {
       toast.error('Failed to upload SPD');
@@ -203,7 +203,7 @@ export default function ProjectItemsPage() {
     uploadSpdMutation.mutate({ 
       file: spdFile, 
       date: targetSelesaiDate,
-      pendukung: spdPendukungFiles.filter((f): f is File => f !== null)
+      pendukung: spdPendukungUrl
     });
   };
 
@@ -1463,61 +1463,17 @@ export default function ProjectItemsPage() {
                 className='h-9 text-xs'
               />
             </div>
-            <div className='space-y-3 pt-2'>
-              <div className='flex items-center justify-between'>
-                <Label className='text-xs font-medium'>
-                  File Pendukung
-                </Label>
-                <Button
-                  type='button'
-                  variant='outline'
-                  size='sm'
-                  className='h-7 text-[10px] bg-orange-50 text-orange-600 border-orange-200 hover:bg-orange-100'
-                  onClick={() => setSpdPendukungFiles([...spdPendukungFiles, null])}
-                >
-                  <Plus className='h-3 w-3 mr-1' />
-                  Tambah
-                </Button>
-              </div>
-              
-              <div className='space-y-2 max-h-[200px] overflow-y-auto pr-1 custom-scrollbar'>
-                {spdPendukungFiles.map((file, index) => (
-                  <div key={index} className='flex gap-2 items-center'>
-                    <div className='relative flex-1'>
-                      <Input
-                        type='file'
-                        accept='.pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx'
-                        onChange={(e) => {
-                          const newFiles = [...spdPendukungFiles];
-                          newFiles[index] = e.target.files?.[0] || null;
-                          setSpdPendukungFiles(newFiles);
-                        }}
-                        className='h-9 text-[10px] pr-8'
-                      />
-                      {spdPendukungFiles[index] && (
-                        <CheckCircle2 className='h-3 w-3 text-emerald-500 absolute right-2.5 top-3' />
-                      )}
-                    </div>
-                    <Button
-                      type='button'
-                      variant='ghost'
-                      size='icon'
-                      className='h-8 w-8 text-neutral-400 hover:text-red-600 hover:bg-red-50 shrink-0'
-                      onClick={() => {
-                        const newFiles = spdPendukungFiles.filter((_, i) => i !== index);
-                        setSpdPendukungFiles(newFiles);
-                      }}
-                    >
-                      <Trash2 className='h-3.5 w-3.5' />
-                    </Button>
-                  </div>
-                ))}
-                {spdPendukungFiles.length === 0 && (
-                  <p className='text-[10px] text-muted-foreground italic text-center py-4 bg-neutral-50 rounded-lg border border-dashed'>
-                    Belum ada file pendukung
-                  </p>
-                )}
-              </div>
+            <div className='space-y-1.5 pt-2'>
+              <Label className='text-xs font-medium'>
+                Link Pendukung (Opsional)
+              </Label>
+              <Input
+                type='url'
+                placeholder='Masukkan link URL'
+                value={spdPendukungUrl}
+                onChange={(e) => setSpdPendukungUrl(e.target.value)}
+                className='h-9 text-xs'
+              />
             </div>
           </div>
           <DialogFooter>
