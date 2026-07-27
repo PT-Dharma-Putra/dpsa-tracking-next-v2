@@ -409,7 +409,9 @@ export const projectV2Service = {
     if (file) {
       formData.append('file', file);
     }
-    formData.append('target_selesai', target_selesai);
+    if (target_selesai) {
+      formData.append('target_selesai', target_selesai);
+    }
     if (linkPendukung !== undefined) {
       formData.append('link_pendukung', linkPendukung);
     }
