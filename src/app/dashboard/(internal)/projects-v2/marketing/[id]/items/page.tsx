@@ -2,7 +2,12 @@
 
 import * as React from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  useInfiniteQuery,
+} from '@tanstack/react-query';
 import {
   Plus,
   Pencil,
@@ -25,6 +30,7 @@ import {
   ImageIcon,
   AlertCircle,
   CheckCircle,
+  ExternalLink,
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -83,7 +89,11 @@ import { ProjectItemImportDialog } from '../../../_components/project-item-impor
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import {
   Command,
   CommandEmpty,
@@ -163,11 +173,14 @@ export default function ProjectItemsPage() {
   });
 
   const [selectedItemIds, setSelectedItemIds] = React.useState<number[]>([]);
-  const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = React.useState(false);
+  const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] =
+    React.useState(false);
 
   const bulkDeleteMutation = useMutation({
     mutationFn: async () => {
-      const promises = selectedItemIds.map(id => projectV2Service.deleteProjectItem(id));
+      const promises = selectedItemIds.map((id) =>
+        projectV2Service.deleteProjectItem(id)
+      );
       await Promise.all(promises);
     },
     onSuccess: () => {
@@ -243,9 +256,7 @@ export default function ProjectItemsPage() {
   };
 
   const [spdFile, setSpdFile] = React.useState<File | null>(null);
-  const [spdPendukungFiles, setSpdPendukungFiles] = React.useState<
-    (File | null)[]
-  >([]);
+  const [spdPendukungUrl, setSpdPendukungUrl] = React.useState<string>('');
   const [targetSelesaiDate, setTargetSelesaiDate] = React.useState<string>(
     format(new Date(), 'yyyy-MM-dd')
   );
@@ -256,15 +267,15 @@ export default function ProjectItemsPage() {
       date,
       pendukung,
     }: {
-      file: File;
+      file?: File | null;
       date: string;
-      pendukung?: File[];
+      pendukung?: string;
     }) => projectV2Service.uploadSPD(projectId, file, date, pendukung),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects-v2', projectId] });
       toast.success('SPD uploaded successfully');
       setSpdFile(null);
-      setSpdPendukungFiles([]);
+      setSpdPendukungUrl('');
     },
     onError: () => {
       toast.error('Failed to upload SPD');
@@ -272,15 +283,33 @@ export default function ProjectItemsPage() {
   });
 
   const handleSpdUpload = () => {
-    if (!spdFile) {
+    const existingSpd = project?.designs?.[0];
+    if (!spdFile && !existingSpd?.spd_file) {
       toast.error('Please select a file');
       return;
     }
     uploadSpdMutation.mutate({
       file: spdFile,
       date: targetSelesaiDate,
-      pendukung: spdPendukungFiles.filter((f): f is File => f !== null),
+      pendukung: spdPendukungUrl,
     });
+  };
+
+  const handleOpenSpdModal = () => {
+    const existingSpd = project?.designs?.[0];
+    setSpdFile(null);
+    if (existingSpd?.spd_file) {
+      setTargetSelesaiDate(
+        existingSpd.target_selesai
+          ? format(new Date(existingSpd.target_selesai), 'yyyy-MM-dd')
+          : format(new Date(), 'yyyy-MM-dd')
+      );
+      setSpdPendukungUrl(project?.file_pendukung_spd?.[0]?.file || '');
+    } else {
+      setTargetSelesaiDate(format(new Date(), 'yyyy-MM-dd'));
+      setSpdPendukungUrl('');
+    }
+    setIsSpdModalOpen(true);
   };
 
   const [sphFile, setSphFile] = React.useState<File | null>(null);
@@ -302,7 +331,15 @@ export default function ProjectItemsPage() {
       nominal_dpp?: string;
       ppn?: string;
       grand_total?: string;
-    }) => projectV2Service.uploadSPH(projectId, file, number, nominal_dpp, ppn, grand_total),
+    }) =>
+      projectV2Service.uploadSPH(
+        projectId,
+        file,
+        number,
+        nominal_dpp,
+        ppn,
+        grand_total
+      ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects-v2', projectId] });
       toast.success('SPH uploaded successfully');
@@ -386,7 +423,8 @@ export default function ProjectItemsPage() {
   const [spkPenerbitId, setSpkPenerbitId] = React.useState<string>('');
 
   const [clientPopoverOpen, setClientPopoverOpen] = React.useState(false);
-  const [editClientPopoverOpen, setEditClientPopoverOpen] = React.useState(false);
+  const [editClientPopoverOpen, setEditClientPopoverOpen] =
+    React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState('');
   const [debouncedSearch, setDebouncedSearch] = React.useState('');
 
@@ -414,7 +452,9 @@ export default function ProjectItemsPage() {
   });
 
   const clientsRaw = clientsData?.pages.flatMap((page) => page.data) || [];
-  const clients = Array.from(new Map(clientsRaw.map((c: any) => [c.id, c])).values());
+  const clients = Array.from(
+    new Map(clientsRaw.map((c: any) => [c.id, c])).values()
+  );
 
   const observerRef = React.useRef<IntersectionObserver>(null);
   const loadMoreRef = React.useCallback(
@@ -516,9 +556,13 @@ export default function ProjectItemsPage() {
       projectV2Service.updateSphMeta(projectId, {
         nomor_sph: editSphNumber,
         file: editSphFile,
-        nominal_dpp: editSphNominal ? parseRawNumber(editSphNominal) : undefined,
+        nominal_dpp: editSphNominal
+          ? parseRawNumber(editSphNominal)
+          : undefined,
         ppn: editSphPpn || undefined,
-        grand_total: editSphGrandTotal ? parseRawNumber(editSphGrandTotal) : undefined,
+        grand_total: editSphGrandTotal
+          ? parseRawNumber(editSphGrandTotal)
+          : undefined,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects-v2', projectId] });
@@ -535,7 +579,9 @@ export default function ProjectItemsPage() {
     if (existingSph) {
       setEditSphNumber(existingSph.nomor_sph || '');
       setEditSphNominal(
-        existingSph.nominal_dpp ? formatRupiah(String(existingSph.nominal_dpp)) : ''
+        existingSph.nominal_dpp
+          ? formatRupiah(String(existingSph.nominal_dpp))
+          : ''
       );
       setEditSphPpn(existingSph.ppn ? String(existingSph.ppn) : '');
       setEditSphGrandTotal(
@@ -550,7 +596,8 @@ export default function ProjectItemsPage() {
   const [editSpkNumber, setEditSpkNumber] = React.useState<string>('');
   const [editSpkTanggalSpk, setEditSpkTanggalSpk] = React.useState<string>('');
   const [editSpkDeadline, setEditSpkDeadline] = React.useState<string>('');
-  const [editSpkTanggalMasuk, setEditSpkTanggalMasuk] = React.useState<string>('');
+  const [editSpkTanggalMasuk, setEditSpkTanggalMasuk] =
+    React.useState<string>('');
   const [editSpkNominal, setEditSpkNominal] = React.useState<string>('');
   const [editSpkPpn, setEditSpkPpn] = React.useState<string>('');
   const [editSpkGrandTotal, setEditSpkGrandTotal] = React.useState<string>('');
@@ -564,9 +611,13 @@ export default function ProjectItemsPage() {
         tanggal_spk: editSpkTanggalSpk || undefined,
         deadline: editSpkDeadline || undefined,
         tanggal_masuk: editSpkTanggalMasuk || undefined,
-        nominal_dpp: editSpkNominal ? parseRawNumber(editSpkNominal) : undefined,
+        nominal_dpp: editSpkNominal
+          ? parseRawNumber(editSpkNominal)
+          : undefined,
         ppn: editSpkPpn || undefined,
-        grand_total: editSpkGrandTotal ? parseRawNumber(editSpkGrandTotal) : undefined,
+        grand_total: editSpkGrandTotal
+          ? parseRawNumber(editSpkGrandTotal)
+          : undefined,
         penerbit_id: editSpkPenerbitId || undefined,
       }),
     onSuccess: () => {
@@ -590,13 +641,17 @@ export default function ProjectItemsPage() {
       setEditSpkDeadline(toDateInput(project?.deadline));
       setEditSpkTanggalMasuk(toDateInput(existingSpk.tanggal_masuk));
       setEditSpkNominal(
-        existingSpk.nominal_dpp ? formatRupiah(String(existingSpk.nominal_dpp)) : ''
+        existingSpk.nominal_dpp
+          ? formatRupiah(String(existingSpk.nominal_dpp))
+          : ''
       );
       setEditSpkPpn(existingSpk.ppn ? String(existingSpk.ppn) : '');
       setEditSpkGrandTotal(
         existingSpk.nominal ? formatRupiah(String(existingSpk.nominal)) : ''
       );
-      setEditSpkPenerbitId(existingSpk.penerbit_id ? String(existingSpk.penerbit_id) : '');
+      setEditSpkPenerbitId(
+        existingSpk.penerbit_id ? String(existingSpk.penerbit_id) : ''
+      );
     }
     setIsEditSpkModalOpen(true);
   };
@@ -1013,49 +1068,40 @@ export default function ProjectItemsPage() {
                       </a>
                     </Button>
                   </div>
-                  {/* {project.file_pendukung_spd &&
-                    project.file_pendukung_spd.length > 0 && (
-                      <div className='mt-3 pt-3 border-t border-orange-100 space-y-2'>
-                        <p className='text-[10px] font-bold text-orange-700 uppercase tracking-wider'>
-                          File Pendukung
-                        </p>
-                        <div className='grid grid-cols-1 gap-2'>
-                          {project.file_pendukung_spd.map((fp, i) => (
-                            <div
-                              key={fp.id}
-                              className='flex items-center justify-between p-2 rounded-lg bg-white border border-orange-50 shadow-sm min-w-0 gap-2'
-                            >
-                              <div className='flex items-center gap-2 overflow-hidden min-w-0 flex-1 mr-2'>
-                                <FileText className='h-3 w-3 text-orange-400 shrink-0' />
-                                <span
-                                  className='text-[10px] text-orange-800 truncate'
-                                  title={`File Pendukung ${i + 1}`}
-                                >
-                                  File Pendukung {i + 1}
-                                </span>
-                              </div>
-                              <Button
-                                variant='ghost'
-                                size='icon'
-                                className='h-6 w-6 text-orange-600 hover:bg-orange-50 shrink-0'
-                                asChild
-                              >
-                                <a
-                                  href={`${(
-                                    process.env.NEXT_PUBLIC_API_URL ||
-                                    'http://localhost:8000'
-                                  ).replace('/api', '')}/storage/${fp.file}`}
-                                  target='_blank'
-                                  rel='noopener noreferrer'
-                                >
-                                  <FileDown className='h-3 w-3' />
-                                </a>
-                              </Button>
-                            </div>
-                          ))}
+
+                  {project?.file_pendukung_spd && project.file_pendukung_spd.length > 0 && (
+                    <div className='mt-3 pt-3 border-t border-orange-100 space-y-2'>
+                      <p className='text-[10px] font-bold text-orange-700 uppercase tracking-wider'>
+                        Link Pendukung
+                      </p>
+                      <div className='flex items-center justify-between p-2 rounded-lg bg-white border border-orange-50 shadow-sm min-w-0 gap-2'>
+                        <div className='flex items-center gap-2 overflow-hidden min-w-0 flex-1 mr-2'>
+                          <FileText className='h-3 w-3 text-orange-400 shrink-0' />
+                          <span
+                            className='text-[10px] text-orange-800 truncate'
+                            title='Link Pendukung'
+                          >
+                            Link Pendukung
+                          </span>
                         </div>
+                        <Button
+                          variant='ghost'
+                          size='icon'
+                          className='h-6 w-6 text-orange-600 hover:bg-orange-50 shrink-0'
+                          asChild
+                        >
+                          <a
+                            href={project.file_pendukung_spd[0].file.startsWith('http') ? project.file_pendukung_spd[0].file : `http://${project.file_pendukung_spd[0].file}`}
+                            target='_blank'
+                            rel='noopener noreferrer'
+                          >
+                            <ExternalLink className='h-3 w-3' />
+                          </a>
+                        </Button>
                       </div>
-                    )} */}
+                    </div>
+                  )}
+
                   <Button
                     size='sm'
                     variant='outline'
@@ -1063,10 +1109,10 @@ export default function ProjectItemsPage() {
                     disabled={
                       !flowSteps[0].isActive || project.need_design === 0
                     }
-                    onClick={() => setIsSpdModalOpen(true)}
+                    onClick={handleOpenSpdModal}
                   >
-                    <Upload className='h-3 w-3 mr-1' />
-                    Ganti SPD
+                    <Pencil className='h-3 w-3 mr-1' />
+                    Edit
                   </Button>
                 </>
               ) : (
@@ -1083,7 +1129,7 @@ export default function ProjectItemsPage() {
                     disabled={
                       !flowSteps[0].isActive || project.need_design === 0
                     }
-                    onClick={() => setIsSpdModalOpen(true)}
+                    onClick={handleOpenSpdModal}
                   >
                     <Upload className='h-3 w-3 mr-1' />
                     Upload SPD
@@ -1855,7 +1901,11 @@ export default function ProjectItemsPage() {
                 <TableRow>
                   <TableHead className='w-[40px] text-center'>
                     <Checkbox
-                      checked={!!items && items.length > 0 && selectedItemIds.length === items.length}
+                      checked={
+                        !!items &&
+                        items.length > 0 &&
+                        selectedItemIds.length === items.length
+                      }
                       onCheckedChange={(checked) => {
                         if (checked && items) {
                           setSelectedItemIds(items.map((i) => i.id));
@@ -2051,7 +2101,7 @@ export default function ProjectItemsPage() {
           <DialogHeader>
             <DialogTitle className='flex items-center gap-2 text-orange-700'>
               <FileText className='h-5 w-5' />
-              Upload SPD
+              {existingSpd?.spd_file ? 'Edit SPD' : 'Upload SPD'}
             </DialogTitle>
           </DialogHeader>
           <div className='flex flex-col gap-3 py-2'>
@@ -2075,63 +2125,17 @@ export default function ProjectItemsPage() {
                 className='h-9 text-xs'
               />
             </div>
-            <div className='space-y-3 pt-2'>
-              <div className='flex items-center justify-between'>
-                <Label className='text-xs font-medium'>File Pendukung</Label>
-                <Button
-                  type='button'
-                  variant='outline'
-                  size='sm'
-                  className='h-7 text-[10px] bg-orange-50 text-orange-600 border-orange-200 hover:bg-orange-100'
-                  onClick={() =>
-                    setSpdPendukungFiles([...spdPendukungFiles, null])
-                  }
-                >
-                  <Plus className='h-3 w-3 mr-1' />
-                  Tambah
-                </Button>
-              </div>
-
-              <div className='space-y-2 max-h-[200px] overflow-y-auto pr-1 custom-scrollbar'>
-                {spdPendukungFiles.map((file, index) => (
-                  <div key={index} className='flex gap-2 items-center'>
-                    <div className='relative flex-1'>
-                      <Input
-                        type='file'
-                        accept='.pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx'
-                        onChange={(e) => {
-                          const newFiles = [...spdPendukungFiles];
-                          newFiles[index] = e.target.files?.[0] || null;
-                          setSpdPendukungFiles(newFiles);
-                        }}
-                        className='h-9 text-[10px] pr-8'
-                      />
-                      {spdPendukungFiles[index] && (
-                        <CheckCircle2 className='h-3 w-3 text-emerald-500 absolute right-2.5 top-3' />
-                      )}
-                    </div>
-                    <Button
-                      type='button'
-                      variant='ghost'
-                      size='icon'
-                      className='h-8 w-8 text-neutral-400 hover:text-red-600 hover:bg-red-50 shrink-0'
-                      onClick={() => {
-                        const newFiles = spdPendukungFiles.filter(
-                          (_, i) => i !== index
-                        );
-                        setSpdPendukungFiles(newFiles);
-                      }}
-                    >
-                      <Trash2 className='h-3.5 w-3.5' />
-                    </Button>
-                  </div>
-                ))}
-                {spdPendukungFiles.length === 0 && (
-                  <p className='text-[10px] text-muted-foreground italic text-center py-4 bg-neutral-50 rounded-lg border border-dashed'>
-                    Belum ada file pendukung
-                  </p>
-                )}
-              </div>
+            <div className='space-y-1.5 pt-2'>
+              <Label className='text-xs font-medium'>
+                Link Pendukung (Opsional)
+              </Label>
+              <Input
+                type='url'
+                placeholder='Masukkan link URL'
+                value={spdPendukungUrl}
+                onChange={(e) => setSpdPendukungUrl(e.target.value)}
+                className='h-9 text-xs'
+              />
             </div>
           </div>
           <DialogFooter>
@@ -2149,7 +2153,7 @@ export default function ProjectItemsPage() {
                 handleSpdUpload();
                 setIsSpdModalOpen(false);
               }}
-              disabled={!spdFile || uploadSpdMutation.isPending}
+              disabled={(!spdFile && !existingSpd?.spd_file) || uploadSpdMutation.isPending}
             >
               {uploadSpdMutation.isPending ? (
                 <Loader2 className='h-4 w-4 animate-spin' />
@@ -2216,7 +2220,8 @@ export default function ProjectItemsPage() {
               />
               {buktiAccFile && (
                 <p className='text-[10px] text-emerald-600 font-medium'>
-                  Ukuran file: {(buktiAccFile.size / (1024 * 1024)).toFixed(2)} MB
+                  Ukuran file: {(buktiAccFile.size / (1024 * 1024)).toFixed(2)}{' '}
+                  MB
                 </p>
               )}
               {existingAcc?.bukti_acc && !buktiAccFile && (
@@ -2241,7 +2246,10 @@ export default function ProjectItemsPage() {
                 handleAccUpdate();
                 setIsAccModalOpen(false);
               }}
-              disabled={updateAccMutation.isPending || (!buktiAccFile && !existingAcc?.bukti_acc)}
+              disabled={
+                updateAccMutation.isPending ||
+                (!buktiAccFile && !existingAcc?.bukti_acc)
+              }
             >
               {updateAccMutation.isPending ? (
                 <Loader2 className='h-4 w-4 animate-spin' />
@@ -2286,9 +2294,18 @@ export default function ProjectItemsPage() {
                 onChange={(e) => {
                   const formatted = formatRupiah(e.target.value);
                   setEditSphNominal(formatted);
-                  const nominalNum = parseInt(parseRawNumber(e.target.value) || '0', 10);
-                  const ppnAmount = Math.round(nominalNum * (parseFloat(editSphPpn || '0') / 100));
-                  setEditSphGrandTotal((nominalNum + ppnAmount) > 0 ? formatRupiah((nominalNum + ppnAmount).toString()) : '');
+                  const nominalNum = parseInt(
+                    parseRawNumber(e.target.value) || '0',
+                    10
+                  );
+                  const ppnAmount = Math.round(
+                    nominalNum * (parseFloat(editSphPpn || '0') / 100)
+                  );
+                  setEditSphGrandTotal(
+                    nominalNum + ppnAmount > 0
+                      ? formatRupiah((nominalNum + ppnAmount).toString())
+                      : ''
+                  );
                 }}
                 className='h-9 text-xs font-mono border-blue-200'
               />
@@ -2303,9 +2320,18 @@ export default function ProjectItemsPage() {
                   onCheckedChange={(checked) => {
                     const pct = checked ? '11' : '0';
                     setEditSphPpn(pct);
-                    const nominalNum = parseInt(parseRawNumber(editSphNominal) || '0', 10);
-                    const ppnAmount = Math.round(nominalNum * (parseFloat(pct || '0') / 100));
-                    setEditSphGrandTotal((nominalNum + ppnAmount) > 0 ? formatRupiah((nominalNum + ppnAmount).toString()) : '');
+                    const nominalNum = parseInt(
+                      parseRawNumber(editSphNominal) || '0',
+                      10
+                    );
+                    const ppnAmount = Math.round(
+                      nominalNum * (parseFloat(pct || '0') / 100)
+                    );
+                    setEditSphGrandTotal(
+                      nominalNum + ppnAmount > 0
+                        ? formatRupiah((nominalNum + ppnAmount).toString())
+                        : ''
+                    );
                   }}
                 />
                 <span className='text-xs font-medium text-neutral-600'>
@@ -2321,7 +2347,9 @@ export default function ProjectItemsPage() {
                 type='text'
                 placeholder='Rp 0'
                 value={editSphGrandTotal}
-                onChange={(e) => setEditSphGrandTotal(formatRupiah(e.target.value))}
+                onChange={(e) =>
+                  setEditSphGrandTotal(formatRupiah(e.target.value))
+                }
                 className='h-9 text-xs font-mono border-blue-200'
               />
             </div>
@@ -2396,15 +2424,23 @@ export default function ProjectItemsPage() {
                   const raw = parseRawNumber(e.target.value);
                   setSphNominal(raw);
                   const nominalNum = parseInt(raw || '0', 10);
-                  const ppnAmount = Math.round(nominalNum * (parseFloat(sphPpn || '0') / 100));
-                  setSphGrandTotal((nominalNum + ppnAmount) > 0 ? (nominalNum + ppnAmount).toString() : '');
+                  const ppnAmount = Math.round(
+                    nominalNum * (parseFloat(sphPpn || '0') / 100)
+                  );
+                  setSphGrandTotal(
+                    nominalNum + ppnAmount > 0
+                      ? (nominalNum + ppnAmount).toString()
+                      : ''
+                  );
                 }}
                 className='h-9 text-xs font-mono'
               />
             </div>
 
             <div className='space-y-1.5'>
-              <Label className='text-xs font-medium'>PPN 12% (11/12 x 12%)</Label>
+              <Label className='text-xs font-medium'>
+                PPN 12% (11/12 x 12%)
+              </Label>
               <div className='flex items-center gap-3 h-9'>
                 <Switch
                   checked={sphPpn === '11'}
@@ -2412,8 +2448,14 @@ export default function ProjectItemsPage() {
                     const pct = checked ? '11' : '0';
                     setSphPpn(pct);
                     const nominalNum = parseInt(sphNominal || '0', 10);
-                    const ppnAmount = Math.round(nominalNum * (parseFloat(pct || '0') / 100));
-                    setSphGrandTotal((nominalNum + ppnAmount) > 0 ? (nominalNum + ppnAmount).toString() : '');
+                    const ppnAmount = Math.round(
+                      nominalNum * (parseFloat(pct || '0') / 100)
+                    );
+                    setSphGrandTotal(
+                      nominalNum + ppnAmount > 0
+                        ? (nominalNum + ppnAmount).toString()
+                        : ''
+                    );
                   }}
                 />
                 <span className='text-xs font-medium text-neutral-600'>
@@ -2428,7 +2470,9 @@ export default function ProjectItemsPage() {
                 type='text'
                 placeholder='Rp 0'
                 value={formatRupiah(sphGrandTotal)}
-                onChange={(e) => setSphGrandTotal(parseRawNumber(e.target.value))}
+                onChange={(e) =>
+                  setSphGrandTotal(parseRawNumber(e.target.value))
+                }
                 className='h-9 text-xs font-mono'
               />
             </div>
@@ -2529,9 +2573,18 @@ export default function ProjectItemsPage() {
                 onChange={(e) => {
                   const formatted = formatRupiah(e.target.value);
                   setEditSpkNominal(formatted);
-                  const nominalNum = parseInt(parseRawNumber(e.target.value) || '0', 10);
-                  const ppnAmount = Math.round(nominalNum * (parseFloat(editSpkPpn || '0') / 100));
-                  setEditSpkGrandTotal((nominalNum + ppnAmount) > 0 ? formatRupiah((nominalNum + ppnAmount).toString()) : '');
+                  const nominalNum = parseInt(
+                    parseRawNumber(e.target.value) || '0',
+                    10
+                  );
+                  const ppnAmount = Math.round(
+                    nominalNum * (parseFloat(editSpkPpn || '0') / 100)
+                  );
+                  setEditSpkGrandTotal(
+                    nominalNum + ppnAmount > 0
+                      ? formatRupiah((nominalNum + ppnAmount).toString())
+                      : ''
+                  );
                 }}
                 className='h-9 text-xs border-purple-200'
               />
@@ -2546,9 +2599,18 @@ export default function ProjectItemsPage() {
                   onCheckedChange={(checked) => {
                     const pct = checked ? '11' : '0';
                     setEditSpkPpn(pct);
-                    const nominalNum = parseInt(parseRawNumber(editSpkNominal) || '0', 10);
-                    const ppnAmount = Math.round(nominalNum * (parseFloat(pct || '0') / 100));
-                    setEditSpkGrandTotal((nominalNum + ppnAmount) > 0 ? formatRupiah((nominalNum + ppnAmount).toString()) : '');
+                    const nominalNum = parseInt(
+                      parseRawNumber(editSpkNominal) || '0',
+                      10
+                    );
+                    const ppnAmount = Math.round(
+                      nominalNum * (parseFloat(pct || '0') / 100)
+                    );
+                    setEditSpkGrandTotal(
+                      nominalNum + ppnAmount > 0
+                        ? formatRupiah((nominalNum + ppnAmount).toString())
+                        : ''
+                    );
                   }}
                 />
                 <span className='text-xs font-medium text-neutral-600'>
@@ -2564,7 +2626,9 @@ export default function ProjectItemsPage() {
                 type='text'
                 placeholder='Rp 0'
                 value={editSpkGrandTotal}
-                onChange={(e) => setEditSpkGrandTotal(formatRupiah(e.target.value))}
+                onChange={(e) =>
+                  setEditSpkGrandTotal(formatRupiah(e.target.value))
+                }
                 className='h-9 text-xs font-mono border-purple-200'
               />
             </div>
@@ -2573,68 +2637,76 @@ export default function ProjectItemsPage() {
               <Label className='text-xs font-medium text-purple-700'>
                 Diterbitkan Oleh
               </Label>
-              <Popover open={editClientPopoverOpen} onOpenChange={setEditClientPopoverOpen}>
-                  <PopoverTrigger asChild>
-                      <Button
-                          variant="outline"
-                          role="combobox"
-                          className={cn(
-                              "w-full justify-between h-9 text-xs border-purple-200 font-normal",
-                              !editSpkPenerbitId && "text-muted-foreground"
-                          )}
-                      >
-                          {editSpkPenerbitId && clients.length > 0
-                              ? clients.find(
-                                    (client) => client.id.toString() === editSpkPenerbitId
-                                )?.name || "Pilih Penerbit..."
-                              : "Pilih Penerbit..."}
-                          <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                      </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[400px] p-0" align="start">
-                      <Command shouldFilter={false}>
-                          <CommandInput 
-                              placeholder="Cari client..." 
-                              value={searchQuery}
-                              onValueChange={setSearchQuery}
-                              className="text-xs h-9"
-                          />
-                          <CommandList>
-                              <CommandEmpty className="text-xs p-2 text-center text-muted-foreground">
-                                  {isLoadingClients ? 'Loading...' : 'Tidak ditemukan.'}
-                              </CommandEmpty>
-                              <CommandGroup>
-                                  {clients.map((client) => (
-                                      <CommandItem
-                                          value={client.id.toString()}
-                                          key={client.id}
-                                          onSelect={() => {
-                                              setEditSpkPenerbitId(client.id.toString());
-                                              setEditClientPopoverOpen(false);
-                                          }}
-                                          className="text-xs"
-                                      >
-                                          <Check
-                                              className={cn(
-                                                  "mr-2 h-4 w-4",
-                                                  client.id.toString() === editSpkPenerbitId
-                                                      ? "opacity-100"
-                                                      : "opacity-0"
-                                              )}
-                                          />
-                                          {client.name}
-                                      </CommandItem>
-                                  ))}
-                              </CommandGroup>
-                              {hasNextPage && (
-                                  <div ref={loadMoreRef} className="py-2 flex justify-center items-center">
-                                      <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
-                                      <span className="ml-2 text-[10px] text-muted-foreground">Loading more...</span>
-                                  </div>
+              <Popover
+                open={editClientPopoverOpen}
+                onOpenChange={setEditClientPopoverOpen}
+              >
+                <PopoverTrigger asChild>
+                  <Button
+                    variant='outline'
+                    role='combobox'
+                    className={cn(
+                      'w-full justify-between h-9 text-xs border-purple-200 font-normal',
+                      !editSpkPenerbitId && 'text-muted-foreground'
+                    )}
+                  >
+                    {editSpkPenerbitId && clients.length > 0
+                      ? clients.find(
+                          (client) => client.id.toString() === editSpkPenerbitId
+                        )?.name || 'Pilih Penerbit...'
+                      : 'Pilih Penerbit...'}
+                    <ChevronDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className='w-[400px] p-0' align='start'>
+                  <Command shouldFilter={false}>
+                    <CommandInput
+                      placeholder='Cari client...'
+                      value={searchQuery}
+                      onValueChange={setSearchQuery}
+                      className='text-xs h-9'
+                    />
+                    <CommandList>
+                      <CommandEmpty className='text-xs p-2 text-center text-muted-foreground'>
+                        {isLoadingClients ? 'Loading...' : 'Tidak ditemukan.'}
+                      </CommandEmpty>
+                      <CommandGroup>
+                        {clients.map((client) => (
+                          <CommandItem
+                            value={client.id.toString()}
+                            key={client.id}
+                            onSelect={() => {
+                              setEditSpkPenerbitId(client.id.toString());
+                              setEditClientPopoverOpen(false);
+                            }}
+                            className='text-xs'
+                          >
+                            <Check
+                              className={cn(
+                                'mr-2 h-4 w-4',
+                                client.id.toString() === editSpkPenerbitId
+                                  ? 'opacity-100'
+                                  : 'opacity-0'
                               )}
-                          </CommandList>
-                      </Command>
-                  </PopoverContent>
+                            />
+                            {client.name}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                      {hasNextPage && (
+                        <div
+                          ref={loadMoreRef}
+                          className='py-2 flex justify-center items-center'
+                        >
+                          <Loader2 className='h-3 w-3 animate-spin text-muted-foreground' />
+                          <span className='ml-2 text-[10px] text-muted-foreground'>
+                            Loading more...
+                          </span>
+                        </div>
+                      )}
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
               </Popover>
             </div>
             <div className='space-y-1.5'>
@@ -2733,9 +2805,18 @@ export default function ProjectItemsPage() {
                 onChange={(e) => {
                   const formatted = formatRupiah(e.target.value);
                   setSpkNominal(formatted);
-                  const nominalNum = parseInt(parseRawNumber(e.target.value) || '0', 10);
-                  const ppnAmount = Math.round(nominalNum * (parseFloat(spkPpn || '0') / 100));
-                  setSpkGrandTotal((nominalNum + ppnAmount) > 0 ? (nominalNum + ppnAmount).toString() : '');
+                  const nominalNum = parseInt(
+                    parseRawNumber(e.target.value) || '0',
+                    10
+                  );
+                  const ppnAmount = Math.round(
+                    nominalNum * (parseFloat(spkPpn || '0') / 100)
+                  );
+                  setSpkGrandTotal(
+                    nominalNum + ppnAmount > 0
+                      ? (nominalNum + ppnAmount).toString()
+                      : ''
+                  );
                 }}
                 className='h-9 text-xs border-purple-200'
               />
@@ -2750,9 +2831,18 @@ export default function ProjectItemsPage() {
                   onCheckedChange={(checked) => {
                     const pct = checked ? '11' : '0';
                     setSpkPpn(pct);
-                    const nominalNum = parseInt(parseRawNumber(spkNominal) || '0', 10);
-                    const ppnAmount = Math.round(nominalNum * (parseFloat(pct || '0') / 100));
-                    setSpkGrandTotal((nominalNum + ppnAmount) > 0 ? (nominalNum + ppnAmount).toString() : '');
+                    const nominalNum = parseInt(
+                      parseRawNumber(spkNominal) || '0',
+                      10
+                    );
+                    const ppnAmount = Math.round(
+                      nominalNum * (parseFloat(pct || '0') / 100)
+                    );
+                    setSpkGrandTotal(
+                      nominalNum + ppnAmount > 0
+                        ? (nominalNum + ppnAmount).toString()
+                        : ''
+                    );
                   }}
                 />
                 <span className='text-xs font-medium text-neutral-600'>
@@ -2768,7 +2858,9 @@ export default function ProjectItemsPage() {
                 type='text'
                 placeholder='Rp 0'
                 value={formatRupiah(spkGrandTotal)}
-                onChange={(e) => setSpkGrandTotal(parseRawNumber(e.target.value))}
+                onChange={(e) =>
+                  setSpkGrandTotal(parseRawNumber(e.target.value))
+                }
                 className='h-9 text-xs font-mono border-purple-200'
               />
             </div>
@@ -2777,68 +2869,76 @@ export default function ProjectItemsPage() {
               <Label className='text-xs font-medium text-purple-700'>
                 Diterbitkan Oleh
               </Label>
-              <Popover open={clientPopoverOpen} onOpenChange={setClientPopoverOpen}>
-                  <PopoverTrigger asChild>
-                      <Button
-                          variant="outline"
-                          role="combobox"
-                          className={cn(
-                              "w-full justify-between h-9 text-xs border-purple-200 font-normal",
-                              !spkPenerbitId && "text-muted-foreground"
-                          )}
-                      >
-                          {spkPenerbitId && clients.length > 0
-                              ? clients.find(
-                                    (client) => client.id.toString() === spkPenerbitId
-                                )?.name || "Pilih Penerbit..."
-                              : "Pilih Penerbit..."}
-                          <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                      </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[400px] p-0" align="start">
-                      <Command shouldFilter={false}>
-                          <CommandInput 
-                              placeholder="Cari client..." 
-                              value={searchQuery}
-                              onValueChange={setSearchQuery}
-                              className="text-xs h-9"
-                          />
-                          <CommandList>
-                              <CommandEmpty className="text-xs p-2 text-center text-muted-foreground">
-                                  {isLoadingClients ? 'Loading...' : 'Tidak ditemukan.'}
-                              </CommandEmpty>
-                              <CommandGroup>
-                                  {clients.map((client) => (
-                                      <CommandItem
-                                          value={client.id.toString()}
-                                          key={client.id}
-                                          onSelect={() => {
-                                              setSpkPenerbitId(client.id.toString());
-                                              setClientPopoverOpen(false);
-                                          }}
-                                          className="text-xs"
-                                      >
-                                          <Check
-                                              className={cn(
-                                                  "mr-2 h-4 w-4",
-                                                  client.id.toString() === spkPenerbitId
-                                                      ? "opacity-100"
-                                                      : "opacity-0"
-                                              )}
-                                          />
-                                          {client.name}
-                                      </CommandItem>
-                                  ))}
-                              </CommandGroup>
-                              {hasNextPage && (
-                                  <div ref={loadMoreRef} className="py-2 flex justify-center items-center">
-                                      <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
-                                      <span className="ml-2 text-[10px] text-muted-foreground">Loading more...</span>
-                                  </div>
+              <Popover
+                open={clientPopoverOpen}
+                onOpenChange={setClientPopoverOpen}
+              >
+                <PopoverTrigger asChild>
+                  <Button
+                    variant='outline'
+                    role='combobox'
+                    className={cn(
+                      'w-full justify-between h-9 text-xs border-purple-200 font-normal',
+                      !spkPenerbitId && 'text-muted-foreground'
+                    )}
+                  >
+                    {spkPenerbitId && clients.length > 0
+                      ? clients.find(
+                          (client) => client.id.toString() === spkPenerbitId
+                        )?.name || 'Pilih Penerbit...'
+                      : 'Pilih Penerbit...'}
+                    <ChevronDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className='w-[400px] p-0' align='start'>
+                  <Command shouldFilter={false}>
+                    <CommandInput
+                      placeholder='Cari client...'
+                      value={searchQuery}
+                      onValueChange={setSearchQuery}
+                      className='text-xs h-9'
+                    />
+                    <CommandList>
+                      <CommandEmpty className='text-xs p-2 text-center text-muted-foreground'>
+                        {isLoadingClients ? 'Loading...' : 'Tidak ditemukan.'}
+                      </CommandEmpty>
+                      <CommandGroup>
+                        {clients.map((client) => (
+                          <CommandItem
+                            value={client.id.toString()}
+                            key={client.id}
+                            onSelect={() => {
+                              setSpkPenerbitId(client.id.toString());
+                              setClientPopoverOpen(false);
+                            }}
+                            className='text-xs'
+                          >
+                            <Check
+                              className={cn(
+                                'mr-2 h-4 w-4',
+                                client.id.toString() === spkPenerbitId
+                                  ? 'opacity-100'
+                                  : 'opacity-0'
                               )}
-                          </CommandList>
-                      </Command>
-                  </PopoverContent>
+                            />
+                            {client.name}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                      {hasNextPage && (
+                        <div
+                          ref={loadMoreRef}
+                          className='py-2 flex justify-center items-center'
+                        >
+                          <Loader2 className='h-3 w-3 animate-spin text-muted-foreground' />
+                          <span className='ml-2 text-[10px] text-muted-foreground'>
+                            Loading more...
+                          </span>
+                        </div>
+                      )}
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
               </Popover>
             </div>
             <div className='space-y-1.5'>
@@ -3112,9 +3212,13 @@ export default function ProjectItemsPage() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Hapus {selectedItemIds.length} item?</AlertDialogTitle>
+            <AlertDialogTitle>
+              Hapus {selectedItemIds.length} item?
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              Tindakan ini akan menghapus {selectedItemIds.length} item yang dipilih secara permanen. Anda tidak dapat membatalkan tindakan ini.
+              Tindakan ini akan menghapus {selectedItemIds.length} item yang
+              dipilih secara permanen. Anda tidak dapat membatalkan tindakan
+              ini.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

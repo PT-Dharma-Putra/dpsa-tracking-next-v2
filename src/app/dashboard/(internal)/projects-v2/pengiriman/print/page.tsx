@@ -86,6 +86,7 @@ export default function PrintSuratJalanPage() {
       const isSuratJalan = activeTab === 'surat-jalan';
       let wsData: any[][] = [];
       let merges: any[] = [];
+      const borderThin = { style: 'thin' } as const;
 
       if (isSuratJalan) {
         // SURAT JALAN Layout
@@ -112,8 +113,34 @@ export default function PrintSuratJalanPage() {
 
         // Metadata right aligned
         wsData.push([
-          '',
-          '',
+          {
+            v: 'PPIC',
+            t: 's',
+            s: {
+              font: { bold: true, sz: 8 },
+              alignment: { horizontal: 'center' },
+              border: {
+                top: borderThin,
+                bottom: borderThin,
+                left: borderThin,
+                right: borderThin,
+              },
+            },
+          },
+          {
+            v: 'Rev : 00',
+            t: 's',
+            s: {
+              font: { sz: 8 },
+              alignment: { horizontal: 'center' },
+              border: {
+                top: borderThin,
+                bottom: borderThin,
+                left: borderThin,
+                right: borderThin,
+              },
+            },
+          },
           '',
           '',
           '',
@@ -128,8 +155,34 @@ export default function PrintSuratJalanPage() {
         merges.push({ s: { r: 5, c: 10 }, e: { r: 5, c: 11 } });
 
         wsData.push([
-          '',
-          '',
+          {
+            v: '004',
+            t: 's',
+            s: {
+              font: { bold: true, sz: 8 },
+              alignment: { horizontal: 'center' },
+              border: {
+                top: borderThin,
+                bottom: borderThin,
+                left: borderThin,
+                right: borderThin,
+              },
+            },
+          },
+          {
+            v: 'Terbit : 8/25',
+            t: 's',
+            s: {
+              font: { sz: 8 },
+              alignment: { horizontal: 'center' },
+              border: {
+                top: borderThin,
+                bottom: borderThin,
+                left: borderThin,
+                right: borderThin,
+              },
+            },
+          },
           '',
           '',
           '',
@@ -164,9 +217,8 @@ export default function PrintSuratJalanPage() {
         // Table Header Line 1
         wsData.push([
           { v: 'NO', t: 's', s: headerStyle },
-          { v: 'LANTAI', t: 's', s: headerStyle },
-          { v: 'RUANG', t: 's', s: headerStyle },
           { v: 'NO. SPK', t: 's', s: headerStyle },
+          { v: 'RUANG', t: 's', s: headerStyle },
           { v: 'ITEM/PERABOT', t: 's', s: headerStyle },
           { v: 'DIMENSI (METER)', t: 's', s: headerStyle },
           { v: '', t: 's', s: headerStyle },
@@ -175,11 +227,11 @@ export default function PrintSuratJalanPage() {
           { v: 'SAT', t: 's', s: headerStyle },
           { v: 'JML', t: 's', s: headerStyle },
           { v: 'KET', t: 's', s: headerStyle },
+          { v: '', t: 's', s: headerStyle },
         ]); // 10 (r: 9)
 
         // Table Header Line 2
         wsData.push([
-          '',
           '',
           '',
           '',
@@ -191,19 +243,19 @@ export default function PrintSuratJalanPage() {
           '',
           '',
           '',
+          '',
         ]); // 11 (r: 10)
 
         // Merges for header
         merges.push({ s: { r: 9, c: 0 }, e: { r: 10, c: 0 } }); // NO
-        merges.push({ s: { r: 9, c: 1 }, e: { r: 10, c: 1 } }); // LANTAI
+        merges.push({ s: { r: 9, c: 1 }, e: { r: 10, c: 1 } }); // NO. SPK
         merges.push({ s: { r: 9, c: 2 }, e: { r: 10, c: 2 } }); // RUANG
-        merges.push({ s: { r: 9, c: 3 }, e: { r: 10, c: 3 } }); // NO. SPK
-        merges.push({ s: { r: 9, c: 4 }, e: { r: 10, c: 4 } }); // ITEM/PERABOT
-        merges.push({ s: { r: 9, c: 5 }, e: { r: 9, c: 7 } }); // DIMENSI
-        merges.push({ s: { r: 9, c: 8 }, e: { r: 10, c: 8 } }); // VOL
-        merges.push({ s: { r: 9, c: 9 }, e: { r: 10, c: 9 } }); // SAT
-        merges.push({ s: { r: 9, c: 10 }, e: { r: 10, c: 10 } }); // JML
-        merges.push({ s: { r: 9, c: 11 }, e: { r: 10, c: 11 } }); // KET
+        merges.push({ s: { r: 9, c: 3 }, e: { r: 10, c: 3 } }); // ITEM/PERABOT
+        merges.push({ s: { r: 9, c: 4 }, e: { r: 9, c: 6 } }); // DIMENSI
+        merges.push({ s: { r: 9, c: 7 }, e: { r: 10, c: 7 } }); // VOL
+        merges.push({ s: { r: 9, c: 8 }, e: { r: 10, c: 8 } }); // SAT
+        merges.push({ s: { r: 9, c: 9 }, e: { r: 10, c: 9 } }); // JML
+        merges.push({ s: { r: 9, c: 10 }, e: { r: 10, c: 11 } }); // KET
 
         // Data
         if (pengiriman.details) {
@@ -211,7 +263,7 @@ export default function PrintSuratJalanPage() {
             wsData.push([
               { v: index + 1, t: 'n', s: dataStyleCenter },
               {
-                v: detail.project_item?.lantai || '-',
+                v: detail.project_item?.project?.spk_number || '-',
                 t: 's',
                 s: dataStyleCenter,
               },
@@ -219,11 +271,6 @@ export default function PrintSuratJalanPage() {
                 v: detail.project_item?.ruang || '-',
                 t: 's',
                 s: dataStyleLeft,
-              },
-              {
-                v: detail.project_item?.project?.spk_number || '-',
-                t: 's',
-                s: dataStyleCenter,
               },
               { v: detail.project_item?.item || '-', t: 's', s: dataStyleLeft },
               {
@@ -253,7 +300,10 @@ export default function PrintSuratJalanPage() {
               },
               { v: detail.jumlah_keluar || 0, t: 'n', s: dataStyleCenter },
               { v: detail.keterangan || '-', t: 's', s: dataStyleLeft },
+              { v: '', t: 's', s: dataStyleLeft },
             ]);
+            const rData = wsData.length - 1;
+            merges.push({ s: { r: rData, c: 10 }, e: { r: rData, c: 11 } });
           });
         }
 
@@ -395,7 +445,6 @@ export default function PrintSuratJalanPage() {
         // SETRIM Layout
         wsData.push([]); // 1
 
-        const borderThin = { style: 'thin' };
         const boxStyle = {
           font: { sz: 8 },
           alignment: { horizontal: 'center', vertical: 'center' },
