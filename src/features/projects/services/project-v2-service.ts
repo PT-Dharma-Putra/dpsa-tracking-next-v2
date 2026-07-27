@@ -401,17 +401,19 @@ export const projectV2Service = {
 
   uploadSPD: async (
     projectId: number,
-    file: File,
+    file: File | null | undefined,
     target_selesai: string,
-    filePendukung?: File[]
+    linkPendukung?: string
   ) => {
     const formData = new FormData();
-    formData.append('file', file);
-    formData.append('target_selesai', target_selesai);
-    if (filePendukung && filePendukung.length > 0) {
-      filePendukung.forEach((f) => {
-        formData.append('file_pendukung[]', f);
-      });
+    if (file) {
+      formData.append('file', file);
+    }
+    if (target_selesai) {
+      formData.append('target_selesai', target_selesai);
+    }
+    if (linkPendukung !== undefined) {
+      formData.append('link_pendukung', linkPendukung);
     }
     const { data } = await apiClient.post(
       `/projects-v2/${projectId}/upload-spd`,

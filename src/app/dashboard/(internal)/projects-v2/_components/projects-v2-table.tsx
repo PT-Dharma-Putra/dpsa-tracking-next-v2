@@ -35,6 +35,7 @@ import {
   FileEdit,
   Package,
   Hammer,
+  ExternalLink,
 } from 'lucide-react';
 import { format, differenceInDays, startOfDay } from 'date-fns';
 
@@ -2780,6 +2781,19 @@ export function ProjectsV2Table({
                         </div>
                       </TableHead>
                     )}
+                  {!showAllDashboard &&
+                    !showProduksi &&
+                    !showPurchasing &&
+                    !showPiutang &&
+                    !showPengirimanV2 &&
+                    !showQC && (
+                      <TableHead className='text-center'>
+                        <div className="flex flex-col items-center">
+                          <span>FILE</span>
+                          <span>PENDUKUNG</span>
+                        </div>
+                      </TableHead>
+                    )}
                   {!showAllDashboard && !showSPD && !showPiutang && (
                     <TableHead>JADWAL KIRIM</TableHead>
                   )}
@@ -3854,6 +3868,44 @@ export function ProjectsV2Table({
                                 </Button>
                               )}
                             </div>
+                          </TableCell>
+                        )}
+                      {!showAllDashboard &&
+                        !showProduksi &&
+                        !showPurchasing &&
+                        !showPiutang &&
+                        !showPengirimanV2 &&
+                        !showQC && (
+                          <TableCell className='text-center'>
+                            {project.file_pendukung_spd &&
+                            project.file_pendukung_spd.length > 0 &&
+                            project.file_pendukung_spd[0]?.file ? (
+                              <Button
+                                variant='ghost'
+                                size='sm'
+                                className='h-7 text-xs text-orange-600 hover:bg-orange-50 gap-1'
+                                asChild
+                              >
+                                <a
+                                  href={
+                                    project.file_pendukung_spd[0].file.startsWith(
+                                      'http'
+                                    )
+                                      ? project.file_pendukung_spd[0].file
+                                      : `http://${project.file_pendukung_spd[0].file}`
+                                  }
+                                  target='_blank'
+                                  rel='noopener noreferrer'
+                                >
+                                  <ExternalLink className='h-3.5 w-3.5' />
+                                  Link
+                                </a>
+                              </Button>
+                            ) : (
+                              <span className='text-muted-foreground italic text-xs'>
+                                -
+                              </span>
+                            )}
                           </TableCell>
                         )}
                       {!showAllDashboard && !showSPD && !showPiutang && (
