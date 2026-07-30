@@ -109,7 +109,7 @@ export const adminService = {
     },
 
     getRolePermissions: async (roleId: number) => {
-        const { data } = await axiosInstance.get<{ permission_ids: number[] }>(`/access-management/roles/${roleId}/permissions`);
+        const { data } = await axiosInstance.get<{ permission_ids: number[]; role_permission_ids?: number[] }>(`/access-management/roles/${roleId}/permissions`);
         return data;
     },
 
@@ -124,7 +124,7 @@ export const adminService = {
     },
 
     getUserPermissions: async (userId: number) => {
-        const { data } = await axiosInstance.get<{ permission_ids: number[] }>(`/access-management/users/${userId}/permissions`);
+        const { data } = await axiosInstance.get<{ permission_ids: number[]; role_permission_ids?: number[] }>(`/access-management/users/${userId}/permissions`);
         return data;
     },
 
