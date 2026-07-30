@@ -23,7 +23,12 @@ export const useAuthStore = create<AuthState>()(
             hydrated: false,
 
             setAuth: (user, token) => set({ user, token, isAuthenticated: true }),
-            logout: () => set({ user: null, token: null, isAuthenticated: false }),
+            logout: () => {
+                if (typeof window !== 'undefined') {
+                    sessionStorage.removeItem('hasSeenQuote');
+                }
+                set({ user: null, token: null, isAuthenticated: false });
+            },
             setHydrated: (state) => set({ hydrated: state }),
         }),
         {

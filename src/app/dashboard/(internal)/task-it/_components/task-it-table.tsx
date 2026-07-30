@@ -132,6 +132,9 @@ export function TaskItTable({ statusFilter, onClearFilter }: TaskItTableProps = 
         if (statusFilter === "inprogress") {
             const s = t.status.toLowerCase()
             if (s !== "in progress" && s !== "progress" && s !== "sedang dikerjakan") return false
+        } else if (statusFilter === "pending") {
+            const s = t.status.toLowerCase()
+            if (s !== "pending" && s !== "tunda") return false
         }
         if (!search) return true
         return (
@@ -362,6 +365,20 @@ export function TaskItTable({ statusFilter, onClearFilter }: TaskItTableProps = 
                         </button>
                     </div>
                 )}
+                {statusFilter === "pending" && (
+                    <div className="flex items-center gap-1.5 bg-yellow-50 border border-yellow-200 text-yellow-700 text-xs font-semibold px-3 py-1.5 rounded-full">
+                        <Loader2 className="h-3 w-3 animate-pulse" />
+                        <span>Pekerjaan Pending</span>
+                        <button
+                            type="button"
+                            onClick={onClearFilter}
+                            className="ml-1 hover:text-yellow-900 transition-colors"
+                            aria-label="Hapus filter"
+                        >
+                            ✕
+                        </button>
+                    </div>
+                )}
             </div>
 
             {/* Table */}
@@ -413,7 +430,7 @@ export function TaskItTable({ statusFilter, onClearFilter }: TaskItTableProps = 
                                         {getStatusSelect(task)}
                                     </TableCell>
                                     <TableCell className="text-xs text-neutral-600">
-                                        {task.created_at ? format(new Date(task.created_at), "d MMM yyyy HH:mm") : <span className="text-muted-foreground italic">-</span>}
+                                        {task.created_at ? format(new Date(task.created_at), "d MMM yyyy") : <span className="text-muted-foreground italic">-</span>}
                                     </TableCell>
                                     <TableCell className="text-xs text-neutral-600">
                                         {task.tanggal_selesai ? format(new Date(task.tanggal_selesai), "d MMM yyyy HH:mm") : <span className="text-muted-foreground italic">-</span>}

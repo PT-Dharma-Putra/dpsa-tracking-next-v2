@@ -43,16 +43,28 @@ export default function TaskItPage() {
                 </div>
 
                 {/* Pending Tasks Card */}
-                <div className="bg-white border border-neutral-200 rounded-xl p-5 shadow-sm flex items-center justify-between hover:shadow-md transition-all duration-300 relative overflow-hidden group">
-                    <div className="absolute top-0 left-0 h-1 w-full bg-yellow-400 group-hover:bg-yellow-500 transition-colors" />
+                <button
+                    type="button"
+                    onClick={() => setStatusFilter(statusFilter === "pending" ? null : "pending")}
+                    className={`text-left bg-white border rounded-xl p-5 shadow-sm flex items-center justify-between transition-all duration-300 relative overflow-hidden group cursor-pointer w-full
+                        ${statusFilter === "pending"
+                            ? "border-yellow-400 ring-2 ring-yellow-300 shadow-yellow-100"
+                            : "border-neutral-200 hover:shadow-md"
+                        }`}
+                >
+                    <div className={`absolute top-0 left-0 h-1 w-full transition-colors ${statusFilter === "pending" ? "bg-yellow-500" : "bg-yellow-400 group-hover:bg-yellow-500"}`} />
                     <div>
                         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Pekerjaan Pending</p>
                         <p className="text-3xl font-black text-neutral-800 mt-1">{isLoading ? "..." : pendingCount}</p>
+                        {statusFilter === "pending" && (
+                            <p className="text-xs text-yellow-600 font-semibold mt-0.5">Filter aktif</p>
+                        )}
                     </div>
-                    <div className="h-10 w-10 rounded-lg bg-yellow-50 flex items-center justify-center border border-yellow-100 group-hover:scale-105 transition-transform">
+                    <div className={`h-10 w-10 rounded-lg flex items-center justify-center border transition-transform group-hover:scale-105
+                        ${statusFilter === "pending" ? "bg-yellow-100 border-yellow-200" : "bg-yellow-50 border-yellow-100"}`}>
                         <Loader2 className="h-5 w-5 text-yellow-600 animate-pulse" />
                     </div>
-                </div>
+                </button>
 
                 {/* In Progress Tasks Card */}
                 <button

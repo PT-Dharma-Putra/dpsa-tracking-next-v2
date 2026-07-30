@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import {
   useQuery,
   useMutation,
@@ -35,6 +35,7 @@ import {
   FileEdit,
   Package,
   Hammer,
+  ExternalLink,
 } from 'lucide-react';
 import { format, differenceInDays, startOfDay } from 'date-fns';
 
@@ -154,14 +155,87 @@ export function ProjectsV2Table({
   showMarketingFilter?: boolean;
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
   const queryClient = useQueryClient();
-  const [page, setPage] = React.useState(1);
-  const [search, setSearch] = React.useState('');
-  const [searchInput, setSearchInput] = React.useState('');
+  const [page, setPage] = React.useState(() => Number(searchParams.get('page')) || 1);
+
+  React.useEffect(() => {
+    const urlPage = Number(searchParams.get('page')) || 1;
+    if (urlPage !== page) {
+      setPage(urlPage);
+    }
+  }, [searchParams]);
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+    const params = new URLSearchParams(searchParams.toString());
+    if (newPage > 1) {
+      params.set('page', newPage.toString());
+    } else {
+      params.delete('page');
+    }
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+  };
+
+  const [search, setSearch] = React.useState(searchParams.get('search') || '');
+  const [searchInput, setSearchInput] = React.useState(searchParams.get('search') || '');
   const [clientId, setClientId] = React.useState<string>('all');
   const [marketingId, setMarketingId] = React.useState<string>('all');
-  const [sortBy, setSortBy] = React.useState<string>('created_at');
-  const [sortOrder, setSortOrder] = React.useState<'asc' | 'desc'>('desc');
+  const [sortBy, setSortBy] = React.useState<string>(searchParams.get('sort_by') || 'created_at');
+  const [sortOrder, setSortOrder] = React.useState<'asc' | 'desc'>((searchParams.get('sort_order') as 'asc' | 'desc') || 'desc');
+
+  React.useEffect(() => {
+    const params = new URLSearchParams(searchParams.toString());
+    let shouldUpdate = false;
+    let pushOrReplace = 'push';
+
+    const urlPage = Number(params.get('page')) || 1;
+    if (page === 1 && urlPage > 1) {
+      params.delete('page');
+      shouldUpdate = true;
+      pushOrReplace = 'replace';
+    }
+
+    if (sortBy !== (params.get('sort_by') || 'created_at')) {
+      if (sortBy === 'created_at') params.delete('sort_by');
+      else params.set('sort_by', sortBy);
+      shouldUpdate = true;
+    }
+
+    if (sortOrder !== (params.get('sort_order') || 'desc')) {
+      if (sortOrder === 'desc') params.delete('sort_order');
+      else params.set('sort_order', sortOrder);
+      shouldUpdate = true;
+    }
+
+    if (search !== (params.get('search') || '')) {
+      if (search) params.set('search', search);
+      else params.delete('search');
+      shouldUpdate = true;
+      pushOrReplace = 'replace';
+    }
+
+    if (shouldUpdate) {
+      if (pushOrReplace === 'replace') {
+        router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+      } else {
+        router.push(`${pathname}?${params.toString()}`, { scroll: false });
+      }
+    }
+  }, [page, sortBy, sortOrder, search, pathname, router, searchParams]);
+
+  React.useEffect(() => {
+    const urlSortBy = searchParams.get('sort_by') || 'created_at';
+    const urlSortOrder = (searchParams.get('sort_order') as 'asc' | 'desc') || 'desc';
+    const urlSearch = searchParams.get('search') || '';
+    if (urlSortBy !== sortBy) setSortBy(urlSortBy);
+    if (urlSortOrder !== sortOrder) setSortOrder(urlSortOrder);
+    if (urlSearch !== search) {
+      setSearch(urlSearch);
+      setSearchInput(urlSearch);
+    }
+  }, [searchParams]);
   const [selectedMonth, setSelectedMonth] = React.useState<string>('all');
   const [selectedYear, setSelectedYear] = React.useState<string>('all');
   const [poDivisiFilter, setPoDivisiFilter] = React.useState<
@@ -200,8 +274,13 @@ export function ProjectsV2Table({
     | 'overdue'
     | 'urgent'
     | 'po_supplier'
+    | 'pakai_desain'
     | null
-  >(null);
+  >(searchParams.get('dashboard_filter') as any || null);
+
+  React.useEffect(() => {
+    setDashboardFilter(searchParams.get('dashboard_filter') as any || null);
+  }, [searchParams]);
 
   const handleDashboardFilterClick = (
     filter:
@@ -215,13 +294,27 @@ export function ProjectsV2Table({
       | 'overdue'
       | 'urgent'
       | 'po_supplier'
+      | 'pakai_desain'
       | null
   ) => {
+    let newFilter = filter;
     if (filter === null) {
-      setDashboardFilter(null);
+      newFilter = null;
     } else {
-      setDashboardFilter((prev) => (prev === filter ? null : filter));
+      newFilter = dashboardFilter === filter ? null : filter;
     }
+    
+    setDashboardFilter(newFilter);
+    
+    const params = new URLSearchParams(searchParams.toString());
+    if (newFilter) {
+      params.set('dashboard_filter', newFilter);
+    } else {
+      params.delete('dashboard_filter');
+    }
+    // ensure page is reset in url if we had it, but we aren't managing page in url yet, just to be safe
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+
     setSpkFilterActive(false);
     setPoDivisiFilter(null);
     setGambarKerjaFilter(null);
@@ -382,11 +475,13 @@ export function ProjectsV2Table({
   // Debounce search
   React.useEffect(() => {
     const timer = setTimeout(() => {
-      setSearch(searchInput);
-      setPage(1);
+      if (search !== searchInput) {
+        setSearch(searchInput);
+        setPage(1);
+      }
     }, 500);
     return () => clearTimeout(timer);
-  }, [searchInput]);
+  }, [searchInput, search]);
 
   const { data, isLoading } = useQuery({
     queryKey: [
@@ -601,36 +696,138 @@ export function ProjectsV2Table({
 
   return (
     <div className='space-y-6 w-full max-w-full overflow-hidden'>
-      {showEngineer && stats && (
-        <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4'>
-          {/* Total SPK */}
+      {showSPD && !showEngineer && stats && (
+        <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 w-full'>
+          {/* Total Project */}
+          <div className='flex flex-col gap-2 p-4 rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md'>
+            <div className='flex items-center gap-2 border-b border-slate-100 pb-2'>
+              <div className='h-6 w-6 rounded bg-slate-100 flex items-center justify-center text-slate-600 shrink-0'>
+                <Briefcase className='h-3.5 w-3.5' />
+              </div>
+              <p className='text-[10px] font-bold text-slate-500 uppercase tracking-wider'>
+                Total Projek
+              </p>
+              <span className='ml-auto text-lg font-bold text-slate-800'>
+                {stats.total_project}
+              </span>
+            </div>
+
+            <div className='grid grid-cols-2 gap-1.5 mt-auto'>
+              {/* Terbit SPH */}
+              <div
+                onClick={() => handleDashboardFilterClick('sph_only')}
+                className={cn(
+                  'flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  dashboardFilter === 'sph_only'
+                    ? 'border-amber-500 bg-amber-50 text-amber-700 font-semibold'
+                    : 'border-amber-100 bg-amber-50/50 hover:border-amber-300 text-amber-700'
+                )}
+              >
+                <span className='font-medium leading-tight'>Terbit SPH</span>
+                <span className='font-bold shrink-0 ml-1'>
+                  {stats.sph_only ?? 0}
+                </span>
+              </div>
+
+              {/* Terbit SPK */}
+              <div
+                onClick={() => handleDashboardFilterClick('spk')}
+                className={cn(
+                  'flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  dashboardFilter === 'spk'
+                    ? 'border-indigo-500 bg-indigo-50 text-indigo-700 font-semibold'
+                    : 'border-indigo-100 bg-indigo-50/50 hover:border-indigo-300 text-indigo-700'
+                )}
+              >
+                <span className='font-medium leading-tight'>Terbit SPK</span>
+                <span className='font-bold shrink-0 ml-1'>
+                  {stats.total_spk}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Pakai Desain */}
           <div
-            onClick={() => handleFilterClick('spk')}
+            onClick={() => handleDashboardFilterClick('pakai_desain')}
             className={cn(
-              'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-indigo-400 select-none',
-              spkFilterActive
-                ? 'border-indigo-500 bg-indigo-50/50 ring-2 ring-indigo-500/20'
-                : 'border-indigo-200 bg-white'
+              'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-emerald-400 select-none',
+              dashboardFilter === 'pakai_desain'
+                ? 'border-emerald-500 bg-emerald-50/50 ring-2 ring-emerald-500/20'
+                : 'border-emerald-200 bg-white'
             )}
           >
             <div className='flex items-center gap-3'>
-              <div className='h-10 w-10 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600 shrink-0'>
-                <FileText className='h-5 w-5' />
+              <div className='h-10 w-10 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0'>
+                <Eye className='h-5 w-5' />
               </div>
               <div>
-                <p className='text-[10px] font-bold text-indigo-600 uppercase tracking-wider'>
-                  Total SPK
+                <p className='text-[10px] font-bold text-emerald-600 uppercase tracking-wider'>
+                  Pakai Desain
                 </p>
-                <p className='text-xl font-bold text-slate-800'>
-                  {stats.total_spk}
+                <p className='text-xl font-bold text-emerald-800'>
+                  {stats.pakai_desain ?? 0}
                 </p>
               </div>
             </div>
-            {spkFilterActive && (
-              <span className='text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
+            {dashboardFilter === 'pakai_desain' && (
+              <span className='text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
                 Active
               </span>
             )}
+          </div>
+        </div>
+      )}
+
+      {showEngineer && stats && (
+        <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4'>
+          {/* Total Project */}
+          <div className='flex flex-col gap-2 p-4 rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md'>
+            <div className='flex items-center gap-2 border-b border-slate-100 pb-2'>
+              <div className='h-6 w-6 rounded bg-slate-100 flex items-center justify-center text-slate-600 shrink-0'>
+                <Briefcase className='h-3.5 w-3.5' />
+              </div>
+              <p className='text-[10px] font-bold text-slate-500 uppercase tracking-wider'>
+                Total Projek
+              </p>
+              <span className='ml-auto text-lg font-bold text-slate-800'>
+                {stats.total_project}
+              </span>
+            </div>
+
+            <div className='grid grid-cols-2 gap-1.5 mt-auto'>
+              {/* Terbit SPH */}
+              <div
+                onClick={() => handleDashboardFilterClick('sph_only')}
+                className={cn(
+                  'flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  dashboardFilter === 'sph_only'
+                    ? 'border-amber-500 bg-amber-50 text-amber-700 font-semibold'
+                    : 'border-amber-100 bg-amber-50/50 hover:border-amber-300 text-amber-700'
+                )}
+              >
+                <span className='font-medium leading-tight'>Terbit SPH</span>
+                <span className='font-bold shrink-0 ml-1'>
+                  {stats.sph_only ?? 0}
+                </span>
+              </div>
+
+              {/* Terbit SPK */}
+              <div
+                onClick={() => handleDashboardFilterClick('spk')}
+                className={cn(
+                  'flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  dashboardFilter === 'spk'
+                    ? 'border-indigo-500 bg-indigo-50 text-indigo-700 font-semibold'
+                    : 'border-indigo-100 bg-indigo-50/50 hover:border-indigo-300 text-indigo-700'
+                )}
+              >
+                <span className='font-medium leading-tight'>Terbit SPK</span>
+                <span className='font-bold shrink-0 ml-1'>
+                  {stats.total_spk}
+                </span>
+              </div>
+            </div>
           </div>
 
           {/* Order Gambar */}
@@ -682,7 +879,7 @@ export function ProjectsV2Table({
       )}
 
       {showPiutang && stats && (
-        <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8 gap-4'>
+        <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 w-full'>
           {/* Total Project */}
           <div className='flex flex-col gap-2 p-4 rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md'>
             <div className='flex items-center gap-2 border-b border-slate-100 pb-2'>
@@ -727,6 +924,54 @@ export function ProjectsV2Table({
                 <span className='font-medium leading-tight'>Terbit SPK</span>
                 <span className='font-bold shrink-0 ml-1'>
                   {stats.total_spk}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Pengiriman */}
+          <div className='flex flex-col gap-2 p-4 rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md'>
+            <div className='flex items-center gap-2 border-b border-slate-100 pb-2'>
+              <div className='h-6 w-6 rounded bg-blue-100 flex items-center justify-center text-blue-600 shrink-0'>
+                <Truck className='h-3.5 w-3.5' />
+              </div>
+              <p className='text-[10px] font-bold text-slate-500 uppercase tracking-wider'>
+                Pengiriman
+              </p>
+            </div>
+
+            <div className='flex flex-row gap-1.5 mt-auto'>
+              {/* Terkirim 100% */}
+              <div
+                onClick={() => handlePengirimanStatusFilterClick('completed')}
+                className={cn(
+                  'flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  pengirimanStatusFilter === 'completed'
+                    ? 'border-blue-500 bg-blue-50 text-blue-700 font-semibold'
+                    : 'border-slate-100 hover:border-slate-300 text-slate-600'
+                )}
+              >
+                <span className='truncate mr-1'>Terkirim 100%</span>
+                <span className='font-bold'>
+                  {stats.pengiriman_completed ?? 0}
+                </span>
+              </div>
+
+              {/* Belum 100% */}
+              <div
+                onClick={() =>
+                  handlePengirimanStatusFilterClick('not_completed')
+                }
+                className={cn(
+                  'flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  pengirimanStatusFilter === 'not_completed'
+                    ? 'border-rose-500 bg-rose-50 text-rose-700 font-semibold'
+                    : 'border-slate-100 hover:border-slate-300 text-slate-600'
+                )}
+              >
+                <span className='truncate mr-1'>Belum 100%</span>
+                <span className='font-bold'>
+                  {stats.pengiriman_not_completed ?? 0}
                 </span>
               </div>
             </div>
@@ -1966,6 +2211,7 @@ export function ProjectsV2Table({
             showPengirimanV2 ||
             showQC ||
             showMarketingFilter ||
+            showSPD ||
             showPiutang) &&
             'bg-white rounded-xl shadow-sm border border-neutral-200'
         )}
@@ -2340,33 +2586,37 @@ export function ProjectsV2Table({
                         </TableHead>
                       )}
                       {showPiutang && (
-                        <TableHead
-                          className='cursor-pointer hover:bg-neutral-100 transition-colors group'
-                          onClick={() => {
-                            if (sortBy === 'progres_produksi') {
-                              setSortOrder(
-                                sortOrder === 'asc' ? 'desc' : 'asc'
-                              );
-                            } else {
-                              setSortBy('progres_produksi');
-                              setSortOrder('asc');
-                            }
-                            setPage(1);
-                          }}
-                        >
-                          <div className='flex items-center gap-1'>
-                            PROGRES PRODUKSI
-                            {sortBy === 'progres_produksi' ? (
-                              sortOrder === 'asc' ? (
-                                <ArrowUp className='h-3 w-3' />
-                              ) : (
-                                <ArrowDown className='h-3 w-3' />
-                              )
+                    <TableHead
+                      className='text-center cursor-pointer hover:bg-neutral-100 transition-colors group'
+                      onClick={() => {
+                        if (sortBy === 'progres_produksi') {
+                          setSortOrder(
+                            sortOrder === 'asc' ? 'desc' : 'asc'
+                          );
+                        } else {
+                          setSortBy('progres_produksi');
+                          setSortOrder('asc');
+                        }
+                        setPage(1);
+                      }}
+                    >
+                      <div className="flex items-center">
+                        <div className="flex flex-col items-center">
+                          <span>PROGRES</span>
+                          <span>PRODUKSI</span>
+                        </div>
+
+                        {sortBy === 'progres_produksi' ? (
+                            sortOrder === 'asc' ? (
+                              <ArrowUp className='h-3 w-3' />
                             ) : (
-                              <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
-                            )}
-                          </div>
-                        </TableHead>
+                              <ArrowDown className='h-3 w-3' />
+                            )
+                          ) : (
+                            <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
+                          )}
+                      </div>
+                    </TableHead>
                       )}
                       {showPiutang && (
                         <TableHead
@@ -2383,8 +2633,11 @@ export function ProjectsV2Table({
                             setPage(1);
                           }}
                         >
-                          <div className='flex items-center gap-1'>
-                            PROGRES PENGIRIMAN
+                      <div className="flex items-center">
+                        <div className="flex flex-col items-center">
+                          <span>PROGRES</span>
+                          <span>PENGIRIMAN</span>
+                        </div>
                             {sortBy === 'progres_pengiriman' ? (
                               sortOrder === 'asc' ? (
                                 <ArrowUp className='h-3 w-3' />
@@ -2412,8 +2665,11 @@ export function ProjectsV2Table({
                             setPage(1);
                           }}
                         >
-                          <div className='flex items-center gap-1'>
-                            TOTAL PENAGIHAN
+                      <div className="flex items-center">
+                        <div className="flex flex-col items-center">
+                          <span>TOTAL</span>
+                          <span>PENAGIHAN</span>
+                        </div>
                             {sortBy === 'total_penagihan' ? (
                               sortOrder === 'asc' ? (
                                 <ArrowUp className='h-3 w-3' />
@@ -2508,8 +2764,11 @@ export function ProjectsV2Table({
                           setPage(1);
                         }}
                       >
-                        <div className='flex items-center gap-1'>
-                          PAKAI DESAIN
+                      <div className="flex items-center">
+                        <div className="flex flex-col items-center">
+                          <span>PAKAI</span>
+                          <span>DESAIN</span>
+                        </div>
                           {sortBy === 'need_design' ? (
                             sortOrder === 'asc' ? (
                               <ArrowUp className='h-3 w-3' />
@@ -2522,15 +2781,87 @@ export function ProjectsV2Table({
                         </div>
                       </TableHead>
                     )}
+                  {!showAllDashboard &&
+                    !showProduksi &&
+                    !showPurchasing &&
+                    !showPiutang &&
+                    !showPengirimanV2 &&
+                    !showQC && (
+                      <TableHead className='text-center'>
+                        <div className="flex flex-col items-center">
+                          <span>FILE</span>
+                          <span>PENDUKUNG</span>
+                        </div>
+                      </TableHead>
+                    )}
                   {!showAllDashboard && !showSPD && !showPiutang && (
                     <TableHead>JADWAL KIRIM</TableHead>
                   )}
                   {(showPengirimanV2 || showQC) && (
-                    <TableHead>PROGRES PRODUKSI</TableHead>
+                    <TableHead
+                      className='text-center cursor-pointer hover:bg-neutral-100 transition-colors group'
+                      onClick={() => {
+                        if (sortBy === 'progres_produksi') {
+                          setSortOrder(
+                            sortOrder === 'asc' ? 'desc' : 'asc'
+                          );
+                        } else {
+                          setSortBy('progres_produksi');
+                          setSortOrder('asc');
+                        }
+                        setPage(1);
+                      }}
+                    >
+                      <div className="flex items-center">
+                        <div className="flex flex-col items-center">
+                          <span>PROGRES</span>
+                          <span>PRODUKSI</span>
+                        </div>
+
+                        {sortBy === 'progres_produksi' ? (
+                            sortOrder === 'asc' ? (
+                              <ArrowUp className='h-3 w-3' />
+                            ) : (
+                              <ArrowDown className='h-3 w-3' />
+                            )
+                          ) : (
+                            <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
+                          )}
+                      </div>
+                    </TableHead>
                   )}
                   {showQC && <TableHead>PROGRES QC</TableHead>}
                   {showPengirimanV2 && (
-                    <TableHead>PROGRES PENGIRIMAN</TableHead>
+                    <TableHead
+                          className='cursor-pointer hover:bg-neutral-100 transition-colors group'
+                          onClick={() => {
+                            if (sortBy === 'progres_pengiriman') {
+                              setSortOrder(
+                                sortOrder === 'asc' ? 'desc' : 'asc'
+                              );
+                            } else {
+                              setSortBy('progres_pengiriman');
+                              setSortOrder('asc');
+                            }
+                            setPage(1);
+                          }}
+                        >
+                      <div className="flex items-center">
+                        <div className="flex flex-col items-center">
+                          <span>PROGRES</span>
+                          <span>PENGIRIMAN</span>
+                        </div>
+                            {sortBy === 'progres_pengiriman' ? (
+                              sortOrder === 'asc' ? (
+                                <ArrowUp className='h-3 w-3' />
+                              ) : (
+                                <ArrowDown className='h-3 w-3' />
+                              )
+                            ) : (
+                              <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
+                            )}
+                          </div>
+                        </TableHead>
                   )}
 
                   {showAllDashboard && (
@@ -2548,8 +2879,11 @@ export function ProjectsV2Table({
                           setPage(1);
                         }}
                       >
-                        <div className='flex items-center gap-1'>
-                          PROGRES KERJA
+                      <div className="flex items-center">
+                        <div className="flex flex-col items-center">
+                          <span>PROGRES</span>
+                          <span>KERJA</span>
+                        </div>
                           {sortBy === 'persentase_kerja' ? (
                             sortOrder === 'asc' ? (
                               <ArrowUp className='h-3 w-3' />
@@ -2586,9 +2920,69 @@ export function ProjectsV2Table({
                   )}
 
                   {(showProduksi || showPurchasing) && (
-                    <TableHead>PROGRES PRODUKSI</TableHead>
+                    <TableHead
+                      className='text-center cursor-pointer hover:bg-neutral-100 transition-colors group'
+                      onClick={() => {
+                        if (sortBy === 'progres_produksi') {
+                          setSortOrder(
+                            sortOrder === 'asc' ? 'desc' : 'asc'
+                          );
+                        } else {
+                          setSortBy('progres_produksi');
+                          setSortOrder('asc');
+                        }
+                        setPage(1);
+                      }}
+                    >
+                      <div className="flex items-center">
+                        <div className="flex flex-col items-center">
+                          <span>PROGRES</span>
+                          <span>PRODUKSI</span>
+                        </div>
+
+                        {sortBy === 'progres_produksi' ? (
+                            sortOrder === 'asc' ? (
+                              <ArrowUp className='h-3 w-3' />
+                            ) : (
+                              <ArrowDown className='h-3 w-3' />
+                            )
+                          ) : (
+                            <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
+                          )}
+                      </div>
+                    </TableHead>
                   )}
-                  {showProduksi && <TableHead>PROGRES BARANG JADI</TableHead>}
+                  {showProduksi && (
+                    <TableHead
+                      className='cursor-pointer hover:bg-neutral-100 transition-colors group text-center'
+                      onClick={() => {
+                        if (sortBy === 'gudang_barang_jadi') {
+                          setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                        } else {
+                          setSortBy('gudang_barang_jadi');
+                          setSortOrder('asc');
+                        }
+                        setPage(1);
+                      }}
+                    >
+                      <div className='flex items-center justify-center gap-1'>
+                        <div className="flex flex-col items-center">
+                          <span>GUDANG</span>
+                          <span>B. JADI</span>
+                        </div>
+                        {sortBy === 'gudang_barang_jadi' ? (
+                          sortOrder === 'asc' ? (
+                            <ArrowUp className='h-3 w-3' />
+                          ) : (
+                            <ArrowDown className='h-3 w-3' />
+                          )
+                        ) : (
+                          <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
+                        )}
+                      </div>
+                    </TableHead>
+                  )}
+
                   {(isMainProjectsV2Page || showPerencanaan) &&
                     !showPengirimanV2 && (
                       <>
@@ -2606,8 +3000,11 @@ export function ProjectsV2Table({
                             setPage(1);
                           }}
                         >
-                          <div className='flex items-center gap-1'>
-                            PROGRES KERJA
+                      <div className="flex items-center">
+                        <div className="flex flex-col items-center">
+                          <span>PROGRES</span>
+                          <span>KERJA</span>
+                        </div>
                             {sortBy === 'persentase_kerja' ? (
                               sortOrder === 'asc' ? (
                                 <ArrowUp className='h-3 w-3' />
@@ -2619,7 +3016,14 @@ export function ProjectsV2Table({
                             )}
                           </div>
                         </TableHead>
-                        <TableHead>PROGRES AKHIR</TableHead>
+                        <TableHead>
+                      <div className="flex">
+                        <div className="flex items-center flex-col ">
+                          <span>PROGRES</span>
+                          <span>AKHIR</span>
+                        </div>
+                      </div>
+                        </TableHead>
                       </>
                     )}
                   </TableRow>
@@ -2957,10 +3361,11 @@ export function ProjectsV2Table({
                               </span>
                             )}
                           </TableCell>
-                          <TableCell className='font-medium text-blue-600'>
-                            {project.spk_number ||
-                              project.spk?.nomor_spk ||
-                              '-'}
+                          <TableCell
+                            className='font-medium text-blue-600 max-w-[100px] truncate'
+                            title={project.spk?.nomor_spk}
+                          >
+                            {project.spk?.nomor_spk || '-'}
                           </TableCell>
                           <TableCell>
                             {project.spk?.tanggal_masuk
@@ -3230,10 +3635,11 @@ export function ProjectsV2Table({
                             </TableCell>
                           )}
                           {(!showSPD || showEngineer) && (
-                            <TableCell className='font-medium text-blue-600'>
-                              {project.spk_number ||
-                                project.spk?.nomor_spk ||
-                                '-'}
+                            <TableCell
+                              className='max-w-[50px] truncate'
+                              title={project.spk?.nomor_spk}
+                            >
+                              {project.spk?.nomor_spk || '-'}
                             </TableCell>
                           )}
                           {showPiutang && (
@@ -3256,7 +3662,10 @@ export function ProjectsV2Table({
                             !showPurchasing &&
                             !showPengirimanV2 &&
                             !showQC && (
-                              <TableCell>
+                              <TableCell
+                                className='max-w-[50px] truncate'
+                                title={project.sph?.nomor_sph}
+                              >
                                 {project.sph?.nomor_sph || '-'}
                               </TableCell>
                             )}
@@ -3283,14 +3692,14 @@ export function ProjectsV2Table({
                         </>
                       )}
                       {showPiutang && (
-                        <TableCell>
+                        <TableCell className="text-center">
                           <span className='text-xs font-bold text-neutral-700'>
                             {Math.round(project.progres_produksi || 0)}%
                           </span>
                         </TableCell>
                       )}
                       {showPiutang && (
-                        <TableCell>
+                        <TableCell className="text-center">
                           <span className='text-xs font-bold text-neutral-700'>
                             {Math.round(project.progres_kerja?.pengiriman || 0)}%
                           </span>
@@ -3298,7 +3707,7 @@ export function ProjectsV2Table({
                       )}
                       {showAllDashboard && <></>}
                       {!showAllDashboard && showPiutang && (
-                        <TableCell>
+                        <TableCell className="text-center">
                           <Badge
                             variant='outline'
                             className='bg-amber-50 text-amber-700 border-amber-200 font-bold'
@@ -3459,6 +3868,44 @@ export function ProjectsV2Table({
                                 </Button>
                               )}
                             </div>
+                          </TableCell>
+                        )}
+                      {!showAllDashboard &&
+                        !showProduksi &&
+                        !showPurchasing &&
+                        !showPiutang &&
+                        !showPengirimanV2 &&
+                        !showQC && (
+                          <TableCell className='text-center'>
+                            {project.file_pendukung_spd &&
+                            project.file_pendukung_spd.length > 0 &&
+                            project.file_pendukung_spd[0]?.file ? (
+                              <Button
+                                variant='ghost'
+                                size='sm'
+                                className='h-7 text-xs text-orange-600 hover:bg-orange-50 gap-1'
+                                asChild
+                              >
+                                <a
+                                  href={
+                                    project.file_pendukung_spd[0].file.startsWith(
+                                      'http'
+                                    )
+                                      ? project.file_pendukung_spd[0].file
+                                      : `http://${project.file_pendukung_spd[0].file}`
+                                  }
+                                  target='_blank'
+                                  rel='noopener noreferrer'
+                                >
+                                  <ExternalLink className='h-3.5 w-3.5' />
+                                  Link
+                                </a>
+                              </Button>
+                            ) : (
+                              <span className='text-muted-foreground italic text-xs'>
+                                -
+                              </span>
+                            )}
                           </TableCell>
                         )}
                       {!showAllDashboard && !showSPD && !showPiutang && (
@@ -3846,29 +4293,6 @@ export function ProjectsV2Table({
                                 <span className='text-xs font-medium'>
                                   {project.designs?.[0]?.studio?.name || '-'}
                                 </span>
-                                {project.designs?.[0]?.final_file_path && (
-                                  <div className='flex items-center gap-2'>
-                                    <Button
-                                      variant='ghost'
-                                      size='icon'
-                                      className='h-5 w-5 text-blue-600'
-                                      asChild
-                                    >
-                                      <a
-                                        href={`${(
-                                          process.env.NEXT_PUBLIC_API_URL ||
-                                          'http://localhost:8000'
-                                        ).replace('/api', '')}/storage/${
-                                          project.designs[0].final_file_path
-                                        }`}
-                                        target='_blank'
-                                        rel='noopener noreferrer'
-                                      >
-                                        <Eye className='h-3 w-3' />
-                                      </a>
-                                    </Button>
-                                  </div>
-                                )}
                               </div>
                             </TableCell>
                           )}
@@ -4111,56 +4535,29 @@ export function ProjectsV2Table({
                       )}
 
                       {(showProduksi || showPurchasing) && (
-                        <TableCell>
-                          <div className='flex items-center gap-2'>
-                            <div className='flex-1 min-w-[60px]'>
-                              <div className='h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden'>
-                                <div
-                                  className='h-full bg-blue-600 rounded-full transition-all duration-500'
-                                  style={{
-                                    width: `${project.progres_produksi || 0}%`,
-                                  }}
-                                />
-                              </div>
-                            </div>
-                            <span className='text-xs font-bold text-neutral-700'>
-                              {Math.round(project.progres_produksi || 0)}%
-                            </span>
-                          </div>
+                        <TableCell className="text-center">
+                          <span className='text-xs font-bold text-neutral-700'>
+                            {Math.round(project.progres_produksi || 0)}%
+                          </span>
                         </TableCell>
                       )}
                       {showProduksi && (
-                        <TableCell>
+                        <TableCell className="text-center">
                           {project.progres_kerja ? (
-                            <div className='flex items-center gap-2'>
-                              <div className='flex-1 min-w-[60px]'>
-                                <div className='h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden'>
-                                  <div
-                                    className='h-full bg-violet-500 rounded-full transition-all duration-500'
-                                    style={{
-                                      width: `${
-                                        project.progres_kerja
-                                          .gudang_barang_jadi || 0
-                                      }%`,
-                                    }}
-                                  />
-                                </div>
-                              </div>
-                              <span
-                                className={cn(
-                                  'text-xs font-bold tabular-nums',
-                                  project.progres_kerja.gudang_barang_jadi >=
-                                    100
-                                    ? 'text-emerald-600'
-                                    : 'text-violet-600'
-                                )}
-                              >
-                                {Math.round(
-                                  project.progres_kerja.gudang_barang_jadi || 0
-                                )}
-                                %
-                              </span>
-                            </div>
+                            <span
+                              className={cn(
+                                'text-xs font-bold tabular-nums',
+                                project.progres_kerja.gudang_barang_jadi >=
+                                  100
+                                  ? 'text-emerald-600'
+                                  : 'text-violet-600'
+                              )}
+                            >
+                              {Math.round(
+                                project.progres_kerja.gudang_barang_jadi || 0
+                              )}
+                              %
+                            </span>
                           ) : (
                             <span className='text-muted-foreground italic text-xs'>
                               -
@@ -4181,7 +4578,7 @@ export function ProjectsV2Table({
               <Button
                 variant='outline'
                 size='sm'
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                onClick={() => handlePageChange(Math.max(1, page - 1))}
                 disabled={page === 1}
               >
                 Previous
@@ -4192,7 +4589,7 @@ export function ProjectsV2Table({
               <Button
                 variant='outline'
                 size='sm'
-                onClick={() => setPage((p) => Math.min(data.last_page, p + 1))}
+                onClick={() => handlePageChange(Math.min(data.last_page, page + 1))}
                 disabled={page === data.last_page}
               >
                 Next

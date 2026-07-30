@@ -69,6 +69,12 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
   Command,
   CommandEmpty,
   CommandGroup,
@@ -311,7 +317,7 @@ export default function PerencanaanDetailPage() {
     if (!bjItem) return;
 
     const currentTotal =
-      bjItem.barang_jadi_masuk?.reduce((sum, bj) => sum + bj.jumlah, 0) || 0;
+      bjItem.barang_jadi_masuk?.reduce((sum, bj) => sum + Number(bj.jumlah), 0) || 0;
     if (currentTotal + bjJumlah > bjItem.jumlah) {
       toast.error(
         `Total barang (${
@@ -485,6 +491,63 @@ export default function PerencanaanDetailPage() {
     },
   });
 
+  const bulkUpdateStokMutation = useMutation({
+    mutationFn: async (payload: {
+      ketersediaan_stok?: string;
+      tanggal_menerima_dokubah?: string;
+      tanggal_keluar?: string;
+      pic_id?: number;
+      new_pic_name?: string;
+      new_pic_jabatan?: string;
+      deskripsi_belum_lengkap?: string;
+    }) => {
+      const promises = selectedItemIds.map(itemId => 
+        projectV2Service.updateBahanBaku(itemId, payload)
+      );
+      await Promise.all(promises);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['project-v2-items', projectId],
+      });
+      toast.success('Stok Material massal berhasil diupdate');
+      setSelectedItemIds([]);
+    },
+    onError: () => {
+      toast.error('Gagal mengupdate Stok Material massal');
+    },
+  });
+
+  const [isBulkStokDialogOpen, setIsBulkStokDialogOpen] = React.useState(false);
+
+  const handleBulkStokUpdate = () => {
+    bulkUpdateStokMutation.mutate({
+      ketersediaan_stok: stokStatus || undefined,
+      tanggal_menerima_dokubah: stokMenerima || undefined,
+      tanggal_keluar: stokKeluar || undefined,
+      pic_id: isManualPic ? undefined : (stokPicId ? parseInt(stokPicId) : undefined),
+      new_pic_name: isManualPic ? newPicName : undefined,
+      new_pic_jabatan: isManualPic ? newPicJabatan : undefined,
+      deskripsi_belum_lengkap: stokStatus === 'Belum Lengkap' ? stokDeskripsiBelumLengkap : '',
+    }, {
+      onSuccess: () => {
+        setIsBulkStokDialogOpen(false);
+      }
+    });
+  };
+
+  const openBulkStokDialog = () => {
+    setStokStatus('');
+    setStokMenerima('');
+    setStokKeluar('');
+    setStokPicId('');
+    setStokDeskripsiBelumLengkap('');
+    setIsManualPic(false);
+    setNewPicName('');
+    setNewPicJabatan('');
+    setIsBulkStokDialogOpen(true);
+  };
+
   const [isSphCollapsed, setIsSphCollapsed] = React.useState(true);
   const [isDivisiCollapsed, setIsDivisiCollapsed] = React.useState(true);
   const [isGkCollapsed, setIsGkCollapsed] = React.useState(true);
@@ -500,6 +563,8 @@ export default function PerencanaanDetailPage() {
   // View Produksi State
   const [isProduksiViewOpen, setIsProduksiViewOpen] = React.useState(false);
   const [produksiViewItem, setProduksiViewItem] = React.useState<ProjectItemV2 | null>(null);
+  const [isSupplierViewOpen, setIsSupplierViewOpen] = React.useState(false);
+  const [supplierViewItem, setSupplierViewItem] = React.useState<ProjectItemV2 | null>(null);
 
   // Edit Dimensi State
   const [isDimDialogOpen, setIsDimDialogOpen] = React.useState(false);
@@ -582,9 +647,30 @@ export default function PerencanaanDetailPage() {
   };
 
   const openProduksiView = (item: ProjectItemV2) => {
-    setProduksiViewItem(item);
-    setIsProduksiViewOpen(true);
+    if (item.produksi?.is_supplier) {
+      setSupplierViewItem(item);
+      setIsSupplierViewOpen(true);
+    } else {
+      setProduksiViewItem(item);
+      setIsProduksiViewOpen(true);
+    }
   };
+
+  const filteredItems = React.useMemo(() => {
+    if (!items) return [];
+    return [...items]
+      .filter((item) => {
+        if (!searchQuery.trim()) return true;
+        const q = searchQuery.toLowerCase();
+        return (
+          item.item?.toLowerCase().includes(q) ||
+          (item.lantai ?? '').toLowerCase().includes(q) ||
+          (item.ruang ?? '').toLowerCase().includes(q) ||
+          (item.keterangan ?? '').toLowerCase().includes(q) ||
+          (item.material_utama ?? '').toLowerCase().includes(q)
+        );
+      });
+  }, [items, searchQuery]);
 
   if (isLoadingProject) {
     return (
@@ -693,6 +779,8 @@ export default function PerencanaanDetailPage() {
       color: 'text-blue-600',
     },
   ];
+
+
 
   return (
     <div className='flex flex-col gap-6 p-6 max-w-[1600px] mx-auto w-full'>
@@ -1475,6 +1563,21 @@ export default function PerencanaanDetailPage() {
                     </Command>
                   </PopoverContent>
                 </Popover>
+
+                <Button 
+                  size='sm' 
+                  variant='outline' 
+                  className='h-8 bg-white'
+                  disabled={bulkUpdateStokMutation.isPending}
+                  onClick={openBulkStokDialog}
+                >
+                  {bulkUpdateStokMutation.isPending ? (
+                    <Loader2 className='h-3.5 w-3.5 mr-2 animate-spin' />
+                  ) : (
+                    <Activity className='h-3.5 w-3.5 mr-2' />
+                  )}
+                  Set Stok Massal
+                </Button>
               </div>
             )}
             <div className='relative w-64'>
@@ -1490,34 +1593,49 @@ export default function PerencanaanDetailPage() {
         </div>
 
         <div className='rounded-xl border border-neutral-200 bg-white overflow-hidden shadow-sm'>
-          <Table>
-            <TableHeader className='bg-neutral-50/80'>
+          <Table containerClassName="max-h-[600px] overflow-auto">
+            <TableHeader className='bg-neutral-50/80 sticky top-0 z-10 shadow-sm shadow-neutral-200/50'>
               <TableRow className='hover:bg-transparent'>
                 <TableHead className='w-[40px] text-[10px] uppercase font-bold text-neutral-500'>#</TableHead>
                 <TableHead className='w-[40px] text-center'>
                   <Checkbox
-                    checked={!!items && items.length > 0 && selectedItemIds.length === items.length}
+                    checked={filteredItems.length > 0 && selectedItemIds.length === filteredItems.length}
                     onCheckedChange={(checked) => {
-                      if (checked && items) {
-                        setSelectedItemIds(items.map((i) => i.id));
+                      if (checked) {
+                        setSelectedItemIds(filteredItems.map((i) => i.id));
                       } else {
                         setSelectedItemIds([]);
                       }
                     }}
                   />
                 </TableHead>
-                <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>Floor/Room</TableHead>
-                <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>Item Name</TableHead>
-                <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>Vol/Dim</TableHead>
+                <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>Lantai | Ruang</TableHead>
+                <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>Nama Item</TableHead>
+                <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>Vol | Dim</TableHead>
                 <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>Qty</TableHead>
                 <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>PO Divisi</TableHead>
                 <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>Gk MDL</TableHead>
                 <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>GK Custom</TableHead>
                 <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>Material</TableHead>
                 <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>Produksi</TableHead>
-                <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>B. Jadi</TableHead>
-                <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>B Keluar</TableHead>
-                <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>B Tersetting</TableHead>
+                <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>
+                  <div className='flex flex-col'>
+                    <span>Barang</span>
+                    <span>Jadi</span>
+                  </div>
+                </TableHead>
+                <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>
+                  <div className='flex flex-col'>
+                    <span>Barang</span>
+                    <span>Terkirim</span>
+                  </div>
+                </TableHead>
+                <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>
+                  <div className='flex flex-col'>
+                    <span>Barang</span>
+                    <span>Tersetting</span>
+                  </div>
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -1540,27 +1658,7 @@ export default function PerencanaanDetailPage() {
                   </TableCell>
                 </TableRow>
               ) : (
-                [...(items ?? [])]
-                .filter((item) => {
-                  if (!searchQuery.trim()) return true;
-                  const q = searchQuery.toLowerCase();
-                  return (
-                    item.item?.toLowerCase().includes(q) ||
-                    (item.lantai ?? '').toLowerCase().includes(q) ||
-                    (item.ruang ?? '').toLowerCase().includes(q) ||
-                    (item.keterangan ?? '').toLowerCase().includes(q) ||
-                    (item.material_utama ?? '').toLowerCase().includes(q)
-                  );
-                })
-                .sort((a, b) => {
-                  const lantaiA = a.lantai ?? '';
-                  const lantaiB = b.lantai ?? '';
-                  const lantaiCmp = lantaiA.localeCompare(lantaiB, undefined, { numeric: true, sensitivity: 'base' });
-                  if (lantaiCmp !== 0) return lantaiCmp;
-                  const ruangA = a.ruang ?? '';
-                  const ruangB = b.ruang ?? '';
-                  return ruangA.localeCompare(ruangB, undefined, { numeric: true, sensitivity: 'base' });
-                }).map((item, index) => (
+                filteredItems.map((item, index) => (
                   <TableRow
                     key={item.id}
                     className='hover:bg-neutral-50/50 transition-colors group'
@@ -1589,10 +1687,25 @@ export default function PerencanaanDetailPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className='flex flex-col gap-0.5'>
-                        <span className='text-xs font-bold text-neutral-900 group-hover:text-blue-600 transition-colors'>{item.item}</span>
-                        {item.keterangan && <span className='text-[9px] text-muted-foreground truncate max-w-[150px]'>{item.keterangan}</span>}
-                      </div>
+                      {item.keterangan ? (
+                        <TooltipProvider delayDuration={200}>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className='flex flex-col gap-0.5 cursor-help'>
+                                <span className='text-xs font-bold text-neutral-900 group-hover:text-blue-600 transition-colors'>{item.item}</span>
+                                 <span className='text-[14px] text-muted-foreground truncate max-w-[200px]'>{item.keterangan || '-'}</span>
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="max-w-[300px] break-words">
+                              <p className="text-xs">{item.keterangan}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      ) : (
+                        <div className='flex flex-col gap-0.5'>
+                          <span className='text-xs font-bold text-neutral-900 group-hover:text-blue-600 transition-colors'>{item.item}</span>
+                        </div>
+                      )}
                     </TableCell>
                     <TableCell className={cn(item.history_fields?.some(f => ['volume', 'panjang', 'lebar', 'tinggi', 'satuan'].includes(f)) ? 'bg-amber-100/80 border-x border-amber-200/50 shadow-[inset_0_0_0_1px_rgba(251,191,36,0.05)]' : '')}>
                       <div className='flex flex-col gap-0.5 group relative'>
@@ -1784,16 +1897,13 @@ export default function PerencanaanDetailPage() {
                     </TableCell>
                     <TableCell>
                       <div 
-                        className='flex flex-col gap-1 w-16 cursor-pointer hover:opacity-80 transition-opacity'
+                        className="flex items-center gap-2 min-w-[120px] cursor-pointer group hover:bg-blue-50 p-1.5 -ml-1.5 rounded-md transition-colors" 
                         onClick={() => openProduksiView(item)}
                       >
-                        <div className='h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden'>
-                          <div 
-                            className='h-full bg-blue-500 transition-all duration-500' 
-                            style={{ width: `${item.produksi?.persen || 0}%` }} 
-                          />
+                        <span className="text-xs font-bold text-neutral-700 w-8 text-right group-hover:text-blue-700 transition-colors">{Math.round(item.produksi?.is_supplier ? Number(item.barang_supplier?.persen) || 0 : Number(item.produksi?.persen) || 0)}%</span>
+                        <div className="flex-1 h-1.5 bg-neutral-100 rounded-full overflow-hidden group-hover:bg-blue-100 transition-colors">
+                          <div className="h-full bg-blue-600 rounded-full" style={{ width: `${item.produksi?.is_supplier ? Number(item.barang_supplier?.persen) || 0 : Number(item.produksi?.persen) || 0}%` }} />
                         </div>
-                        <span className='text-[10px] font-bold text-neutral-700'>{item.produksi?.persen || 0}%</span>
                       </div>
                     </TableCell>
                     <TableCell>
@@ -2182,6 +2292,181 @@ export default function PerencanaanDetailPage() {
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Stok Material Massal Dialog */}
+      <AlertDialog open={isBulkStokDialogOpen} onOpenChange={setIsBulkStokDialogOpen}>
+        <AlertDialogContent className='max-w-md'>
+          <AlertDialogHeader>
+            <AlertDialogTitle className='flex items-center gap-2'>
+              <Activity className='h-5 w-5 text-emerald-500' />
+              Update Stok Material Massal
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Update ketersediaan stok untuk <strong>{selectedItemIds.length}</strong> item terpilih.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className='grid gap-4 py-4'>
+            <div className='space-y-2'>
+              <Label>Ketersediaan Stok</Label>
+              <div className='flex p-1 bg-neutral-100 rounded-lg border border-neutral-200'>
+                {[
+                  { value: 'Belum Lengkap', label: 'Belum Lengkap', color: 'bg-red-500' },
+                  { value: 'Lengkap', label: 'Lengkap', color: 'bg-emerald-500' }
+                ].map((option) => (
+                  <button
+                    key={option.value}
+                    type='button'
+                    onClick={() => setStokStatus(option.value)}
+                    className={cn(
+                      'flex-1 py-1.5 text-[10px] font-bold rounded-md transition-all duration-200',
+                      stokStatus === option.value
+                        ? `${option.color} text-white shadow-sm`
+                        : 'text-neutral-500 hover:text-neutral-700 hover:bg-white/50'
+                    )}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {stokStatus === 'Belum Lengkap' && (
+              <div className='space-y-2'>
+                <Label htmlFor='bulk_deskripsi_belum_lengkap'>Deskripsi Bahan Belum Lengkap</Label>
+                <Textarea
+                  id='bulk_deskripsi_belum_lengkap'
+                  placeholder='Masukkan deskripsi jika bahan belum lengkap...'
+                  value={stokDeskripsiBelumLengkap}
+                  onChange={(e) => setStokDeskripsiBelumLengkap(e.target.value)}
+                  className='text-xs resize-none'
+                  rows={3}
+                />
+              </div>
+            )}
+            <div className='grid grid-cols-2 gap-4'>
+              <div className='space-y-2'>
+                <Label>Tgl Menerima Dokubah</Label>
+                <Input
+                  type='date'
+                  value={stokMenerima}
+                  onChange={(e) => setStokMenerima(e.target.value)}
+                  className='text-xs'
+                />
+              </div>
+              <div className='space-y-2'>
+                <Label>Tgl Keluar</Label>
+                <Input
+                  type='date'
+                  value={stokKeluar}
+                  onChange={(e) => setStokKeluar(e.target.value)}
+                  className='text-xs'
+                />
+              </div>
+            </div>
+            <div className='space-y-2'>
+              <div className='flex items-center justify-between'>
+                <Label>PIC</Label>
+                <Button 
+                  variant='ghost' 
+                  size='sm' 
+                  className='h-6 text-[9px] text-blue-600 gap-1 px-1.5'
+                  onClick={() => {
+                    setIsManualPic(!isManualPic);
+                    setStokPicId('');
+                  }}
+                >
+                  {isManualPic ? (
+                    'Back to List'
+                  ) : (
+                    <>
+                      <Plus className='h-2.5 w-2.5' />
+                      Input Manual
+                    </>
+                  )}
+                </Button>
+              </div>
+              
+              {!isManualPic ? (
+                <Popover open={stokPicOpen} onOpenChange={setStokPicOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={stokPicOpen}
+                      className="w-full justify-between text-xs font-normal h-9"
+                    >
+                      {stokPicId
+                        ? pics?.find((p) => p.id.toString() === stokPicId)?.nama
+                        : "Pilih PIC..."}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0" align="start">
+                    <Command className="w-full">
+                      <CommandInput placeholder="Cari PIC..." className="h-8" />
+                      <CommandList>
+                        <CommandEmpty>PIC tidak ditemukan.</CommandEmpty>
+                        <CommandGroup>
+                          {pics?.map((p) => (
+                            <CommandItem
+                              key={p.id}
+                              value={p.nama}
+                              onSelect={() => {
+                                setStokPicId(p.id.toString());
+                                setStokPicOpen(false);
+                              }}
+                              className="text-xs"
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  stokPicId === p.id.toString() ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              {p.nama} ({p.jabatan})
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              ) : (
+                <div className='grid grid-cols-2 gap-2'>
+                  <Input 
+                    placeholder='Nama PIC...'
+                    value={newPicName}
+                    onChange={(e) => setNewPicName(e.target.value)}
+                    className='text-xs h-9'
+                  />
+                  <Input 
+                    placeholder='Jabatan...'
+                    value={newPicJabatan}
+                    onChange={(e) => setNewPicJabatan(e.target.value)}
+                    className='text-xs h-9'
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setIsBulkStokDialogOpen(false)}>
+              Cancel
+            </AlertDialogCancel>
+            <Button
+              className='bg-emerald-600 hover:bg-emerald-700'
+              onClick={handleBulkStokUpdate}
+              disabled={bulkUpdateStokMutation.isPending}
+            >
+              {bulkUpdateStokMutation.isPending ? (
+                <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+              ) : (
+                <CheckCircle2 className='mr-2 h-4 w-4' />
+              )}
+              Update Stok Massal
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Barang Jadi Masuk Dialog */}
       <AlertDialog open={isBjDialogOpen} onOpenChange={setIsBjDialogOpen}>
         <AlertDialogContent className='max-w-md'>
@@ -2232,7 +2517,7 @@ export default function PerencanaanDetailPage() {
                       <span>Total Saat Ini</span>
                       <span className='text-neutral-900'>
                         {bjItem.barang_jadi_masuk.reduce(
-                          (sum, r) => sum + r.jumlah,
+                          (sum, r) => sum + Number(r.jumlah),
                           0
                         )}{' '}
                         / {bjItem.jumlah}
@@ -2262,7 +2547,7 @@ export default function PerencanaanDetailPage() {
                     bjItem
                       ? bjItem.jumlah -
                         (bjItem.barang_jadi_masuk?.reduce(
-                          (sum, bj) => sum + bj.jumlah,
+                          (sum, bj) => sum + Number(bj.jumlah),
                           0
                         ) || 0)
                       : undefined
@@ -2272,7 +2557,7 @@ export default function PerencanaanDetailPage() {
                   Sisa:{' '}
                   {(bjItem?.jumlah || 0) -
                     (bjItem?.barang_jadi_masuk?.reduce(
-                      (sum, bj) => sum + bj.jumlah,
+                      (sum, bj) => sum + Number(bj.jumlah),
                       0
                     ) || 0)}
                 </span>
@@ -2300,7 +2585,7 @@ export default function PerencanaanDetailPage() {
                 bjJumlah >
                   (bjItem?.jumlah || 0) -
                     (bjItem?.barang_jadi_masuk?.reduce(
-                      (sum, bj) => sum + bj.jumlah,
+                      (sum, bj) => sum + Number(bj.jumlah),
                       0
                     ) || 0)
               }
@@ -2358,7 +2643,7 @@ export default function PerencanaanDetailPage() {
                       <span>Total Saat Ini</span>
                       <span className='text-orange-900'>
                         {packingItem.barang_jadi_terpacking.reduce(
-                          (sum, r) => sum + r.jumlah,
+                          (sum, r) => sum + Number(r.jumlah),
                           0
                         )}{' '}
                         / {packingItem.jumlah}
@@ -2747,6 +3032,193 @@ export default function PerencanaanDetailPage() {
               )}
               Simpan Perubahan
             </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* View Produksi Progress Dialog */}
+      <AlertDialog open={isProduksiViewOpen} onOpenChange={setIsProduksiViewOpen}>
+        <AlertDialogContent className='max-w-2xl'>
+          <AlertDialogHeader>
+            <AlertDialogTitle className='flex items-center gap-2'>
+              <BarChart3 className='h-5 w-5 text-orange-500' />
+              Detail Progress Produksi
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Melihat progress produksi untuk item: <strong>{produksiViewItem?.item}</strong>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          
+          <div className='py-4 space-y-6'>
+            {/* Summary Progress */}
+            <div className='grid grid-cols-3 gap-4'>
+              <div className='space-y-1 text-center p-3 bg-neutral-50 rounded-xl border border-neutral-100 flex flex-col justify-center'>
+                <span className='text-[10px] font-bold text-neutral-500 uppercase tracking-wider'>Jumlah Order</span>
+                <div className='text-2xl font-black text-neutral-800'>
+                  {produksiViewItem?.jumlah || 0}
+                </div>
+              </div>
+              <div className='space-y-1 text-center p-3 bg-indigo-50 rounded-xl border border-indigo-100 flex flex-col justify-center'>
+                <span className='text-[10px] font-bold text-indigo-800 uppercase tracking-wider'>Menggunakan Stok</span>
+                <div className='text-2xl font-black text-indigo-600'>
+                  {produksiViewItem?.produksi?.menggunakan_stok || 0}
+                </div>
+              </div>
+              <div className='space-y-1 text-center p-3 bg-orange-50 rounded-xl border border-orange-100 flex flex-col justify-center'>
+                <span className='text-[10px] font-bold text-orange-800 uppercase tracking-wider'>Total Progress</span>
+                <div className='flex items-baseline justify-center gap-1'>
+                  <span className='text-2xl font-black text-orange-600'>{Math.round(produksiViewItem?.produksi?.persen || 0)}</span>
+                  <span className='text-sm font-bold text-orange-400'>%</span>
+                </div>
+              </div>
+            </div>
+            <Progress value={produksiViewItem?.produksi?.persen || 0} className='h-2 bg-orange-200/50 w-full' />
+
+            <div className='grid grid-cols-2 gap-x-8 gap-y-6'>
+              {/* Mesin Section */}
+              <div className='space-y-3'>
+                <h4 className='font-bold text-xs text-neutral-400 uppercase tracking-widest border-b pb-2 flex items-center gap-2'>
+                  <Activity className='h-3 w-3' />
+                  Tahapan Mesin
+                </h4>
+                <div className='space-y-3'>
+                  {[
+                    { label: 'Cold Press', value: produksiViewItem?.produksi?.cold_press, key: 'cold_press' },
+                    { label: 'Running Saw', value: produksiViewItem?.produksi?.running_saw, key: 'running_saw' },
+                    { label: 'Edging', value: produksiViewItem?.produksi?.edging, key: 'edging' },
+                    { label: 'CNC', value: produksiViewItem?.produksi?.cnc, key: 'cnc' },
+                  ].map((field) => {
+                    const isSkipped = produksiViewItem?.produksi?.skipped_fields?.includes(field.key);
+                    return (
+                      <div key={field.key} className='flex items-center justify-between'>
+                        <span className='text-xs text-neutral-600'>{field.label}</span>
+                        <div className='flex items-center gap-2'>
+                          {isSkipped ? (
+                            <Badge variant='secondary' className='text-[9px] bg-neutral-100 text-neutral-400 border-none'>SKIPPED</Badge>
+                          ) : (
+                            <span className='text-sm font-bold text-neutral-900'>{field.value || 0} <span className='text-[10px] text-neutral-400 font-normal'>/ {produksiViewItem?.jumlah}</span></span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Manual Section */}
+              <div className='space-y-3'>
+                <h4 className='font-bold text-xs text-neutral-400 uppercase tracking-widest border-b pb-2 flex items-center gap-2'>
+                  <User className='h-3 w-3' />
+                  Tahapan Manual
+                </h4>
+                <div className='space-y-3'>
+                  {[
+                    { label: 'Tukang Kayu', value: produksiViewItem?.produksi?.tukang_kayu, key: 'tukang_kayu' },
+                    { label: 'Tukang Jok', value: produksiViewItem?.produksi?.tukang_jok, key: 'tukang_jok' },
+                    { label: 'Rakit', value: produksiViewItem?.produksi?.rakit, key: 'rakit' },
+                    { label: 'Finishing', value: produksiViewItem?.produksi?.finishing, key: 'finishing' },
+                  ].map((field) => {
+                    const isSkipped = produksiViewItem?.produksi?.skipped_fields?.includes(field.key);
+                    return (
+                      <div key={field.key} className='flex items-center justify-between'>
+                        <span className='text-xs text-neutral-600'>{field.label}</span>
+                        <div className='flex items-center gap-2'>
+                          {isSkipped ? (
+                            <Badge variant='secondary' className='text-[9px] bg-neutral-100 text-neutral-400 border-none'>SKIPPED</Badge>
+                          ) : (
+                            <span className='text-sm font-bold text-neutral-900'>{field.value || 0} <span className='text-[10px] text-neutral-400 font-normal'>/ {produksiViewItem?.jumlah}</span></span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <AlertDialogFooter className='border-t pt-4'>
+            <AlertDialogCancel className='bg-neutral-100 hover:bg-neutral-200 border-none'>Tutup</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* View Barang Supplier Progress Dialog */}
+      <AlertDialog
+        open={isSupplierViewOpen}
+        onOpenChange={setIsSupplierViewOpen}
+      >
+        <AlertDialogContent className='max-w-xl'>
+          <AlertDialogHeader>
+            <AlertDialogTitle className='flex items-center gap-2 text-lg sm:text-xl font-bold tracking-tight text-neutral-800'>
+              <Truck className='h-6 w-6 text-blue-500' />
+              Detail Progress Supplier
+            </AlertDialogTitle>
+            <AlertDialogDescription className='text-sm text-neutral-500 mt-1'>
+              Melihat progress supplier untuk item: <strong>{supplierViewItem?.item}</strong>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <div className='py-4 space-y-6'>
+            {/* Jumlah Order & Persen */}
+            <div className='grid grid-cols-2 gap-4'>
+              <div className='space-y-2 text-center p-4 bg-neutral-50 rounded-xl border border-neutral-100'>
+                <span className='text-xs font-bold text-neutral-500 uppercase tracking-wider'>Jumlah Order</span>
+                <div className='text-3xl font-black text-neutral-800'>
+                  {supplierViewItem?.barang_supplier?.jumlah_order || supplierViewItem?.jumlah || 0}
+                </div>
+              </div>
+              <div className='space-y-2 text-center p-4 bg-blue-50 rounded-xl border border-blue-100'>
+                <span className='text-xs font-bold text-blue-800 uppercase tracking-wider'>Total Progress</span>
+                <div className='flex items-baseline justify-center gap-1'>
+                  <span className='text-3xl font-black text-blue-600'>
+                    {typeof supplierViewItem?.barang_supplier?.persen === 'number'
+                      ? supplierViewItem.barang_supplier.persen.toFixed(0)
+                      : (Number(supplierViewItem?.barang_supplier?.persen) || 0).toFixed(0)}
+                  </span>
+                  <span className='text-xl font-bold text-blue-400'>%</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Fields */}
+            <div className='space-y-3'>
+              <h4 className='font-bold text-xs text-neutral-400 uppercase tracking-widest border-b pb-2 flex items-center gap-2'>
+                <Truck className='h-3 w-3' />
+                Tahapan Supplier
+              </h4>
+              <div className='grid grid-cols-2 sm:grid-cols-2 gap-x-8 gap-y-4'>
+                {(
+                  [
+                    { key: 'barang_dipesan', label: 'Barang Dipesan' },
+                    { key: 'barang_tersedia', label: 'Barang Tersedia' },
+                    { key: 'rakit', label: 'Rakit' },
+                    { key: 'packing', label: 'Packing' },
+                    { key: 'terkirim', label: 'Terkirim' },
+                  ] as const
+                ).map(({ key, label }) => {
+                  const isSkipped = supplierViewItem?.barang_supplier?.skipped_fields?.includes(key);
+                  const val = supplierViewItem?.barang_supplier?.[key as keyof typeof supplierViewItem.barang_supplier];
+                  const order = supplierViewItem?.barang_supplier?.jumlah_order || supplierViewItem?.jumlah || 0;
+                  return (
+                    <div key={key} className='flex items-center justify-between'>
+                      <span className='text-xs text-neutral-600'>{label}</span>
+                      <div className='flex items-center gap-2'>
+                        {isSkipped ? (
+                          <Badge variant='secondary' className='text-[9px] bg-neutral-100 text-neutral-400 border-none'>SKIPPED</Badge>
+                        ) : (
+                          <span className='text-sm font-bold text-neutral-900'>{Number(val) || 0} <span className='text-[10px] text-neutral-400 font-normal'>/ {order}</span></span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          <AlertDialogFooter className='border-t pt-4'>
+            <AlertDialogCancel className='bg-neutral-100 hover:bg-neutral-200 border-none'>Tutup</AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { CalendarIcon, Loader2, Check, AlertCircle } from "lucide-react"
+import { CalendarIcon, Loader2 } from "lucide-react"
 import { format } from "date-fns"
 import { Label } from "@/components/ui/label"
 
@@ -291,14 +291,6 @@ export function PengirimanPerSpkFormDialog({
       return
     }
 
-    const invalidItem = selectedItems.find(
-      item => item.selected && (item.jumlah_keluar_total + item.jumlah_keluar) > item.jumlah
-    )
-    if (invalidItem) {
-      toast.error(`Item "${invalidItem.item_name}" melebihi jumlah order (${invalidItem.jumlah_keluar_total + invalidItem.jumlah_keluar} / ${invalidItem.jumlah})`)
-      return
-    }
-
     saveMutation.mutate(values)
   }
 
@@ -511,11 +503,8 @@ export function PengirimanPerSpkFormDialog({
                     </thead>
                     <tbody className="divide-y">
                       {selectedItems.map((item) => {
-                        const totalKirim = item.jumlah_keluar_total + item.jumlah_keluar
-                        const isOver = item.selected && totalKirim > item.jumlah
-
                         return (
-                          <tr key={item.project_item_id} className={cn("hover:bg-muted/10 transition-colors", isOver && "bg-destructive/5", !item.selected && "opacity-75")}>
+                          <tr key={item.project_item_id} className={cn("hover:bg-muted/10 transition-colors", !item.selected && "opacity-75")}>
                             <td className="p-3 text-center">
                               <input
                                 type="checkbox"
@@ -540,14 +529,8 @@ export function PengirimanPerSpkFormDialog({
                                   value={item.jumlah_keluar}
                                   onChange={(e) => handleQtyChange(item.project_item_id, "jumlah_keluar", parseInt(e.target.value) || 0)}
                                   disabled={!item.selected}
-                                  className={cn("w-24 text-center h-8 text-xs", isOver && "border-destructive focus-visible:ring-destructive")}
+                                  className="w-24 text-center h-8 text-xs"
                                 />
-                                {isOver && (
-                                  <span className="text-[10px] text-destructive flex items-center gap-0.5 mt-1">
-                                    <AlertCircle className="h-3 w-3" />
-                                    Melebihi Order
-                                  </span>
-                                )}
                               </div>
                             </td>
                             <td className="p-3">

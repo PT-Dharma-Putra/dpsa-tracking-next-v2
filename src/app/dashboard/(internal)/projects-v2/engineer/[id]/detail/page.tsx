@@ -29,6 +29,9 @@ import {
   Check,
   ChevronsUpDown,
   Copy,
+  Search,
+  ArrowUp,
+  ArrowDown,
 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { format, differenceInDays } from 'date-fns';
@@ -101,6 +104,12 @@ import {
 } from '@/features/projects/services/project-v2-service';
 import { ProjectItemFormDialog } from '../../../_components/project-item-form-dialog';
 import { Badge } from '@/components/ui/badge';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 function CopyableCode({ code }: { code: string }) {
   const [copied, setCopied] = React.useState(false);
@@ -172,6 +181,23 @@ export default function EngineerDetailPage() {
     null
   );
   const [selectedItemIds, setSelectedItemIds] = React.useState<number[]>([]);
+  const [searchQuery, setSearchQuery] = React.useState('');
+  const [sortConfig, setSortConfig] = React.useState<{
+    key: string;
+    direction: 'asc' | 'desc';
+  } | null>(null);
+
+  const handleSort = (key: string) => {
+    setSortConfig((current) => {
+      if (!current || current.key !== key) {
+        return { key, direction: 'asc' };
+      }
+      if (current.direction === 'asc') {
+        return { key, direction: 'desc' };
+      }
+      return null;
+    });
+  };
 
   // Quick PIC Creation States
   const [isNewPicDialogOpen, setIsNewPicDialogOpen] = React.useState(false);
@@ -191,6 +217,40 @@ export default function EngineerDetailPage() {
     queryKey: ['project-v2-items', projectId],
     queryFn: () => projectV2Service.getProjectItems(projectId),
   });
+
+  const filteredItems = React.useMemo(() => {
+    if (!items) return [];
+    
+    let result = items;
+    
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(
+        (item) =>
+          item.item?.toLowerCase().includes(q) ||
+          (item.ruang && item.ruang.toLowerCase().includes(q)) ||
+          (item.lantai && item.lantai.toLowerCase().includes(q)) ||
+          (item.keterangan && item.keterangan.toLowerCase().includes(q)) ||
+          (item.mdl_item?.kode_barang && item.mdl_item.kode_barang.toLowerCase().includes(q))
+      );
+    }
+
+    if (sortConfig) {
+      result = [...result].sort((a, b) => {
+        let aValue = '';
+        let bValue = '';
+        if (sortConfig.key === 'divisi') {
+          aValue = a.divisi?.nama || '';
+          bValue = b.divisi?.nama || '';
+        }
+        if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+
+    return result;
+  }, [items, searchQuery, sortConfig]);
 
   const { data: stages, isLoading: isLoadingStages } = useQuery({
     queryKey: ['design-stages'],
@@ -399,6 +459,7 @@ export default function EngineerDetailPage() {
   const [gkFile, setGkFile] = React.useState<File | string | null>(null);
   const [gkStart, setGkStart] = React.useState<string>('');
   const [gkEnd, setGkEnd] = React.useState<string>('');
+  const [gkInputType, setGkInputType] = React.useState<'url' | 'file'>('url');
 
   const uploadGkMutation = useMutation({
     mutationFn: (payload: {
@@ -424,6 +485,7 @@ export default function EngineerDetailPage() {
   const [bulkGkFile, setBulkGkFile] = React.useState<File | string | null>(null);
   const [bulkGkStart, setBulkGkStart] = React.useState<string>('');
   const [bulkGkEnd, setBulkGkEnd] = React.useState<string>('');
+  const [bulkGkInputType, setBulkGkInputType] = React.useState<'url' | 'file'>('url');
 
   const bulkUploadGkMutation = useMutation({
     mutationFn: async (payload: {
@@ -497,7 +559,15 @@ export default function EngineerDetailPage() {
     setGkItem(item);
     setGkStart(item.gambar_kerja?.tanggal_mulai || '');
     setGkEnd(item.gambar_kerja?.tanggal_selesai || '');
-    setGkFile(item.gambar_kerja?.file || null);
+    const fileValue = item.gambar_kerja?.file || null;
+    setGkFile(fileValue);
+    
+    if (fileValue && !fileValue.startsWith('http')) {
+      setGkInputType('file');
+    } else {
+      setGkInputType('url');
+    }
+    
     setIsGkDialogOpen(true);
   };
 
@@ -912,18 +982,30 @@ export default function EngineerDetailPage() {
       {/* Items Table */}
       <Card className='border shadow-sm overflow-hidden'>
         <CardHeader className='pb-0 flex flex-row items-center justify-between bg-neutral-50/50 border-b'>
-          <div className='py-4 px-2'>
-            <CardTitle className='text-lg font-bold text-neutral-800 flex items-center gap-2'>
-              <Package className='h-5 w-5 text-orange-500' />
-              Project Items
-            </CardTitle>
-            <p className='text-xs text-muted-foreground'>
-              Manage items and technical drawings
-            </p>
+          <div className='py-4 px-2 flex flex-col sm:flex-row sm:items-center gap-4 w-full sm:w-auto'>
+            <div>
+              <CardTitle className='text-lg font-bold text-neutral-800 flex items-center gap-2'>
+                <Package className='h-5 w-5 text-orange-500' />
+                Project Items
+              </CardTitle>
+              <p className='text-xs text-muted-foreground'>
+                Manage items and technical drawings
+              </p>
+            </div>
           </div>
-          {selectedItemIds.length > 0 && (
-            <div className='flex items-center gap-3 pr-2'>
-              <span className='text-xs text-muted-foreground font-medium'>{selectedItemIds.length} item dipilih</span>
+          <div className='flex items-center gap-3 pr-2 flex-wrap sm:flex-nowrap justify-end w-full sm:w-auto pb-4 sm:pb-0'>
+            <div className='relative w-full sm:w-64'>
+              <Search className='absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-neutral-400 pointer-events-none' />
+              <Input
+                placeholder='Cari item, lantai, ruang...'
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className='pl-8 h-8 text-xs bg-white'
+              />
+            </div>
+            {selectedItemIds.length > 0 && (
+              <>
+                <span className='text-xs text-muted-foreground font-medium whitespace-nowrap'>{selectedItemIds.length} item dipilih</span>
               <Button 
                 size='sm' 
                 variant='outline' 
@@ -962,42 +1044,58 @@ export default function EngineerDetailPage() {
                   </Command>
                 </PopoverContent>
               </Popover>
-            </div>
-          )}
+              </>
+            )}
+          </div>
         </CardHeader>
         <CardContent className='p-0'>
           <div className='overflow-x-auto'>
-            <Table>
-              <TableHeader className='bg-neutral-50/50'>
+            <Table className='min-w-max' containerClassName='max-h-[600px] overflow-auto'>
+              <TableHeader className='bg-neutral-50/80 sticky top-0 z-10 shadow-sm shadow-neutral-200/50'>
                 <TableRow>
                   <TableHead className='w-[60px] text-center'>#</TableHead>
-                  <TableHead>Kode Barang</TableHead>
-                  <TableHead>Location / Floor</TableHead>
-                  <TableHead>Item Name</TableHead>
-                  <TableHead>Spesifikasi</TableHead>
-                  <TableHead className='text-center'>Ukuran</TableHead>
-                  <TableHead className='text-center'>Volume</TableHead>
-                  <TableHead className='text-center'>Qty</TableHead>
-                  <TableHead className='text-center'>Satuan</TableHead>
-                  <TableHead>PO Divisi</TableHead>
+                  <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>Kode Barang</TableHead>
+                  <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>Lantai | Ruang</TableHead>
+                  <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>Nama Item</TableHead>
+                  <TableHead className='text-[12px] text-center uppercase font-bold text-neutral-500'>Ukuran</TableHead>
+                  <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>Volume</TableHead>
+                  <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>Qty</TableHead>
+                  <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>Satuan</TableHead>
+                  <TableHead 
+                    className='text-[12px] uppercase font-bold text-neutral-500 cursor-pointer hover:bg-neutral-100 transition-colors select-none'
+                    onClick={() => handleSort('divisi')}
+                  >
+                    <div className='flex items-center gap-1'>
+                      PO Divisi
+                      {sortConfig?.key === 'divisi' ? (
+                        sortConfig.direction === 'asc' ? (
+                          <ArrowUp className='h-3.5 w-3.5' />
+                        ) : (
+                          <ArrowDown className='h-3.5 w-3.5' />
+                        )
+                      ) : (
+                        <ChevronsUpDown className='h-3.5 w-3.5 opacity-50' />
+                      )}
+                    </div>
+                  </TableHead>
                   <TableHead className='w-[40px] text-center'>
                     <Checkbox
-                      checked={!!items && items.length > 0 && selectedItemIds.length === items.length}
+                      checked={!!filteredItems && filteredItems.length > 0 && selectedItemIds.length === filteredItems.length}
                       onCheckedChange={(checked) => {
-                        if (checked && items) {
-                          setSelectedItemIds(items.map((i) => i.id));
+                        if (checked && filteredItems) {
+                          setSelectedItemIds(filteredItems.map((i) => i.id));
                         } else {
                           setSelectedItemIds([]);
                         }
                       }}
                     />
                   </TableHead>
-                  <TableHead className='text-center'>PIC</TableHead>
-                  <TableHead>Submit</TableHead>
-                  <TableHead>Tepat Waktu</TableHead>
-                  <TableHead>GK MDL</TableHead>
-                  <TableHead>Gambar Kerja</TableHead>
-                  <TableHead>Timeline Drawing</TableHead>
+                  <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>PIC</TableHead>
+                  <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>GK MDL</TableHead>
+                  <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>Gambar Kerja</TableHead>
+                  <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>Submit</TableHead>
+                  <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>Timeline Drawing</TableHead>
+                  <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>Tepat Waktu</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -1007,17 +1105,17 @@ export default function EngineerDetailPage() {
                       <Loader2 className='h-6 w-6 animate-spin mx-auto text-neutral-300' />
                     </TableCell>
                   </TableRow>
-                ) : items?.length === 0 ? (
+                ) : filteredItems.length === 0 ? (
                   <TableRow>
                     <TableCell
                       colSpan={19}
                       className='h-32 text-center text-muted-foreground italic'
                     >
-                      No items added to this project yet.
+                      No items found.
                     </TableCell>
                   </TableRow>
                 ) : (
-                  items?.map((item, index) => (
+                  filteredItems.map((item, index) => (
                     <TableRow
                       key={item.id}
                       className='group hover:bg-neutral-50/50 transition-colors'
@@ -1036,51 +1134,30 @@ export default function EngineerDetailPage() {
                       </TableCell>
                       <TableCell>
                         <div className='flex flex-col gap-0.5'>
-                          <span className='text-xs text-neutral-700'>
-                            {item.lokasi || '-'}
-                          </span>
-                          {item.lantai && (
-                            <Badge
-                              variant='secondary'
-                              className='w-fit text-[9px] h-4 px-1.5 font-normal bg-neutral-100'
-                            >
-                              Floor {item.lantai}
-                            </Badge>
-                          )}
+                          <span className='text-xs font-bold text-neutral-800'>{item.lantai || '-'}</span>
+                          <span className='text-[12px] text-muted-foreground truncate max-w-[120px]' title={item.ruang}>{item.ruang || '-'}</span>
                         </div>
                       </TableCell>
+
                       <TableCell>
-                        <div className='flex flex-col'>
-                          <div className='flex items-center gap-2'>
-                            <span className='font-bold text-neutral-900'>
-                              {item.item}
-                            </span>
-                            {item.custom && (
-                              <Badge
-                                variant='destructive'
-                                className='text-[8px] h-3.5 px-1 font-bold uppercase'
-                              >
-                                Custom
-                              </Badge>
-                            )}
-                          </div>
-                          <span className='text-[10px] text-muted-foreground uppercase tracking-tight'>
-                            {item.material_utama}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell className='text-sm text-neutral-600 max-w-[160px]'>
                         {item.keterangan ? (
-                          <span
-                            className='line-clamp-2'
-                            title={item.keterangan}
-                          >
-                            {item.keterangan}
-                          </span>
+                          <TooltipProvider delayDuration={200}>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className='flex flex-col gap-0.5 cursor-help'>
+                                  <span className='text-sm font-bold text-neutral-900 group-hover:text-blue-600 transition-colors'>{item.item}</span>
+                                    <span className='text-sm text-muted-foreground truncate max-w-[200px]'>{item.keterangan || '-'}</span>
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="max-w-[300px] break-words">
+                                <p className="text-xs">{item.keterangan}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                         ) : (
-                          <span className='text-muted-foreground italic'>
-                            -
-                          </span>
+                          <div className='flex flex-col gap-0.5'>
+                            <span className='text-xs font-bold text-neutral-900 group-hover:text-blue-600 transition-colors'>{item.item}</span>
+                          </div>
                         )}
                       </TableCell>
 
@@ -1221,43 +1298,7 @@ export default function EngineerDetailPage() {
                           </PopoverContent>
                         </Popover>
                       </TableCell>
-                      <TableCell className='text-xs text-neutral-600'>
-                        {item.gambar_kerja?.tanggal_selesai
-                          ? format(
-                              new Date(item.gambar_kerja.tanggal_selesai),
-                              'MMM d, yyyy'
-                            )
-                          : '-'}
-                      </TableCell>
-                      <TableCell className='text-center'>
-                        {(() => {
-                          const target =
-                            project?.order_gambar_kerja?.[0]?.target_selesai;
-                          const submit = item.gambar_kerja?.tanggal_selesai;
-                          if (!target || !submit)
-                            return (
-                              <span className='text-[10px] text-muted-foreground italic'>
-                                -
-                              </span>
-                            );
-
-                          const isOnTime = new Date(submit) <= new Date(target);
-                          return (
-                            <Badge
-                              variant='outline'
-                              className={cn(
-                                'font-bold text-[10px]',
-                                isOnTime
-                                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                  : 'bg-red-50 text-red-700 border-red-200'
-                              )}
-                            >
-                              {isOnTime ? 'Ya' : 'Tidak'}
-                            </Badge>
-                          );
-                        })()}
-                      </TableCell>
-                      <TableCell>
+                                            <TableCell>
                         {!item.custom ? (
                           item.mdl_item?.link_gambar_kerja ? (
                             <Button
@@ -1339,6 +1380,14 @@ export default function EngineerDetailPage() {
                           </Button>
                         )}
                       </TableCell>
+                      <TableCell className='text-xs text-neutral-600'>
+                        {item.gambar_kerja?.tanggal_selesai
+                          ? format(
+                              new Date(item.gambar_kerja.tanggal_selesai),
+                              'MMM d, yyyy'
+                            )
+                          : '-'}
+                      </TableCell>
                       <TableCell>
                         {item.gambar_kerja?.tanggal_mulai ? (
                           <div className='flex flex-col gap-0.5'>
@@ -1370,6 +1419,35 @@ export default function EngineerDetailPage() {
                           </span>
                         )}
                       </TableCell>
+                      <TableCell className='text-center'>
+                        {(() => {
+                          const target =
+                            project?.order_gambar_kerja?.[0]?.target_selesai;
+                          const submit = item.gambar_kerja?.tanggal_selesai;
+                          if (!target || !submit)
+                            return (
+                              <span className='text-[10px] text-muted-foreground italic'>
+                                -
+                              </span>
+                            );
+
+                          const isOnTime = new Date(submit) <= new Date(target);
+                          return (
+                            <Badge
+                              variant='outline'
+                              className={cn(
+                                'font-bold text-[10px]',
+                                isOnTime
+                                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                  : 'bg-red-50 text-red-700 border-red-200'
+                              )}
+                            >
+                              {isOnTime ? 'Ya' : 'Tidak'}
+                            </Badge>
+                          );
+                        })()}
+                      </TableCell>
+
                     </TableRow>
                   ))
                 )}
@@ -1413,15 +1491,67 @@ export default function EngineerDetailPage() {
               </div>
             </div>
             <div className='space-y-2'>
-              <Label>Link Gambar Kerja</Label>
-              <Input
-                type='text'
-                value={typeof gkFile === 'string' ? gkFile : ''}
-                onChange={(e) => setGkFile(e.target.value)}
-                placeholder='Paste link here...'
-                className='text-xs'
-              />
+              <Label>Metode Input</Label>
+              <div className='flex gap-2 p-1 bg-neutral-100 rounded-md w-full'>
+                <button 
+                  type='button'
+                  className={`flex-1 text-xs py-1.5 rounded-sm transition-colors ${gkInputType === 'url' ? 'bg-white shadow-sm font-semibold text-neutral-900' : 'text-neutral-500 hover:text-neutral-700'}`} 
+                  onClick={() => { setGkInputType('url'); setGkFile(null); }}
+                >
+                  URL Tautan
+                </button>
+                <button 
+                  type='button'
+                  className={`flex-1 text-xs py-1.5 rounded-sm transition-colors ${gkInputType === 'file' ? 'bg-white shadow-sm font-semibold text-neutral-900' : 'text-neutral-500 hover:text-neutral-700'}`} 
+                  onClick={() => { setGkInputType('file'); setGkFile(null); }}
+                >
+                  Upload File
+                </button>
+              </div>
             </div>
+            {gkInputType === 'url' ? (
+              <div key="url-input" className='space-y-2'>
+                <Label>Link Gambar Kerja</Label>
+                <Input
+                  type='text'
+                  value={typeof gkFile === 'string' ? gkFile : ''}
+                  onChange={(e) => setGkFile(e.target.value)}
+                  placeholder='Paste link here...'
+                  className='text-xs'
+                />
+              </div>
+            ) : (
+              <div key="file-input" className='space-y-2'>
+                <Label>File Gambar Kerja</Label>
+                <div className='relative group border-2 border-dashed border-neutral-300 rounded-lg p-6 hover:bg-orange-50/50 hover:border-orange-500 transition-colors flex flex-col items-center justify-center gap-1 text-center'>
+                  <input
+                    type='file'
+                    className='absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10'
+                    onChange={(e) => setGkFile(e.target.files?.[0] || null)}
+                  />
+                  <Upload className='h-8 w-8 text-neutral-400 group-hover:text-orange-500 transition-colors mb-2' />
+                  {gkFile && typeof gkFile !== 'string' ? (
+                    <>
+                      <div className='text-sm font-semibold text-neutral-900 truncate max-w-[280px]'>
+                        {gkFile.name}
+                      </div>
+                      <div className='text-xs text-neutral-500'>
+                        {(gkFile.size / 1024 / 1024).toFixed(2)} MB
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className='text-sm font-medium text-neutral-700'>
+                        Klik atau drag file ke area ini
+                      </div>
+                      <div className='text-xs text-neutral-500'>
+                        Mendukung upload dokumen atau gambar
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setIsGkDialogOpen(false)}>
@@ -1430,7 +1560,7 @@ export default function EngineerDetailPage() {
             <Button
               className='bg-orange-600 hover:bg-orange-700'
               onClick={handleGkUpload}
-              disabled={uploadGkMutation.isPending}
+              disabled={uploadGkMutation.isPending || !gkStart || !gkEnd || !gkFile}
             >
               {uploadGkMutation.isPending && (
                 <Loader2 className='mr-2 h-4 w-4 animate-spin' />
@@ -1475,15 +1605,67 @@ export default function EngineerDetailPage() {
               </div>
             </div>
             <div className='space-y-2'>
-              <Label>Link Gambar Kerja</Label>
-              <Input
-                type='text'
-                value={typeof bulkGkFile === 'string' ? bulkGkFile : ''}
-                onChange={(e) => setBulkGkFile(e.target.value)}
-                placeholder='Paste link here...'
-                className='text-xs'
-              />
+              <Label>Metode Input</Label>
+              <div className='flex gap-2 p-1 bg-neutral-100 rounded-md w-full'>
+                <button 
+                  type='button'
+                  className={`flex-1 text-xs py-1.5 rounded-sm transition-colors ${bulkGkInputType === 'url' ? 'bg-white shadow-sm font-semibold text-neutral-900' : 'text-neutral-500 hover:text-neutral-700'}`} 
+                  onClick={() => { setBulkGkInputType('url'); setBulkGkFile(null); }}
+                >
+                  URL Tautan
+                </button>
+                <button 
+                  type='button'
+                  className={`flex-1 text-xs py-1.5 rounded-sm transition-colors ${bulkGkInputType === 'file' ? 'bg-white shadow-sm font-semibold text-neutral-900' : 'text-neutral-500 hover:text-neutral-700'}`} 
+                  onClick={() => { setBulkGkInputType('file'); setBulkGkFile(null); }}
+                >
+                  Upload File
+                </button>
+              </div>
             </div>
+            {bulkGkInputType === 'url' ? (
+              <div key="bulk-url-input" className='space-y-2'>
+                <Label>Link Gambar Kerja</Label>
+                <Input
+                  type='text'
+                  value={typeof bulkGkFile === 'string' ? bulkGkFile : ''}
+                  onChange={(e) => setBulkGkFile(e.target.value)}
+                  placeholder='Paste link here...'
+                  className='text-xs'
+                />
+              </div>
+            ) : (
+              <div key="bulk-file-input" className='space-y-2'>
+                <Label>File Gambar Kerja</Label>
+                <div className='relative group border-2 border-dashed border-neutral-300 rounded-lg p-6 hover:bg-orange-50/50 hover:border-orange-500 transition-colors flex flex-col items-center justify-center gap-1 text-center'>
+                  <input
+                    type='file'
+                    className='absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10'
+                    onChange={(e) => setBulkGkFile(e.target.files?.[0] || null)}
+                  />
+                  <Upload className='h-8 w-8 text-neutral-400 group-hover:text-orange-500 transition-colors mb-2' />
+                  {bulkGkFile && typeof bulkGkFile !== 'string' ? (
+                    <>
+                      <div className='text-sm font-semibold text-neutral-900 truncate max-w-[280px]'>
+                        {bulkGkFile.name}
+                      </div>
+                      <div className='text-xs text-neutral-500'>
+                        {(bulkGkFile.size / 1024 / 1024).toFixed(2)} MB
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className='text-sm font-medium text-neutral-700'>
+                        Klik atau drag file ke area ini
+                      </div>
+                      <div className='text-xs text-neutral-500'>
+                        Mendukung upload dokumen atau gambar
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setIsBulkGkDialogOpen(false)}>
@@ -1498,7 +1680,7 @@ export default function EngineerDetailPage() {
                   tanggal_selesai: bulkGkEnd || undefined,
                 });
               }}
-              disabled={bulkUploadGkMutation.isPending}
+              disabled={bulkUploadGkMutation.isPending || !bulkGkStart || !bulkGkEnd || !bulkGkFile}
             >
               {bulkUploadGkMutation.isPending && (
                 <Loader2 className='mr-2 h-4 w-4 animate-spin' />

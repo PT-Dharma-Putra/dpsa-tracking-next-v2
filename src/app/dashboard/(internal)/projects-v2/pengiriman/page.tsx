@@ -15,6 +15,7 @@ import {
   Calendar,
   Truck,
   User,
+  Eye,
   Settings,
 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -201,8 +202,8 @@ export default function PengirimanPage() {
               <thead>
                 <tr className='bg-neutral-50/70 border-b border-neutral-200 text-neutral-500 font-semibold text-xs uppercase tracking-wider'>
                   <th className='p-4'>Tanggal</th>
-                  <th className='p-4'>No. Surat Jalan</th>
                   <th className='p-4'>Client</th>
+                  <th className='p-4'>Surat Jalan</th>
                   <th className='p-4'>Supir & Kendaraan</th>
                   <th className='p-4'>Setrim</th>
                   <th className='p-4'>Setting (Pemasangan)</th>
@@ -223,11 +224,6 @@ export default function PengirimanPage() {
                       </div>
                     </td>
 
-                    {/* No Surat Jalan */}
-                    <td className='p-4 font-semibold text-neutral-900 whitespace-nowrap'>
-                      {item.surat_jalan || '-'}
-                    </td>
-
                     {/* Client */}
                     <td className='p-4 whitespace-nowrap'>
                       <div className='flex items-center gap-2 text-neutral-700'>
@@ -236,6 +232,30 @@ export default function PengirimanPage() {
                           {item.client?.name || 'Unknown Client'}
                         </span>
                       </div>
+                    </td>
+
+                    {/* No Surat Jalan */}
+                    <td className='p-4 font-semibold text-neutral-900 whitespace-nowrap'>
+                      {(item?.surat_jalan && (
+                        <Button
+                          variant='ghost'
+                          size='icon'
+                          className='h-5 w-5 text-blue-600'
+                          asChild
+                        >
+                          <a
+                            href={`${(
+                              process.env.NEXT_PUBLIC_API_URL ||
+                              'http://localhost:8000'
+                            ).replace('/api', '')}/storage/${item.surat_jalan}`}
+                            target='_blank'
+                            rel='noopener noreferrer'
+                          >
+                            <Eye className='h-3 w-3' />
+                          </a>
+                        </Button>
+                      )) ||
+                        '-'}
                     </td>
 
                     {/* Supir & Kendaraan */}
@@ -260,8 +280,27 @@ export default function PengirimanPage() {
                     </td>
 
                     {/* Setrim */}
-                    <td className='p-4 whitespace-nowrap text-neutral-700'>
-                      {item.setrim || '-'}
+                    <td className='p-4 whitespace-nowrap text-neutral-700 truncate max-w-[120px]'>
+                      {(item?.setrim && (
+                        <Button
+                          variant='ghost'
+                          size='icon'
+                          className='h-5 w-5 text-blue-600'
+                          asChild
+                        >
+                          <a
+                            href={`${(
+                              process.env.NEXT_PUBLIC_API_URL ||
+                              'http://localhost:8000'
+                            ).replace('/api', '')}/storage/${item.setrim}`}
+                            target='_blank'
+                            rel='noopener noreferrer'
+                          >
+                            <Eye className='h-3 w-3' />
+                          </a>
+                        </Button>
+                      )) ||
+                        '-'}
                     </td>
 
                     {/* Setting */}

@@ -54,6 +54,7 @@ import {
   BarangSupplier,
 } from '@/features/projects/services/project-v2-service';
 import { QRCodeSVG } from 'qrcode.react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 
@@ -131,7 +132,7 @@ export default function ProduksiDetailPage() {
     if (!bjItem) return;
 
     const currentTotal =
-      bjItem.barang_jadi_masuk?.reduce((sum, bj) => sum + bj.jumlah, 0) || 0;
+      bjItem.barang_jadi_masuk?.reduce((sum, bj) => sum + Number(bj.jumlah), 0) || 0;
     if (currentTotal + bjJumlah > bjItem.jumlah) {
       toast.error(
         `Total barang (${
@@ -166,12 +167,260 @@ export default function ProduksiDetailPage() {
 
   // Items Search State
   const [searchQuery, setSearchQuery] = React.useState('');
+  const [isGrouped, setIsGrouped] = React.useState(false);
+
+  const filteredItems = React.useMemo(() => {
+    if (!items) return [];
+    if (!searchQuery.trim()) return items;
+    const query = searchQuery.toLowerCase();
+    return items.filter(
+      (item) =>
+        item.item?.toLowerCase().includes(query) ||
+        (item.ruang && item.ruang.toLowerCase().includes(query)) ||
+        (item.lantai && item.lantai.toLowerCase().includes(query)) ||
+        (item.keterangan && item.keterangan.toLowerCase().includes(query))
+    );
+  }, [items, searchQuery]);
+
+  const displayItems = React.useMemo(() => {
+    if (!isGrouped) return filteredItems;
+    
+    const grouped = new Map<string, ProjectItemV2 & { groupedItems?: { id: number, jumlah: number }[] }>();
+    
+    filteredItems.forEach(item => {
+      const key = (item.item || '').toLowerCase();
+      if (grouped.has(key)) {
+        const existing = grouped.get(key)!;
+        existing.jumlah += item.jumlah;
+        
+        const existingVol = Number(existing.volume || 0);
+        const itemVol = Number(item.volume || 0);
+        if (!isNaN(existingVol) && !isNaN(itemVol)) {
+          existing.volume = Number((existingVol + itemVol).toFixed(3));
+        }
+
+        if (existing.produksi && item.produksi) {
+          const fields = [
+            'menggunakan_stok', 'cold_press', 'running_saw', 'edging', 'cnc',
+            'tukang_kayu', 'tukang_jok', 'finishing', 'rakit', 'quality_control', 'packing'
+          ];
+          fields.forEach(f => {
+            if (typeof (item.produksi as any)[f] === 'number') {
+              (existing.produksi as any)[f] = ((existing.produksi as any)[f] || 0) + (item.produksi as any)[f];
+            }
+          });
+        } else if (!existing.produksi && item.produksi) {
+          existing.produksi = { ...item.produksi };
+        }
+
+        if (existing.groupedItems) {
+          existing.groupedItems.push({ id: item.id, jumlah: item.jumlah });
+        }
+      } else {
+        const newItem = { ...item, groupedItems: [{ id: item.id, jumlah: item.jumlah }] };
+        if (newItem.produksi) newItem.produksi = { ...newItem.produksi };
+        grouped.set(key, newItem);
+      }
+    });
+    
+    return Array.from(grouped.values());
+  }, [filteredItems, isGrouped]);
 
   // QR Code per-item State
   const [isItemQrDialogOpen, setIsItemQrDialogOpen] = React.useState(false);
   const [qrItem, setQrItem] = React.useState<ProjectItemV2 | null>(null);
   const [qrParts, setQrParts] = React.useState<number>(1);
   const hiddenQrRef = React.useRef<HTMLDivElement>(null);
+
+  // Mass QR Print State
+  const [selectedQrItemIds, setSelectedQrItemIds] = React.useState<number[]>([]);
+  const [isMassQrDialogOpen, setIsMassQrDialogOpen] = React.useState(false);
+  const [massQrPartsConfig, setMassQrPartsConfig] = React.useState<Record<number, number>>({});
+  const hiddenMassQrRef = React.useRef<HTMLDivElement>(null);
+
+  const toggleSelectQrItem = (id: number) => {
+    setSelectedQrItemIds((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    );
+  };
+
+  const handleSelectAllQrItems = (checked: boolean) => {
+    if (checked && items) {
+      const filteredItems = items.filter((item) => {
+        if (!searchQuery.trim()) return true;
+        const q = searchQuery.toLowerCase();
+        return (
+          item.item?.toLowerCase().includes(q) ||
+          (item.lantai ?? '').toLowerCase().includes(q) ||
+          (item.ruang ?? '').toLowerCase().includes(q) ||
+          (item.keterangan ?? '').toLowerCase().includes(q)
+        );
+      });
+      setSelectedQrItemIds(filteredItems.map(i => i.id));
+    } else {
+      setSelectedQrItemIds([]);
+    }
+  };
+
+  const openMassQrDialog = () => {
+    const initialConfig: Record<number, number> = {};
+    selectedQrItemIds.forEach(id => {
+      initialConfig[id] = 1;
+    });
+    setMassQrPartsConfig(initialConfig);
+    setIsMassQrDialogOpen(true);
+  };
+
+  const handlePrintMassQR = () => {
+    if (selectedQrItemIds.length === 0 || !items) return;
+
+    const selectedItems = items.filter(i => selectedQrItemIds.includes(i.id));
+
+    const spkYear = project?.spk?.tanggal_spk
+      ? new Date(project.spk.tanggal_spk).getFullYear()
+      : project?.created_at
+      ? new Date(project.created_at).getFullYear()
+      : '';
+    const spkValue = [project?.spk?.nomor_spk, spkYear].filter(Boolean).join(' / ') || '-';
+
+    const labelsData: string[] = [];
+
+    selectedItems.forEach(item => {
+      const parts = massQrPartsConfig[item.id] || 1;
+      const total = item.jumlah;
+      const qrCodeValue = item.id.toString();
+
+      const svgEl = hiddenMassQrRef.current?.querySelector(`#qr-svg-${item.id} svg`);
+      const svgString = svgEl?.outerHTML ?? '';
+
+      const makeLabelHTML = (itemIndex: number, partIndex: number) => {
+        const rows: [string, string][] = [
+          ['NAMA ITEM', item.item || '-'],
+          ['UKURAN', `${item.panjang || '-'} x ${item.lebar || '-'} x ${item.tinggi || '-'}`],
+          ['JUMLAH', `${itemIndex + 1}/${total} ${item.satuan || ''}`.trim()],
+        ];
+        
+        if (parts > 1) {
+          rows.push(['BAGIAN', `${partIndex + 1}/${parts}`]);
+        }
+        
+        rows.push(
+          ['RUANG', item.ruang || '-'],
+          ['RUMAH SAKIT', project?.client?.name || '-'],
+          ['NO. SPK/TAHUN', spkValue]
+        );
+
+        return `
+          <div class="label">
+            <div class="hdr">
+              <div class="logo"><img src="${window.location.origin}/Logo.png" alt="Logo"/></div>
+              <div class="co">
+                <p class="n">PT DHARMA PUTERA SEJAHTERA ABADI</p>
+                <p class="it">Interior &amp; Furniture Manufaktur</p>
+                <p>Jl. Matraman No. 88, Ringinsari, Maguwoharjo, Depok, Sleman, Yogyakarta</p>
+                <p>Telepon : (0274) 2800089&nbsp;&nbsp;Fax : (0274) 433 2248</p>
+                <p>E-mail : piutang.dpsa@gmail.com&nbsp;Website : www.dpm-jogja.com</p>
+              </div>
+              <div class="dc">
+                <div class="dr">PROD</div><div class="dr b">003</div>
+                <div class="db"><span>Rev:00</span><span>Terbit:<br>08/25</span></div>
+              </div>
+            </div>
+            <div class="bd">
+              <div class="info">
+                ${rows
+                  .map(
+                    ([l, v], ri) =>
+                      `<div class="row${
+                        ri === rows.length - 1 ? ' last' : ''
+                      }"><div class="lbl">${l}</div><div class="sep">:</div><div class="val">${v}</div></div>`
+                  )
+                  .join('')}
+              </div>
+              <div class="qr">${svgString}<p>${qrCodeValue}</p></div>
+            </div>
+          </div>`;
+      };
+
+      for (let i = 0; i < total; i++) {
+        for (let p = 0; p < parts; p++) {
+          labelsData.push(makeLabelHTML(i, p));
+        }
+      }
+    });
+
+    const pages: string[][] = [];
+    for (let i = 0; i < labelsData.length; i += 12) {
+      pages.push(labelsData.slice(i, i + 12));
+    }
+
+    const printWindow = window.open('', '', 'width=800,height=600');
+    if (!printWindow) return;
+
+    printWindow.document.write(`<!DOCTYPE html><html><head>
+      <title>Print Label Produksi Massal</title>
+      <style>
+        @page { size: A4 portrait; margin: 5mm; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: Arial, sans-serif; font-size: 9px; color: #171717; background: #fff; }
+        .pg {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          grid-template-rows: auto auto;
+          gap: 3mm;
+          width: 100%;
+          page-break-after: always;
+          break-after: page;
+        }
+        .pg.last { page-break-after: auto; break-after: auto; }
+        .empty { border: 1px dashed #ccc; }
+        .label { border: 1px solid #000; }
+        .hdr { display: flex; border-bottom: 1px solid #000; }
+        .logo { width: 44px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; padding: 4px; border-right: 1px solid #000; }
+        .logo img { width: 34px; height: 34px; object-fit: contain; }
+        .co { flex: 1; text-align: center; padding: 3px 5px; border-right: 1px solid #000; }
+        .co .n  { font-weight: 900; color: #1d4ed8; font-size: 8.5px; text-transform: uppercase; line-height: 1.2; }
+        .co .it { font-style: italic; font-size: 7.5px; color: #525252; }
+        .co p   { font-size: 7.5px; color: #525252; line-height: 1.3; }
+        .dc { width: 58px; flex-shrink: 0; display: flex; flex-direction: column; text-align: center; font-size: 7.5px; }
+        .dr { border-bottom: 1px solid #000; padding: 1px 2px; font-weight: 700; }
+        .dr.b { font-size: 11px; }
+        .db { display: flex; }
+        .db span { flex: 1; padding: 1px 2px; line-height: 1.2; }
+        .db span:first-child { border-right: 1px solid #000; }
+        .bd { display: flex; }
+        .info { flex: 1; border-right: 1px solid #000; }
+        .row { display: flex; border-bottom: 1px solid #000; }
+        .row.last { border-bottom: none; }
+        .lbl { width: 78px; font-weight: 700; padding: 3px 4px; border-right: 1px solid #000; flex-shrink: 0; font-size: 8px; }
+        .sep { width: 12px; text-align: center; padding: 3px 0; border-right: 1px solid #000; flex-shrink: 0; }
+        .val { flex: 1; padding: 3px 4px; font-size: 8px; word-break: break-word; }
+        .qr  { width: 94px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 4px; padding: 6px 5px; }
+        .qr svg { display: block; width: 76px !important; height: 76px !important; }
+        .qr p { font-family: monospace; font-weight: 700; text-align: center; word-break: break-all; font-size: 7.5px; }
+      </style>
+    </head><body>
+      ${pages
+        .map(
+          (page, pi) => `
+        <div class="pg${pi === pages.length - 1 ? ' last' : ''}">
+          ${page.join('')}
+          ${Array.from(
+            { length: 12 - page.length },
+            () => '<div class="empty"></div>'
+          ).join('')}
+        </div>`
+        )
+        .join('')}
+      <script>
+        window.onload = function() {
+          window.print();
+          setTimeout(() => window.close(), 500);
+        };
+      </script>
+    </body></html>`);
+    printWindow.document.close();
+  };
 
   const openItemQrDialog = (item: ProjectItemV2) => {
     setQrItem(item);
@@ -263,10 +512,10 @@ export default function ProduksiDetailPage() {
       }
     }
 
-    // Group indices into pages of 4
+    // Group indices into pages of 12
     const pages: any[][] = [];
-    for (let i = 0; i < labelsData.length; i += 4) {
-      pages.push(labelsData.slice(i, i + 4));
+    for (let i = 0; i < labelsData.length; i += 12) {
+      pages.push(labelsData.slice(i, i + 12));
     }
 
     const html = `<!DOCTYPE html><html><head>
@@ -323,7 +572,7 @@ export default function ProduksiDetailPage() {
         <div class="pg${pi === pages.length - 1 ? ' last' : ''}">
           ${page.map((data) => makeLabelHTML(data.itemIndex, data.partIndex)).join('')}
           ${Array.from(
-            { length: 4 - page.length },
+            { length: 12 - page.length },
             () => '<div class="empty"></div>'
           ).join('')}
         </div>`
@@ -377,8 +626,9 @@ export default function ProduksiDetailPage() {
   };
 
   const updateProduksiMutation = useMutation({
-    mutationFn: (payload: Partial<Produksi>) =>
-      projectV2Service.updateProduksi(produksiItem!.id, payload),
+    mutationFn: async (payload: { items: { id: number, data: Partial<Produksi> }[] }) => {
+      await Promise.all(payload.items.map(item => projectV2Service.updateProduksi(item.id, item.data)));
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ['project-v2-items', projectId],
@@ -397,10 +647,32 @@ export default function ProduksiDetailPage() {
     const skippedList = Object.keys(skippedFields).filter(
       (k) => skippedFields[k]
     );
-    updateProduksiMutation.mutate({
-      ...produksiData,
-      skipped_fields: skippedList,
+
+    const isGroup = !!(produksiItem as any).groupedItems && (produksiItem as any).groupedItems.length > 1;
+    const groupedItems = isGroup 
+      ? (produksiItem as any).groupedItems as { id: number, jumlah: number }[] 
+      : [{ id: produksiItem.id, jumlah: produksiItem.jumlah }];
+    
+    const fieldsToDistribute = [
+      'menggunakan_stok', 'cold_press', 'running_saw', 'edging', 'cnc',
+      'tukang_kayu', 'tukang_jok', 'finishing', 'rakit', 'quality_control', 'packing'
+    ];
+
+    const updates = groupedItems.map(gItem => {
+      const itemData = { ...produksiData, jumlah_order: gItem.jumlah, skipped_fields: skippedList };
+      return { id: gItem.id, data: itemData, capacity: gItem.jumlah };
     });
+
+    fieldsToDistribute.forEach(field => {
+      let remaining = (produksiData as any)[field] || 0;
+      updates.forEach(update => {
+        const allocate = Math.min(remaining, update.capacity);
+        (update.data as any)[field] = allocate;
+        remaining -= allocate;
+      });
+    });
+
+    updateProduksiMutation.mutate({ items: updates.map(u => ({ id: u.id, data: u.data })) });
   };
 
   // Supplier Confirm State
@@ -1009,8 +1281,18 @@ export default function ProduksiDetailPage() {
           <h2 className='text-xl font-bold flex items-center gap-2'>
             <ListChecks className='h-5 w-5 text-neutral-400' />
             Project Items
+            <Badge variant='outline' className='ml-2 bg-neutral-50 text-neutral-600 border-neutral-200'>{items?.length} Items</Badge>
           </h2>
+
           <div className='flex items-center gap-2'>
+            <Button
+              variant={isGrouped ? 'default' : 'outline'}
+              onClick={() => setIsGrouped(!isGrouped)}
+              className='shadow-sm h-8 text-xs'
+            >
+              <Package className='w-4 h-4 mr-2' />
+              Kelompokkan Item
+            </Button>
             <div className='relative w-64'>
               <Search className='absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-neutral-400 pointer-events-none' />
               <Input
@@ -1020,22 +1302,24 @@ export default function ProduksiDetailPage() {
                 className='pl-8 h-8 text-xs'
               />
             </div>
-            <Button
-              size='sm'
-              variant='outline'
-              className='gap-2 h-8'
-              onClick={() => setIsQrDialogOpen(true)}
-              disabled={!items || items.length === 0}
-            >
-              <QrCode className='h-4 w-4' />
-              Generate QR
-            </Button>
+
+            {selectedQrItemIds.length > 0 && (
+              <Button
+                size='sm'
+                variant='default'
+                className='gap-2 h-8 bg-blue-600 hover:bg-blue-700'
+                onClick={openMassQrDialog}
+              >
+                <Printer className='h-4 w-4' />
+                Print QR Massal ({selectedQrItemIds.length})
+              </Button>
+            )}
           </div>
         </div>
 
-        <div className='rounded-xl border border-neutral-200 bg-white overflow-x-auto shadow-sm'>
-          <Table className='min-w-max'>
-            <TableHeader className='bg-neutral-50/80'>
+        <div className='rounded-xl border border-neutral-200 bg-white overflow-hidden shadow-sm'>
+          <Table className='min-w-max' containerClassName='max-h-[600px] overflow-auto'>
+            <TableHeader className='bg-neutral-50/80 sticky top-0 z-10 shadow-sm shadow-neutral-200/50'>
               <TableRow>
                 <TableHead className='w-[50px]'>#</TableHead>
                 {/* <TableHead>Kode Barang</TableHead> */}
@@ -1057,7 +1341,24 @@ export default function ProduksiDetailPage() {
                 <TableHead>Produksi</TableHead>
                 <TableHead>QC Cek</TableHead>
                 <TableHead>B. Jadi</TableHead>
-                <TableHead className='text-center'>Actions</TableHead>
+                <TableHead className='text-center'>
+                  {isGrouped ? (
+                    <div className='text-center font-medium'>Aksi</div>
+                  ) : (
+                    <div className='flex items-center justify-center gap-2'>
+                      <Checkbox
+                        checked={
+                          displayItems && displayItems.length > 0
+                            ? displayItems.length === selectedQrItemIds.length && selectedQrItemIds.length > 0
+                            : false
+                        }
+                        onCheckedChange={handleSelectAllQrItems}
+                        className='bg-white'
+                      />
+                      Aksi
+                    </div>
+                  )}
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -1070,7 +1371,7 @@ export default function ProduksiDetailPage() {
                     <Loader2 className='h-6 w-6 animate-spin mx-auto' />
                   </TableCell>
                 </TableRow>
-              ) : items?.length === 0 ? (
+              ) : displayItems.length === 0 ? (
                 <TableRow>
                   <TableCell
                     colSpan={18}
@@ -1080,18 +1381,7 @@ export default function ProduksiDetailPage() {
                   </TableCell>
                 </TableRow>
               ) : (
-                [...(items ?? [])]
-                  .filter((item) => {
-                    if (!searchQuery.trim()) return true;
-                    const q = searchQuery.toLowerCase();
-                    return (
-                      item.item?.toLowerCase().includes(q) ||
-                      (item.lantai ?? '').toLowerCase().includes(q) ||
-                      (item.ruang ?? '').toLowerCase().includes(q) ||
-                      (item.keterangan ?? '').toLowerCase().includes(q)
-                    );
-                  })
-                  .map((item, index) => (
+                displayItems.map((item, index) => (
                   <TableRow
                     key={item.id}
                     className='hover:bg-neutral-50/50 transition-colors'
@@ -1257,76 +1547,100 @@ export default function ProduksiDetailPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div
-                        className='cursor-pointer hover:bg-neutral-100 p-2 rounded-lg transition-colors group flex items-center gap-2'
-                        onClick={() => openQcView(item)}
-                      >
-                        {item.qc_cek ? (
-                          <>
-                            <span className='text-[10px] font-bold text-neutral-600'>
-                              {item.qc_cek.qty} Unit
-                            </span>
-                            {item.qc_cek.file && (
-                              <Button
-                                variant='ghost'
-                                size='icon'
-                                className='h-6 w-6 text-blue-600'
-                                asChild
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <a
-                                  href={`${(
-                                    process.env.NEXT_PUBLIC_API_URL ||
-                                    'http://localhost:8000'
-                                  ).replace('/api', '')}/storage/${
-                                    item.qc_cek.file
-                                  }`}
-                                  target='_blank'
-                                  rel='noopener noreferrer'
+                      {isGrouped ? (
+                        <span className='text-[10px] text-muted-foreground italic text-center block w-full'>
+                          -
+                        </span>
+                      ) : (
+                        <div
+                          className='cursor-pointer hover:bg-neutral-100 p-2 rounded-lg transition-colors group flex items-center gap-2'
+                          onClick={() => openQcView(item)}
+                        >
+                          {item.qc_cek ? (
+                            <>
+                              <span className='text-[10px] font-bold text-neutral-600'>
+                                {item.qc_cek.qty} Unit
+                              </span>
+                              {item.qc_cek.file && (
+                                <Button
+                                  variant='ghost'
+                                  size='icon'
+                                  className='h-6 w-6 text-blue-600'
+                                  asChild
+                                  onClick={(e) => e.stopPropagation()}
                                 >
-                                  <Eye className='h-3.5 w-3.5' />
-                                </a>
-                              </Button>
-                            )}
-                          </>
-                        ) : (
-                          <span className='text-[10px] text-muted-foreground italic'>
-                            -
-                          </span>
-                        )}
-                      </div>
+                                  <a
+                                    href={`${(
+                                      process.env.NEXT_PUBLIC_API_URL ||
+                                      'http://localhost:8000'
+                                    ).replace('/api', '')}/storage/${
+                                      item.qc_cek.file
+                                    }`}
+                                    target='_blank'
+                                    rel='noopener noreferrer'
+                                  >
+                                    <Eye className='h-3.5 w-3.5' />
+                                  </a>
+                                </Button>
+                              )}
+                            </>
+                          ) : (
+                            <span className='text-[10px] text-muted-foreground italic'>
+                              -
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </TableCell>
                     <TableCell>
-                      <div
-                        className='cursor-pointer p-1 rounded transition-colors flex flex-col gap-0.5'
-                        onClick={() => openBjDialog(item)}
-                      >
-                        {item.barang_jadi_masuk &&
-                        item.barang_jadi_masuk.length > 0 ? (
-                          <Badge className='bg-blue-600 text-white border-none font-bold text-[10px] h-5 px-1.5 shadow-sm w-fit'>
-                            {item.barang_jadi_masuk.reduce(
-                              (sum, bj) => sum + Number(bj.jumlah),
-                              0
-                            )}{' '}
-                            / {item.jumlah}
-                          </Badge>
-                        ) : (
-                          <span className='text-[9px] text-muted-foreground italic hover:text-blue-600 transition-colors'>
-                            Record
-                          </span>
-                        )}
-                      </div>
+                      {isGrouped ? (
+                        <span className='text-[10px] text-muted-foreground italic text-center block w-full'>
+                          -
+                        </span>
+                      ) : (
+                        <div
+                          className='cursor-pointer p-1 rounded transition-colors flex flex-col gap-0.5'
+                          onClick={() => openBjDialog(item)}
+                        >
+                          {item.barang_jadi_masuk &&
+                          item.barang_jadi_masuk.length > 0 ? (
+                            <Badge className='bg-blue-600 text-white border-none font-bold text-[10px] h-5 px-1.5 shadow-sm w-fit'>
+                              {item.barang_jadi_masuk.reduce(
+                                (sum, bj) => sum + Number(bj.jumlah),
+                                0
+                              )}{' '}
+                              / {item.jumlah}
+                            </Badge>
+                          ) : (
+                            <span className='text-[9px] text-muted-foreground italic hover:text-blue-600 transition-colors'>
+                              Record
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </TableCell>
                     <TableCell className='text-center'>
-                      <Button
-                        size='sm'
-                        variant='outline'
-                        className='h-7 px-2 gap-1.5 text-[11px]'
-                        onClick={() => openItemQrDialog(item)}
-                      >
-                        <QrCode className='h-3.5 w-3.5' />
-                        QR
-                      </Button>
+                      {isGrouped ? (
+                        <span className='text-[10px] text-muted-foreground italic text-center block w-full'>
+                          -
+                        </span>
+                      ) : (
+                        <div className='flex items-center justify-center gap-2'>
+                          <Checkbox
+                            checked={selectedQrItemIds.includes(item.id)}
+                            onCheckedChange={() => toggleSelectQrItem(item.id)}
+                          />
+                          <Button
+                            size='sm'
+                            variant='outline'
+                            className='h-7 px-2 gap-1.5 text-[11px]'
+                            onClick={() => openItemQrDialog(item)}
+                          >
+                            <QrCode className='h-3.5 w-3.5' />
+                            QR
+                          </Button>
+                        </div>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))
@@ -1341,13 +1655,21 @@ export default function ProduksiDetailPage() {
         open={isProduksiDialogOpen}
         onOpenChange={setIsProduksiDialogOpen}
       >
-        <AlertDialogContent className='mb-4 flex h-[90dvh] sm:h-[calc(70vh-2rem)] w-[95vw] sm:min-w-[calc(70vw-2rem)] sm:max-w-[calc(70vw-2rem)] flex-col justify-between gap-0 p-0'>
+        <AlertDialogContent 
+          className='mb-4 flex h-[90dvh] sm:h-[calc(70vh-2rem)] w-[95vw] sm:min-w-[calc(70vw-2rem)] sm:max-w-[calc(70vw-2rem)] flex-col justify-between gap-0 p-0'
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              handleProduksiUpdate();
+            }
+          }}
+        >
           {/* Header */}
           <div className='bg-white border-b px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between shrink-0 shadow-sm z-10'>
             <div>
               <AlertDialogTitle className='flex items-center gap-2 text-lg sm:text-2xl font-bold tracking-tight text-neutral-800'>
                 <BarChart3 className='h-6 w-6 text-orange-500' />
-                Update Progress Produksi
+                Update Progres Produksi
               </AlertDialogTitle>
               <AlertDialogDescription className='text-sm text-neutral-500 mt-1'>
                 Input jumlah item yang telah selesai di setiap tahapan untuk:{' '}
@@ -1413,6 +1735,7 @@ export default function ProduksiDetailPage() {
                     min={0}
                     max={produksiData.jumlah_order}
                     disabled={skippedFields.cold_press}
+                    onFocus={(e) => e.target.select()}
                     value={
                       skippedFields.cold_press
                         ? '-'
@@ -1460,6 +1783,7 @@ export default function ProduksiDetailPage() {
                     min={0}
                     max={produksiData.jumlah_order}
                     disabled={skippedFields.running_saw}
+                    onFocus={(e) => e.target.select()}
                     value={
                       skippedFields.running_saw
                         ? '-'
@@ -1505,6 +1829,7 @@ export default function ProduksiDetailPage() {
                     min={0}
                     max={produksiData.jumlah_order}
                     disabled={skippedFields.edging}
+                    onFocus={(e) => e.target.select()}
                     value={
                       skippedFields.edging
                         ? '-'
@@ -1550,6 +1875,7 @@ export default function ProduksiDetailPage() {
                     min={0}
                     max={produksiData.jumlah_order}
                     disabled={skippedFields.cnc}
+                    onFocus={(e) => e.target.select()}
                     value={
                       skippedFields.cnc
                         ? '-'
@@ -1606,6 +1932,7 @@ export default function ProduksiDetailPage() {
                     min={0}
                     max={produksiData.jumlah_order}
                     disabled={skippedFields.tukang_kayu}
+                    onFocus={(e) => e.target.select()}
                     value={
                       skippedFields.tukang_kayu
                         ? '-'
@@ -1651,6 +1978,7 @@ export default function ProduksiDetailPage() {
                     min={0}
                     max={produksiData.jumlah_order}
                     disabled={skippedFields.tukang_jok}
+                    onFocus={(e) => e.target.select()}
                     value={
                       skippedFields.tukang_jok
                         ? '-'
@@ -1696,6 +2024,7 @@ export default function ProduksiDetailPage() {
                     min={0}
                     max={produksiData.jumlah_order}
                     disabled={skippedFields.rakit}
+                    onFocus={(e) => e.target.select()}
                     value={
                       skippedFields.rakit
                         ? '-'
@@ -1741,6 +2070,7 @@ export default function ProduksiDetailPage() {
                     min={0}
                     max={produksiData.jumlah_order}
                     disabled={skippedFields.finishing}
+                    onFocus={(e) => e.target.select()}
                     value={
                       skippedFields.finishing
                         ? '-'
@@ -1775,6 +2105,7 @@ export default function ProduksiDetailPage() {
                   type='number'
                   min={0}
                   max={produksiData.jumlah_order}
+                  onFocus={(e) => e.target.select()}
                   value={
                     produksiData.menggunakan_stok === 0
                       ? ''
@@ -1839,7 +2170,7 @@ export default function ProduksiDetailPage() {
                 ) : (
                   <CheckCircle2 className='w-4 h-4 mr-2' />
                 )}
-                Update Progress
+                Update Progres
               </Button>
             </div>
           </div>
@@ -2243,7 +2574,7 @@ export default function ProduksiDetailPage() {
                       <span>Total Saat Ini</span>
                       <span className='text-neutral-900'>
                         {bjItem.barang_jadi_masuk.reduce(
-                          (sum, r) => sum + r.jumlah,
+                          (sum, r) => sum + Number(r.jumlah),
                           0
                         )}{' '}
                         / {bjItem.jumlah}
@@ -2273,7 +2604,7 @@ export default function ProduksiDetailPage() {
                     bjItem
                       ? bjItem.jumlah -
                         (bjItem.barang_jadi_masuk?.reduce(
-                          (sum, bj) => sum + bj.jumlah,
+                          (sum, bj) => sum + Number(bj.jumlah),
                           0
                         ) || 0)
                       : undefined
@@ -2283,7 +2614,7 @@ export default function ProduksiDetailPage() {
                   Sisa:{' '}
                   {(bjItem?.jumlah || 0) -
                     (bjItem?.barang_jadi_masuk?.reduce(
-                      (sum, bj) => sum + bj.jumlah,
+                      (sum, bj) => sum + Number(bj.jumlah),
                       0
                     ) || 0)}
                 </span>
@@ -2311,7 +2642,7 @@ export default function ProduksiDetailPage() {
                 bjJumlah >
                   (bjItem?.jumlah || 0) -
                     (bjItem?.barang_jadi_masuk?.reduce(
-                      (sum, bj) => sum + bj.jumlah,
+                      (sum, bj) => sum + Number(bj.jumlah),
                       0
                     ) || 0)
               }
@@ -2392,6 +2723,112 @@ export default function ProduksiDetailPage() {
               <Printer className='h-4 w-4' />
               Print QR Codes
             </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Hidden QR Code for Mass Printing */}
+      <div className='absolute -left-[9999px] top-0 opacity-0 pointer-events-none' aria-hidden='true'>
+        <div ref={hiddenMassQrRef}>
+          {items
+            ?.filter(i => selectedQrItemIds.includes(i.id))
+            .map((item) => (
+              <div key={item.id} id={`qr-svg-${item.id}`}>
+                <QRCodeSVG
+                  value={item.id.toString()}
+                  size={120}
+                  bgColor='#ffffff'
+                  fgColor='#000000'
+                  level='M'
+                  includeMargin={false}
+                />
+              </div>
+            ))}
+        </div>
+      </div>
+
+      {/* Mass QR Code Print Dialog */}
+      <AlertDialog
+        open={isMassQrDialogOpen}
+        onOpenChange={setIsMassQrDialogOpen}
+      >
+        <AlertDialogContent className='max-w-2xl'>
+          <AlertDialogHeader>
+            <AlertDialogTitle className='flex items-center gap-2 text-base'>
+              <Printer className='h-4 w-4 text-blue-600' />
+              Print Massal Label Produksi
+            </AlertDialogTitle>
+            <AlertDialogDescription className='text-xs'>
+              Atur bagian per item untuk <strong>{selectedQrItemIds.length}</strong> item yang dipilih.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <div className='max-h-[60vh] overflow-y-auto border border-neutral-200 rounded-md mt-2'>
+            <Table>
+              <TableHeader className='bg-neutral-50'>
+                <TableRow>
+                  <TableHead className='text-xs'>Item</TableHead>
+                  <TableHead className='text-xs text-center'>Qty</TableHead>
+                  <TableHead className='text-xs text-center'>Bagian per Qty</TableHead>
+                  <TableHead className='text-xs text-center'>Total Label</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {items
+                  ?.filter(i => selectedQrItemIds.includes(i.id))
+                  .map(item => {
+                    const parts = massQrPartsConfig[item.id] || 1;
+                    return (
+                      <TableRow key={item.id}>
+                        <TableCell className='text-xs font-medium'>
+                          {item.item}
+                          <div className='text-[10px] text-muted-foreground'>
+                            {item.panjang}x{item.lebar}x{item.tinggi}
+                          </div>
+                        </TableCell>
+                        <TableCell className='text-xs text-center'>{item.jumlah}</TableCell>
+                        <TableCell className='text-xs text-center'>
+                          <Input
+                            type='number'
+                            min={1}
+                            value={parts}
+                            onChange={(e) => {
+                              const val = Math.max(1, parseInt(e.target.value) || 1);
+                              setMassQrPartsConfig(prev => ({ ...prev, [item.id]: val }));
+                            }}
+                            className='h-7 w-16 text-xs mx-auto text-center'
+                          />
+                        </TableCell>
+                        <TableCell className='text-xs text-center font-bold text-blue-600'>
+                          {item.jumlah * parts}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+              </TableBody>
+            </Table>
+          </div>
+
+          <AlertDialogFooter className='mt-4 flex items-center justify-between'>
+            <div className='text-xs text-muted-foreground font-medium'>
+              Total Label Keseluruhan: <span className='text-blue-600 font-bold'>
+                {items
+                  ?.filter(i => selectedQrItemIds.includes(i.id))
+                  .reduce((sum, item) => sum + (item.jumlah * (massQrPartsConfig[item.id] || 1)), 0)}
+              </span>
+            </div>
+            <div className='flex gap-2'>
+              <AlertDialogCancel onClick={() => setIsMassQrDialogOpen(false)}>
+                Batal
+              </AlertDialogCancel>
+              <Button
+                className='bg-blue-600 hover:bg-blue-700 text-white gap-2'
+                onClick={handlePrintMassQR}
+              >
+                <Printer className='h-4 w-4' />
+                Print Massal
+              </Button>
+            </div>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -2644,7 +3081,7 @@ export default function ProduksiDetailPage() {
                     <span>Total Packed</span>
                     <span className='text-neutral-900'>
                       {packingViewItem.barang_jadi_terpacking.reduce(
-                        (sum, r) => sum + r.jumlah,
+                        (sum, r) => sum + Number(r.jumlah),
                         0
                       )}{' '}
                       / {packingViewItem.jumlah}

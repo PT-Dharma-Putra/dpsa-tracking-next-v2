@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, Loader2, Package, ListChecks, CheckCircle2, Box, Layers, Building2, Calendar, ClipboardCheck, FileText, FileDown } from 'lucide-react';
+import { ArrowLeft, Loader2, Package, ListChecks, CheckCircle2, Box, Layers, Building2, Calendar, ClipboardCheck, FileText, FileDown, BarChart3, Activity, User, Truck, Search } from 'lucide-react';
 import { format } from 'date-fns';
 import * as XLSX from 'xlsx-js-style';
 import { toast } from 'sonner';
@@ -20,6 +20,17 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { Input } from '@/components/ui/input';
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Progress } from '@/components/ui/progress';
 
 import {
   projectV2Service,
@@ -142,6 +153,22 @@ export default function PerencanaanRekapPage() {
     queryFn: () => projectV2Service.getProject(projectId),
   });
 
+  const [isProduksiViewOpen, setIsProduksiViewOpen] = React.useState(false);
+  const [produksiViewItem, setProduksiViewItem] = React.useState<ProjectItemV2 | null>(null);
+  const [isSupplierViewOpen, setIsSupplierViewOpen] = React.useState(false);
+  const [supplierViewItem, setSupplierViewItem] = React.useState<ProjectItemV2 | null>(null);
+  const [searchQuery, setSearchQuery] = React.useState('');
+
+  const openProduksiView = (item: ProjectItemV2) => {
+    if (item.produksi?.is_supplier) {
+      setSupplierViewItem(item);
+      setIsSupplierViewOpen(true);
+    } else {
+      setProduksiViewItem(item);
+      setIsProduksiViewOpen(true);
+    }
+  };
+
   const { data: items, isLoading: isLoadingItems } = useQuery({
     queryKey: ['project-v2-items', projectId],
     queryFn: () => projectV2Service.getProjectItems(projectId),
@@ -203,7 +230,10 @@ export default function PerencanaanRekapPage() {
     const qty = item.jumlah;
 
     // Produksi
-    const progressProduksi = Number(item.produksi?.persen) || 0;
+    const isSupplier = item.produksi?.is_supplier;
+    const progressProduksi = isSupplier 
+      ? Number(item.barang_supplier?.persen) || 0
+      : Number(item.produksi?.persen) || 0;
     if (progressProduksi > 0) itemsProduksiCount++;
     totalProduksiProgress += progressProduksi;
 
@@ -262,10 +292,11 @@ export default function PerencanaanRekapPage() {
       qty,
       poDivisi: item.divisi?.nama || '-',
       produksi: { progress: progressProduksi, text: progressProduksi > 0 ? `${progressProduksi}%` : '' },
-      packing: { progress: progressBarangJadi, text: qtyBarangJadi > 0 ? `${qtyBarangJadi}/${qty}` : 'Record' },
+      packing: { progress: progressBarangJadi, text: qtyBarangJadi > 0 ? `${qtyBarangJadi}/${qty}` : '-' },
       terkirim: { progress: progressTerkirim, text: qtyTerkirim > 0 ? `${qtyTerkirim}/${qty}` : '-' },
       tersetting: { progress: progressTersetting, text: qtyTersetting > 0 ? `${qtyTersetting}/${qty}` : '-' },
       statusAkhir,
+      originalItem: item,
     };
   });
 
@@ -274,11 +305,19 @@ export default function PerencanaanRekapPage() {
   const avgTerkirim = totalItemsCount > 0 ? totalTerkirimProgress / totalItemsCount : 0;
   const avgTersetting = totalItemsCount > 0 ? totalTersettingProgress / totalItemsCount : 0;
 
+  const filteredTableData = tableData.filter((row) => {
+    if (!searchQuery) return true;
+    const lowerQuery = searchQuery.toLowerCase();
+    return row.name.toLowerCase().includes(lowerQuery) || 
+           (row.originalItem?.keterangan || '').toLowerCase().includes(lowerQuery) ||
+           (row.originalItem?.lantai || '').toLowerCase().includes(lowerQuery) ||
+           (row.originalItem?.ruang || '').toLowerCase().includes(lowerQuery);
+  });
+
   const donutData = [
     { value: itemsSelesai, color: '#3b82f6', label: 'Selesai' }, // blue-500
     { value: itemsSebagian, color: '#22c55e', label: 'Sebagian' }, // green-500
     { value: itemsBelum, color: '#eab308', label: 'Belum' }, // yellow-500
-    { value: itemsBelumAdaData, color: '#d1d5db', label: 'Belum Ada Data' }, // gray-300
   ];
 
   const handleExportExcel = () => {
@@ -341,12 +380,26 @@ export default function PerencanaanRekapPage() {
           { v: row.qty, t: 'n', s: dataStyleCenter },
           { v: row.poDivisi, t: 's', s: dataStyleCenter },
           { v: row.produksi.text || '0%', t: 's', s: dataStyleCenter },
-          { v: row.packing.text === 'Record' ? '-' : row.packing.text, t: 's', s: dataStyleCenter },
+          { v: row.packing.text === '-' ? '-' : row.packing.text, t: 's', s: dataStyleCenter },
           { v: row.terkirim.text, t: 's', s: dataStyleCenter },
           { v: row.tersetting.text, t: 's', s: dataStyleCenter },
           { v: row.statusAkhir, t: 's', s: dataStyleCenter },
         ]);
       });
+
+      // Tambahkan baris summary rata-rata persentase di paling bawah
+      wsData.push([
+        { v: '', t: 's', s: headerStyle },
+        { v: 'RATA-RATA PROGRESS', t: 's', s: headerStyle },
+        { v: '', t: 's', s: headerStyle },
+        { v: '', t: 's', s: headerStyle },
+        { v: '', t: 's', s: headerStyle },
+        { v: `${avgProduksi.toFixed(1)}%`, t: 's', s: headerStyle },
+        { v: `${avgPacking.toFixed(1)}%`, t: 's', s: headerStyle },
+        { v: `${avgTerkirim.toFixed(1)}%`, t: 's', s: headerStyle },
+        { v: `${avgTersetting.toFixed(1)}%`, t: 's', s: headerStyle },
+        { v: '', t: 's', s: headerStyle },
+      ]);
 
       const ws = XLSX.utils.aoa_to_sheet(wsData);
 
@@ -428,91 +481,91 @@ export default function PerencanaanRekapPage() {
       </div>
 
       {/* Top Cards Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-4">
-        <Card className="shadow-sm border-neutral-100">
-          <CardContent className="p-4 flex flex-col justify-between h-full">
-            <div className="text-xs font-bold text-neutral-800">Total Item</div>
-            <div className="flex items-center justify-between mt-2">
-              <div className="flex flex-col">
-                <span className="text-3xl font-black text-neutral-900">{totalItemsCount}</span>
-                <span className="text-xs text-muted-foreground font-medium">Item</span>
+        {/* <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-4">
+          <Card className="shadow-sm border-neutral-100">
+            <CardContent className="p-4 flex flex-col justify-between h-full">
+              <div className="text-xs font-bold text-neutral-800">Total Item</div>
+              <div className="flex items-center justify-between mt-2">
+                <div className="flex flex-col">
+                  <span className="text-3xl font-black text-neutral-900">{totalItemsCount}</span>
+                  <span className="text-xs text-muted-foreground font-medium">Item</span>
+                </div>
+                <div className="h-10 w-10 bg-blue-50 rounded-full flex items-center justify-center">
+                  <Layers className="h-5 w-5 text-blue-500" />
+                </div>
               </div>
-              <div className="h-10 w-10 bg-blue-50 rounded-full flex items-center justify-center">
-                <Layers className="h-5 w-5 text-blue-500" />
+            </CardContent>
+          </Card>
+          <Card className="shadow-sm border-neutral-100">
+            <CardContent className="p-4 flex flex-col justify-between h-full">
+              <div className="text-xs font-bold text-neutral-800">Total QTY</div>
+              <div className="flex items-center justify-between mt-2">
+                <div className="flex flex-col">
+                  <span className="text-3xl font-black text-neutral-900">{totalQtyOrder}</span>
+                  <span className="text-xs text-muted-foreground font-medium">UNIT</span>
+                </div>
+                <div className="h-10 w-10 bg-purple-50 rounded-full flex items-center justify-center">
+                  <ListChecks className="h-5 w-5 text-purple-500" />
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="shadow-sm border-neutral-100">
-          <CardContent className="p-4 flex flex-col justify-between h-full">
-            <div className="text-xs font-bold text-neutral-800">Total QTY</div>
-            <div className="flex items-center justify-between mt-2">
-              <div className="flex flex-col">
-                <span className="text-3xl font-black text-neutral-900">{totalQtyOrder}</span>
-                <span className="text-xs text-muted-foreground font-medium">UNIT</span>
-              </div>
-              <div className="h-10 w-10 bg-purple-50 rounded-full flex items-center justify-center">
-                <ListChecks className="h-5 w-5 text-purple-500" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="shadow-sm border-neutral-100">
-          <CardContent className="p-4 flex items-center justify-between h-full">
-            <div className="text-xs font-bold text-blue-600 self-start">Produksi</div>
-            <RingChart
-              percentage={avgProduksi}
-              color="#3b82f6" // blue-500
-              label="Rata-rata"
-              subLabel={`${itemsProduksiCount} / ${totalItemsCount} item`}
-            />
-          </CardContent>
-        </Card>
-        <Card className="shadow-sm border-neutral-100">
-          <CardContent className="p-4 flex items-center justify-between h-full">
-            <div className="text-xs font-bold text-emerald-600 self-start">Barang Jadi</div>
-            <RingChart
-              percentage={avgPacking}
-              color="#10b981" // emerald-500
-              label="Rata-rata"
-              subLabel={`${itemsPackingCount} / ${totalItemsCount} item`}
-            />
-          </CardContent>
-        </Card>
-        <Card className="shadow-sm border-neutral-100">
-          <CardContent className="p-4 flex items-center justify-between h-full">
-            <div className="text-xs font-bold text-emerald-600 self-start">Terkirim</div>
-            <RingChart
-              percentage={avgTerkirim}
-              color="#10b981" // emerald-500
-              label="Rata-rata"
-              subLabel={`${itemsTerkirimCount} / ${totalItemsCount} item`}
-            />
-          </CardContent>
-        </Card>
-        <Card className="shadow-sm border-neutral-100">
-          <CardContent className="p-4 flex items-center justify-between h-full">
-            <div className="text-xs font-bold text-orange-600 self-start">Belum Tersetting</div>
-            <RingChart
-              percentage={totalItemsCount > 0 ? (itemsBelumTersettingCount / totalItemsCount) * 100 : 0}
-              color="#f97316" // orange-500
-              label="Rata-rata"
-              subLabel={`${itemsBelumTersettingCount} / ${totalItemsCount} item`}
-            />
-          </CardContent>
-        </Card>
-        <Card className="shadow-sm border-neutral-100">
-          <CardContent className="p-4 flex items-center justify-between h-full">
-            <div className="text-xs font-bold text-emerald-600 self-start">Tersetting</div>
-            <RingChart
-              percentage={avgTersetting}
-              color="#10b981" // emerald-500
-              label="Rata-rata"
-              subLabel={`${itemsTersettingCount} / ${totalItemsCount} item`}
-            />
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
+          <Card className="shadow-sm border-neutral-100">
+            <CardContent className="p-4 flex items-center justify-between h-full">
+              <div className="text-xs font-bold text-blue-600 self-start">Produksi</div>
+              <RingChart
+                percentage={avgProduksi}
+                color="#3b82f6" // blue-500
+                label="Rata-rata"
+                subLabel={`${itemsProduksiCount} / ${totalItemsCount} item`}
+              />
+            </CardContent>
+          </Card>
+          <Card className="shadow-sm border-neutral-100">
+            <CardContent className="p-4 flex items-center justify-between h-full">
+              <div className="text-xs font-bold text-emerald-600 self-start">Barang Jadi</div>
+              <RingChart
+                percentage={avgPacking}
+                color="#10b981" // emerald-500
+                label="Rata-rata"
+                subLabel={`${itemsPackingCount} / ${totalItemsCount} item`}
+              />
+            </CardContent>
+          </Card>
+          <Card className="shadow-sm border-neutral-100">
+            <CardContent className="p-4 flex items-center justify-between h-full">
+              <div className="text-xs font-bold text-emerald-600 self-start">Terkirim</div>
+              <RingChart
+                percentage={avgTerkirim}
+                color="#10b981" // emerald-500
+                label="Rata-rata"
+                subLabel={`${itemsTerkirimCount} / ${totalItemsCount} item`}
+              />
+            </CardContent>
+          </Card>
+          <Card className="shadow-sm border-neutral-100">
+            <CardContent className="p-4 flex items-center justify-between h-full">
+              <div className="text-xs font-bold text-orange-600 self-start">Belum Tersetting</div>
+              <RingChart
+                percentage={totalItemsCount > 0 ? (itemsBelumTersettingCount / totalItemsCount) * 100 : 0}
+                color="#f97316" // orange-500
+                label="Rata-rata"
+                subLabel={`${itemsBelumTersettingCount} / ${totalItemsCount} item`}
+              />
+            </CardContent>
+          </Card>
+          <Card className="shadow-sm border-neutral-100">
+            <CardContent className="p-4 flex items-center justify-between h-full">
+              <div className="text-xs font-bold text-emerald-600 self-start">Tersetting</div>
+              <RingChart
+                percentage={avgTersetting}
+                color="#10b981" // emerald-500
+                label="Rata-rata"
+                subLabel={`${itemsTersettingCount} / ${totalItemsCount} item`}
+              />
+            </CardContent>
+          </Card>
+        </div> */}
 
       {/* Middle Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -536,7 +589,6 @@ export default function PerencanaanRekapPage() {
                   <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-blue-500"></div><span className="text-[10px] text-neutral-600">Selesai</span></div>
                   <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-emerald-500"></div><span className="text-[10px] text-neutral-600">Sebagian</span></div>
                   <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-yellow-500"></div><span className="text-[10px] text-neutral-600">Belum</span></div>
-                  <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-gray-300"></div><span className="text-[10px] text-neutral-600">Belum Ada Data</span></div>
                </div>
             </div>
           </CardContent>
@@ -612,17 +664,29 @@ export default function PerencanaanRekapPage() {
 
       {/* Detail Table */}
       <Card className="shadow-sm border-neutral-100 overflow-hidden">
-        <CardHeader className="pb-4 pt-4 px-4 bg-white flex flex-row items-center justify-between border-b border-neutral-100/60">
+        <CardHeader className="pb-4 pt-4 px-4 bg-white flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-neutral-100/60 gap-4">
           <CardTitle className="text-sm font-bold text-neutral-800">Ringkasan Item per Tahap</CardTitle>
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8 text-xs font-semibold text-emerald-600 border-emerald-200 hover:bg-emerald-50"
-            onClick={handleExportExcel}
-          >
-            <FileDown className="h-3.5 w-3.5 mr-1.5" />
-            Export XLS
-          </Button>
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 text-xs font-semibold text-emerald-600 border-emerald-200 hover:bg-emerald-50 shrink-0"
+              onClick={handleExportExcel}
+            >
+              <FileDown className="h-3.5 w-3.5 mr-1.5" />
+              Export XLS
+            </Button>
+
+            <div className='relative w-full sm:w-64'>
+              <Search className='absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-neutral-400 pointer-events-none' />
+              <Input
+                placeholder='Cari item, lantai, ruang...'
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className='pl-8 h-8 text-xs'
+              />
+            </div>
+          </div>
         </CardHeader>
         <div className="overflow-x-auto">
           <Table>
@@ -661,14 +725,14 @@ export default function PerencanaanRekapPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {tableData.length === 0 ? (
+              {filteredTableData.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={10} className="text-center text-sm text-muted-foreground h-24">
                     No items found.
                   </TableCell>
                 </TableRow>
               ) : (
-                tableData.map((row, i) => (
+                filteredTableData.map((row, i) => (
                   <TableRow key={i} className="hover:bg-neutral-50/50">
                     <TableCell className="text-center text-xs text-neutral-500">{row.no}</TableCell>
                     <TableCell>
@@ -688,17 +752,20 @@ export default function PerencanaanRekapPage() {
                     </TableCell>
                     {/* Produksi Progress */}
                     <TableCell>
-                      <div className="flex items-center gap-2 min-w-[120px]">
-                        <span className="text-xs font-bold text-neutral-700 w-8 text-right">{Math.round(row.produksi.progress)}%</span>
-                        <div className="flex-1 h-1.5 bg-neutral-100 rounded-full overflow-hidden">
+                      <div 
+                        className="flex items-center gap-2 min-w-[120px] cursor-pointer group hover:bg-blue-50 p-1.5 -ml-1.5 rounded-md transition-colors" 
+                        onClick={() => openProduksiView(row.originalItem)}
+                      >
+                        <span className="text-xs font-bold text-neutral-700 w-8 text-right group-hover:text-blue-700 transition-colors">{Math.round(row.produksi.progress)}%</span>
+                        <div className="flex-1 h-1.5 bg-neutral-100 rounded-full overflow-hidden group-hover:bg-blue-100 transition-colors">
                           <div className="h-full bg-blue-600 rounded-full" style={{ width: `${row.produksi.progress}%` }} />
                         </div>
                       </div>
                     </TableCell>
                     {/* Packing Progress */}
                     <TableCell className="text-center">
-                      {row.packing.text === 'Record' && row.packing.progress === 0 ? (
-                        <span className="text-[10px] text-neutral-400">Record</span>
+                      {row.packing.text === '-' && row.packing.progress === 0 ? (
+                        <span className="text-[10px] text-neutral-400">-</span>
                       ) : row.packing.text ? (
                         <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 px-2 py-0 h-5 text-[10px]">{row.packing.text}</Badge>
                       ) : (
@@ -742,6 +809,193 @@ export default function PerencanaanRekapPage() {
           </Table>
         </div>
       </Card>
+
+      {/* View Produksi Progress Dialog */}
+      <AlertDialog open={isProduksiViewOpen} onOpenChange={setIsProduksiViewOpen}>
+        <AlertDialogContent className='max-w-2xl'>
+          <AlertDialogHeader>
+            <AlertDialogTitle className='flex items-center gap-2'>
+              <BarChart3 className='h-5 w-5 text-orange-500' />
+              Detail Progress Produksi
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Melihat progress produksi untuk item: <strong>{produksiViewItem?.item}</strong>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          
+          <div className='py-4 space-y-6'>
+            {/* Summary Progress */}
+            <div className='grid grid-cols-3 gap-4'>
+              <div className='space-y-1 text-center p-3 bg-neutral-50 rounded-xl border border-neutral-100 flex flex-col justify-center'>
+                <span className='text-[10px] font-bold text-neutral-500 uppercase tracking-wider'>Jumlah Order</span>
+                <div className='text-2xl font-black text-neutral-800'>
+                  {produksiViewItem?.jumlah || 0}
+                </div>
+              </div>
+              <div className='space-y-1 text-center p-3 bg-indigo-50 rounded-xl border border-indigo-100 flex flex-col justify-center'>
+                <span className='text-[10px] font-bold text-indigo-800 uppercase tracking-wider'>Menggunakan Stok</span>
+                <div className='text-2xl font-black text-indigo-600'>
+                  {produksiViewItem?.produksi?.menggunakan_stok || 0}
+                </div>
+              </div>
+              <div className='space-y-1 text-center p-3 bg-orange-50 rounded-xl border border-orange-100 flex flex-col justify-center'>
+                <span className='text-[10px] font-bold text-orange-800 uppercase tracking-wider'>Total Progress</span>
+                <div className='flex items-baseline justify-center gap-1'>
+                  <span className='text-2xl font-black text-orange-600'>{Math.round(produksiViewItem?.produksi?.persen || 0)}</span>
+                  <span className='text-sm font-bold text-orange-400'>%</span>
+                </div>
+              </div>
+            </div>
+            <Progress value={produksiViewItem?.produksi?.persen || 0} className='h-2 bg-orange-200/50 w-full' />
+
+            <div className='grid grid-cols-2 gap-x-8 gap-y-6'>
+              {/* Mesin Section */}
+              <div className='space-y-3'>
+                <h4 className='font-bold text-xs text-neutral-400 uppercase tracking-widest border-b pb-2 flex items-center gap-2'>
+                  <Activity className='h-3 w-3' />
+                  Tahapan Mesin
+                </h4>
+                <div className='space-y-3'>
+                  {[
+                    { label: 'Cold Press', value: produksiViewItem?.produksi?.cold_press, key: 'cold_press' },
+                    { label: 'Running Saw', value: produksiViewItem?.produksi?.running_saw, key: 'running_saw' },
+                    { label: 'Edging', value: produksiViewItem?.produksi?.edging, key: 'edging' },
+                    { label: 'CNC', value: produksiViewItem?.produksi?.cnc, key: 'cnc' },
+                  ].map((field) => {
+                    const isSkipped = produksiViewItem?.produksi?.skipped_fields?.includes(field.key);
+                    return (
+                      <div key={field.key} className='flex items-center justify-between'>
+                        <span className='text-xs text-neutral-600'>{field.label}</span>
+                        <div className='flex items-center gap-2'>
+                          {isSkipped ? (
+                            <Badge variant='secondary' className='text-[9px] bg-neutral-100 text-neutral-400 border-none'>SKIPPED</Badge>
+                          ) : (
+                            <span className='text-sm font-bold text-neutral-900'>{field.value || 0} <span className='text-[10px] text-neutral-400 font-normal'>/ {produksiViewItem?.jumlah}</span></span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Manual Section */}
+              <div className='space-y-3'>
+                <h4 className='font-bold text-xs text-neutral-400 uppercase tracking-widest border-b pb-2 flex items-center gap-2'>
+                  <User className='h-3 w-3' />
+                  Tahapan Manual
+                </h4>
+                <div className='space-y-3'>
+                  {[
+                    { label: 'Tukang Kayu', value: produksiViewItem?.produksi?.tukang_kayu, key: 'tukang_kayu' },
+                    { label: 'Tukang Jok', value: produksiViewItem?.produksi?.tukang_jok, key: 'tukang_jok' },
+                    { label: 'Rakit', value: produksiViewItem?.produksi?.rakit, key: 'rakit' },
+                    { label: 'Finishing', value: produksiViewItem?.produksi?.finishing, key: 'finishing' },
+                  ].map((field) => {
+                    const isSkipped = produksiViewItem?.produksi?.skipped_fields?.includes(field.key);
+                    return (
+                      <div key={field.key} className='flex items-center justify-between'>
+                        <span className='text-xs text-neutral-600'>{field.label}</span>
+                        <div className='flex items-center gap-2'>
+                          {isSkipped ? (
+                            <Badge variant='secondary' className='text-[9px] bg-neutral-100 text-neutral-400 border-none'>SKIPPED</Badge>
+                          ) : (
+                            <span className='text-sm font-bold text-neutral-900'>{field.value || 0} <span className='text-[10px] text-neutral-400 font-normal'>/ {produksiViewItem?.jumlah}</span></span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <AlertDialogFooter className='border-t pt-4'>
+            <AlertDialogCancel className='bg-neutral-100 hover:bg-neutral-200 border-none'>Tutup</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* View Barang Supplier Progress Dialog */}
+      <AlertDialog
+        open={isSupplierViewOpen}
+        onOpenChange={setIsSupplierViewOpen}
+      >
+        <AlertDialogContent className='max-w-xl'>
+          <AlertDialogHeader>
+            <AlertDialogTitle className='flex items-center gap-2 text-lg sm:text-xl font-bold tracking-tight text-neutral-800'>
+              <Truck className='h-6 w-6 text-blue-500' />
+              Detail Progress Supplier
+            </AlertDialogTitle>
+            <AlertDialogDescription className='text-sm text-neutral-500 mt-1'>
+              Melihat progress supplier untuk item: <strong>{supplierViewItem?.item}</strong>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <div className='py-4 space-y-6'>
+            {/* Jumlah Order & Persen */}
+            <div className='grid grid-cols-2 gap-4'>
+              <div className='space-y-2 text-center p-4 bg-neutral-50 rounded-xl border border-neutral-100'>
+                <span className='text-xs font-bold text-neutral-500 uppercase tracking-wider'>Jumlah Order</span>
+                <div className='text-3xl font-black text-neutral-800'>
+                  {supplierViewItem?.barang_supplier?.jumlah_order || supplierViewItem?.jumlah || 0}
+                </div>
+              </div>
+              <div className='space-y-2 text-center p-4 bg-blue-50 rounded-xl border border-blue-100'>
+                <span className='text-xs font-bold text-blue-800 uppercase tracking-wider'>Total Progress</span>
+                <div className='flex items-baseline justify-center gap-1'>
+                  <span className='text-3xl font-black text-blue-600'>
+                    {typeof supplierViewItem?.barang_supplier?.persen === 'number'
+                      ? supplierViewItem.barang_supplier.persen.toFixed(0)
+                      : (Number(supplierViewItem?.barang_supplier?.persen) || 0).toFixed(0)}
+                  </span>
+                  <span className='text-xl font-bold text-blue-400'>%</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Fields */}
+            <div className='space-y-3'>
+              <h4 className='font-bold text-xs text-neutral-400 uppercase tracking-widest border-b pb-2 flex items-center gap-2'>
+                <Truck className='h-3 w-3' />
+                Tahapan Supplier
+              </h4>
+              <div className='grid grid-cols-2 sm:grid-cols-2 gap-x-8 gap-y-4'>
+                {(
+                  [
+                    { key: 'barang_dipesan', label: 'Barang Dipesan' },
+                    { key: 'barang_tersedia', label: 'Barang Tersedia' },
+                    { key: 'rakit', label: 'Rakit' },
+                    { key: 'packing', label: 'Packing' },
+                    { key: 'terkirim', label: 'Terkirim' },
+                  ] as const
+                ).map(({ key, label }) => {
+                  const isSkipped = supplierViewItem?.barang_supplier?.skipped_fields?.includes(key);
+                  const val = supplierViewItem?.barang_supplier?.[key as keyof typeof supplierViewItem.barang_supplier];
+                  const order = supplierViewItem?.barang_supplier?.jumlah_order || supplierViewItem?.jumlah || 0;
+                  return (
+                    <div key={key} className='flex items-center justify-between'>
+                      <span className='text-xs text-neutral-600'>{label}</span>
+                      <div className='flex items-center gap-2'>
+                        {isSkipped ? (
+                          <Badge variant='secondary' className='text-[9px] bg-neutral-100 text-neutral-400 border-none'>SKIPPED</Badge>
+                        ) : (
+                          <span className='text-sm font-bold text-neutral-900'>{Number(val) || 0} <span className='text-[10px] text-neutral-400 font-normal'>/ {order}</span></span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          <AlertDialogFooter className='border-t pt-4'>
+            <AlertDialogCancel className='bg-neutral-100 hover:bg-neutral-200 border-none'>Tutup</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

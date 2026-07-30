@@ -29,6 +29,8 @@ import {
   BarChart3,
   History,
   Search,
+  QrCode,
+  Printer,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import Link from 'next/link';
@@ -83,7 +85,6 @@ import {
 } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
 import { Check, ChevronsUpDown, Plus, ClipboardList } from 'lucide-react';
-
 import {
   projectV2Service,
   ProjectItemV2,
@@ -91,6 +92,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 import { PengirimanFormDialog } from '@/app/dashboard/(internal)/projects-v2/pengiriman/_components/pengiriman-form-dialog';
 import { PengirimanPerSpkFormDialog } from '@/app/dashboard/(internal)/projects-v2/pengiriman/_components/pengiriman-per-spk-form-dialog';
 import {
@@ -129,6 +131,457 @@ export default function PerencanaanDetailPage() {
   // Items Search State
   const [searchQuery, setSearchQuery] = React.useState('');
   const [showBelumTerkirim, setShowBelumTerkirim] = React.useState(false);
+
+  // QR Code per-item State
+  const [isItemQrDialogOpen, setIsItemQrDialogOpen] = React.useState(false);
+  const [qrItem, setQrItem] = React.useState<ProjectItemV2 | null>(null);
+  const [qrJumlah, setQrJumlah] = React.useState<string>('');
+  const [qrBagian, setQrBagian] = React.useState<string>('1');
+
+  // Mass Label Print State
+  const [selectedLabelItemIds, setSelectedLabelItemIds] = React.useState<number[]>([]);
+  const [isMassLabelDialogOpen, setIsMassLabelDialogOpen] = React.useState(false);
+  const [massLabelConfig, setMassLabelConfig] = React.useState<Record<number, string>>({});
+  const [massLabelBagianConfig, setMassLabelBagianConfig] = React.useState<Record<number, string>>({});
+
+  const toggleSelectLabelItem = (id: number) => {
+    setSelectedLabelItemIds((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    );
+  };
+
+  const handleSelectAllLabelItems = (checked: boolean) => {
+    if (checked && items) {
+      const filteredItems = items.filter((item) => {
+        if (showBelumTerkirim) {
+          const totalKeluar =
+            item.detail_pengiriman?.reduce(
+              (sum, d) => sum + Number(d.jumlah_keluar),
+              0
+            ) ?? 0;
+          if (totalKeluar >= item.jumlah) return false;
+        }
+        if (!searchQuery.trim()) return true;
+        const q = searchQuery.toLowerCase();
+        return (
+          item.item?.toLowerCase().includes(q) ||
+          (item.lantai ?? '').toLowerCase().includes(q) ||
+          (item.ruang ?? '').toLowerCase().includes(q) ||
+          (item.keterangan ?? '').toLowerCase().includes(q) ||
+          (item.material_utama ?? '').toLowerCase().includes(q)
+        );
+      });
+      setSelectedLabelItemIds(filteredItems.map(i => i.id));
+    } else {
+      setSelectedLabelItemIds([]);
+    }
+  };
+
+  const openMassLabelDialog = () => {
+    const initialConfig: Record<number, string> = {};
+    const initialBagianConfig: Record<number, string> = {};
+    selectedLabelItemIds.forEach(id => {
+      const item = items?.find(i => i.id === id);
+      initialConfig[id] = item ? item.jumlah.toString() : '';
+      initialBagianConfig[id] = '1';
+    });
+    setMassLabelConfig(initialConfig);
+    setMassLabelBagianConfig(initialBagianConfig);
+    setIsMassLabelDialogOpen(true);
+  };
+
+  const handlePrintMassLabel = () => {
+    if (selectedLabelItemIds.length === 0 || !items) return;
+
+    const selectedItems = items.filter(i => selectedLabelItemIds.includes(i.id));
+
+    const spkYear = project?.spk?.tanggal_spk
+      ? new Date(project.spk.tanggal_spk).getFullYear()
+      : project?.created_at
+      ? new Date(project.created_at).getFullYear()
+      : '';
+    const spkValue = [project?.spk?.nomor_spk, spkYear].filter(Boolean).join(' / ') || '-';
+
+    const labelsData: string[] = [];
+
+    selectedItems.forEach(item => {
+      const customJumlahText = massLabelConfig[item.id] ?? item.jumlah.toString();
+      const itemPerPacking = Math.max(1, parseInt(customJumlahText) || 1);
+      const bagianText = massLabelBagianConfig[item.id] ?? '1';
+      const pengaliBagian = Math.max(1, parseInt(bagianText) || 1);
+      const numLabelsBase = Math.ceil(item.jumlah / itemPerPacking);
+
+      for (let j = 0; j < pengaliBagian; j++) {
+        for (let i = 0; i < numLabelsBase; i++) {
+        const remaining = item.jumlah - (i * itemPerPacking);
+        const qtyForThisLabel = Math.min(itemPerPacking, remaining);
+
+        const rows: [string, string][] = [
+          ['NAMA ITEM', item.item || '-'],
+          ['UKURAN', `${item.panjang || '-'} x ${item.lebar || '-'} x ${item.tinggi || '-'}`],
+          ['JUMLAH', qtyForThisLabel > 0 ? `${qtyForThisLabel} ${item.satuan || ''}`.trim() : '-'],
+          ['RUANG', item.ruang || '-'],
+          ['RUMAH SAKIT', project?.client?.name || '-'],
+          ['NO. SPK/TAHUN', spkValue]
+        ];
+
+        const html = `
+          <div class="label">
+            <div class="hdr">
+              <div class="logo"><img src="${window.location.origin}/Logo.png" alt="Logo"/></div>
+              <div class="co">
+                <p class="n">PT DHARMA PUTERA SEJAHTERA ABADI</p>
+                <p class="it">Interior &amp; Furniture Manufaktur</p>
+                <p>Jl. Matraman No. 88, Ringinsari, Maguwoharjo, Depok, Sleman, Yogyakarta</p>
+                <p>Telepon : (0274) 2800089&nbsp;&nbsp;Fax : (0274) 433 2248</p>
+                <p>E-mail : piutang.dpsa@gmail.com&nbsp;Website : www.dpm-jogja.com</p>
+              </div>
+              <div class="dc">
+                <div class="dr">PROD</div><div class="dr b">003</div>
+                <div class="db"><span>Rev:00</span><span>Terbit:<br>08/25</span></div>
+              </div>
+            </div>
+            <div class="bd">
+              <div class="info">
+                ${rows
+                  .map(
+                    ([l, v], ri) =>
+                      `<div class="row${
+                        ri === rows.length - 1 ? ' last' : ''
+                      }"><div class="lbl">${l}</div><div class="sep">:</div><div class="val">${v}</div></div>`
+                  )
+                  .join('')}
+              </div>
+            </div>
+          </div>`;
+        labelsData.push(html);
+        }
+      }
+    });
+
+    const pages: string[][] = [];
+    for (let i = 0; i < labelsData.length; i += 8) {
+      pages.push(labelsData.slice(i, i + 8));
+    }
+
+    const printWindow = window.open('', '', 'width=800,height=600');
+    if (!printWindow) return;
+
+    printWindow.document.write(`<!DOCTYPE html>
+      <html>
+        <head>
+          <title>Print Label Pengiriman Massal</title>
+          <style>
+            @page { size: A4 portrait; margin: 3mm; }
+            body { 
+              margin: 0; 
+              padding: 0; 
+              font-family: Arial, sans-serif;
+              background: #fff;
+            }
+            * { box-sizing: border-box; }
+            
+            .pg {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              grid-auto-rows: min-content;
+              gap: 3mm;
+              width: 100%;
+              page-break-after: always;
+              break-after: page;
+            }
+            .pg.last { page-break-after: auto; break-after: auto; }
+            .empty { border: 1px dashed #ccc; }
+
+            .label {
+              width: 100%;
+              height: auto;
+              border: 1px solid #000;
+              page-break-inside: avoid;
+              display: flex;
+              flex-direction: column;
+              background: #fff;
+              position: relative;
+            }
+            .hdr { display: flex; border-bottom: 1px solid #000; }
+            .logo { width: 44px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; padding: 4px; border-right: 1px solid #000; }
+            .logo img { width: 34px; height: 34px; object-fit: contain; }
+            .co { flex: 1; text-align: center; padding: 3px 5px; border-right: 1px solid #000; display: flex; flex-direction: column; justify-content: center; }
+            .co .n  { font-weight: 900; color: #1d4ed8; font-size: 8.5px; text-transform: uppercase; line-height: 1.2; margin: 0; }
+            .co .it { font-style: italic; font-size: 7.5px; color: #525252; margin: 0; }
+            .co p   { font-size: 7.5px; color: #525252; line-height: 1.3; margin: 0; }
+            .dc { width: 58px; flex-shrink: 0; display: flex; flex-direction: column; text-align: center; font-size: 7.5px; }
+            .dr { border-bottom: 1px solid #000; padding: 1px 2px; font-weight: 700; }
+            .dr.b { font-size: 11px; }
+            .db { display: flex; }
+            .db span { flex: 1; padding: 1px 2px; line-height: 1.2; }
+            .db span:first-child { border-right: 1px solid #000; }
+            
+            .bd {
+              display: flex;
+              flex: 1;
+            }
+            .info {
+              flex: 1;
+              display: flex;
+              flex-direction: column;
+            }
+            .row {
+              display: flex;
+              border-bottom: 1px solid #000;
+            }
+            .row.last { border-bottom: none; }
+            .lbl {
+              width: 32mm;
+              font-weight: bold;
+              font-size: 12px;
+              padding: 8px 5px;
+              border-right: 1px solid #000;
+            }
+            .sep {
+              width: 5mm;
+              text-align: center;
+              padding: 8px 0;
+              font-size: 12px;
+              border-right: 1px solid #000;
+            }
+            .val {
+              flex: 1;
+              padding: 8px 5px;
+              font-size: 12px;
+            }
+            
+            @media print {
+              body { padding: 0; }
+            }
+          </style>
+        </head>
+        <body>
+          ${pages
+            .map(
+              (page, pi) => `
+            <div class="pg${pi === pages.length - 1 ? ' last' : ''}">
+              ${page.join('')}
+              ${Array.from(
+                { length: 8 - page.length },
+                () => '<div class="empty"></div>'
+              ).join('')}
+            </div>`
+            )
+            .join('')}
+          <script>
+            window.onload = function() {
+              window.print();
+              setTimeout(() => window.close(), 500);
+            };
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
+  const openItemQrDialog = (item: ProjectItemV2) => {
+    setQrItem(item);
+    setQrJumlah(item.jumlah.toString());
+    setQrBagian('1');
+    setIsItemQrDialogOpen(true);
+  };
+
+  const handlePrintItemQR = () => {
+    if (!qrItem) return;
+
+    const spkYear = project?.spk?.tanggal_spk
+      ? new Date(project.spk.tanggal_spk).getFullYear()
+      : project?.created_at
+      ? new Date(project.created_at).getFullYear()
+      : '';
+    const spkValue =
+      [project?.spk?.nomor_spk, spkYear].filter(Boolean).join(' / ') || '-';
+
+    // Builds one label cell
+    const makeLabelHTML = (qtyForThisLabel: number) => {
+      const rows: [string, string][] = [
+        ['NAMA ITEM', qrItem.item || '-'],
+        [
+          'UKURAN',
+          `${qrItem.panjang || '-'} x ${qrItem.lebar || '-'} x ${
+            qrItem.tinggi || '-'
+          }`,
+        ],
+        ['JUMLAH', qtyForThisLabel > 0 ? `${qtyForThisLabel} ${qrItem.satuan || ''}`.trim() : '-'],
+        ['RUANG', qrItem.ruang || '-'],
+        ['RUMAH SAKIT', project?.client?.name || '-'],
+        ['NO. SPK/TAHUN', spkValue]
+      ];
+
+      return `
+        <div class="label">
+          <div class="hdr">
+            <div class="logo"><img src="${
+              window.location.origin
+            }/Logo.png" alt="Logo"/></div>
+            <div class="co">
+              <p class="n">PT DHARMA PUTERA SEJAHTERA ABADI</p>
+              <p class="it">Interior &amp; Furniture Manufaktur</p>
+              <p>Jl. Matraman No. 88, Ringinsari, Maguwoharjo, Depok, Sleman, Yogyakarta</p>
+              <p>Telepon : (0274) 2800089&nbsp;&nbsp;Fax : (0274) 433 2248</p>
+              <p>E-mail : piutang.dpsa@gmail.com&nbsp;Website : www.dpm-jogja.com</p>
+            </div>
+            <div class="dc">
+              <div class="dr">PROD</div><div class="dr b">003</div>
+              <div class="db"><span>Rev:00</span><span>Terbit:<br>08/25</span></div>
+            </div>
+          </div>
+          <div class="bd">
+            <div class="info">
+              ${rows
+                .map(
+                  ([l, v], ri) =>
+                    `<div class="row${
+                      ri === rows.length - 1 ? ' last' : ''
+                    }"><div class="lbl">${l}</div><div class="sep">:</div><div class="val">${v}</div></div>`
+                )
+                .join('')}
+            </div>
+          </div>
+        </div>`;
+    };
+
+    const labelsData: string[] = [];
+    const itemPerPacking = Math.max(1, parseInt(qrJumlah) || 1);
+    const numLabelsBase = Math.ceil(qrItem.jumlah / itemPerPacking);
+    const pengaliBagian = Math.max(1, parseInt(qrBagian) || 1);
+
+    for (let j = 0; j < pengaliBagian; j++) {
+      for (let i = 0; i < numLabelsBase; i++) {
+        const remaining = qrItem.jumlah - (i * itemPerPacking);
+        const qtyForThisLabel = Math.min(itemPerPacking, remaining);
+        labelsData.push(makeLabelHTML(qtyForThisLabel));
+      }
+    }
+
+    const pages: string[][] = [];
+    for (let i = 0; i < labelsData.length; i += 8) {
+      pages.push(labelsData.slice(i, i + 8));
+    }
+
+    const printWindow = window.open('', '', 'width=800,height=600');
+    if (!printWindow) return;
+
+    printWindow.document.write(`<!DOCTYPE html>
+      <html>
+        <head>
+          <title>Print Label Packing</title>
+          <style>
+            @page { size: A4 portrait; margin: 3mm; }
+            body { 
+              margin: 0; 
+              padding: 0; 
+              font-family: Arial, sans-serif;
+              background: #fff;
+            }
+            * { box-sizing: border-box; }
+            
+            .pg {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              grid-auto-rows: min-content;
+              gap: 3mm;
+              width: 100%;
+              page-break-after: always;
+              break-after: page;
+            }
+            .pg.last { page-break-after: auto; break-after: auto; }
+            .empty { border: 1px dashed #ccc; }
+
+            .label {
+              width: 100%;
+              height: auto;
+              border: 1px solid #000;
+              page-break-inside: avoid;
+              display: flex;
+              flex-direction: column;
+              background: #fff;
+              position: relative;
+            }
+            .hdr { display: flex; border-bottom: 1px solid #000; }
+            .logo { width: 44px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; padding: 4px; border-right: 1px solid #000; }
+            .logo img { width: 34px; height: 34px; object-fit: contain; }
+            .co { flex: 1; text-align: center; padding: 3px 5px; border-right: 1px solid #000; display: flex; flex-direction: column; justify-content: center; }
+            .co .n  { font-weight: 900; color: #1d4ed8; font-size: 8.5px; text-transform: uppercase; line-height: 1.2; margin: 0; }
+            .co .it { font-style: italic; font-size: 7.5px; color: #525252; margin: 0; }
+            .co p   { font-size: 7.5px; color: #525252; line-height: 1.3; margin: 0; }
+            .dc { width: 58px; flex-shrink: 0; display: flex; flex-direction: column; text-align: center; font-size: 7.5px; }
+            .dr { border-bottom: 1px solid #000; padding: 1px 2px; font-weight: 700; }
+            .dr.b { font-size: 11px; }
+            .db { display: flex; }
+            .db span { flex: 1; padding: 1px 2px; line-height: 1.2; }
+            .db span:first-child { border-right: 1px solid #000; }
+            
+            .bd {
+              display: flex;
+              flex: 1;
+            }
+            .info {
+              flex: 1;
+              display: flex;
+              flex-direction: column;
+            }
+            .row {
+              display: flex;
+              border-bottom: 1px solid #000;
+            }
+            .row.last { border-bottom: none; }
+            .lbl {
+              width: 32mm;
+              font-weight: bold;
+              font-size: 12px;
+              padding: 8px 5px;
+              border-right: 1px solid #000;
+            }
+            .sep {
+              width: 5mm;
+              text-align: center;
+              padding: 8px 0;
+              font-size: 12px;
+              border-right: 1px solid #000;
+            }
+            .val {
+              flex: 1;
+              padding: 8px 5px;
+              font-size: 12px;
+            }
+            
+            @media print {
+              body { padding: 0; }
+            }
+          </style>
+        </head>
+        <body>
+          ${pages
+            .map(
+              (page, pi) => `
+            <div class="pg${pi === pages.length - 1 ? ' last' : ''}">
+              ${page.join('')}
+              ${Array.from(
+                { length: 8 - page.length },
+                () => '<div class="empty"></div>'
+              ).join('')}
+            </div>`
+            )
+            .join('')}
+          <script>
+            window.onload = function() {
+              window.print();
+              setTimeout(() => window.close(), 500);
+            };
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
 
   const handleExportBelumTerkirim = () => {
     const belumTerkirimItems = (items ?? []).filter((item) => {
@@ -475,7 +928,7 @@ export default function PerencanaanDetailPage() {
     if (!bjItem) return;
 
     const currentTotal =
-      bjItem.barang_jadi_masuk?.reduce((sum, bj) => sum + bj.jumlah, 0) || 0;
+      bjItem.barang_jadi_masuk?.reduce((sum, bj) => sum + Number(bj.jumlah), 0) || 0;
     if (currentTotal + bjJumlah > bjItem.jumlah) {
       toast.error(
         `Total barang (${
@@ -673,6 +1126,9 @@ export default function PerencanaanDetailPage() {
   const [suratJalanPengirimanId, setSuratJalanPengirimanId] = React.useState<
     number | null
   >(null);
+  const [previewSjDialogOpen, setPreviewSjDialogOpen] = React.useState(false);
+  const [previewSjUrl, setPreviewSjUrl] = React.useState<string | null>(null);
+  const [previewSjPengirimanId, setPreviewSjPengirimanId] = React.useState<number | null>(null);
   const [suratJalanFile, setSuratJalanFile] = React.useState<File | null>(null);
 
   const updateSuratJalanMutation = useMutation({
@@ -693,6 +1149,9 @@ export default function PerencanaanDetailPage() {
   const [setrimPengirimanId, setSetrimPengirimanId] = React.useState<
     number | null
   >(null);
+  const [previewSetrimDialogOpen, setPreviewSetrimDialogOpen] = React.useState(false);
+  const [previewSetrimUrl, setPreviewSetrimUrl] = React.useState<string | null>(null);
+  const [previewSetrimPengirimanId, setPreviewSetrimPengirimanId] = React.useState<number | null>(null);
   const [setrimFile, setSetrimFile] = React.useState<File | null>(null);
 
   const updateSetrimMutation = useMutation({
@@ -1408,19 +1867,19 @@ export default function PerencanaanDetailPage() {
                                   </span>
                                 )}
                                 {p.surat_jalan ? (
-                                  <a
-                                    href={`${(
-                                      process.env.NEXT_PUBLIC_API_URL ||
-                                      'http://localhost:8000'
-                                    ).replace('/api', '')}/storage/${
-                                      p.surat_jalan
-                                    }`}
-                                    target='_blank'
-                                    rel='noreferrer'
+                                  <button
+                                    onClick={() => {
+                                      setPreviewSjUrl(`${(
+                                        process.env.NEXT_PUBLIC_API_URL ||
+                                        'http://localhost:8000'
+                                      ).replace('/api', '')}/storage/${p.surat_jalan}`);
+                                      setPreviewSjPengirimanId(p.id);
+                                      setPreviewSjDialogOpen(true);
+                                    }}
                                     className='text-[9px] font-semibold text-neutral-600 bg-neutral-100 px-1.5 py-0.5 rounded hover:bg-neutral-200 flex items-center gap-0.5'
                                   >
                                     <Eye className='h-2.5 w-2.5' /> Lihat SJ
-                                  </a>
+                                  </button>
                                 ) : (
                                   <button
                                     className='text-[9px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded hover:bg-amber-100 transition-colors'
@@ -1434,17 +1893,19 @@ export default function PerencanaanDetailPage() {
                                   </button>
                                 )}
                                 {p.setrim ? (
-                                  <a
-                                    href={`${(
-                                      process.env.NEXT_PUBLIC_API_URL ||
-                                      'http://localhost:8000'
-                                    ).replace('/api', '')}/storage/${p.setrim}`}
-                                    target='_blank'
-                                    rel='noreferrer'
+                                  <button
+                                    onClick={() => {
+                                      setPreviewSetrimUrl(`${(
+                                        process.env.NEXT_PUBLIC_API_URL ||
+                                        'http://localhost:8000'
+                                      ).replace('/api', '')}/storage/${p.setrim}`);
+                                      setPreviewSetrimPengirimanId(p.id);
+                                      setPreviewSetrimDialogOpen(true);
+                                    }}
                                     className='text-[9px] font-semibold text-neutral-600 bg-neutral-100 px-1.5 py-0.5 rounded hover:bg-neutral-200 flex items-center gap-0.5'
                                   >
                                     <Eye className='h-2.5 w-2.5' /> Lihat Setrim
-                                  </a>
+                                  </button>
                                 ) : (
                                   <button
                                     className='text-[9px] font-bold text-blue-600 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded hover:bg-blue-100 transition-colors'
@@ -1769,6 +2230,17 @@ export default function PerencanaanDetailPage() {
                 <p>Export Excel Item Belum Terkirim</p>
               </TooltipContent>
             </Tooltip>
+            {selectedLabelItemIds.length > 0 && (
+              <Button
+                size='sm'
+                variant='default'
+                className='h-8 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white border-transparent gap-2'
+                onClick={openMassLabelDialog}
+              >
+                <Printer className='h-3.5 w-3.5' />
+                Print Label Massal ({selectedLabelItemIds.length})
+              </Button>
+            )}
             <div className='relative w-64'>
               <Search className='absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-neutral-400 pointer-events-none' />
               <Input
@@ -1815,13 +2287,45 @@ export default function PerencanaanDetailPage() {
                 <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>
                   B Tersetting
                 </TableHead>
+                <TableHead className='text-[10px] uppercase font-bold text-neutral-500 text-center w-14'>
+                  <div className='flex items-center justify-center gap-2'>
+                    <Checkbox
+                      checked={
+                        items && items.length > 0
+                          ? items.filter((item) => {
+                              if (showBelumTerkirim) {
+                                const totalKeluar =
+                                  item.detail_pengiriman?.reduce(
+                                    (sum, d) => sum + Number(d.jumlah_keluar),
+                                    0
+                                  ) ?? 0;
+                                if (totalKeluar >= item.jumlah) return false;
+                              }
+                              if (!searchQuery.trim()) return true;
+                              const q = searchQuery.toLowerCase();
+                              return (
+                                item.item?.toLowerCase().includes(q) ||
+                                (item.lantai ?? '').toLowerCase().includes(q) ||
+                                (item.ruang ?? '').toLowerCase().includes(q) ||
+                                (item.keterangan ?? '').toLowerCase().includes(q) ||
+                                (item.material_utama ?? '').toLowerCase().includes(q)
+                              );
+                            }).length === selectedLabelItemIds.length && selectedLabelItemIds.length > 0
+                          : false
+                      }
+                      onCheckedChange={handleSelectAllLabelItems}
+                      className='bg-white'
+                    />
+                    Actions
+                  </div>
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoadingItems ? (
                 <TableRow>
                   <TableCell
-                    colSpan={11}
+                    colSpan={12}
                     className='h-32 text-center text-muted-foreground'
                   >
                     <Loader2 className='h-6 w-6 animate-spin mx-auto' />
@@ -1830,7 +2334,7 @@ export default function PerencanaanDetailPage() {
               ) : items?.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={11}
+                    colSpan={12}
                     className='h-32 text-center text-muted-foreground'
                   >
                     No items recorded for this project.
@@ -2096,6 +2600,24 @@ export default function PerencanaanDetailPage() {
                           );
                         })()}
                       </TableCell>
+                      <TableCell className='text-center'>
+                        <div className='flex items-center justify-center gap-2'>
+                          <Checkbox
+                            checked={selectedLabelItemIds.includes(item.id)}
+                            onCheckedChange={() => toggleSelectLabelItem(item.id)}
+                            className='bg-white'
+                          />
+                          <Button
+                            size='sm'
+                            variant='outline'
+                            className='h-7 px-2 gap-1.5 text-[11px]'
+                            onClick={() => openItemQrDialog(item)}
+                          >
+                            <Printer className='h-3.5 w-3.5' />
+                            Label
+                          </Button>
+                        </div>
+                      </TableCell>
                     </TableRow>
                   ))
               )}
@@ -2103,6 +2625,196 @@ export default function PerencanaanDetailPage() {
           </Table>
         </div>
       </div>
+
+      {/* Per-Item QR Code Dialog - Label Format */}
+      <AlertDialog
+        open={isItemQrDialogOpen}
+        onOpenChange={setIsItemQrDialogOpen}
+      >
+        <AlertDialogContent className='max-w-4xl'>
+          <AlertDialogHeader>
+            <AlertDialogTitle className='flex items-center gap-2 text-base'>
+              <Printer className='h-4 w-4 text-blue-600' />
+              Label Packing -— {qrItem?.item}
+            </AlertDialogTitle>
+            <AlertDialogDescription className='text-xs'>
+              Preview label cetak. Klik <strong>Print Label</strong> untuk
+              mencetak.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          {/* Label Preview */}
+          <div
+            id='qr-item-print-area'
+            className='border border-black font-sans text-neutral-900 bg-white text-[11px] mt-2'
+          >
+            {/* ── Header ── */}
+            <div className='flex border-b border-black'>
+              {/* Logo */}
+              <div className='flex items-center justify-center p-2 border-r border-black w-20 shrink-0'>
+                <img
+                  src='/Logo.png'
+                  alt='Logo DPM'
+                  className='w-14 h-14 object-contain'
+                />
+              </div>
+
+              {/* Company Info */}
+              <div className='flex-1 text-center py-2 px-4 border-r border-black'>
+                <p className='font-extrabold text-blue-700 text-[13px] tracking-wide uppercase leading-tight'>
+                  PT DHARMA PUTERA SEJAHTERA ABADI
+                </p>
+                <p className='italic text-[10px] text-neutral-600 mt-0.5'>
+                  Interior &amp; Furniture Manufaktur
+                </p>
+                <p className='text-[10px] text-neutral-600 mt-0.5'>
+                  Jl. Matraman No. 88, Ringinsari, Maguwoharjo, Depok, Sleman,
+                  Yogyakarta
+                </p>
+                <p className='text-[10px] text-neutral-600'>
+                  Telepon : (0274) 2800089&nbsp;&nbsp;&nbsp;Fax : (0274) 433
+                  2248
+                </p>
+                <p className='text-[10px] text-neutral-600'>
+                  E-mail : piutang.dpsa@gmail.com&nbsp;&nbsp;Website :
+                  www.dpm-jogja.com
+                </p>
+              </div>
+
+              {/* Doc Code Box */}
+              <div className='w-24 shrink-0 flex flex-col text-[10px] text-center'>
+                <div className='border-b border-black py-0.5 px-1 font-bold'>
+                  PROD
+                </div>
+                <div className='border-b border-black py-0.5 px-1 font-bold text-[13px]'>
+                  003
+                </div>
+                <div className='flex flex-1'>
+                  <div className='flex-1 border-r border-black py-0.5 px-1'>
+                    Rev:00
+                  </div>
+                  <div className='flex-1 py-0.5 px-1 leading-tight'>
+                    Terbit:
+                    <br />
+                    08/25
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* ── Info Fields ── */}
+            <div className='flex'>
+              {/* Left: info rows */}
+              <div className='flex-1'>
+                {[
+                  {
+                    label: 'NAMA ITEM',
+                    value: qrItem?.item || '-',
+                  },
+                  {
+                    label: 'UKURAN',
+                    value: `${qrItem?.panjang || '-'} x ${
+                      qrItem?.lebar || '-'
+                    } x ${qrItem?.tinggi || '-'}`,
+                  },
+                  {
+                    label: 'JUMLAH',
+                    value: qrJumlah ? `${qrJumlah} ${qrItem?.satuan || ''}`.trim() : '-',
+                  },
+                  {
+                    label: 'RUANG',
+                    value: qrItem?.ruang || '-',
+                  },
+                  {
+                    label: 'RUMAH SAKIT',
+                    value: project?.client?.name || '-',
+                  },
+                  {
+                    label: 'NO. SPK/TAHUN',
+                    value: project?.spk?.nomor_spk || '-',
+                  },
+                ].map((row) => (
+                  <div
+                    key={row.label}
+                    className='flex border-b border-black last:border-b-0'
+                  >
+                    <div className='w-36 font-bold py-3 px-2 border-r border-black shrink-0'>
+                      {row.label}
+                    </div>
+                    <div className='w-5 text-center py-3 border-r border-black shrink-0'>
+                      :
+                    </div>
+                    <div className='flex-1 py-3 px-2'>{row.value}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <AlertDialogFooter className='mt-4 flex-col sm:flex-row items-start sm:items-center gap-2'>
+            <div className='flex items-center gap-4 flex-1 flex-wrap'>
+              <div className='flex items-center gap-2'>
+                <Label className='text-xs'>Item per packing:</Label>
+                <Input
+                  type='number'
+                  min={1}
+                  max={qrItem?.jumlah || 1}
+                  value={qrJumlah}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === '') {
+                      setQrJumlah('');
+                    } else {
+                      const num = parseInt(val);
+                      if (!isNaN(num)) {
+                        setQrJumlah(Math.min(num, qrItem?.jumlah || Infinity).toString());
+                      }
+                    }
+                  }}
+                  className='h-8 w-24 text-xs'
+                  placeholder='Misal: 3'
+                />
+              </div>
+              <div className='flex items-center gap-2'>
+                <Label className='text-xs'>Bagian:</Label>
+                <Input
+                  type='number'
+                  min={1}
+                  value={qrBagian}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === '') {
+                      setQrBagian('');
+                    } else {
+                      const num = parseInt(val);
+                      if (!isNaN(num) && num > 0) {
+                        setQrBagian(num.toString());
+                      }
+                    }
+                  }}
+                  className='h-8 w-20 text-xs'
+                  placeholder='Misal: 1'
+                />
+              </div>
+              <div className='text-xs font-bold text-blue-600 sm:border-l sm:pl-4'>
+                Total Label: {Math.ceil((qrItem?.jumlah || 0) / Math.max(1, parseInt(qrJumlah) || 1)) * Math.max(1, parseInt(qrBagian) || 1)}
+              </div>
+            </div>
+            <div className='flex gap-2 ml-auto'>
+              <AlertDialogCancel onClick={() => setIsItemQrDialogOpen(false)}>
+                Tutup
+              </AlertDialogCancel>
+              <Button
+                className='bg-blue-600 hover:bg-blue-700 text-white gap-2'
+                onClick={handlePrintItemQR}
+              >
+                <Printer className='h-4 w-4' />
+                Print Label
+              </Button>
+            </div>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Gambar Kerja Upload Dialog */}
       <AlertDialog open={isGkDialogOpen} onOpenChange={setIsGkDialogOpen}>
@@ -2494,7 +3206,7 @@ export default function PerencanaanDetailPage() {
                       <span>Total Saat Ini</span>
                       <span className='text-neutral-900'>
                         {bjItem.barang_jadi_masuk.reduce(
-                          (sum, r) => sum + r.jumlah,
+                          (sum, r) => sum + Number(r.jumlah),
                           0
                         )}{' '}
                         / {bjItem.jumlah}
@@ -2524,7 +3236,7 @@ export default function PerencanaanDetailPage() {
                     bjItem
                       ? bjItem.jumlah -
                         (bjItem.barang_jadi_masuk?.reduce(
-                          (sum, bj) => sum + bj.jumlah,
+                          (sum, bj) => sum + Number(bj.jumlah),
                           0
                         ) || 0)
                       : undefined
@@ -2534,7 +3246,7 @@ export default function PerencanaanDetailPage() {
                   Sisa:{' '}
                   {(bjItem?.jumlah || 0) -
                     (bjItem?.barang_jadi_masuk?.reduce(
-                      (sum, bj) => sum + bj.jumlah,
+                      (sum, bj) => sum + Number(bj.jumlah),
                       0
                     ) || 0)}
                 </span>
@@ -2562,7 +3274,7 @@ export default function PerencanaanDetailPage() {
                 bjJumlah >
                   (bjItem?.jumlah || 0) -
                     (bjItem?.barang_jadi_masuk?.reduce(
-                      (sum, bj) => sum + bj.jumlah,
+                      (sum, bj) => sum + Number(bj.jumlah),
                       0
                     ) || 0)
               }
@@ -2620,7 +3332,7 @@ export default function PerencanaanDetailPage() {
                       <span>Total Saat Ini</span>
                       <span className='text-orange-900'>
                         {packingItem.barang_jadi_terpacking.reduce(
-                          (sum, r) => sum + r.jumlah,
+                          (sum, r) => sum + Number(r.jumlah),
                           0
                         )}{' '}
                         / {packingItem.jumlah}
@@ -3191,6 +3903,56 @@ export default function PerencanaanDetailPage() {
         }
       />
 
+      {/* Preview Surat Jalan Dialog */}
+      <AlertDialog
+        open={previewSjDialogOpen}
+        onOpenChange={setPreviewSjDialogOpen}
+      >
+        <AlertDialogContent className='max-w-4xl'>
+          <AlertDialogHeader>
+            <AlertDialogTitle className='flex items-center justify-between gap-2 w-full pr-4'>
+              <div className='flex items-center gap-2'>
+                <FileText className='h-5 w-5 text-amber-500' />
+                Preview Surat Jalan
+              </div>
+              <Button
+                variant='outline'
+                size='sm'
+                className='gap-2 h-8'
+                onClick={() => {
+                  setPreviewSjDialogOpen(false);
+                  setSuratJalanPengirimanId(previewSjPengirimanId);
+                  setSuratJalanFile(null);
+                  setSuratJalanDialogOpen(true);
+                }}
+              >
+                <Pencil className='h-3.5 w-3.5' /> Edit Dokumen
+              </Button>
+            </AlertDialogTitle>
+          </AlertDialogHeader>
+          <div className='py-4 min-h-[60vh]'>
+            {previewSjUrl && (
+              <iframe
+                src={previewSjUrl}
+                className='w-full h-[60vh] border rounded-md'
+                title='Preview Surat Jalan'
+              />
+            )}
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => {
+                setPreviewSjDialogOpen(false);
+                setPreviewSjUrl(null);
+                setPreviewSjPengirimanId(null);
+              }}
+            >
+              Tutup
+            </AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Upload Surat Jalan Dialog */}
       <AlertDialog
         open={suratJalanDialogOpen}
@@ -3249,6 +4011,56 @@ export default function PerencanaanDetailPage() {
               )}
               Simpan
             </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Preview Setrim Dialog */}
+      <AlertDialog
+        open={previewSetrimDialogOpen}
+        onOpenChange={setPreviewSetrimDialogOpen}
+      >
+        <AlertDialogContent className='max-w-4xl'>
+          <AlertDialogHeader>
+            <AlertDialogTitle className='flex items-center justify-between gap-2 w-full pr-4'>
+              <div className='flex items-center gap-2'>
+                <FileText className='h-5 w-5 text-blue-500' />
+                Preview Setrim
+              </div>
+              <Button
+                variant='outline'
+                size='sm'
+                className='gap-2 h-8'
+                onClick={() => {
+                  setPreviewSetrimDialogOpen(false);
+                  setSetrimPengirimanId(previewSetrimPengirimanId);
+                  setSetrimFile(null);
+                  setSetrimDialogOpen(true);
+                }}
+              >
+                <Pencil className='h-3.5 w-3.5' /> Edit Dokumen
+              </Button>
+            </AlertDialogTitle>
+          </AlertDialogHeader>
+          <div className='py-4 min-h-[60vh]'>
+            {previewSetrimUrl && (
+              <iframe
+                src={previewSetrimUrl}
+                className='w-full h-[60vh] border rounded-md'
+                title='Preview Setrim'
+              />
+            )}
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => {
+                setPreviewSetrimDialogOpen(false);
+                setPreviewSetrimUrl(null);
+                setPreviewSetrimPengirimanId(null);
+              }}
+            >
+              Tutup
+            </AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -3393,6 +4205,146 @@ export default function PerencanaanDetailPage() {
             <AlertDialogCancel onClick={() => setIsHistoryOpen(false)}>
               Tutup
             </AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Mass Label Print Configuration Dialog */}
+      <AlertDialog
+        open={isMassLabelDialogOpen}
+        onOpenChange={setIsMassLabelDialogOpen}
+      >
+        <AlertDialogContent className='w-[95vw] max-w-5xl'>
+          <AlertDialogHeader>
+            <AlertDialogTitle className='flex items-center gap-2 text-base'>
+              <Printer className='h-4 w-4 text-blue-600' />
+              Konfigurasi Print Label Massal
+            </AlertDialogTitle>
+            <AlertDialogDescription className='text-xs'>
+              Sesuaikan nilai <strong>Item per packing</strong> untuk setiap item. Secara default terisi sesuai Qty pesanan.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+            <Table containerClassName='max-h-[60vh] overflow-x-scroll overflow-y-auto border border-neutral-200 rounded-md mt-4 custom-scrollbar'>
+              <TableHeader className='bg-neutral-50 sticky top-0 z-10 shadow-sm shadow-neutral-200/50'>
+                <TableRow>
+                  <TableHead className='text-xs'>Item</TableHead>
+                  <TableHead className='text-xs text-center'>Qty</TableHead>
+                  <TableHead className='text-xs text-center'>
+                    <span className='block'>Item</span>
+                    <span className='block'>Per Packing</span>
+                  </TableHead>
+                  <TableHead className='text-xs text-center'>Bagian</TableHead>
+                  <TableHead className='text-xs text-center'>
+                    <span className='block'>Jumlah</span>
+                    <span className='block'>Label</span>
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {items
+                  ?.filter((i) => selectedLabelItemIds.includes(i.id))
+                  .map((item) => {
+                    const customJumlahText = massLabelConfig[item.id] ?? item.jumlah.toString();
+                    const itemPerPacking = Math.max(1, parseInt(customJumlahText) || 1);
+                    const bagianText = massLabelBagianConfig[item.id] ?? '1';
+                    const pengaliBagian = Math.max(1, parseInt(bagianText) || 1);
+                    const totalLabel = Math.ceil(item.jumlah / itemPerPacking) * pengaliBagian;
+
+                    return (
+                      <TableRow key={item.id}>
+                        <TableCell className='text-xs font-medium'>
+                          {item.item}
+                          <div className='text-[10px] text-muted-foreground'>
+                            Lantai/Ruang: {item.lantai || '-'} / {item.ruang || '-'}
+                          </div>
+                        </TableCell>
+                        <TableCell className='text-xs text-center'>
+                          {item.jumlah}
+                        </TableCell>
+                        <TableCell className='text-xs text-center'>
+                          <Input
+                            type='number'
+                            min={1}
+                            max={item.jumlah}
+                            className='h-7 w-16 text-xs mx-auto text-center'
+                            value={massLabelConfig[item.id] ?? ''}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (val === '') {
+                                setMassLabelConfig((prev) => ({ ...prev, [item.id]: '' }));
+                              } else {
+                                const num = parseInt(val);
+                                if (!isNaN(num)) {
+                                  setMassLabelConfig((prev) => ({
+                                    ...prev,
+                                    [item.id]: Math.min(num, item.jumlah).toString(),
+                                  }));
+                                }
+                              }
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell className='text-xs text-center'>
+                          <Input
+                            type='number'
+                            min={1}
+                            className='h-7 w-16 text-xs mx-auto text-center'
+                            value={massLabelBagianConfig[item.id] ?? '1'}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (val === '') {
+                                setMassLabelBagianConfig((prev) => ({ ...prev, [item.id]: '' }));
+                              } else {
+                                const num = parseInt(val);
+                                if (!isNaN(num) && num > 0) {
+                                  setMassLabelBagianConfig((prev) => ({
+                                    ...prev,
+                                    [item.id]: num.toString(),
+                                  }));
+                                }
+                              }
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell className='text-xs text-center font-bold text-blue-600'>
+                          {totalLabel}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+              </TableBody>
+            </Table>
+
+          <AlertDialogFooter className='mt-4 flex items-center justify-between'>
+            <div className='text-xs text-muted-foreground font-medium'>
+              Total Label Keseluruhan: <span className='text-blue-600 font-bold'>
+                {items
+                  ?.filter((i) => selectedLabelItemIds.includes(i.id))
+                  .reduce((sum, item) => {
+                    const customJumlahText = massLabelConfig[item.id] ?? item.jumlah.toString();
+                    const itemPerPacking = Math.max(1, parseInt(customJumlahText) || 1);
+                    const bagianText = massLabelBagianConfig[item.id] ?? '1';
+                    const pengaliBagian = Math.max(1, parseInt(bagianText) || 1);
+                    return sum + (Math.ceil(item.jumlah / itemPerPacking) * pengaliBagian);
+                  }, 0)}
+              </span>
+            </div>
+            <div className='flex gap-2'>
+              <AlertDialogCancel onClick={() => setIsMassLabelDialogOpen(false)}>
+                Batal
+              </AlertDialogCancel>
+              <Button
+                className='bg-blue-600 hover:bg-blue-700 text-white'
+                onClick={() => {
+                  setIsMassLabelDialogOpen(false);
+                  handlePrintMassLabel();
+                }}
+              >
+                <Printer className='mr-2 h-4 w-4' />
+                Print Label
+              </Button>
+            </div>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
