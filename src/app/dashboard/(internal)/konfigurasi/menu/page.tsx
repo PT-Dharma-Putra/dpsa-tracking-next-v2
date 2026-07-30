@@ -216,7 +216,7 @@ export default function MenuManagementPage() {
           </h1>
           <p className='text-muted-foreground text-sm'>
             Kelola struktur menu, hirarki parent-child, dan daftar aksi
-            (permission) untuk setiap modul.
+            (permission) untuk setiap modulnya.
           </p>
         </div>
         <Button
