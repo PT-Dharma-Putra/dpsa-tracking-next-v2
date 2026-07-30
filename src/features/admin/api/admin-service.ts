@@ -7,6 +7,13 @@ export interface ApprovalStats {
     pending_client: number;
 }
 
+export interface TargetPermissionsResponse {
+    permission_ids: number[];
+    role_permission_ids?: number[];
+    direct_permission_ids?: number[];
+    has_custom_permissions?: boolean;
+}
+
 export interface Role {
     id: number;
     name: string;
@@ -109,7 +116,7 @@ export const adminService = {
     },
 
     getRolePermissions: async (roleId: number) => {
-        const { data } = await axiosInstance.get<{ permission_ids: number[]; role_permission_ids?: number[] }>(`/access-management/roles/${roleId}/permissions`);
+        const { data } = await axiosInstance.get<TargetPermissionsResponse>(`/access-management/roles/${roleId}/permissions`);
         return data;
     },
 
@@ -124,7 +131,7 @@ export const adminService = {
     },
 
     getUserPermissions: async (userId: number) => {
-        const { data } = await axiosInstance.get<{ permission_ids: number[]; role_permission_ids?: number[] }>(`/access-management/users/${userId}/permissions`);
+        const { data } = await axiosInstance.get<TargetPermissionsResponse>(`/access-management/users/${userId}/permissions`);
         return data;
     },
 
