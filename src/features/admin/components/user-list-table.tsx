@@ -71,18 +71,30 @@ export function UserListTable() {
     const [isDialogOpen, setIsDialogOpen] = useState(false)
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
     const [selectedUser, setSelectedUser] = useState<User | null>(null)
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState<{
+        name: string;
+        email: string;
+        password: string;
+        password_confirmation: string;
+        role_id: string;
+        role_ids: number[];
+        divisi_id: string;
+        client_id: string;
+        account_status: string;
+    }>({
         name: '',
         email: '',
         password: '',
         password_confirmation: '',
         role_id: '',
+        role_ids: [],
         divisi_id: '',
         client_id: '',
         account_status: 'approved'
     })
     const [dialogTab, setDialogTab] = useState("internal")
     const [isClientPopoverOpen, setIsClientPopoverOpen] = useState(false)
+    const [isRolePopoverOpen, setIsRolePopoverOpen] = useState(false)
 
     // Reset page when search changes
     useEffect(() => {
@@ -158,6 +170,7 @@ export function UserListTable() {
             password: '',
             password_confirmation: '',
             role_id: '',
+            role_ids: [],
             divisi_id: '',
             client_id: '',
             account_status: 'approved'
@@ -168,12 +181,14 @@ export function UserListTable() {
 
     const openEditDialog = (user: any) => {
         setSelectedUser(user)
+        const userRoleIds: number[] = user.role_ids || (user.role_id ? [Number(user.role_id)] : [])
         setFormData({
             name: user.name,
             email: user.email,
             password: '',
             password_confirmation: '',
             role_id: user.role_id?.toString() || '',
+            role_ids: userRoleIds,
             divisi_id: user.divisi_id?.toString() || '',
             client_id: user.client_id?.toString() || '',
             account_status: user.account_status || 'approved'
@@ -192,15 +207,20 @@ export function UserListTable() {
         if (value === "internal") {
             setFormData(prev => ({ ...prev, client_id: '' }))
         } else {
-            setFormData(prev => ({ ...prev, role_id: '', divisi_id: '' }))
+            setFormData(prev => ({ ...prev, role_id: '', role_ids: [], divisi_id: '' }))
         }
     }
 
     const handleSubmit = () => {
+        const payload = {
+            ...formData,
+            role_ids: formData.role_ids,
+            role_id: formData.role_ids[0] ? formData.role_ids[0].toString() : formData.role_id
+        }
         if (selectedUser) {
-            updateMutation.mutate({ id: selectedUser.id, data: formData })
+            updateMutation.mutate({ id: selectedUser.id, data: payload })
         } else {
-            createMutation.mutate(formData)
+            createMutation.mutate(payload)
         }
     }
 
@@ -236,7 +256,7 @@ export function UserListTable() {
                         <TableRow>
                             <TableHead className="w-[50px]">#</TableHead>
                             <TableHead>User</TableHead>
-                            <TableHead>Role</TableHead>
+                            <TableHead>Roles</TableHead>
                             <TableHead>Division</TableHead>
                             <TableHead>Account Status</TableHead>
                             <TableHead className="text-right">Actions</TableHead>
@@ -268,7 +288,20 @@ export function UserListTable() {
                                         </div>
                                     </TableCell>
                                     <TableCell>
-                                        <Badge variant="outline" className="w-fit">{user.role}</Badge>
+                                        <div className="flex flex-wrap gap-1">
+                                            {user.roles && Array.isArray(user.roles) && user.roles.length > 0 ? (
+                                                user.roles.map((r: any, rIdx: number) => {
+                                                    const rName = typeof r === 'string' ? r : (r?.name || String(r))
+                                                    return (
+                                                        <Badge key={rIdx} variant="outline" className="w-fit bg-slate-50 text-slate-700">
+                                                            {rName}
+                                                        </Badge>
+                                                    )
+                                                })
+                                            ) : (
+                                                <Badge variant="outline" className="w-fit bg-slate-50 text-slate-700">{user.role}</Badge>
+                                            )}
+                                        </div>
                                     </TableCell>
                                     <TableCell>
                                         {user.divisi ? user.divisi : <span className="text-muted-foreground">-</span>}
@@ -406,20 +439,60 @@ export function UserListTable() {
                             <TabsContent value="internal" className="mt-0 space-y-4">
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="grid gap-2">
-                                        <Label>Role</Label>
-                                        <Select 
-                                            value={formData.role_id} 
-                                            onValueChange={val => setFormData({...formData, role_id: val})}
-                                        >
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Select Role" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {roles?.map((role: any) => (
-                                                    <SelectItem key={role.id} value={role.id.toString()}>{role.name}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
+                                        <Label>Roles (Multi-select)</Label>
+                                        <Popover open={isRolePopoverOpen} onOpenChange={setIsRolePopoverOpen}>
+                                            <PopoverTrigger asChild>
+                                                <Button variant="outline" className="w-full justify-between font-normal h-auto min-h-10 py-1.5 px-3">
+                                                    <div className="flex flex-wrap gap-1 items-center">
+                                                        {formData.role_ids.length > 0 ? (
+                                                            formData.role_ids.map((id) => {
+                                                                const rName = roles?.find((r: any) => r.id === id)?.name || id
+                                                                return (
+                                                                    <Badge key={id} variant="secondary" className="text-xs px-1.5 py-0.5">
+                                                                        {rName}
+                                                                    </Badge>
+                                                                )
+                                                            })
+                                                        ) : (
+                                                            <span className="text-muted-foreground">Pilih Role...</span>
+                                                        )}
+                                                    </div>
+                                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-64 p-2" align="start">
+                                                <div className="space-y-2">
+                                                    <p className="text-xs font-semibold text-muted-foreground px-1 py-1">Pilih satu atau lebih Role:</p>
+                                                    <div className="max-h-48 overflow-y-auto space-y-1">
+                                                        {roles?.map((role: any) => {
+                                                            const isSelected = formData.role_ids.includes(role.id)
+                                                            return (
+                                                                <div
+                                                                    key={role.id}
+                                                                    onClick={() => {
+                                                                        const newRoleIds = isSelected
+                                                                            ? formData.role_ids.filter((id) => id !== role.id)
+                                                                            : [...formData.role_ids, role.id]
+                                                                        setFormData({
+                                                                            ...formData,
+                                                                            role_ids: newRoleIds,
+                                                                            role_id: newRoleIds[0]?.toString() || ''
+                                                                        })
+                                                                    }}
+                                                                    className={cn(
+                                                                        "flex items-center justify-between px-2 py-1.5 rounded text-sm cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800",
+                                                                        isSelected && "font-medium bg-orange-50 text-orange-900"
+                                                                    )}
+                                                                >
+                                                                    <span>{role.name}</span>
+                                                                    {isSelected && <Check className="w-4 h-4 text-orange-600" />}
+                                                                </div>
+                                                            )
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            </PopoverContent>
+                                        </Popover>
                                     </div>
                                     <div className="grid gap-2">
                                         <Label>Division</Label>

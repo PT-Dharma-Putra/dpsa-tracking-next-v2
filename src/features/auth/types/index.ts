@@ -16,9 +16,10 @@ export interface User {
     email_verified_at?: string;
     role: string; // Flattened role string from API
     role_id?: number;
+    role_ids?: number[];
     divisi?: string; // Division name
     divisi_id?: number;
-    roles?: { name: string }[]; // Backward compatibility
+    roles?: (string | { name: string })[];
     roles_list?: string[];
     avatar_url?: string;
     // External specific

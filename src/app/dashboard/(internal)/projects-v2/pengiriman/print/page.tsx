@@ -499,6 +499,7 @@ export default function PrintSuratJalanPage() {
               },
             },
           },
+
           '',
           '',
           '',
@@ -532,12 +533,9 @@ export default function PrintSuratJalanPage() {
               },
             },
           },
-        ]); // 2 (r: 1)
-        merges.push({ s: { r: 1, c: 0 }, e: { r: 1, c: 6 } });
-        // ]); // 5 (r:4)
+        ]);
         let rNomor = wsData.length - 1;
         merges.push({ s: { r: rNomor, c: 0 }, e: { r: rNomor, c: 1 } });
-        merges.push({ s: { r: rNomor, c: 3 }, e: { r: rNomor, c: 6 } });
 
         wsData.push([
           '',
@@ -594,6 +592,7 @@ export default function PrintSuratJalanPage() {
               },
             },
           },
+
           '',
           '',
           '',
@@ -603,7 +602,6 @@ export default function PrintSuratJalanPage() {
         ]); // 6 (r:5)
         let rTujuan = wsData.length - 1;
         merges.push({ s: { r: rTujuan, c: 0 }, e: { r: rTujuan, c: 1 } });
-        merges.push({ s: { r: rTujuan, c: 3 }, e: { r: rTujuan, c: 6 } });
 
         wsData.push([]); // Jarak 1 baris
 
@@ -622,7 +620,7 @@ export default function PrintSuratJalanPage() {
               },
             },
           },
-          '',
+
           '',
           { v: 'No. SPK/SPH', t: 's', s: boldStyle },
           { v: ':', t: 's', s: normalStyle },
@@ -664,12 +662,24 @@ export default function PrintSuratJalanPage() {
               },
             },
           },
+          {
+            v: '',
+            t: 's',
+            s: {
+              border: {
+                top: borderThin,
+                bottom: borderThin,
+                left: borderThin,
+                right: borderThin,
+              },
+            },
+          },
           '',
         ]); // 7 (r:6)
         let rTanggal = wsData.length - 1;
         merges.push({ s: { r: rTanggal, c: 0 }, e: { r: rTanggal, c: 1 } });
-        merges.push({ s: { r: rTanggal, c: 5 }, e: { r: rTanggal, c: 6 } });
-        merges.push({ s: { r: rTanggal, c: 7 }, e: { r: rTanggal, c: 9 } });
+        merges.push({ s: { r: rTanggal, c: 4 }, e: { r: rTanggal, c: 5 } });
+        merges.push({ s: { r: rTanggal, c: 6 }, e: { r: rTanggal, c: 9 } });
 
         wsData.push([]);
 
@@ -925,7 +935,7 @@ export default function PrintSuratJalanPage() {
         const sigRow1 = wsData.length - 1;
         merges.push({ s: { r: sigRow1, c: 0 }, e: { r: sigRow1, c: 2 } });
         merges.push({ s: { r: sigRow1, c: 3 }, e: { r: sigRow1, c: 5 } });
-        merges.push({ s: { r: sigRow1, c: 6 }, e: { r: sigRow1, c: 8 } });
+        merges.push({ s: { r: sigRow1, c: 6 }, e: { r: sigRow1, c: 9 } });
 
         wsData.push([], [], []);
 
@@ -950,7 +960,7 @@ export default function PrintSuratJalanPage() {
         const sigRowName = wsData.length - 1;
         merges.push({ s: { r: sigRowName, c: 0 }, e: { r: sigRowName, c: 2 } });
         merges.push({ s: { r: sigRowName, c: 3 }, e: { r: sigRowName, c: 5 } });
-        merges.push({ s: { r: sigRowName, c: 6 }, e: { r: sigRowName, c: 8 } });
+        merges.push({ s: { r: sigRowName, c: 6 }, e: { r: sigRowName, c: 9 } });
 
         wsData.push([
           {
@@ -973,7 +983,7 @@ export default function PrintSuratJalanPage() {
         const sigRow2 = wsData.length - 1;
         merges.push({ s: { r: sigRow2, c: 0 }, e: { r: sigRow2, c: 2 } });
         merges.push({ s: { r: sigRow2, c: 3 }, e: { r: sigRow2, c: 5 } });
-        merges.push({ s: { r: sigRow2, c: 6 }, e: { r: sigRow2, c: 8 } });
+        merges.push({ s: { r: sigRow2, c: 6 }, e: { r: sigRow2, c: 9 } });
       }
 
       const ws = XLSX.utils.aoa_to_sheet(wsData);
@@ -981,33 +991,48 @@ export default function PrintSuratJalanPage() {
 
       if (isSuratJalan) {
         ws['!cols'] = [
-          { wch: 5 }, // NO
-          { wch: 10 }, // LANTAI
-          { wch: 20 }, // RUANG
-          { wch: 15 }, // SPK
-          { wch: 30 }, // ITEM
-          { wch: 8 }, // P
-          { wch: 8 }, // L
-          { wch: 8 }, // T
-          { wch: 8 }, // VOL
-          { wch: 8 }, // SAT
-          { wch: 8 }, // JML
-          { wch: 15 }, // KET
+          { wch: 4 }, // NO
+          { wch: 11 }, // NO. SPK
+          { wch: 15 }, // RUANG
+          { wch: 24 }, // ITEM/PERABOT
+          { wch: 5 }, // P
+          { wch: 5 }, // L
+          { wch: 5 }, // T
+          { wch: 5 }, // VOL
+          { wch: 5 }, // SAT
+          { wch: 5 }, // JML
+          { wch: 7 }, // KET (1/2)
+          { wch: 7 }, // KET (2/2)
         ];
       } else {
         ws['!cols'] = [
-          { wch: 5 }, // NO
-          { wch: 20 }, // RUANG
-          { wch: 30 }, // ITEM
-          { wch: 8 }, // P
-          { wch: 8 }, // L
-          { wch: 8 }, // T
-          { wch: 8 }, // VOL
-          { wch: 8 }, // SAT
-          { wch: 8 }, // JML
-          { wch: 15 }, // KET
+          { wch: 4 }, // NO
+          { wch: 18 }, // RUANG
+          { wch: 26 }, // ITEM/PERABOT
+          { wch: 5 }, // P
+          { wch: 5 }, // L
+          { wch: 5 }, // T
+          { wch: 5 }, // VOL
+          { wch: 5 }, // SAT
+          { wch: 5 }, // JML
+          { wch: 8 }, // KET
         ];
       }
+
+      ws['!margins'] = {
+        left: 0.3,
+        right: 0.3,
+        top: 0.5,
+        bottom: 0.5,
+        header: 0.3,
+        footer: 0.3,
+      };
+      ws['!pageSetup'] = {
+        orientation: 'portrait',
+        paperSize: 9, // A4
+        fitToWidth: 1,
+        fitToHeight: 0,
+      };
 
       XLSX.utils.book_append_sheet(
         wb,
