@@ -16,6 +16,8 @@ import {
 } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { useQuery } from '@tanstack/react-query';
+import { adminService } from '@/features/admin/api/admin-service';
 
 import {
   Sidebar,
@@ -66,12 +68,19 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     router.push('/auth/internal/login');
   };
 
-  // Define menu items based on Role (Can be refined later)
+  // Define menu items based on Role & Permissions
   const userRoles = [
     ...(user?.role ? [user.role] : []),
-    ...(user?.roles?.map((r) => r.name) || []),
+    ...(user?.roles?.map((r) => typeof r === 'string' ? r : r.name) || []),
   ];
-  const isAdmin = userRoles.includes('Super-Admin');
+  const userPermissions: string[] = user?.permissions || [];
+  const isSuperAdmin = userRoles.includes('Super-Admin');
+  const isAdmin = isSuperAdmin;
+
+  const hasPermission = (perm: string) => {
+    if (isSuperAdmin) return true;
+    return userPermissions.includes(perm);
+  };
 
   const isActive = (href: string) => {
     if (href === '/dashboard') return pathname === '/dashboard';
@@ -500,19 +509,86 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           },
         ],
       },
-    ].filter((group) => {
-      if (!user) return false;
-
-      // Collect all user roles into a single list
-      const userRoles = [
-        ...(user.role ? [user.role] : []),
-        ...(user.roles?.map((r) => r.name) || []),
-      ];
-
-      // Check if any user role is in the group's allowedRoles
-      return group.allowedRoles.some((allowed) => userRoles.includes(allowed));
-    }),
+      {
+        title: 'Konfigurasi',
+        url: '#',
+        allowedRoles: ['Super-Admin'],
+        items: [
+          {
+            title: 'Akses Role',
+            url: '/dashboard/konfigurasi/akses-role',
+          },
+          {
+            title: 'Akses User',
+            url: '/dashboard/konfigurasi/akses-user',
+          },
+          {
+            title: 'Users',
+            url: '/dashboard/admin/users',
+          },
+        ],
+      },
+    ],
   };
+
+  // Filter groups & sub-items dynamically by user permissions + roles
+  const filteredNavMain = data.navMain
+    .map((group) => {
+      const filteredItems = (group.items || []).filter((subItem: any) => {
+        if (isSuperAdmin) return true;
+
+        // 1. Check subItem direct permission (if defined)
+        if (subItem.permission && userPermissions.includes(subItem.permission)) {
+          return true;
+        }
+
+        // 2. Check subItem allowedRoles (if defined)
+        if (subItem.allowedRoles && Array.isArray(subItem.allowedRoles)) {
+          if (subItem.allowedRoles.some((r: string) => userRoles.includes(r))) return true;
+        }
+
+        // 3. Fallback: if no item-level restriction, inherit group allowedRoles
+        if (!subItem.permission && !subItem.allowedRoles) {
+          if (group.allowedRoles && Array.isArray(group.allowedRoles)) {
+            return group.allowedRoles.some((r: string) => userRoles.includes(r));
+          }
+          return true;
+        }
+
+        return false;
+      });
+
+      return {
+        ...group,
+        items: filteredItems,
+      };
+    })
+    .filter((group) => {
+      if (!user) return false;
+      if (isSuperAdmin) return true;
+
+      // Group is visible if it has matching allowedRoles OR at least 1 allowed child item
+      const hasGroupRole = group.allowedRoles && Array.isArray(group.allowedRoles) && group.allowedRoles.some((r: string) => userRoles.includes(r));
+      return hasGroupRole || group.items.length > 0;
+    });
+
+  // Fetch dynamic database menus (from database table 'menus')
+  const { data: dbMenus } = useQuery({
+    queryKey: ['user-sidebar-menus'],
+    queryFn: adminService.getUserSidebarMenus,
+    enabled: !!user,
+  });
+
+  const dynamicNavMain = (dbMenus && Array.isArray(dbMenus) && dbMenus.length > 0)
+    ? dbMenus.map((parent: any) => ({
+        title: parent.name,
+        url: parent.url || '#',
+        items: (parent.children || []).map((child: any) => ({
+          title: child.name,
+          url: child.url,
+        }))
+      }))
+    : filteredNavMain;
 
   return (
     <Sidebar collapsible='icon' {...props}>
@@ -763,46 +839,72 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarGroup>
         )}
 
-        {/* add sidebar collapse  */}
-        {data.navMain.map((item) => (
-          <Collapsible
-            key={item.title}
-            title={item.title}
-            defaultOpen
-            className='group/collapsible'
-          >
-            <SidebarGroup>
-              <SidebarGroupLabel
-                asChild
-                className='group/label text-sm text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
-              >
-                <CollapsibleTrigger>
-                  {item.title}{' '}
-                  <ChevronRight className='ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90' />
-                </CollapsibleTrigger>
-              </SidebarGroupLabel>
-              <CollapsibleContent>
+        {/* Render dynamic menus */}
+        {dynamicNavMain.map((item: any) => {
+          const hasChildren = item.items && item.items.length > 0;
+
+          if (!hasChildren) {
+            if (!item.url || item.url === '#') return null;
+            return (
+              <SidebarGroup key={item.title}>
                 <SidebarGroupContent>
                   <SidebarMenu>
-                    {item.items.map((subItem: any) => (
-                      <SidebarMenuItem key={subItem.title}>
-                        <SidebarMenuButton
-                          asChild
-                          isActive={isActive(subItem.url)}
-                        >
-                          <a href={subItem.url} className='flex items-center'>
-                            {subItem.icon && subItem.icon}
-                            <span className='truncate'>{subItem.title}</span>
-                          </a>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    ))}
+                    <SidebarMenuItem>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={isActive(item.url)}
+                      >
+                        <a href={item.url} className='flex items-center font-medium'>
+                          <span>{item.title}</span>
+                        </a>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
                   </SidebarMenu>
                 </SidebarGroupContent>
-              </CollapsibleContent>
-            </SidebarGroup>
-          </Collapsible>
-        ))}
+              </SidebarGroup>
+            );
+          }
+
+          return (
+            <Collapsible
+              key={item.title}
+              title={item.title}
+              defaultOpen
+              className='group/collapsible'
+            >
+              <SidebarGroup>
+                <SidebarGroupLabel
+                  asChild
+                  className='group/label text-sm text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+                >
+                  <CollapsibleTrigger>
+                    {item.title}{' '}
+                    <ChevronRight className='ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90' />
+                  </CollapsibleTrigger>
+                </SidebarGroupLabel>
+                <CollapsibleContent>
+                  <SidebarGroupContent>
+                    <SidebarMenu>
+                      {item.items.map((subItem: any) => (
+                        <SidebarMenuItem key={subItem.title}>
+                          <SidebarMenuButton
+                            asChild
+                            isActive={isActive(subItem.url)}
+                          >
+                            <a href={subItem.url} className='flex items-center'>
+                              {subItem.icon && subItem.icon}
+                              <span className='truncate'>{subItem.title}</span>
+                            </a>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      ))}
+                    </SidebarMenu>
+                  </SidebarGroupContent>
+                </CollapsibleContent>
+              </SidebarGroup>
+            </Collapsible>
+          );
+        })}
       </SidebarContent>
 
       <SidebarFooter>
@@ -857,7 +959,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                         {user?.name || 'Guest'}
                       </span>
                       <span className='truncate text-xs text-muted-foreground'>
-                        {user?.roles?.[0]?.name || 'Staff'}
+                        {user?.roles?.[0] ? (typeof user.roles[0] === 'string' ? user.roles[0] : user.roles[0].name) : 'Staff'}
                       </span>
                     </div>
                   </div>

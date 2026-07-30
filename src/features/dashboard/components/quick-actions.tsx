@@ -7,7 +7,10 @@ import { cn } from "@/lib/utils"
 
 export function QuickActions({ className }: { className?: string }) {
     const { user } = useAuthStore()
-    const isAdmin = user?.roles?.some(r => r.name === 'SUPER_ADMIN' || r.name === 'ADMIN')
+    const isAdmin = user?.roles?.some(r => {
+        const name = typeof r === 'string' ? r : r.name
+        return name === 'SUPER_ADMIN' || name === 'ADMIN' || name === 'Super-Admin'
+    })
 
     // Define Actions Data
     const actions = [

@@ -100,5 +100,67 @@ export const adminService = {
     deleteRole: async (id: number) => {
         const { data } = await axiosInstance.delete(`/roles/${id}`);
         return data;
+    },
+
+    // Access Management Matrix & Permission APIs
+    getAccessMatrix: async () => {
+        const { data } = await axiosInstance.get<{ data: any[] }>('/access-management/matrix');
+        return data.data;
+    },
+
+    getRolePermissions: async (roleId: number) => {
+        const { data } = await axiosInstance.get<{ permission_ids: number[] }>(`/access-management/roles/${roleId}/permissions`);
+        return data;
+    },
+
+    updateRolePermissions: async (roleId: number, permissionIds: number[]) => {
+        const { data } = await axiosInstance.put(`/access-management/roles/${roleId}/permissions`, { permission_ids: permissionIds });
+        return data;
+    },
+
+    copyRolePermissions: async (targetRoleId: number, sourceRoleId: number) => {
+        const { data } = await axiosInstance.post(`/access-management/roles/${targetRoleId}/copy-from`, { source_role_id: sourceRoleId });
+        return data;
+    },
+
+    getUserPermissions: async (userId: number) => {
+        const { data } = await axiosInstance.get<{ permission_ids: number[] }>(`/access-management/users/${userId}/permissions`);
+        return data;
+    },
+
+    updateUserPermissions: async (userId: number, permissionIds: number[]) => {
+        const { data } = await axiosInstance.put(`/access-management/users/${userId}/permissions`, { permission_ids: permissionIds });
+        return data;
+    },
+
+    getUserSidebarMenus: async () => {
+        const { data } = await axiosInstance.get<{ data: any[] }>('/access-management/user-menus');
+        return data.data;
+    },
+
+    // Menu CRUD APIs
+    getMenus: async (params?: { search?: string, flat?: boolean }) => {
+        const { data } = await axiosInstance.get<{ data: any[] }>('/menus', { params });
+        return data.data;
+    },
+
+    getParentMenus: async () => {
+        const { data } = await axiosInstance.get<{ data: any[] }>('/menus/parents');
+        return data.data;
+    },
+
+    createMenu: async (payload: any) => {
+        const { data } = await axiosInstance.post('/menus', payload);
+        return data;
+    },
+
+    updateMenu: async (id: number, payload: any) => {
+        const { data } = await axiosInstance.put(`/menus/${id}`, payload);
+        return data;
+    },
+
+    deleteMenu: async (id: number) => {
+        const { data } = await axiosInstance.delete(`/menus/${id}`);
+        return data;
     }
 };

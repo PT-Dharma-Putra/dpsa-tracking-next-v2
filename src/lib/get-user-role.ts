@@ -12,7 +12,7 @@ export function getUserBusinessRole(user: User | null): BusinessRole {
     // Check from roles array first (backward compat)
     const roleNames = [
         user.role?.toLowerCase(),
-        ...(user.roles?.map(r => r.name.toLowerCase()) || []),
+        ...(user.roles?.map(r => typeof r === 'string' ? r.toLowerCase() : r.name?.toLowerCase()) || []),
         ...(user.roles_list?.map(r => r.toLowerCase()) || []),
     ].filter(Boolean);
 
