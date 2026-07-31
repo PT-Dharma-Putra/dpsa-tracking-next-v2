@@ -131,6 +131,13 @@ export interface ProjectV2 {
     file: string | null;
     file_rekap_dokubah: string | null;
   };
+  project_team?: {
+    id: number;
+    project_id: number;
+    divisi_id: string | null;
+    created_at?: string;
+    updated_at?: string;
+  };
 }
 
 export interface ProgresKerja {
@@ -259,6 +266,32 @@ export const projectV2Service = {
 
   getProject: async (id: number) => {
     const { data } = await apiClient.get<ProjectV2>(`/projects-v2/${id}`);
+    return data;
+  },
+
+  getProjectTeam: async (projectId: number) => {
+    const { data } = await apiClient.get<{
+      id: number;
+      project_id: number;
+      divisi_id: string | null;
+      created_at?: string;
+      updated_at?: string;
+    } | null>(`/projects-v2/${projectId}/team`);
+    return data;
+  },
+
+  updateProjectTeam: async (
+    projectId: number,
+    divisiId: string | (number | string)[]
+  ) => {
+    const { data } = await apiClient.post<{
+      message: string;
+      data: {
+        id: number;
+        project_id: number;
+        divisi_id: string | null;
+      };
+    }>(`/projects-v2/${projectId}/team`, { divisi_id: divisiId });
     return data;
   },
 
