@@ -258,8 +258,8 @@ export default function EngineerDetailPage() {
   });
 
   const { data: designers } = useQuery({
-    queryKey: ['designers'],
-    queryFn: () => projectV2Service.getDesigners(),
+    queryKey: ['engineers'],
+    queryFn: () => projectV2Service.getEngineers(),
   });
 
   const { data: progress, isLoading: isLoadingProgress } = useQuery({
