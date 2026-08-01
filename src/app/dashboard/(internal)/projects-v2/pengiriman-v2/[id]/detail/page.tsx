@@ -139,10 +139,17 @@ export default function PerencanaanDetailPage() {
   const [qrBagian, setQrBagian] = React.useState<string>('1');
 
   // Mass Label Print State
-  const [selectedLabelItemIds, setSelectedLabelItemIds] = React.useState<number[]>([]);
-  const [isMassLabelDialogOpen, setIsMassLabelDialogOpen] = React.useState(false);
-  const [massLabelConfig, setMassLabelConfig] = React.useState<Record<number, string>>({});
-  const [massLabelBagianConfig, setMassLabelBagianConfig] = React.useState<Record<number, string>>({});
+  const [selectedLabelItemIds, setSelectedLabelItemIds] = React.useState<
+    number[]
+  >([]);
+  const [isMassLabelDialogOpen, setIsMassLabelDialogOpen] =
+    React.useState(false);
+  const [massLabelConfig, setMassLabelConfig] = React.useState<
+    Record<number, string>
+  >({});
+  const [massLabelBagianConfig, setMassLabelBagianConfig] = React.useState<
+    Record<number, string>
+  >({});
 
   const toggleSelectLabelItem = (id: number) => {
     setSelectedLabelItemIds((prev) =>
@@ -171,7 +178,7 @@ export default function PerencanaanDetailPage() {
           (item.material_utama ?? '').toLowerCase().includes(q)
         );
       });
-      setSelectedLabelItemIds(filteredItems.map(i => i.id));
+      setSelectedLabelItemIds(filteredItems.map((i) => i.id));
     } else {
       setSelectedLabelItemIds([]);
     }
@@ -180,8 +187,8 @@ export default function PerencanaanDetailPage() {
   const openMassLabelDialog = () => {
     const initialConfig: Record<number, string> = {};
     const initialBagianConfig: Record<number, string> = {};
-    selectedLabelItemIds.forEach(id => {
-      const item = items?.find(i => i.id === id);
+    selectedLabelItemIds.forEach((id) => {
+      const item = items?.find((i) => i.id === id);
       initialConfig[id] = item ? item.jumlah.toString() : '';
       initialBagianConfig[id] = '1';
     });
@@ -193,19 +200,23 @@ export default function PerencanaanDetailPage() {
   const handlePrintMassLabel = () => {
     if (selectedLabelItemIds.length === 0 || !items) return;
 
-    const selectedItems = items.filter(i => selectedLabelItemIds.includes(i.id));
+    const selectedItems = items.filter((i) =>
+      selectedLabelItemIds.includes(i.id)
+    );
 
     const spkYear = project?.spk?.tanggal_spk
       ? new Date(project.spk.tanggal_spk).getFullYear()
       : project?.created_at
       ? new Date(project.created_at).getFullYear()
       : '';
-    const spkValue = [project?.spk?.nomor_spk, spkYear].filter(Boolean).join(' / ') || '-';
+    const spkValue =
+      [project?.spk?.nomor_spk, spkYear].filter(Boolean).join(' / ') || '-';
 
     const labelsData: string[] = [];
 
-    selectedItems.forEach(item => {
-      const customJumlahText = massLabelConfig[item.id] ?? item.jumlah.toString();
+    selectedItems.forEach((item) => {
+      const customJumlahText =
+        massLabelConfig[item.id] ?? item.jumlah.toString();
       const itemPerPacking = Math.max(1, parseInt(customJumlahText) || 1);
       const bagianText = massLabelBagianConfig[item.id] ?? '1';
       const pengaliBagian = Math.max(1, parseInt(bagianText) || 1);
@@ -213,22 +224,34 @@ export default function PerencanaanDetailPage() {
 
       for (let j = 0; j < pengaliBagian; j++) {
         for (let i = 0; i < numLabelsBase; i++) {
-        const remaining = item.jumlah - (i * itemPerPacking);
-        const qtyForThisLabel = Math.min(itemPerPacking, remaining);
+          const remaining = item.jumlah - i * itemPerPacking;
+          const qtyForThisLabel = Math.min(itemPerPacking, remaining);
 
-        const rows: [string, string][] = [
-          ['NAMA ITEM', item.item || '-'],
-          ['UKURAN', `${item.panjang || '-'} x ${item.lebar || '-'} x ${item.tinggi || '-'}`],
-          ['JUMLAH', qtyForThisLabel > 0 ? `${qtyForThisLabel} ${item.satuan || ''}`.trim() : '-'],
-          ['RUANG', item.ruang || '-'],
-          ['RUMAH SAKIT', project?.client?.name || '-'],
-          ['NO. SPK/TAHUN', spkValue]
-        ];
+          const rows: [string, string][] = [
+            ['NAMA ITEM', item.item || '-'],
+            [
+              'UKURAN',
+              `${item.panjang || '-'} x ${item.lebar || '-'} x ${
+                item.tinggi || '-'
+              }`,
+            ],
+            [
+              'JUMLAH',
+              qtyForThisLabel > 0
+                ? `${qtyForThisLabel} ${item.satuan || ''}`.trim()
+                : '-',
+            ],
+            ['RUANG', item.ruang || '-'],
+            ['RUMAH SAKIT', project?.client?.name || '-'],
+            ['NO. SPK/TAHUN', spkValue],
+          ];
 
-        const html = `
+          const html = `
           <div class="label">
             <div class="hdr">
-              <div class="logo"><img src="${window.location.origin}/Logo.png" alt="Logo"/></div>
+              <div class="logo"><img src="${
+                window.location.origin
+              }/Logo.png" alt="Logo"/></div>
               <div class="co">
                 <p class="n">PT DHARMA PUTERA SEJAHTERA ABADI</p>
                 <p class="it">Interior &amp; Furniture Manufaktur</p>
@@ -254,7 +277,7 @@ export default function PerencanaanDetailPage() {
               </div>
             </div>
           </div>`;
-        labelsData.push(html);
+          labelsData.push(html);
         }
       }
     });
@@ -409,10 +432,15 @@ export default function PerencanaanDetailPage() {
             qrItem.tinggi || '-'
           }`,
         ],
-        ['JUMLAH', qtyForThisLabel > 0 ? `${qtyForThisLabel} ${qrItem.satuan || ''}`.trim() : '-'],
+        [
+          'JUMLAH',
+          qtyForThisLabel > 0
+            ? `${qtyForThisLabel} ${qrItem.satuan || ''}`.trim()
+            : '-',
+        ],
         ['RUANG', qrItem.ruang || '-'],
         ['RUMAH SAKIT', project?.client?.name || '-'],
-        ['NO. SPK/TAHUN', spkValue]
+        ['NO. SPK/TAHUN', spkValue],
       ];
 
       return `
@@ -455,7 +483,7 @@ export default function PerencanaanDetailPage() {
 
     for (let j = 0; j < pengaliBagian; j++) {
       for (let i = 0; i < numLabelsBase; i++) {
-        const remaining = qrItem.jumlah - (i * itemPerPacking);
+        const remaining = qrItem.jumlah - i * itemPerPacking;
         const qtyForThisLabel = Math.min(itemPerPacking, remaining);
         labelsData.push(makeLabelHTML(qtyForThisLabel));
       }
@@ -928,7 +956,10 @@ export default function PerencanaanDetailPage() {
     if (!bjItem) return;
 
     const currentTotal =
-      bjItem.barang_jadi_masuk?.reduce((sum, bj) => sum + Number(bj.jumlah), 0) || 0;
+      bjItem.barang_jadi_masuk?.reduce(
+        (sum, bj) => sum + Number(bj.jumlah),
+        0
+      ) || 0;
     if (currentTotal + bjJumlah > bjItem.jumlah) {
       toast.error(
         `Total barang (${
@@ -1128,7 +1159,9 @@ export default function PerencanaanDetailPage() {
   >(null);
   const [previewSjDialogOpen, setPreviewSjDialogOpen] = React.useState(false);
   const [previewSjUrl, setPreviewSjUrl] = React.useState<string | null>(null);
-  const [previewSjPengirimanId, setPreviewSjPengirimanId] = React.useState<number | null>(null);
+  const [previewSjPengirimanId, setPreviewSjPengirimanId] = React.useState<
+    number | null
+  >(null);
   const [suratJalanFile, setSuratJalanFile] = React.useState<File | null>(null);
 
   const updateSuratJalanMutation = useMutation({
@@ -1149,9 +1182,13 @@ export default function PerencanaanDetailPage() {
   const [setrimPengirimanId, setSetrimPengirimanId] = React.useState<
     number | null
   >(null);
-  const [previewSetrimDialogOpen, setPreviewSetrimDialogOpen] = React.useState(false);
-  const [previewSetrimUrl, setPreviewSetrimUrl] = React.useState<string | null>(null);
-  const [previewSetrimPengirimanId, setPreviewSetrimPengirimanId] = React.useState<number | null>(null);
+  const [previewSetrimDialogOpen, setPreviewSetrimDialogOpen] =
+    React.useState(false);
+  const [previewSetrimUrl, setPreviewSetrimUrl] = React.useState<string | null>(
+    null
+  );
+  const [previewSetrimPengirimanId, setPreviewSetrimPengirimanId] =
+    React.useState<number | null>(null);
   const [setrimFile, setSetrimFile] = React.useState<File | null>(null);
 
   const updateSetrimMutation = useMutation({
@@ -1693,18 +1730,16 @@ export default function PerencanaanDetailPage() {
         {/* 2. Gudang Barang Jadi */}
         <Card
           className={`relative border shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md ${
-            totalQtyMasuk >= totalQtyOrder &&
-            totalQtyOrder > 0
+            totalQtyMasuk >= totalQtyOrder && totalQtyOrder > 0
               ? 'border-emerald-200 bg-white ring-1 ring-emerald-100'
               : 'border-neutral-200 bg-white'
           }`}
         >
-          {totalQtyMasuk >= totalQtyOrder &&
-            totalQtyOrder > 0 && (
-              <div className='absolute -top-1.5 -right-1.5 h-5 w-5 bg-emerald-500 rounded-full flex items-center justify-center shadow-sm z-10 animate-in zoom-in duration-300'>
-                <Check className='h-3 w-3 text-white' strokeWidth={3} />
-              </div>
-            )}
+          {totalQtyMasuk >= totalQtyOrder && totalQtyOrder > 0 && (
+            <div className='absolute -top-1.5 -right-1.5 h-5 w-5 bg-emerald-500 rounded-full flex items-center justify-center shadow-sm z-10 animate-in zoom-in duration-300'>
+              <Check className='h-3 w-3 text-white' strokeWidth={3} />
+            </div>
+          )}
           <CardHeader className='pb-2 flex flex-row items-center justify-between gap-3 min-w-0'>
             <button
               className='flex items-center gap-3 flex-1 text-left min-w-0'
@@ -1869,10 +1904,14 @@ export default function PerencanaanDetailPage() {
                                 {p.surat_jalan ? (
                                   <button
                                     onClick={() => {
-                                      setPreviewSjUrl(`${(
-                                        process.env.NEXT_PUBLIC_API_URL ||
-                                        'http://localhost:8000'
-                                      ).replace('/api', '')}/storage/${p.surat_jalan}`);
+                                      setPreviewSjUrl(
+                                        `${(
+                                          process.env.NEXT_PUBLIC_API_URL ||
+                                          'http://localhost:8000'
+                                        ).replace('/api', '')}/storage/${
+                                          p.surat_jalan
+                                        }`
+                                      );
                                       setPreviewSjPengirimanId(p.id);
                                       setPreviewSjDialogOpen(true);
                                     }}
@@ -1895,10 +1934,14 @@ export default function PerencanaanDetailPage() {
                                 {p.setrim ? (
                                   <button
                                     onClick={() => {
-                                      setPreviewSetrimUrl(`${(
-                                        process.env.NEXT_PUBLIC_API_URL ||
-                                        'http://localhost:8000'
-                                      ).replace('/api', '')}/storage/${p.setrim}`);
+                                      setPreviewSetrimUrl(
+                                        `${(
+                                          process.env.NEXT_PUBLIC_API_URL ||
+                                          'http://localhost:8000'
+                                        ).replace('/api', '')}/storage/${
+                                          p.setrim
+                                        }`
+                                      );
                                       setPreviewSetrimPengirimanId(p.id);
                                       setPreviewSetrimDialogOpen(true);
                                     }}
@@ -2208,7 +2251,9 @@ export default function PerencanaanDetailPage() {
               size='sm'
               className={cn(
                 'h-8 text-xs font-semibold transition-colors',
-                showBelumTerkirim ? 'bg-amber-500 hover:bg-amber-600 text-white border-transparent' : 'text-amber-600 border-amber-200 hover:bg-amber-50'
+                showBelumTerkirim
+                  ? 'bg-amber-500 hover:bg-amber-600 text-white border-transparent'
+                  : 'text-amber-600 border-amber-200 hover:bg-amber-50'
               )}
               onClick={() => setShowBelumTerkirim(!showBelumTerkirim)}
             >
@@ -2254,8 +2299,8 @@ export default function PerencanaanDetailPage() {
         </div>
 
         <div className='rounded-xl border border-neutral-200 bg-white overflow-hidden shadow-sm'>
-          <Table>
-            <TableHeader className='bg-neutral-50/80'>
+          <Table containerClassName='max-h-[600px] overflow-auto'>
+            <TableHeader className='bg-neutral-50 sticky top-0 z-10 shadow-sm shadow-neutral-200/50'>
               <TableRow className='hover:bg-transparent'>
                 <TableHead className='w-[40px] text-[10px] uppercase font-bold text-neutral-500'>
                   #
@@ -2307,10 +2352,15 @@ export default function PerencanaanDetailPage() {
                                 item.item?.toLowerCase().includes(q) ||
                                 (item.lantai ?? '').toLowerCase().includes(q) ||
                                 (item.ruang ?? '').toLowerCase().includes(q) ||
-                                (item.keterangan ?? '').toLowerCase().includes(q) ||
-                                (item.material_utama ?? '').toLowerCase().includes(q)
+                                (item.keterangan ?? '')
+                                  .toLowerCase()
+                                  .includes(q) ||
+                                (item.material_utama ?? '')
+                                  .toLowerCase()
+                                  .includes(q)
                               );
-                            }).length === selectedLabelItemIds.length && selectedLabelItemIds.length > 0
+                            }).length === selectedLabelItemIds.length &&
+                            selectedLabelItemIds.length > 0
                           : false
                       }
                       onCheckedChange={handleSelectAllLabelItems}
@@ -2604,7 +2654,9 @@ export default function PerencanaanDetailPage() {
                         <div className='flex items-center justify-center gap-2'>
                           <Checkbox
                             checked={selectedLabelItemIds.includes(item.id)}
-                            onCheckedChange={() => toggleSelectLabelItem(item.id)}
+                            onCheckedChange={() =>
+                              toggleSelectLabelItem(item.id)
+                            }
                             className='bg-white'
                           />
                           <Button
@@ -2719,7 +2771,9 @@ export default function PerencanaanDetailPage() {
                   },
                   {
                     label: 'JUMLAH',
-                    value: qrJumlah ? `${qrJumlah} ${qrItem?.satuan || ''}`.trim() : '-',
+                    value: qrJumlah
+                      ? `${qrJumlah} ${qrItem?.satuan || ''}`.trim()
+                      : '-',
                   },
                   {
                     label: 'RUANG',
@@ -2767,7 +2821,9 @@ export default function PerencanaanDetailPage() {
                     } else {
                       const num = parseInt(val);
                       if (!isNaN(num)) {
-                        setQrJumlah(Math.min(num, qrItem?.jumlah || Infinity).toString());
+                        setQrJumlah(
+                          Math.min(num, qrItem?.jumlah || Infinity).toString()
+                        );
                       }
                     }
                   }}
@@ -2797,7 +2853,10 @@ export default function PerencanaanDetailPage() {
                 />
               </div>
               <div className='text-xs font-bold text-blue-600 sm:border-l sm:pl-4'>
-                Total Label: {Math.ceil((qrItem?.jumlah || 0) / Math.max(1, parseInt(qrJumlah) || 1)) * Math.max(1, parseInt(qrBagian) || 1)}
+                Total Label:{' '}
+                {Math.ceil(
+                  (qrItem?.jumlah || 0) / Math.max(1, parseInt(qrJumlah) || 1)
+                ) * Math.max(1, parseInt(qrBagian) || 1)}
               </div>
             </div>
             <div className='flex gap-2 ml-auto'>
@@ -4221,117 +4280,146 @@ export default function PerencanaanDetailPage() {
               Konfigurasi Print Label Massal
             </AlertDialogTitle>
             <AlertDialogDescription className='text-xs'>
-              Sesuaikan nilai <strong>Item per packing</strong> untuk setiap item. Secara default terisi sesuai Qty pesanan.
+              Sesuaikan nilai <strong>Item per packing</strong> untuk setiap
+              item. Secara default terisi sesuai Qty pesanan.
             </AlertDialogDescription>
           </AlertDialogHeader>
 
-            <Table containerClassName='max-h-[60vh] overflow-x-scroll overflow-y-auto border border-neutral-200 rounded-md mt-4 custom-scrollbar'>
-              <TableHeader className='bg-neutral-50 sticky top-0 z-10 shadow-sm shadow-neutral-200/50'>
-                <TableRow>
-                  <TableHead className='text-xs'>Item</TableHead>
-                  <TableHead className='text-xs text-center'>Qty</TableHead>
-                  <TableHead className='text-xs text-center'>
-                    <span className='block'>Item</span>
-                    <span className='block'>Per Packing</span>
-                  </TableHead>
-                  <TableHead className='text-xs text-center'>Bagian</TableHead>
-                  <TableHead className='text-xs text-center'>
-                    <span className='block'>Jumlah</span>
-                    <span className='block'>Label</span>
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {items
-                  ?.filter((i) => selectedLabelItemIds.includes(i.id))
-                  .map((item) => {
-                    const customJumlahText = massLabelConfig[item.id] ?? item.jumlah.toString();
-                    const itemPerPacking = Math.max(1, parseInt(customJumlahText) || 1);
-                    const bagianText = massLabelBagianConfig[item.id] ?? '1';
-                    const pengaliBagian = Math.max(1, parseInt(bagianText) || 1);
-                    const totalLabel = Math.ceil(item.jumlah / itemPerPacking) * pengaliBagian;
+          <Table containerClassName='max-h-[60vh] overflow-x-scroll overflow-y-auto border border-neutral-200 rounded-md mt-4 custom-scrollbar'>
+            <TableHeader className='bg-neutral-50 sticky top-0 z-10 shadow-sm shadow-neutral-200/50'>
+              <TableRow>
+                <TableHead className='text-xs'>Item</TableHead>
+                <TableHead className='text-xs text-center'>Qty</TableHead>
+                <TableHead className='text-xs text-center'>
+                  <span className='block'>Item</span>
+                  <span className='block'>Per Packing</span>
+                </TableHead>
+                <TableHead className='text-xs text-center'>Bagian</TableHead>
+                <TableHead className='text-xs text-center'>
+                  <span className='block'>Jumlah</span>
+                  <span className='block'>Label</span>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {items
+                ?.filter((i) => selectedLabelItemIds.includes(i.id))
+                .map((item) => {
+                  const customJumlahText =
+                    massLabelConfig[item.id] ?? item.jumlah.toString();
+                  const itemPerPacking = Math.max(
+                    1,
+                    parseInt(customJumlahText) || 1
+                  );
+                  const bagianText = massLabelBagianConfig[item.id] ?? '1';
+                  const pengaliBagian = Math.max(1, parseInt(bagianText) || 1);
+                  const totalLabel =
+                    Math.ceil(item.jumlah / itemPerPacking) * pengaliBagian;
 
-                    return (
-                      <TableRow key={item.id}>
-                        <TableCell className='text-xs font-medium'>
-                          {item.item}
-                          <div className='text-[10px] text-muted-foreground'>
-                            Lantai/Ruang: {item.lantai || '-'} / {item.ruang || '-'}
-                          </div>
-                        </TableCell>
-                        <TableCell className='text-xs text-center'>
-                          {item.jumlah}
-                        </TableCell>
-                        <TableCell className='text-xs text-center'>
-                          <Input
-                            type='number'
-                            min={1}
-                            max={item.jumlah}
-                            className='h-7 w-16 text-xs mx-auto text-center'
-                            value={massLabelConfig[item.id] ?? ''}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              if (val === '') {
-                                setMassLabelConfig((prev) => ({ ...prev, [item.id]: '' }));
-                              } else {
-                                const num = parseInt(val);
-                                if (!isNaN(num)) {
-                                  setMassLabelConfig((prev) => ({
-                                    ...prev,
-                                    [item.id]: Math.min(num, item.jumlah).toString(),
-                                  }));
-                                }
+                  return (
+                    <TableRow key={item.id}>
+                      <TableCell className='text-xs font-medium'>
+                        {item.item}
+                        <div className='text-[10px] text-muted-foreground'>
+                          Lantai/Ruang: {item.lantai || '-'} /{' '}
+                          {item.ruang || '-'}
+                        </div>
+                      </TableCell>
+                      <TableCell className='text-xs text-center'>
+                        {item.jumlah}
+                      </TableCell>
+                      <TableCell className='text-xs text-center'>
+                        <Input
+                          type='number'
+                          min={1}
+                          max={item.jumlah}
+                          className='h-7 w-16 text-xs mx-auto text-center'
+                          value={massLabelConfig[item.id] ?? ''}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val === '') {
+                              setMassLabelConfig((prev) => ({
+                                ...prev,
+                                [item.id]: '',
+                              }));
+                            } else {
+                              const num = parseInt(val);
+                              if (!isNaN(num)) {
+                                setMassLabelConfig((prev) => ({
+                                  ...prev,
+                                  [item.id]: Math.min(
+                                    num,
+                                    item.jumlah
+                                  ).toString(),
+                                }));
                               }
-                            }}
-                          />
-                        </TableCell>
-                        <TableCell className='text-xs text-center'>
-                          <Input
-                            type='number'
-                            min={1}
-                            className='h-7 w-16 text-xs mx-auto text-center'
-                            value={massLabelBagianConfig[item.id] ?? '1'}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              if (val === '') {
-                                setMassLabelBagianConfig((prev) => ({ ...prev, [item.id]: '' }));
-                              } else {
-                                const num = parseInt(val);
-                                if (!isNaN(num) && num > 0) {
-                                  setMassLabelBagianConfig((prev) => ({
-                                    ...prev,
-                                    [item.id]: num.toString(),
-                                  }));
-                                }
+                            }
+                          }}
+                        />
+                      </TableCell>
+                      <TableCell className='text-xs text-center'>
+                        <Input
+                          type='number'
+                          min={1}
+                          className='h-7 w-16 text-xs mx-auto text-center'
+                          value={massLabelBagianConfig[item.id] ?? '1'}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val === '') {
+                              setMassLabelBagianConfig((prev) => ({
+                                ...prev,
+                                [item.id]: '',
+                              }));
+                            } else {
+                              const num = parseInt(val);
+                              if (!isNaN(num) && num > 0) {
+                                setMassLabelBagianConfig((prev) => ({
+                                  ...prev,
+                                  [item.id]: num.toString(),
+                                }));
                               }
-                            }}
-                          />
-                        </TableCell>
-                        <TableCell className='text-xs text-center font-bold text-blue-600'>
-                          {totalLabel}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-              </TableBody>
-            </Table>
+                            }
+                          }}
+                        />
+                      </TableCell>
+                      <TableCell className='text-xs text-center font-bold text-blue-600'>
+                        {totalLabel}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+            </TableBody>
+          </Table>
 
           <AlertDialogFooter className='mt-4 flex items-center justify-between'>
             <div className='text-xs text-muted-foreground font-medium'>
-              Total Label Keseluruhan: <span className='text-blue-600 font-bold'>
+              Total Label Keseluruhan:{' '}
+              <span className='text-blue-600 font-bold'>
                 {items
                   ?.filter((i) => selectedLabelItemIds.includes(i.id))
                   .reduce((sum, item) => {
-                    const customJumlahText = massLabelConfig[item.id] ?? item.jumlah.toString();
-                    const itemPerPacking = Math.max(1, parseInt(customJumlahText) || 1);
+                    const customJumlahText =
+                      massLabelConfig[item.id] ?? item.jumlah.toString();
+                    const itemPerPacking = Math.max(
+                      1,
+                      parseInt(customJumlahText) || 1
+                    );
                     const bagianText = massLabelBagianConfig[item.id] ?? '1';
-                    const pengaliBagian = Math.max(1, parseInt(bagianText) || 1);
-                    return sum + (Math.ceil(item.jumlah / itemPerPacking) * pengaliBagian);
+                    const pengaliBagian = Math.max(
+                      1,
+                      parseInt(bagianText) || 1
+                    );
+                    return (
+                      sum +
+                      Math.ceil(item.jumlah / itemPerPacking) * pengaliBagian
+                    );
                   }, 0)}
               </span>
             </div>
             <div className='flex gap-2'>
-              <AlertDialogCancel onClick={() => setIsMassLabelDialogOpen(false)}>
+              <AlertDialogCancel
+                onClick={() => setIsMassLabelDialogOpen(false)}
+              >
                 Batal
               </AlertDialogCancel>
               <Button
