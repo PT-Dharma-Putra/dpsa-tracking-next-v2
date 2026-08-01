@@ -36,6 +36,7 @@ import {
   Package,
   Hammer,
   ExternalLink,
+  Users,
 } from 'lucide-react';
 import { format, differenceInDays, startOfDay } from 'date-fns';
 
@@ -98,6 +99,7 @@ import { ClientService } from '@/features/clients/services/client-service';
 import { ProjectFormDialog } from './project-form-dialog';
 import { ScheduleDeliveryDialog } from './schedule-delivery-dialog';
 import { DeadlineDialog } from './deadline-dialog';
+import { SetTeamDialog } from './set-team-dialog';
 const formatRupiah = (value: string | number) => {
   if (value === null || value === undefined || value === '') return '';
 
@@ -461,6 +463,10 @@ export function ProjectsV2Table({
   const [projectToEditDeadline, setProjectToEditDeadline] =
     React.useState<ProjectV2 | null>(null);
 
+  const [isSetTeamOpen, setIsSetTeamOpen] = React.useState(false);
+  const [projectToSetTeam, setProjectToSetTeam] =
+    React.useState<ProjectV2 | null>(null);
+
   const isJadwalEditable = showPerencanaan;
   const isMainProjectsV2Page =
     !showSPD &&
@@ -588,6 +594,17 @@ export function ProjectsV2Table({
     enabled: showMarketingFilter,
   });
 
+  const { data: divisions = [] } = useQuery({
+    queryKey: ['divisions'],
+    queryFn: () => projectV2Service.getDivisions(),
+  });
+
+  const divisionsMap = React.useMemo(() => {
+    const map = new Map<number, string>();
+    divisions.forEach((d) => map.set(d.id, d.nama));
+    return map;
+  }, [divisions]);
+
   const observerRef = React.useRef<IntersectionObserver>(null);
   const loadMoreRef = React.useCallback(
     (node: HTMLDivElement | null) => {
@@ -620,7 +637,7 @@ export function ProjectsV2Table({
   // PIC Management
   const { data: designers = [] } = useQuery({
     queryKey: ['designers'],
-    queryFn: () => projectV2Service.getDesigners(),
+    queryFn: () => projectV2Service.getDesigners('designer'),
     enabled: showSPD,
   });
 
@@ -684,6 +701,11 @@ export function ProjectsV2Table({
   const handleDeadlineClick = (project: ProjectV2) => {
     setProjectToEditDeadline(project);
     setIsDeadlineOpen(true);
+  };
+
+  const handleSetTeamClick = (project: ProjectV2) => {
+    setProjectToSetTeam(project);
+    setIsSetTeamOpen(true);
   };
 
   const confirmDelete = () => {
@@ -2465,6 +2487,7 @@ export function ProjectsV2Table({
                           )}
                         </div>
                       </TableHead>
+                      <TableHead>TEAM</TableHead>
                       <TableHead
                         className='cursor-pointer hover:bg-neutral-100 transition-colors group'
                         onClick={() => {
@@ -2557,33 +2580,36 @@ export function ProjectsV2Table({
                         !showPengirimanV2 &&
                         !showQC && <TableHead>NO SPH</TableHead>}
                       {!showSPD && (
-                        <TableHead
-                          className='cursor-pointer hover:bg-neutral-100 transition-colors group'
-                          onClick={() => {
-                            if (sortBy === 'prioritas') {
-                              setSortOrder(
-                                sortOrder === 'asc' ? 'desc' : 'asc'
-                              );
-                            } else {
-                              setSortBy('prioritas');
-                              setSortOrder('asc');
-                            }
-                            setPage(1);
-                          }}
-                        >
-                          <div className='flex items-center gap-1'>
-                            PRIORITAS
-                            {sortBy === 'prioritas' ? (
-                              sortOrder === 'asc' ? (
-                                <ArrowUp className='h-3 w-3' />
+                        <>
+                          <TableHead
+                            className='cursor-pointer hover:bg-neutral-100 transition-colors group'
+                            onClick={() => {
+                              if (sortBy === 'prioritas') {
+                                setSortOrder(
+                                  sortOrder === 'asc' ? 'desc' : 'asc'
+                                );
+                              } else {
+                                setSortBy('prioritas');
+                                setSortOrder('asc');
+                              }
+                              setPage(1);
+                            }}
+                          >
+                            <div className='flex items-center gap-1'>
+                              PRIORITAS
+                              {sortBy === 'prioritas' ? (
+                                sortOrder === 'asc' ? (
+                                  <ArrowUp className='h-3 w-3' />
+                                ) : (
+                                  <ArrowDown className='h-3 w-3' />
+                                )
                               ) : (
-                                <ArrowDown className='h-3 w-3' />
-                              )
-                            ) : (
-                              <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
-                            )}
-                          </div>
-                        </TableHead>
+                                <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
+                              )}
+                            </div>
+                          </TableHead>
+                          <TableHead>TEAM</TableHead>
+                        </>
                       )}
                       {showPiutang && (
                     <TableHead
@@ -3146,6 +3172,11 @@ export function ProjectsV2Table({
                                     >
                                       Rekap
                                     </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() => handleSetTeamClick(project)}
+                                    >
+                                      Set Team/Divisi
+                                    </DropdownMenuItem>
                                   </DropdownMenuContent>
                                 </DropdownMenu>
                               )}
@@ -3273,6 +3304,12 @@ export function ProjectsV2Table({
                                       <FileText className='mr-2 h-4 w-4' />
                                       Rekap
                                     </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() => handleSetTeamClick(project)}
+                                    >
+                                      <Users className='mr-2 h-4 w-4' />
+                                      Set Team/Divisi
+                                    </DropdownMenuItem>
                                   </>
                                 )}
                                 {showQC && (
@@ -3387,6 +3424,32 @@ export function ProjectsV2Table({
                               >
                                 Normal
                               </Badge>
+                            ) : (
+                              <span className='text-muted-foreground italic text-xs'>
+                                -
+                              </span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {project.project_team?.divisi_id ? (
+                              <div className='flex flex-wrap gap-1 max-w-[200px]'>
+                                {project.project_team.divisi_id
+                                  .split(',')
+                                  .map((idStr) => {
+                                    const id = parseInt(idStr.trim(), 10);
+                                    const name = divisionsMap.get(id);
+                                    if (!name) return null;
+                                    return (
+                                      <Badge
+                                        key={id}
+                                        variant='outline'
+                                        className='text-[11px] bg-blue-50 text-blue-700 border-blue-200 whitespace-nowrap'
+                                      >
+                                        {name}
+                                      </Badge>
+                                    );
+                                  })}
+                              </div>
                             ) : (
                               <span className='text-muted-foreground italic text-xs'>
                                 -
@@ -3670,24 +3733,52 @@ export function ProjectsV2Table({
                               </TableCell>
                             )}
                           {!showSPD && (
-                            <TableCell>
-                              {project.prioritas === 'Urgent' ? (
-                                <Badge className='bg-red-100 text-red-700 border border-red-200 hover:bg-red-100 font-semibold text-[11px]'>
-                                  Urgent
-                                </Badge>
-                              ) : project.prioritas === 'Normal' ? (
-                                <Badge
-                                  variant='secondary'
-                                  className='font-normal text-[11px]'
-                                >
-                                  Normal
-                                </Badge>
-                              ) : (
-                                <span className='text-muted-foreground italic text-xs'>
-                                  -
-                                </span>
-                              )}
-                            </TableCell>
+                            <>
+                              <TableCell>
+                                {project.prioritas === 'Urgent' ? (
+                                  <Badge className='bg-red-100 text-red-700 border border-red-200 hover:bg-red-100 font-semibold text-[11px]'>
+                                    Urgent
+                                  </Badge>
+                                ) : project.prioritas === 'Normal' ? (
+                                  <Badge
+                                    variant='secondary'
+                                    className='font-normal text-[11px]'
+                                  >
+                                    Normal
+                                  </Badge>
+                                ) : (
+                                  <span className='text-muted-foreground italic text-xs'>
+                                    -
+                                  </span>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                {project.project_team?.divisi_id ? (
+                                  <div className='flex flex-wrap gap-1 max-w-[200px]'>
+                                    {project.project_team.divisi_id
+                                      .split(',')
+                                      .map((idStr) => {
+                                        const id = parseInt(idStr.trim(), 10);
+                                        const name = divisionsMap.get(id);
+                                        if (!name) return null;
+                                        return (
+                                          <Badge
+                                            key={id}
+                                            variant='outline'
+                                            className='text-[11px] bg-blue-50 text-blue-700 border-blue-200 whitespace-nowrap'
+                                          >
+                                            {name}
+                                          </Badge>
+                                        );
+                                      })}
+                                  </div>
+                                ) : (
+                                  <span className='text-muted-foreground italic text-xs'>
+                                    -
+                                  </span>
+                                )}
+                              </TableCell>
+                            </>
                           )}
                         </>
                       )}
@@ -4613,6 +4704,12 @@ export function ProjectsV2Table({
             open={isDeadlineOpen}
             onOpenChange={setIsDeadlineOpen}
             project={projectToEditDeadline}
+          />
+
+          <SetTeamDialog
+            open={isSetTeamOpen}
+            onOpenChange={setIsSetTeamOpen}
+            project={projectToSetTeam}
           />
 
           <AlertDialog

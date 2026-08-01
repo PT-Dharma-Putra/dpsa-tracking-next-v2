@@ -131,6 +131,13 @@ export interface ProjectV2 {
     file: string | null;
     file_rekap_dokubah: string | null;
   };
+  project_team?: {
+    id: number;
+    project_id: number;
+    divisi_id: string | null;
+    created_at?: string;
+    updated_at?: string;
+  };
 }
 
 export interface ProgresKerja {
@@ -262,6 +269,32 @@ export const projectV2Service = {
     return data;
   },
 
+  getProjectTeam: async (projectId: number) => {
+    const { data } = await apiClient.get<{
+      id: number;
+      project_id: number;
+      divisi_id: string | null;
+      created_at?: string;
+      updated_at?: string;
+    } | null>(`/projects-v2/${projectId}/team`);
+    return data;
+  },
+
+  updateProjectTeam: async (
+    projectId: number,
+    divisiId: string | (number | string)[]
+  ) => {
+    const { data } = await apiClient.post<{
+      message: string;
+      data: {
+        id: number;
+        project_id: number;
+        divisi_id: string | null;
+      };
+    }>(`/projects-v2/${projectId}/team`, { divisi_id: divisiId });
+    return data;
+  },
+
   createProject: async (payload: {
     name: string;
     client_id: number;
@@ -319,9 +352,18 @@ export const projectV2Service = {
     return data;
   },
 
-  getDesigners: async () => {
+  getDesigners: async (role?: string) => {
     const { data } = await apiClient.get<Array<{ id: number; name: string }>>(
-      '/designers'
+      '/designers',
+      { params: role ? { role } : undefined }
+    );
+    return data;
+  },
+
+  getEngineers: async () => {
+    const { data } = await apiClient.get<Array<{ id: number; name: string }>>(
+      '/designers',
+      { params: { role: 'engineer' } }
     );
     return data;
   },

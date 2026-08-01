@@ -258,8 +258,8 @@ export default function EngineerDetailPage() {
   });
 
   const { data: designers } = useQuery({
-    queryKey: ['designers'],
-    queryFn: () => projectV2Service.getDesigners(),
+    queryKey: ['engineers'],
+    queryFn: () => projectV2Service.getEngineers(),
   });
 
   const { data: progress, isLoading: isLoadingProgress } = useQuery({
@@ -1051,7 +1051,7 @@ export default function EngineerDetailPage() {
         <CardContent className='p-0'>
           <div className='overflow-x-auto'>
             <Table className='min-w-max' containerClassName='max-h-[600px] overflow-auto'>
-              <TableHeader className='bg-neutral-50/80 sticky top-0 z-10 shadow-sm shadow-neutral-200/50'>
+              <TableHeader className='bg-neutral-50 sticky top-0 z-10 shadow-sm shadow-neutral-200/50'>
                 <TableRow>
                   <TableHead className='w-[60px] text-center'>#</TableHead>
                   <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>Kode Barang</TableHead>
