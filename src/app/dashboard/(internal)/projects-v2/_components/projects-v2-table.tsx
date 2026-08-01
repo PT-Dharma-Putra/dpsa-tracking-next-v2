@@ -637,7 +637,7 @@ export function ProjectsV2Table({
   // PIC Management
   const { data: designers = [] } = useQuery({
     queryKey: ['designers'],
-    queryFn: () => projectV2Service.getDesigners(),
+    queryFn: () => projectV2Service.getDesigners('designer'),
     enabled: showSPD,
   });
 

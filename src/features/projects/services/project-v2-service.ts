@@ -352,9 +352,18 @@ export const projectV2Service = {
     return data;
   },
 
-  getDesigners: async () => {
+  getDesigners: async (role?: string) => {
     const { data } = await apiClient.get<Array<{ id: number; name: string }>>(
-      '/designers'
+      '/designers',
+      { params: role ? { role } : undefined }
+    );
+    return data;
+  },
+
+  getEngineers: async () => {
+    const { data } = await apiClient.get<Array<{ id: number; name: string }>>(
+      '/designers',
+      { params: { role: 'engineer' } }
     );
     return data;
   },
