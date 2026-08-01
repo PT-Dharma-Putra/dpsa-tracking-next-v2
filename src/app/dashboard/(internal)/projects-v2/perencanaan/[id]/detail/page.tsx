@@ -1594,7 +1594,7 @@ export default function PerencanaanDetailPage() {
 
         <div className='rounded-xl border border-neutral-200 bg-white overflow-hidden shadow-sm'>
           <Table containerClassName="max-h-[600px] overflow-auto">
-            <TableHeader className='bg-neutral-50/80 sticky top-0 z-10 shadow-sm shadow-neutral-200/50'>
+            <TableHeader className='bg-neutral-50 sticky top-0 z-10 shadow-sm shadow-neutral-200/50'>
               <TableRow className='hover:bg-transparent'>
                 <TableHead className='w-[40px] text-[10px] uppercase font-bold text-neutral-500'>#</TableHead>
                 <TableHead className='w-[40px] text-center'>
