@@ -59,7 +59,13 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 export default function QCDetailPage() {
   const params = useParams();
@@ -84,13 +90,16 @@ export default function QCDetailPage() {
     null
   );
   const [produksiData, setProduksiData] = React.useState<Partial<Produksi>>({});
-  const [skippedFields, setSkippedFields] = React.useState<Record<string, boolean>>({});
+  const [skippedFields, setSkippedFields] = React.useState<
+    Record<string, boolean>
+  >({});
   const [isOrderCollapsed, setIsOrderCollapsed] = React.useState(false);
   const [isProgressCollapsed, setIsProgressCollapsed] = React.useState(false);
 
   // Produksi View State
   const [isProduksiViewOpen, setIsProduksiViewOpen] = React.useState(false);
-  const [produksiViewItem, setProduksiViewItem] = React.useState<ProjectItemV2 | null>(null);
+  const [produksiViewItem, setProduksiViewItem] =
+    React.useState<ProjectItemV2 | null>(null);
 
   const openProduksiView = (item: ProjectItemV2) => {
     setProduksiViewItem(item);
@@ -100,7 +109,14 @@ export default function QCDetailPage() {
   // QC Cek State
   const [isQcDialogOpen, setIsQcDialogOpen] = React.useState(false);
   const [qcItem, setQcItem] = React.useState<ProjectItemV2 | null>(null);
-  const [qcData, setQcData] = React.useState<{ qty: number; repair: number; pass: number; afkir: number; status: string; file: File | null }>({
+  const [qcData, setQcData] = React.useState<{
+    qty: number;
+    repair: number;
+    pass: number;
+    afkir: number;
+    status: string;
+    file: File | null;
+  }>({
     qty: 0,
     repair: 0,
     pass: 0,
@@ -110,8 +126,14 @@ export default function QCDetailPage() {
   });
 
   const updateQcMutation = useMutation({
-    mutationFn: (payload: { qty: number; repair: number; pass: number; afkir: number; status: string; file: File | null }) =>
-      projectV2Service.updateQcCek(qcItem!.id, payload),
+    mutationFn: (payload: {
+      qty: number;
+      repair: number;
+      pass: number;
+      afkir: number;
+      status: string;
+      file: File | null;
+    }) => projectV2Service.updateQcCek(qcItem!.id, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ['project-v2-items', projectId],
@@ -127,7 +149,8 @@ export default function QCDetailPage() {
   const handleQcUpdate = () => {
     if (!qcItem) return;
     // Status otomatis: Pass jika pass > 0 & repair = 0 & afkir = 0, Repair jika ada repair, Defect jika ada afkir
-    const autoStatus = qcData.afkir > 0 ? 'Defect' : qcData.repair > 0 ? 'Repair' : 'Pass';
+    const autoStatus =
+      qcData.afkir > 0 ? 'Defect' : qcData.repair > 0 ? 'Repair' : 'Pass';
     updateQcMutation.mutate({ ...qcData, status: autoStatus });
   };
 
@@ -166,8 +189,13 @@ export default function QCDetailPage() {
 
   const handleProduksiUpdate = () => {
     if (!produksiItem) return;
-    const skippedList = Object.keys(skippedFields).filter((k) => skippedFields[k]);
-    updateProduksiMutation.mutate({ ...produksiData, skipped_fields: skippedList });
+    const skippedList = Object.keys(skippedFields).filter(
+      (k) => skippedFields[k]
+    );
+    updateProduksiMutation.mutate({
+      ...produksiData,
+      skipped_fields: skippedList,
+    });
   };
 
   const openProduksiDialog = (item: ProjectItemV2) => {
@@ -279,25 +307,44 @@ export default function QCDetailPage() {
     );
   }
 
-  const latestOrderProduksi = project.order_produksi && project.order_produksi.length > 0
-    ? project.order_produksi[project.order_produksi.length - 1]
-    : null;
+  const latestOrderProduksi =
+    project.order_produksi && project.order_produksi.length > 0
+      ? project.order_produksi[project.order_produksi.length - 1]
+      : null;
 
   const flowSteps = [
     {
-      id: 1, title: 'Order Produksi', isCompleted: !!latestOrderProduksi,
-      isActive: true, icon: FileText, color: 'text-orange-600',
-      bgColor: 'bg-orange-500', lightBg: 'bg-orange-50', borderColor: 'border-orange-200',
+      id: 1,
+      title: 'Order Produksi',
+      isCompleted: !!latestOrderProduksi,
+      isActive: true,
+      icon: FileText,
+      color: 'text-orange-600',
+      bgColor: 'bg-orange-500',
+      lightBg: 'bg-orange-50',
+      borderColor: 'border-orange-200',
     },
     {
-      id: 2, title: 'Progress Produksi', isCompleted: (project.progres_produksi ?? 0) >= 100,
-      isActive: !!latestOrderProduksi, icon: BarChart3, color: 'text-blue-600',
-      bgColor: 'bg-blue-500', lightBg: 'bg-blue-50', borderColor: 'border-blue-200',
+      id: 2,
+      title: 'Progress Produksi',
+      isCompleted: (project.progres_produksi ?? 0) >= 100,
+      isActive: !!latestOrderProduksi,
+      icon: BarChart3,
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-500',
+      lightBg: 'bg-blue-50',
+      borderColor: 'border-blue-200',
     },
     {
-      id: 3, title: 'QC Pass', isCompleted: qcPassPercentage >= 100,
-      isActive: (project.progres_produksi ?? 0) > 0, icon: ListChecks, color: 'text-emerald-600',
-      bgColor: 'bg-emerald-500', lightBg: 'bg-emerald-50', borderColor: 'border-emerald-200',
+      id: 3,
+      title: 'QC Pass',
+      isCompleted: qcPassPercentage >= 100,
+      isActive: (project.progres_produksi ?? 0) > 0,
+      icon: ListChecks,
+      color: 'text-emerald-600',
+      bgColor: 'bg-emerald-500',
+      lightBg: 'bg-emerald-50',
+      borderColor: 'border-emerald-200',
     },
   ];
 
@@ -305,13 +352,22 @@ export default function QCDetailPage() {
     <div className='flex flex-col gap-6 p-6 max-w-[1600px] mx-auto w-full'>
       <div className='flex flex-col sm:flex-row sm:items-center gap-4'>
         <div className='flex items-start gap-4 shrink-0'>
-          <Button variant='ghost' size='icon' onClick={() => router.back()} className='rounded-full hover:bg-neutral-100 mt-0.5'>
+          <Button
+            variant='ghost'
+            size='icon'
+            onClick={() => router.back()}
+            className='rounded-full hover:bg-neutral-100 mt-0.5'
+          >
             <ArrowLeft className='h-5 w-5' />
           </Button>
           <div className='space-y-1.5'>
             <div>
-              <h1 className='text-2xl font-bold tracking-tight text-neutral-900'>{project.name}</h1>
-              <p className='text-xs text-muted-foreground'>QC View - Project Items Management</p>
+              <h1 className='text-2xl font-bold tracking-tight text-neutral-900'>
+                {project.name}
+              </h1>
+              <p className='text-xs text-muted-foreground'>
+                QC View - Project Items Management
+              </p>
             </div>
             <div className='flex flex-wrap items-center gap-x-3 gap-y-1'>
               {project.client?.name && (
@@ -342,21 +398,49 @@ export default function QCDetailPage() {
               const Icon = step.icon;
               return (
                 <React.Fragment key={step.id}>
-                  <div className={`flex items-center gap-1.5 transition-all duration-300 ${step.isActive ? 'opacity-100' : 'opacity-40 grayscale'}`}>
-                    <div className={`h-6 w-6 rounded-full flex items-center justify-center border shadow-sm transition-all duration-500 shrink-0 ${
-                      step.isCompleted ? step.bgColor + ' border-transparent text-white'
-                      : step.isActive ? step.lightBg + ' ' + step.borderColor + ' ' + step.color
-                      : 'bg-neutral-100 border-neutral-200 text-neutral-400'
-                    }`}>
-                      {step.isCompleted ? <CheckCircle2 className='h-3 w-3' /> : <Icon className='h-3 w-3' />}
+                  <div
+                    className={`flex items-center gap-1.5 transition-all duration-300 ${
+                      step.isActive ? 'opacity-100' : 'opacity-40 grayscale'
+                    }`}
+                  >
+                    <div
+                      className={`h-6 w-6 rounded-full flex items-center justify-center border shadow-sm transition-all duration-500 shrink-0 ${
+                        step.isCompleted
+                          ? step.bgColor + ' border-transparent text-white'
+                          : step.isActive
+                          ? step.lightBg +
+                            ' ' +
+                            step.borderColor +
+                            ' ' +
+                            step.color
+                          : 'bg-neutral-100 border-neutral-200 text-neutral-400'
+                      }`}
+                    >
+                      {step.isCompleted ? (
+                        <CheckCircle2 className='h-3 w-3' />
+                      ) : (
+                        <Icon className='h-3 w-3' />
+                      )}
                     </div>
-                    <span className={`text-[10px] font-bold whitespace-nowrap ${step.isCompleted || step.isActive ? 'text-neutral-800' : 'text-neutral-400'}`}>
+                    <span
+                      className={`text-[10px] font-bold whitespace-nowrap ${
+                        step.isCompleted || step.isActive
+                          ? 'text-neutral-800'
+                          : 'text-neutral-400'
+                      }`}
+                    >
                       {step.title}
                     </span>
                   </div>
                   {index < flowSteps.length - 1 && (
                     <div className='w-6 h-[2px] rounded-full bg-neutral-200 overflow-hidden relative mx-0.5 shrink-0'>
-                      <div className={`absolute top-0 left-0 h-full w-full transition-transform duration-700 origin-left ${step.isCompleted ? step.bgColor + ' scale-x-100' : 'scale-x-0'}`} />
+                      <div
+                        className={`absolute top-0 left-0 h-full w-full transition-transform duration-700 origin-left ${
+                          step.isCompleted
+                            ? step.bgColor + ' scale-x-100'
+                            : 'scale-x-0'
+                        }`}
+                      />
                     </div>
                   )}
                 </React.Fragment>
@@ -369,22 +453,39 @@ export default function QCDetailPage() {
       {/* Cards Section */}
       <div className='grid grid-cols-1 md:grid-cols-3 gap-4 w-full'>
         {/* Order Produksi Card */}
-        <Card className={`relative border shadow-sm transition-all duration-300 ${
-          latestOrderProduksi ? 'border-orange-200 bg-white ring-1 ring-orange-100' : 'border-orange-300 bg-white ring-2 ring-orange-500 ring-offset-2'
-        }`}>
+        <Card
+          className={`relative border shadow-sm transition-all duration-300 ${
+            latestOrderProduksi
+              ? 'border-orange-200 bg-white ring-1 ring-orange-100'
+              : 'border-orange-300 bg-white ring-2 ring-orange-500 ring-offset-2'
+          }`}
+        >
           {latestOrderProduksi && (
             <div className='absolute -top-1.5 -right-1.5 h-5 w-5 bg-emerald-500 rounded-full flex items-center justify-center shadow-sm z-10 animate-in zoom-in duration-300'>
               <CheckCircle2 className='h-3 w-3 text-white' />
             </div>
           )}
           <CardHeader className='pb-3 flex flex-row items-center justify-between gap-3'>
-            <button className='flex items-center gap-3 flex-1 text-left' onClick={() => setIsOrderCollapsed(v => !v)}>
-              <div className='h-8 w-8 rounded-full flex items-center justify-center font-bold bg-orange-100 text-orange-600'>1</div>
-              <div className='flex-1'>
-                <CardTitle className='text-base text-neutral-800'>Order Produksi</CardTitle>
-                <p className='text-[10px] text-muted-foreground uppercase tracking-wider'>Production Order</p>
+            <button
+              className='flex items-center gap-3 flex-1 text-left'
+              onClick={() => setIsOrderCollapsed((v) => !v)}
+            >
+              <div className='h-8 w-8 rounded-full flex items-center justify-center font-bold bg-orange-100 text-orange-600'>
+                1
               </div>
-              <ChevronDown className={`h-4 w-4 text-neutral-400 transition-transform duration-200 mr-1 ${isOrderCollapsed ? '-rotate-90' : ''}`} />
+              <div className='flex-1'>
+                <CardTitle className='text-base text-neutral-800'>
+                  Order Produksi
+                </CardTitle>
+                <p className='text-[10px] text-muted-foreground uppercase tracking-wider'>
+                  Production Order
+                </p>
+              </div>
+              <ChevronDown
+                className={`h-4 w-4 text-neutral-400 transition-transform duration-200 mr-1 ${
+                  isOrderCollapsed ? '-rotate-90' : ''
+                }`}
+              />
             </button>
           </CardHeader>
           {!isOrderCollapsed && (
@@ -396,78 +497,145 @@ export default function QCDetailPage() {
                       <FileText className='h-4 w-4' />
                     </div>
                     <div>
-                      <p className='text-xs font-bold text-orange-900'>Order Produksi</p>
-                      <p className='text-[10px] text-orange-600/80'>Target: {latestOrderProduksi.target_selesai ? format(new Date(latestOrderProduksi.target_selesai), 'MMM d, yyyy') : '-'}</p>
+                      <p className='text-xs font-bold text-orange-900'>
+                        Order Produksi
+                      </p>
+                      <p className='text-[10px] text-orange-600/80'>
+                        Target:{' '}
+                        {latestOrderProduksi.target_selesai
+                          ? format(
+                              new Date(latestOrderProduksi.target_selesai),
+                              'MMM d, yyyy'
+                            )
+                          : '-'}
+                      </p>
                     </div>
                   </div>
-                  <Button variant='ghost' size='icon' className='h-8 w-8 text-orange-600 hover:bg-orange-200 bg-white shadow-sm border border-orange-100' asChild>
-                    <a href={`${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '')}/storage/${latestOrderProduksi.file}`} target='_blank' rel='noopener noreferrer'>
+                  <Button
+                    variant='ghost'
+                    size='icon'
+                    className='h-8 w-8 text-orange-600 hover:bg-orange-200 bg-white shadow-sm border border-orange-100'
+                    asChild
+                  >
+                    <a
+                      href={`${(
+                        process.env.NEXT_PUBLIC_API_URL ||
+                        'http://localhost:8000'
+                      ).replace('/api', '')}/storage/${
+                        latestOrderProduksi.file
+                      }`}
+                      target='_blank'
+                      rel='noopener noreferrer'
+                    >
                       <FileDown className='h-4 w-4' />
                     </a>
                   </Button>
                 </div>
               ) : (
-                <p className='text-xs text-muted-foreground italic'>Belum ada Order Produksi.</p>
+                <p className='text-xs text-muted-foreground italic'>
+                  Belum ada Order Produksi.
+                </p>
               )}
             </CardContent>
           )}
         </Card>
 
         {/* Progress Produksi Card */}
-        <Card className={`relative border shadow-sm transition-all duration-300 ${
-          (project.progres_produksi || 0) >= 100 ? 'border-emerald-200 bg-white ring-1 ring-emerald-100' : 'border-blue-200 bg-white ring-1 ring-blue-100'
-        }`}>
+        <Card
+          className={`relative border shadow-sm transition-all duration-300 ${
+            (project.progres_produksi || 0) >= 100
+              ? 'border-emerald-200 bg-white ring-1 ring-emerald-100'
+              : 'border-blue-200 bg-white ring-1 ring-blue-100'
+          }`}
+        >
           {(project.progres_produksi || 0) >= 100 && (
             <div className='absolute -top-1.5 -right-1.5 h-5 w-5 bg-emerald-500 rounded-full flex items-center justify-center shadow-sm z-10 animate-in zoom-in duration-300'>
               <CheckCircle2 className='h-3 w-3 text-white' />
             </div>
           )}
           <CardHeader className='pb-3 flex flex-row items-center justify-between gap-3'>
-            <button className='flex items-center gap-3 flex-1 text-left' onClick={() => setIsProgressCollapsed(v => !v)}>
-              <div className='h-8 w-8 rounded-full flex items-center justify-center font-bold bg-blue-100 text-blue-600'>2</div>
-              <div className='flex-1'>
-                <CardTitle className='text-base text-neutral-800'>Progress Produksi</CardTitle>
-                <p className='text-[10px] text-muted-foreground uppercase tracking-wider'>Production Progress</p>
+            <button
+              className='flex items-center gap-3 flex-1 text-left'
+              onClick={() => setIsProgressCollapsed((v) => !v)}
+            >
+              <div className='h-8 w-8 rounded-full flex items-center justify-center font-bold bg-blue-100 text-blue-600'>
+                2
               </div>
-              <ChevronDown className={`h-4 w-4 text-neutral-400 transition-transform duration-200 mr-1 ${isProgressCollapsed ? '-rotate-90' : ''}`} />
+              <div className='flex-1'>
+                <CardTitle className='text-base text-neutral-800'>
+                  Progress Produksi
+                </CardTitle>
+                <p className='text-[10px] text-muted-foreground uppercase tracking-wider'>
+                  Production Progress
+                </p>
+              </div>
+              <ChevronDown
+                className={`h-4 w-4 text-neutral-400 transition-transform duration-200 mr-1 ${
+                  isProgressCollapsed ? '-rotate-90' : ''
+                }`}
+              />
             </button>
           </CardHeader>
           {!isProgressCollapsed && (
             <CardContent className='pt-0'>
               <div className='h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden mt-4'>
-                <div className='h-full bg-blue-600 transition-all duration-500' style={{ width: `${project.progres_produksi || 0}%` }} />
+                <div
+                  className='h-full bg-blue-600 transition-all duration-500'
+                  style={{ width: `${project.progres_produksi || 0}%` }}
+                />
               </div>
               <div className='flex justify-between items-center mt-1'>
-                <p className='text-[10px] font-bold text-neutral-700'>Persentase per SPK</p>
-                <p className='text-[10px] font-bold text-blue-600'>{Number(project.progres_produksi || 0).toFixed(2)}%</p>
+                <p className='text-[10px] font-bold text-neutral-700'>
+                  Persentase per SPK
+                </p>
+                <p className='text-[10px] font-bold text-blue-600'>
+                  {Number(project.progres_produksi || 0).toFixed(2)}%
+                </p>
               </div>
             </CardContent>
           )}
         </Card>
 
         {/* QC Pass Card */}
-        <Card className={`relative border shadow-sm transition-all duration-300 ${
-          qcPassPercentage >= 100 ? 'border-emerald-200 bg-white ring-1 ring-emerald-100' : 'border-neutral-200 bg-white'
-        }`}>
+        <Card
+          className={`relative border shadow-sm transition-all duration-300 ${
+            qcPassPercentage >= 100
+              ? 'border-emerald-200 bg-white ring-1 ring-emerald-100'
+              : 'border-neutral-200 bg-white'
+          }`}
+        >
           {qcPassPercentage >= 100 && (
             <div className='absolute -top-1.5 -right-1.5 h-5 w-5 bg-emerald-500 rounded-full flex items-center justify-center shadow-sm z-10 animate-in zoom-in duration-300'>
               <CheckCircle2 className='h-3 w-3 text-white' />
             </div>
           )}
           <CardHeader className='pb-3 flex flex-row items-center gap-3'>
-            <div className='h-8 w-8 rounded-full flex items-center justify-center font-bold bg-emerald-100 text-emerald-600'>3</div>
+            <div className='h-8 w-8 rounded-full flex items-center justify-center font-bold bg-emerald-100 text-emerald-600'>
+              3
+            </div>
             <div className='flex-1'>
-              <CardTitle className='text-base text-neutral-800'>QC Pass Rate</CardTitle>
-              <p className='text-[10px] text-muted-foreground uppercase tracking-wider'>Quality Control</p>
+              <CardTitle className='text-base text-neutral-800'>
+                QC Pass Rate
+              </CardTitle>
+              <p className='text-[10px] text-muted-foreground uppercase tracking-wider'>
+                Quality Control
+              </p>
             </div>
           </CardHeader>
           <CardContent className='pt-0'>
             <div className='h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden mt-4'>
-              <div className='h-full bg-emerald-500 transition-all duration-500' style={{ width: `${qcPassPercentage}%` }} />
+              <div
+                className='h-full bg-emerald-500 transition-all duration-500'
+                style={{ width: `${qcPassPercentage}%` }}
+              />
             </div>
             <div className='flex justify-between items-center mt-1'>
-              <p className='text-[10px] font-bold text-neutral-700'>Persentase QC Pass</p>
-              <p className='text-[10px] font-bold text-emerald-600'>{qcPassPercentage.toFixed(2)}%</p>
+              <p className='text-[10px] font-bold text-neutral-700'>
+                Persentase QC Pass
+              </p>
+              <p className='text-[10px] font-bold text-emerald-600'>
+                {qcPassPercentage.toFixed(2)}%
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -483,54 +651,103 @@ export default function QCDetailPage() {
         </div>
 
         <div className='rounded-xl border border-neutral-200 bg-white overflow-hidden shadow-sm'>
-          <Table>
-            <TableHeader className='bg-neutral-50/80'>
-              <TableRow>
+          <Table containerClassName="max-h-[600px] overflow-auto">
+            <TableHeader className='bg-neutral-50 sticky top-0 z-10 shadow-sm shadow-neutral-200/50'>
+              <TableRow className='hover:bg-transparent'>
                 <TableHead className='w-[50px]'>#</TableHead>
-                <TableHead>Kode Barang</TableHead>
-                <TableHead>Floor</TableHead>
-                <TableHead>Room</TableHead>
-                <TableHead>Item Name</TableHead>
-                <TableHead>Desc</TableHead>
+                {/* <TableHead>Kode Barang</TableHead> */}
+                <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>
+                  Lantai | Ruang
+                </TableHead>
+                <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>
+                  Nama Item
+                </TableHead>
                 <TableHead>Vol</TableHead>
                 <TableHead>Dimensions</TableHead>
                 <TableHead>Qty</TableHead>
                 <TableHead>GK MDL</TableHead>
                 <TableHead>Gambar Kerja</TableHead>
                 <TableHead>PO Divisi</TableHead>
-                <TableHead>Persentase Produksi</TableHead>
+                <TableHead>
+                  <div className='flex flex-col'>
+                    <span>Persentase</span>
+                    <span>Produksi</span>
+                  </div>
+                </TableHead>
                 <TableHead>QC Cek</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoadingItems ? (
                 <TableRow>
-                  <TableCell colSpan={14} className='h-32 text-center text-muted-foreground'>
+                  <TableCell
+                    colSpan={14}
+                    className='h-32 text-center text-muted-foreground'
+                  >
                     <Loader2 className='h-6 w-6 animate-spin mx-auto' />
                   </TableCell>
                 </TableRow>
               ) : items?.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={14} className='h-32 text-center text-muted-foreground'>
+                  <TableCell
+                    colSpan={14}
+                    className='h-32 text-center text-muted-foreground'
+                  >
                     No items recorded for this project.
                   </TableCell>
                 </TableRow>
               ) : (
                 items?.map((item, index) => (
-                  <TableRow key={item.id} className='hover:bg-neutral-50/50 transition-colors'>
-                    <TableCell className='text-muted-foreground font-medium'>{index + 1}</TableCell>
-                    <TableCell className='text-xs font-mono text-neutral-600'>{item.mdl_item?.kode_barang || '-'}</TableCell>
-                    <TableCell className='text-xs font-medium'>
-                      {item.lantai || '-'}
+                  <TableRow
+                    key={item.id}
+                    className='hover:bg-neutral-50/50 transition-colors'
+                  >
+                    <TableCell className='text-muted-foreground font-medium'>
+                      {index + 1}
                     </TableCell>
-                    <TableCell className='text-xs max-w-[120px] truncate'>
-                      {item.ruang || '-'}
+                    {/* <TableCell className='text-xs font-mono text-neutral-600'>{item.mdl_item?.kode_barang || '-'}</TableCell> */}
+                    <TableCell>
+                      <div className='flex flex-col gap-0.5'>
+                        <span className='text-xs font-bold text-neutral-800'>
+                          {item.lantai || '-'}
+                        </span>
+                        <span
+                          className='text-[12px] text-muted-foreground truncate max-w-[120px]'
+                          title={item.ruang}
+                        >
+                          {item.ruang || '-'}
+                        </span>
+                      </div>
                     </TableCell>
-                    <TableCell className='font-bold text-neutral-800'>
-                      {item.item}
-                    </TableCell>
-                    <TableCell className='max-w-[150px] truncate text-xs text-muted-foreground'>
-                      {item.keterangan || '-'}
+                    <TableCell>
+                      {item.keterangan ? (
+                        <TooltipProvider delayDuration={200}>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className='flex flex-col gap-0.5'>
+                                <span className='text-sm font-bold text-neutral-900 group-hover:text-blue-600 transition-colors'>
+                                  {item.item}
+                                </span>
+                                <span className='text-sm text-muted-foreground truncate max-w-[200px]'>
+                                  {item.keterangan || '-'}
+                                </span>
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent
+                              side='top'
+                              className='max-w-[300px] break-words'
+                            >
+                              <p className='text-xs'>{item.keterangan}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      ) : (
+                        <div className='flex flex-col gap-0.5'>
+                          <span className='text-xs font-bold text-neutral-900 group-hover:text-blue-600 transition-colors'>
+                            {item.item}
+                          </span>
+                        </div>
+                      )}
                     </TableCell>
                     <TableCell className='font-bold text-blue-600 text-xs'>
                       {item.volume || '-'}
@@ -549,9 +766,7 @@ export default function QCDetailPage() {
                           asChild
                         >
                           <a
-                            href={`${
-                              item.mdl_item.link_gambar_kerja
-                            }`}
+                            href={`${item.mdl_item.link_gambar_kerja}`}
                             target='_blank'
                             rel='noopener noreferrer'
                           >
@@ -577,9 +792,7 @@ export default function QCDetailPage() {
                             asChild
                           >
                             <a
-                              href={`${
-                                item.gambar_kerja.file
-                              }`}
+                              href={`${item.gambar_kerja.file}`}
                               target='_blank'
                               rel='noopener noreferrer'
                             >
@@ -619,32 +832,51 @@ export default function QCDetailPage() {
                             style={{ width: `${item.produksi?.persen || 0}%` }}
                           />
                         </div>
-                        <span className='text-[10px] font-bold text-neutral-700'>{item.produksi?.persen || 0}%</span>
+                        <span className='text-[10px] font-bold text-neutral-700'>
+                          {item.produksi?.persen || 0}%
+                        </span>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div 
+                      <div
                         className='cursor-pointer hover:bg-neutral-100 p-2 rounded-lg transition-colors group flex items-center gap-2'
                         onClick={() => openQcDialog(item)}
                       >
                         {item.qc_cek ? (
                           <>
-                            <span className="text-[10px] font-bold text-neutral-600">{item.qc_cek.qty} Unit</span>
+                            <span className='text-[10px] font-bold text-neutral-600'>
+                              {item.qc_cek.qty} Unit
+                            </span>
                             {item.qc_cek.file && (
-                              <Button variant="ghost" size="icon" className="h-6 w-6 text-blue-600" asChild onClick={(e) => e.stopPropagation()}>
-                                <a 
-                                  href={`${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '')}/storage/${item.qc_cek.file}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
+                              <Button
+                                variant='ghost'
+                                size='icon'
+                                className='h-6 w-6 text-blue-600'
+                                asChild
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <a
+                                  href={`${(
+                                    process.env.NEXT_PUBLIC_API_URL ||
+                                    'http://localhost:8000'
+                                  ).replace('/api', '')}/storage/${
+                                    item.qc_cek.file
+                                  }`}
+                                  target='_blank'
+                                  rel='noopener noreferrer'
                                 >
-                                  <Eye className="h-3.5 w-3.5" />
+                                  <Eye className='h-3.5 w-3.5' />
                                 </a>
                               </Button>
                             )}
                           </>
                         ) : (
-                          <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 px-2">
-                            <Upload className="h-3 w-3" />
+                          <Button
+                            variant='outline'
+                            size='sm'
+                            className='h-7 text-[10px] gap-1 px-2'
+                          >
+                            <Upload className='h-3 w-3' />
                             Input QC
                           </Button>
                         )}
@@ -707,7 +939,11 @@ export default function QCDetailPage() {
                       type='button'
                       variant={skippedFields.cold_press ? 'default' : 'outline'}
                       size='sm'
-                      className={`h-6 px-2 text-xs ${skippedFields.cold_press ? 'bg-neutral-500 hover:bg-neutral-600' : 'text-neutral-500'}`}
+                      className={`h-6 px-2 text-xs ${
+                        skippedFields.cold_press
+                          ? 'bg-neutral-500 hover:bg-neutral-600'
+                          : 'text-neutral-500'
+                      }`}
                       onClick={() => toggleSkipField('cold_press')}
                     >
                       {skippedFields.cold_press ? 'Batalkan' : 'Lewati Proses'}
@@ -718,14 +954,27 @@ export default function QCDetailPage() {
                     min={0}
                     max={produksiData.jumlah_order}
                     disabled={skippedFields.cold_press}
-                    value={skippedFields.cold_press ? '-' : produksiData.cold_press === 0 ? '' : produksiData.cold_press || ''}
+                    value={
+                      skippedFields.cold_press
+                        ? '-'
+                        : produksiData.cold_press === 0
+                        ? ''
+                        : produksiData.cold_press || ''
+                    }
                     onChange={(e) =>
                       setProduksiData({
                         ...produksiData,
-                        cold_press: Math.min(Math.max(parseInt(e.target.value) || 0, 0), produksiData.jumlah_order ?? 0),
+                        cold_press: Math.min(
+                          Math.max(parseInt(e.target.value) || 0, 0),
+                          produksiData.jumlah_order ?? 0
+                        ),
                       })
                     }
-                    className={skippedFields.cold_press ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100' : ''}
+                    className={
+                      skippedFields.cold_press
+                        ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100'
+                        : ''
+                    }
                   />
                 </div>
                 <div className='space-y-2'>
@@ -733,9 +982,15 @@ export default function QCDetailPage() {
                     <Label>Running Saw</Label>
                     <Button
                       type='button'
-                      variant={skippedFields.running_saw ? 'default' : 'outline'}
+                      variant={
+                        skippedFields.running_saw ? 'default' : 'outline'
+                      }
                       size='sm'
-                      className={`h-6 px-2 text-xs ${skippedFields.running_saw ? 'bg-neutral-500 hover:bg-neutral-600' : 'text-neutral-500'}`}
+                      className={`h-6 px-2 text-xs ${
+                        skippedFields.running_saw
+                          ? 'bg-neutral-500 hover:bg-neutral-600'
+                          : 'text-neutral-500'
+                      }`}
                       onClick={() => toggleSkipField('running_saw')}
                     >
                       {skippedFields.running_saw ? 'Batalkan' : 'Lewati Proses'}
@@ -746,14 +1001,27 @@ export default function QCDetailPage() {
                     min={0}
                     max={produksiData.jumlah_order}
                     disabled={skippedFields.running_saw}
-                    value={skippedFields.running_saw ? '-' : produksiData.running_saw === 0 ? '' : produksiData.running_saw || ''}
+                    value={
+                      skippedFields.running_saw
+                        ? '-'
+                        : produksiData.running_saw === 0
+                        ? ''
+                        : produksiData.running_saw || ''
+                    }
                     onChange={(e) =>
                       setProduksiData({
                         ...produksiData,
-                        running_saw: Math.min(Math.max(parseInt(e.target.value) || 0, 0), produksiData.jumlah_order ?? 0),
+                        running_saw: Math.min(
+                          Math.max(parseInt(e.target.value) || 0, 0),
+                          produksiData.jumlah_order ?? 0
+                        ),
                       })
                     }
-                    className={skippedFields.running_saw ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100' : ''}
+                    className={
+                      skippedFields.running_saw
+                        ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100'
+                        : ''
+                    }
                   />
                 </div>
                 <div className='space-y-2'>
@@ -763,7 +1031,11 @@ export default function QCDetailPage() {
                       type='button'
                       variant={skippedFields.edging ? 'default' : 'outline'}
                       size='sm'
-                      className={`h-6 px-2 text-xs ${skippedFields.edging ? 'bg-neutral-500 hover:bg-neutral-600' : 'text-neutral-500'}`}
+                      className={`h-6 px-2 text-xs ${
+                        skippedFields.edging
+                          ? 'bg-neutral-500 hover:bg-neutral-600'
+                          : 'text-neutral-500'
+                      }`}
                       onClick={() => toggleSkipField('edging')}
                     >
                       {skippedFields.edging ? 'Batalkan' : 'Lewati Proses'}
@@ -774,14 +1046,27 @@ export default function QCDetailPage() {
                     min={0}
                     max={produksiData.jumlah_order}
                     disabled={skippedFields.edging}
-                    value={skippedFields.edging ? '-' : produksiData.edging === 0 ? '' : produksiData.edging || ''}
+                    value={
+                      skippedFields.edging
+                        ? '-'
+                        : produksiData.edging === 0
+                        ? ''
+                        : produksiData.edging || ''
+                    }
                     onChange={(e) =>
                       setProduksiData({
                         ...produksiData,
-                        edging: Math.min(Math.max(parseInt(e.target.value) || 0, 0), produksiData.jumlah_order ?? 0),
+                        edging: Math.min(
+                          Math.max(parseInt(e.target.value) || 0, 0),
+                          produksiData.jumlah_order ?? 0
+                        ),
                       })
                     }
-                    className={skippedFields.edging ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100' : ''}
+                    className={
+                      skippedFields.edging
+                        ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100'
+                        : ''
+                    }
                   />
                 </div>
                 <div className='space-y-2'>
@@ -791,7 +1076,11 @@ export default function QCDetailPage() {
                       type='button'
                       variant={skippedFields.cnc ? 'default' : 'outline'}
                       size='sm'
-                      className={`h-6 px-2 text-xs ${skippedFields.cnc ? 'bg-neutral-500 hover:bg-neutral-600' : 'text-neutral-500'}`}
+                      className={`h-6 px-2 text-xs ${
+                        skippedFields.cnc
+                          ? 'bg-neutral-500 hover:bg-neutral-600'
+                          : 'text-neutral-500'
+                      }`}
                       onClick={() => toggleSkipField('cnc')}
                     >
                       {skippedFields.cnc ? 'Batalkan' : 'Lewati Proses'}
@@ -802,14 +1091,27 @@ export default function QCDetailPage() {
                     min={0}
                     max={produksiData.jumlah_order}
                     disabled={skippedFields.cnc}
-                    value={skippedFields.cnc ? '-' : produksiData.cnc === 0 ? '' : produksiData.cnc || ''}
+                    value={
+                      skippedFields.cnc
+                        ? '-'
+                        : produksiData.cnc === 0
+                        ? ''
+                        : produksiData.cnc || ''
+                    }
                     onChange={(e) =>
                       setProduksiData({
                         ...produksiData,
-                        cnc: Math.min(Math.max(parseInt(e.target.value) || 0, 0), produksiData.jumlah_order ?? 0),
+                        cnc: Math.min(
+                          Math.max(parseInt(e.target.value) || 0, 0),
+                          produksiData.jumlah_order ?? 0
+                        ),
                       })
                     }
-                    className={skippedFields.cnc ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100' : ''}
+                    className={
+                      skippedFields.cnc
+                        ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100'
+                        : ''
+                    }
                   />
                 </div>
               </div>
@@ -826,9 +1128,15 @@ export default function QCDetailPage() {
                     <Label>Tukang Kayu</Label>
                     <Button
                       type='button'
-                      variant={skippedFields.tukang_kayu ? 'default' : 'outline'}
+                      variant={
+                        skippedFields.tukang_kayu ? 'default' : 'outline'
+                      }
                       size='sm'
-                      className={`h-6 px-2 text-xs ${skippedFields.tukang_kayu ? 'bg-neutral-500 hover:bg-neutral-600' : 'text-neutral-500'}`}
+                      className={`h-6 px-2 text-xs ${
+                        skippedFields.tukang_kayu
+                          ? 'bg-neutral-500 hover:bg-neutral-600'
+                          : 'text-neutral-500'
+                      }`}
                       onClick={() => toggleSkipField('tukang_kayu')}
                     >
                       {skippedFields.tukang_kayu ? 'Batalkan' : 'Lewati Proses'}
@@ -839,14 +1147,27 @@ export default function QCDetailPage() {
                     min={0}
                     max={produksiData.jumlah_order}
                     disabled={skippedFields.tukang_kayu}
-                    value={skippedFields.tukang_kayu ? '-' : produksiData.tukang_kayu === 0 ? '' : produksiData.tukang_kayu || ''}
+                    value={
+                      skippedFields.tukang_kayu
+                        ? '-'
+                        : produksiData.tukang_kayu === 0
+                        ? ''
+                        : produksiData.tukang_kayu || ''
+                    }
                     onChange={(e) =>
                       setProduksiData({
                         ...produksiData,
-                        tukang_kayu: Math.min(Math.max(parseInt(e.target.value) || 0, 0), produksiData.jumlah_order ?? 0),
+                        tukang_kayu: Math.min(
+                          Math.max(parseInt(e.target.value) || 0, 0),
+                          produksiData.jumlah_order ?? 0
+                        ),
                       })
                     }
-                    className={skippedFields.tukang_kayu ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100' : ''}
+                    className={
+                      skippedFields.tukang_kayu
+                        ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100'
+                        : ''
+                    }
                   />
                 </div>
                 <div className='space-y-2'>
@@ -856,7 +1177,11 @@ export default function QCDetailPage() {
                       type='button'
                       variant={skippedFields.tukang_jok ? 'default' : 'outline'}
                       size='sm'
-                      className={`h-6 px-2 text-xs ${skippedFields.tukang_jok ? 'bg-neutral-500 hover:bg-neutral-600' : 'text-neutral-500'}`}
+                      className={`h-6 px-2 text-xs ${
+                        skippedFields.tukang_jok
+                          ? 'bg-neutral-500 hover:bg-neutral-600'
+                          : 'text-neutral-500'
+                      }`}
                       onClick={() => toggleSkipField('tukang_jok')}
                     >
                       {skippedFields.tukang_jok ? 'Batalkan' : 'Lewati Proses'}
@@ -867,14 +1192,27 @@ export default function QCDetailPage() {
                     min={0}
                     max={produksiData.jumlah_order}
                     disabled={skippedFields.tukang_jok}
-                    value={skippedFields.tukang_jok ? '-' : produksiData.tukang_jok === 0 ? '' : produksiData.tukang_jok || ''}
+                    value={
+                      skippedFields.tukang_jok
+                        ? '-'
+                        : produksiData.tukang_jok === 0
+                        ? ''
+                        : produksiData.tukang_jok || ''
+                    }
                     onChange={(e) =>
                       setProduksiData({
                         ...produksiData,
-                        tukang_jok: Math.min(Math.max(parseInt(e.target.value) || 0, 0), produksiData.jumlah_order ?? 0),
+                        tukang_jok: Math.min(
+                          Math.max(parseInt(e.target.value) || 0, 0),
+                          produksiData.jumlah_order ?? 0
+                        ),
                       })
                     }
-                    className={skippedFields.tukang_jok ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100' : ''}
+                    className={
+                      skippedFields.tukang_jok
+                        ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100'
+                        : ''
+                    }
                   />
                 </div>
                 <div className='space-y-2'>
@@ -884,7 +1222,11 @@ export default function QCDetailPage() {
                       type='button'
                       variant={skippedFields.rakit ? 'default' : 'outline'}
                       size='sm'
-                      className={`h-6 px-2 text-xs ${skippedFields.rakit ? 'bg-neutral-500 hover:bg-neutral-600' : 'text-neutral-500'}`}
+                      className={`h-6 px-2 text-xs ${
+                        skippedFields.rakit
+                          ? 'bg-neutral-500 hover:bg-neutral-600'
+                          : 'text-neutral-500'
+                      }`}
                       onClick={() => toggleSkipField('rakit')}
                     >
                       {skippedFields.rakit ? 'Batalkan' : 'Lewati Proses'}
@@ -895,14 +1237,27 @@ export default function QCDetailPage() {
                     min={0}
                     max={produksiData.jumlah_order}
                     disabled={skippedFields.rakit}
-                    value={skippedFields.rakit ? '-' : produksiData.rakit === 0 ? '' : produksiData.rakit || ''}
+                    value={
+                      skippedFields.rakit
+                        ? '-'
+                        : produksiData.rakit === 0
+                        ? ''
+                        : produksiData.rakit || ''
+                    }
                     onChange={(e) =>
                       setProduksiData({
                         ...produksiData,
-                        rakit: Math.min(Math.max(parseInt(e.target.value) || 0, 0), produksiData.jumlah_order ?? 0),
+                        rakit: Math.min(
+                          Math.max(parseInt(e.target.value) || 0, 0),
+                          produksiData.jumlah_order ?? 0
+                        ),
                       })
                     }
-                    className={skippedFields.rakit ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100' : ''}
+                    className={
+                      skippedFields.rakit
+                        ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100'
+                        : ''
+                    }
                   />
                 </div>
                 <div className='space-y-2'>
@@ -912,7 +1267,11 @@ export default function QCDetailPage() {
                       type='button'
                       variant={skippedFields.finishing ? 'default' : 'outline'}
                       size='sm'
-                      className={`h-6 px-2 text-xs ${skippedFields.finishing ? 'bg-neutral-500 hover:bg-neutral-600' : 'text-neutral-500'}`}
+                      className={`h-6 px-2 text-xs ${
+                        skippedFields.finishing
+                          ? 'bg-neutral-500 hover:bg-neutral-600'
+                          : 'text-neutral-500'
+                      }`}
                       onClick={() => toggleSkipField('finishing')}
                     >
                       {skippedFields.finishing ? 'Batalkan' : 'Lewati Proses'}
@@ -923,14 +1282,27 @@ export default function QCDetailPage() {
                     min={0}
                     max={produksiData.jumlah_order}
                     disabled={skippedFields.finishing}
-                    value={skippedFields.finishing ? '-' : produksiData.finishing === 0 ? '' : produksiData.finishing || ''}
+                    value={
+                      skippedFields.finishing
+                        ? '-'
+                        : produksiData.finishing === 0
+                        ? ''
+                        : produksiData.finishing || ''
+                    }
                     onChange={(e) =>
                       setProduksiData({
                         ...produksiData,
-                        finishing: Math.min(Math.max(parseInt(e.target.value) || 0, 0), produksiData.jumlah_order ?? 0),
+                        finishing: Math.min(
+                          Math.max(parseInt(e.target.value) || 0, 0),
+                          produksiData.jumlah_order ?? 0
+                        ),
                       })
                     }
-                    className={skippedFields.finishing ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100' : ''}
+                    className={
+                      skippedFields.finishing
+                        ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100'
+                        : ''
+                    }
                   />
                 </div>
               </div>
@@ -974,7 +1346,10 @@ export default function QCDetailPage() {
       </AlertDialog>
 
       {/* View Produksi Progress Dialog (View-Only) */}
-      <AlertDialog open={isProduksiViewOpen} onOpenChange={setIsProduksiViewOpen}>
+      <AlertDialog
+        open={isProduksiViewOpen}
+        onOpenChange={setIsProduksiViewOpen}
+      >
         <AlertDialogContent className='max-w-2xl'>
           <AlertDialogHeader>
             <AlertDialogTitle className='flex items-center gap-2'>
@@ -982,19 +1357,27 @@ export default function QCDetailPage() {
               Detail Progress Produksi
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Melihat progress produksi untuk item: <strong>{produksiViewItem?.item}</strong>
+              Melihat progress produksi untuk item:{' '}
+              <strong>{produksiViewItem?.item}</strong>
             </AlertDialogDescription>
           </AlertDialogHeader>
 
           <div className='py-4 space-y-6'>
             {/* Summary Progress */}
             <div className='flex flex-col items-center gap-2 p-4 bg-orange-50 rounded-xl border border-orange-100'>
-              <span className='text-xs font-bold text-orange-800 uppercase tracking-wider'>Total Progress</span>
+              <span className='text-xs font-bold text-orange-800 uppercase tracking-wider'>
+                Total Progress
+              </span>
               <div className='flex items-baseline gap-1'>
-                <span className='text-4xl font-black text-orange-600'>{Math.round(produksiViewItem?.produksi?.persen || 0)}</span>
+                <span className='text-4xl font-black text-orange-600'>
+                  {Math.round(produksiViewItem?.produksi?.persen || 0)}
+                </span>
                 <span className='text-xl font-bold text-orange-400'>%</span>
               </div>
-              <Progress value={produksiViewItem?.produksi?.persen || 0} className='h-2 bg-orange-200/50 w-full max-w-md' />
+              <Progress
+                value={produksiViewItem?.produksi?.persen || 0}
+                className='h-2 bg-orange-200/50 w-full max-w-md'
+              />
             </div>
 
             <div className='grid grid-cols-2 gap-x-8 gap-y-6'>
@@ -1006,20 +1389,54 @@ export default function QCDetailPage() {
                 </h4>
                 <div className='space-y-3'>
                   {[
-                    { label: 'Cold Press', value: produksiViewItem?.produksi?.cold_press, key: 'cold_press' },
-                    { label: 'Running Saw', value: produksiViewItem?.produksi?.running_saw, key: 'running_saw' },
-                    { label: 'Edging', value: produksiViewItem?.produksi?.edging, key: 'edging' },
-                    { label: 'CNC', value: produksiViewItem?.produksi?.cnc, key: 'cnc' },
+                    {
+                      label: 'Cold Press',
+                      value: produksiViewItem?.produksi?.cold_press,
+                      key: 'cold_press',
+                    },
+                    {
+                      label: 'Running Saw',
+                      value: produksiViewItem?.produksi?.running_saw,
+                      key: 'running_saw',
+                    },
+                    {
+                      label: 'Edging',
+                      value: produksiViewItem?.produksi?.edging,
+                      key: 'edging',
+                    },
+                    {
+                      label: 'CNC',
+                      value: produksiViewItem?.produksi?.cnc,
+                      key: 'cnc',
+                    },
                   ].map((field) => {
-                    const isSkipped = produksiViewItem?.produksi?.skipped_fields?.includes(field.key);
+                    const isSkipped =
+                      produksiViewItem?.produksi?.skipped_fields?.includes(
+                        field.key
+                      );
                     return (
-                      <div key={field.key} className='flex items-center justify-between'>
-                        <span className='text-xs text-neutral-600'>{field.label}</span>
+                      <div
+                        key={field.key}
+                        className='flex items-center justify-between'
+                      >
+                        <span className='text-xs text-neutral-600'>
+                          {field.label}
+                        </span>
                         <div className='flex items-center gap-2'>
                           {isSkipped ? (
-                            <Badge variant='secondary' className='text-[9px] bg-neutral-100 text-neutral-400 border-none'>SKIPPED</Badge>
+                            <Badge
+                              variant='secondary'
+                              className='text-[9px] bg-neutral-100 text-neutral-400 border-none'
+                            >
+                              SKIPPED
+                            </Badge>
                           ) : (
-                            <span className='text-sm font-bold text-neutral-900'>{field.value || 0} <span className='text-[10px] text-neutral-400 font-normal'>/ {produksiViewItem?.jumlah}</span></span>
+                            <span className='text-sm font-bold text-neutral-900'>
+                              {field.value || 0}{' '}
+                              <span className='text-[10px] text-neutral-400 font-normal'>
+                                / {produksiViewItem?.jumlah}
+                              </span>
+                            </span>
                           )}
                         </div>
                       </div>
@@ -1036,20 +1453,54 @@ export default function QCDetailPage() {
                 </h4>
                 <div className='space-y-3'>
                   {[
-                    { label: 'Tukang Kayu', value: produksiViewItem?.produksi?.tukang_kayu, key: 'tukang_kayu' },
-                    { label: 'Tukang Jok', value: produksiViewItem?.produksi?.tukang_jok, key: 'tukang_jok' },
-                    { label: 'Rakit', value: produksiViewItem?.produksi?.rakit, key: 'rakit' },
-                    { label: 'Finishing', value: produksiViewItem?.produksi?.finishing, key: 'finishing' },
+                    {
+                      label: 'Tukang Kayu',
+                      value: produksiViewItem?.produksi?.tukang_kayu,
+                      key: 'tukang_kayu',
+                    },
+                    {
+                      label: 'Tukang Jok',
+                      value: produksiViewItem?.produksi?.tukang_jok,
+                      key: 'tukang_jok',
+                    },
+                    {
+                      label: 'Rakit',
+                      value: produksiViewItem?.produksi?.rakit,
+                      key: 'rakit',
+                    },
+                    {
+                      label: 'Finishing',
+                      value: produksiViewItem?.produksi?.finishing,
+                      key: 'finishing',
+                    },
                   ].map((field) => {
-                    const isSkipped = produksiViewItem?.produksi?.skipped_fields?.includes(field.key);
+                    const isSkipped =
+                      produksiViewItem?.produksi?.skipped_fields?.includes(
+                        field.key
+                      );
                     return (
-                      <div key={field.key} className='flex items-center justify-between'>
-                        <span className='text-xs text-neutral-600'>{field.label}</span>
+                      <div
+                        key={field.key}
+                        className='flex items-center justify-between'
+                      >
+                        <span className='text-xs text-neutral-600'>
+                          {field.label}
+                        </span>
                         <div className='flex items-center gap-2'>
                           {isSkipped ? (
-                            <Badge variant='secondary' className='text-[9px] bg-neutral-100 text-neutral-400 border-none'>SKIPPED</Badge>
+                            <Badge
+                              variant='secondary'
+                              className='text-[9px] bg-neutral-100 text-neutral-400 border-none'
+                            >
+                              SKIPPED
+                            </Badge>
                           ) : (
-                            <span className='text-sm font-bold text-neutral-900'>{field.value || 0} <span className='text-[10px] text-neutral-400 font-normal'>/ {produksiViewItem?.jumlah}</span></span>
+                            <span className='text-sm font-bold text-neutral-900'>
+                              {field.value || 0}{' '}
+                              <span className='text-[10px] text-neutral-400 font-normal'>
+                                / {produksiViewItem?.jumlah}
+                              </span>
+                            </span>
                           )}
                         </div>
                       </div>
@@ -1061,16 +1512,15 @@ export default function QCDetailPage() {
           </div>
 
           <AlertDialogFooter className='border-t pt-4'>
-            <AlertDialogCancel className='bg-neutral-100 hover:bg-neutral-200 border-none'>Tutup</AlertDialogCancel>
+            <AlertDialogCancel className='bg-neutral-100 hover:bg-neutral-200 border-none'>
+              Tutup
+            </AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
       {/* QC Cek Update Dialog */}
-      <AlertDialog
-        open={isQcDialogOpen}
-        onOpenChange={setIsQcDialogOpen}
-      >
+      <AlertDialog open={isQcDialogOpen} onOpenChange={setIsQcDialogOpen}>
         <AlertDialogContent className='max-w-lg'>
           <AlertDialogHeader>
             <AlertDialogTitle className='flex items-center gap-2'>
@@ -1078,11 +1528,11 @@ export default function QCDetailPage() {
               Input QC Check
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Input hasil pengecekan kualitas untuk: <strong>{qcItem?.item}</strong>
+              Input hasil pengecekan kualitas untuk:{' '}
+              <strong>{qcItem?.item}</strong>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className='py-4 space-y-5'>
-
             {/* Jumlah Item */}
             <div className='space-y-2'>
               <Label className='text-sm font-bold'>Jumlah Item</Label>
@@ -1094,17 +1544,24 @@ export default function QCDetailPage() {
                 onChange={(e) =>
                   setQcData({
                     ...qcData,
-                    qty: Math.min(Math.max(parseInt(e.target.value) || 0, 0), qcItem?.jumlah || 0),
+                    qty: Math.min(
+                      Math.max(parseInt(e.target.value) || 0, 0),
+                      qcItem?.jumlah || 0
+                    ),
                   })
                 }
               />
-              <p className='text-[10px] text-muted-foreground italic'>* Maksimal sesuai Qty Order: {qcItem?.jumlah}</p>
+              <p className='text-[10px] text-muted-foreground italic'>
+                * Maksimal sesuai Qty Order: {qcItem?.jumlah}
+              </p>
             </div>
 
             {/* Repair / Pass / Afkir */}
             <div className='grid grid-cols-3 gap-3'>
               <div className='space-y-2'>
-                <Label className='text-sm font-semibold text-amber-600'>Repair</Label>
+                <Label className='text-sm font-semibold text-amber-600'>
+                  Repair
+                </Label>
                 <Input
                   type='number'
                   min={0}
@@ -1115,13 +1572,18 @@ export default function QCDetailPage() {
                   onChange={(e) =>
                     setQcData({
                       ...qcData,
-                      repair: Math.min(Math.max(parseInt(e.target.value) || 0, 0), qcData.qty),
+                      repair: Math.min(
+                        Math.max(parseInt(e.target.value) || 0, 0),
+                        qcData.qty
+                      ),
                     })
                   }
                 />
               </div>
               <div className='space-y-2'>
-                <Label className='text-sm font-semibold text-emerald-600'>Pass</Label>
+                <Label className='text-sm font-semibold text-emerald-600'>
+                  Pass
+                </Label>
                 <Input
                   type='number'
                   min={0}
@@ -1132,13 +1594,18 @@ export default function QCDetailPage() {
                   onChange={(e) =>
                     setQcData({
                       ...qcData,
-                      pass: Math.min(Math.max(parseInt(e.target.value) || 0, 0), qcData.qty),
+                      pass: Math.min(
+                        Math.max(parseInt(e.target.value) || 0, 0),
+                        qcData.qty
+                      ),
                     })
                   }
                 />
               </div>
               <div className='space-y-2'>
-                <Label className='text-sm font-semibold text-red-600'>Afkir</Label>
+                <Label className='text-sm font-semibold text-red-600'>
+                  Afkir
+                </Label>
                 <Input
                   type='number'
                   min={0}
@@ -1149,7 +1616,10 @@ export default function QCDetailPage() {
                   onChange={(e) =>
                     setQcData({
                       ...qcData,
-                      afkir: Math.min(Math.max(parseInt(e.target.value) || 0, 0), qcData.qty),
+                      afkir: Math.min(
+                        Math.max(parseInt(e.target.value) || 0, 0),
+                        qcData.qty
+                      ),
                     })
                   }
                 />
@@ -1159,39 +1629,68 @@ export default function QCDetailPage() {
             {/* Persen & Status Otomatis */}
             {(() => {
               const total = qcData.qty || 1;
-              const persen = Math.min(Math.round((qcData.pass / total) * 100), 100);
-              const autoStatus = qcData.afkir > 0 ? 'Defect' : qcData.repair > 0 ? 'Repair' : 'Pass';
+              const persen = Math.min(
+                Math.round((qcData.pass / total) * 100),
+                100
+              );
+              const autoStatus =
+                qcData.afkir > 0
+                  ? 'Defect'
+                  : qcData.repair > 0
+                  ? 'Repair'
+                  : 'Pass';
               return (
                 <div className='bg-neutral-50 rounded-xl p-3 space-y-2 border border-neutral-100'>
                   <div className='flex items-center justify-between'>
-                    <span className='text-xs font-semibold text-neutral-500'>Pass Rate</span>
-                    <span className={cn(
-                      'text-sm font-bold',
-                      persen >= 100 ? 'text-emerald-600' : persen >= 80 ? 'text-amber-600' : 'text-red-600'
-                    )}>{persen}%</span>
+                    <span className='text-xs font-semibold text-neutral-500'>
+                      Pass Rate
+                    </span>
+                    <span
+                      className={cn(
+                        'text-sm font-bold',
+                        persen >= 100
+                          ? 'text-emerald-600'
+                          : persen >= 80
+                          ? 'text-amber-600'
+                          : 'text-red-600'
+                      )}
+                    >
+                      {persen}%
+                    </span>
                   </div>
                   <div className='h-2 bg-neutral-200 rounded-full overflow-hidden'>
                     <div
                       className={cn(
                         'h-full rounded-full transition-all duration-500',
-                        persen >= 100 ? 'bg-emerald-500' : persen >= 80 ? 'bg-amber-500' : 'bg-red-500'
+                        persen >= 100
+                          ? 'bg-emerald-500'
+                          : persen >= 80
+                          ? 'bg-amber-500'
+                          : 'bg-red-500'
                       )}
                       style={{ width: `${persen}%` }}
                     />
                   </div>
                   <div className='flex items-center justify-between'>
-                    <span className='text-[10px] text-muted-foreground'>Status otomatis</span>
-                    <span className={cn(
-                      'text-[10px] font-bold px-2 py-0.5 rounded-full',
-                      autoStatus === 'Pass' ? 'bg-emerald-100 text-emerald-700' :
-                      autoStatus === 'Repair' ? 'bg-amber-100 text-amber-700' :
-                      'bg-red-100 text-red-700'
-                    )}>{autoStatus}</span>
+                    <span className='text-[10px] text-muted-foreground'>
+                      Status otomatis
+                    </span>
+                    <span
+                      className={cn(
+                        'text-[10px] font-bold px-2 py-0.5 rounded-full',
+                        autoStatus === 'Pass'
+                          ? 'bg-emerald-100 text-emerald-700'
+                          : autoStatus === 'Repair'
+                          ? 'bg-amber-100 text-amber-700'
+                          : 'bg-red-100 text-red-700'
+                      )}
+                    >
+                      {autoStatus}
+                    </span>
                   </div>
                 </div>
               );
             })()}
-
           </div>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setIsQcDialogOpen(false)}>
