@@ -108,20 +108,26 @@ import {
 import { toast } from 'sonner';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-const storageBase = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '');
+const storageBase = (
+  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+).replace('/api', '');
 
 export default function RekapPenagihanPage() {
   const queryClient = useQueryClient();
 
   const [search, setSearch] = React.useState('');
-  const [sortInvoiceDirection, setSortInvoiceDirection] = React.useState<'asc' | 'desc'>('asc');
+  const [sortInvoiceDirection, setSortInvoiceDirection] = React.useState<
+    'asc' | 'desc'
+  >('asc');
   const [filterMonth, setFilterMonth] = React.useState<string>('all');
   const [filterYear, setFilterYear] = React.useState<string>('all');
   const [isFormOpen, setIsFormOpen] = React.useState(false);
   const [currentPage, setCurrentPage] = React.useState(1);
   const itemsPerPage = 10;
   const [editingId, setEditingId] = React.useState<number | null>(null);
-  const [deleteTarget, setDeleteTarget] = React.useState<Penagihan | null>(null);
+  const [deleteTarget, setDeleteTarget] = React.useState<Penagihan | null>(
+    null
+  );
 
   const [isEditingSpkNominal, setIsEditingSpkNominal] = React.useState(false);
   const [spkNominalInput, setSpkNominalInput] = React.useState('');
@@ -152,8 +158,13 @@ export default function RekapPenagihanPage() {
   });
 
   const updatePenagihanMutation = useMutation({
-    mutationFn: ({ id, payload }: { id: number; payload: Partial<CreatePenagihanPayload> }) =>
-      penagihanService.updatePenagihan(id, payload),
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: number;
+      payload: Partial<CreatePenagihanPayload>;
+    }) => penagihanService.updatePenagihan(id, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['penagihan-all'] });
       toast.success('Penagihan berhasil diperbarui');
@@ -172,7 +183,7 @@ export default function RekapPenagihanPage() {
     onError: () => toast.error('Gagal menghapus penagihan'),
   });
 
-  const editingPenagihan = penagihanList.find(p => p.id === editingId);
+  const editingPenagihan = penagihanList.find((p) => p.id === editingId);
 
   const updateSpkNominalMutation = useMutation({
     mutationFn: ({
@@ -182,8 +193,11 @@ export default function RekapPenagihanPage() {
       nominal: string;
       nomor_spk: string;
     }) => {
-       if (!editingPenagihan?.project_id) throw new Error('No project');
-       return projectV2Service.updateSpkMeta(editingPenagihan.project_id, { nomor_spk, grand_total: nominal })
+      if (!editingPenagihan?.project_id) throw new Error('No project');
+      return projectV2Service.updateSpkMeta(editingPenagihan.project_id, {
+        nomor_spk,
+        grand_total: nominal,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['penagihan-all'] });
@@ -221,7 +235,9 @@ export default function RekapPenagihanPage() {
       nomor_invoice: p.nomor_invoice || '',
       deskripsi: p.deskripsi || '',
       persentase: p.persentase,
-      nominal_penagihan: p.nominal_penagihan ? formatRupiah(p.nominal_penagihan) : '',
+      nominal_penagihan: p.nominal_penagihan
+        ? formatRupiah(p.nominal_penagihan)
+        : '',
       take_out: p.take_out ? formatRupiah(p.take_out) : '',
       tanggal_kirim: p.tanggal_kirim || '',
       tanggal_invoice: p.tanggal_invoice || '',
@@ -240,7 +256,8 @@ export default function RekapPenagihanPage() {
     }
     const payload: Partial<CreatePenagihanPayload> = {
       ...form,
-      nominal_penagihan: parseRawNumber(form.nominal_penagihan as string) || undefined,
+      nominal_penagihan:
+        parseRawNumber(form.nominal_penagihan as string) || undefined,
       take_out: parseRawNumber(form.take_out as string) || undefined,
     };
 
@@ -267,12 +284,21 @@ export default function RekapPenagihanPage() {
     .filter((p) => {
       const searchLower = search.toLowerCase();
       const projectName = (p.project?.name || '').toLowerCase();
-      const clientName = (p.project?.client?.name || '').toLowerCase();
+      const clientName = (
+        p.project?.spk?.penerbit?.name ||
+        p.project?.client?.name ||
+        ''
+      ).toLowerCase();
       const spk = (p.project?.spk?.nomor_spk || '').toLowerCase();
       const invoice = (p.nomor_invoice || '').toLowerCase();
       const deskripsi = (p.deskripsi || '').toLowerCase();
-      
-      const matchesSearch = projectName.includes(searchLower) || clientName.includes(searchLower) || spk.includes(searchLower) || invoice.includes(searchLower) || deskripsi.includes(searchLower);
+
+      const matchesSearch =
+        projectName.includes(searchLower) ||
+        clientName.includes(searchLower) ||
+        spk.includes(searchLower) ||
+        invoice.includes(searchLower) ||
+        deskripsi.includes(searchLower);
 
       let matchesMonth = true;
       let matchesYear = true;
@@ -334,318 +360,357 @@ export default function RekapPenagihanPage() {
                 <Receipt className='h-5 w-5 text-blue-600' />
               </div>
               <div>
-                <p className='text-sm font-semibold text-neutral-800'>Daftar Penagihan</p>
+                <p className='text-sm font-semibold text-neutral-800'>
+                  Daftar Penagihan
+                </p>
                 <p className='text-xs text-muted-foreground'>
                   {filteredPenagihans.length} tagihan terdaftar
                 </p>
               </div>
             </div>
             <div className='flex flex-wrap items-center gap-2'>
-          <Select value={filterMonth} onValueChange={setFilterMonth}>
-            <SelectTrigger className="w-[140px] bg-white">
-              <SelectValue placeholder="Semua Bulan" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Semua Bulan</SelectItem>
-              <SelectItem value="1">Januari</SelectItem>
-              <SelectItem value="2">Februari</SelectItem>
-              <SelectItem value="3">Maret</SelectItem>
-              <SelectItem value="4">April</SelectItem>
-              <SelectItem value="5">Mei</SelectItem>
-              <SelectItem value="6">Juni</SelectItem>
-              <SelectItem value="7">Juli</SelectItem>
-              <SelectItem value="8">Agustus</SelectItem>
-              <SelectItem value="9">September</SelectItem>
-              <SelectItem value="10">Oktober</SelectItem>
-              <SelectItem value="11">November</SelectItem>
-              <SelectItem value="12">Desember</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={filterYear} onValueChange={setFilterYear}>
-            <SelectTrigger className="w-[120px] bg-white">
-              <SelectValue placeholder="Semua Tahun" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Semua Tahun</SelectItem>
-              {[0, 1, 2, 3].map((offset) => {
-                const year = new Date().getFullYear() - offset;
-                return (
-                  <SelectItem key={year} value={year.toString()}>
-                    {year}
-                  </SelectItem>
-                );
-              })}
-            </SelectContent>
-          </Select>
-          <div className='relative w-64'>
-            <Search className='absolute left-2.5 top-2.5 h-4 w-4 text-neutral-500' />
-            <Input
-              placeholder='Cari penagihan...'
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className='pl-9 bg-white'
-            />
+              <Select value={filterMonth} onValueChange={setFilterMonth}>
+                <SelectTrigger className='w-[140px] bg-white'>
+                  <SelectValue placeholder='Semua Bulan' />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='all'>Semua Bulan</SelectItem>
+                  <SelectItem value='1'>Januari</SelectItem>
+                  <SelectItem value='2'>Februari</SelectItem>
+                  <SelectItem value='3'>Maret</SelectItem>
+                  <SelectItem value='4'>April</SelectItem>
+                  <SelectItem value='5'>Mei</SelectItem>
+                  <SelectItem value='6'>Juni</SelectItem>
+                  <SelectItem value='7'>Juli</SelectItem>
+                  <SelectItem value='8'>Agustus</SelectItem>
+                  <SelectItem value='9'>September</SelectItem>
+                  <SelectItem value='10'>Oktober</SelectItem>
+                  <SelectItem value='11'>November</SelectItem>
+                  <SelectItem value='12'>Desember</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={filterYear} onValueChange={setFilterYear}>
+                <SelectTrigger className='w-[120px] bg-white'>
+                  <SelectValue placeholder='Semua Tahun' />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='all'>Semua Tahun</SelectItem>
+                  {[0, 1, 2, 3].map((offset) => {
+                    const year = new Date().getFullYear() - offset;
+                    return (
+                      <SelectItem key={year} value={year.toString()}>
+                        {year}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+              <div className='relative w-64'>
+                <Search className='absolute left-2.5 top-2.5 h-4 w-4 text-neutral-500' />
+                <Input
+                  placeholder='Cari penagihan...'
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className='pl-9 bg-white'
+                />
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
 
-      <div className='rounded-xl overflow-hidden shadow-sm'>
-        <div className='overflow-x-auto max-w-full'>
-          <Table>
-            <TableHeader className='bg-neutral-50/80'>
-              <TableRow>
-                <TableHead className='w-[50px]'>No</TableHead>
-                <TableHead 
-                  className='cursor-pointer hover:bg-neutral-200/50 transition-colors'
-                  onClick={() => setSortInvoiceDirection(prev => prev === 'asc' ? 'desc' : 'asc')}
-                >
-                  <div className='flex items-center gap-2'>
-                    NO INVOICE
-                    <ArrowUpDown className='h-3 w-3 text-neutral-400' />
-                  </div>
-                </TableHead>
-                <TableHead>TGL INVOICE</TableHead>
-                <TableHead>CLIENT</TableHead>
-                {/* <TableHead>TERMIN</TableHead> */}
-                <TableHead>DESKRIPSI</TableHead>
-                <TableHead>STATUS</TableHead>
-                {/* <TableHead>PERSENTASE</TableHead> */}
-                <TableHead>NOMINAL</TableHead>
-                <TableHead>NO SPK</TableHead>
-                <TableHead>NO SPH</TableHead>
-                {/* <TableHead>TAKE OUT</TableHead> */}
-                <TableHead>JATUH TEMPO</TableHead>
-                <TableHead>TGL DIBAYAR</TableHead>
-                <TableHead>
-                  <div className='flex flex-col items-center'>
-                    <span>UMUR</span> 
-                    <span>PENAGIHAN</span>
-                  </div>
-                </TableHead>
-                <TableHead>FILE</TableHead>
-                <TableHead className='text-right'>AKSI</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoadingPenagihan ? (
-                <TableRow>
-                  <TableCell colSpan={12} className='h-32 text-center'>
-                    <Loader2 className='h-6 w-6 animate-spin mx-auto text-neutral-400' />
-                  </TableCell>
-                </TableRow>
-              ) : filteredPenagihans.length === 0 ? (
-                <TableRow>
-                  <TableCell
-                    colSpan={12}
-                    className='h-32 text-center text-muted-foreground'
-                  >
-                    Belum ada data penagihan.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                paginatedPenagihans.map((item, index) => (
-                  <TableRow
-                    key={item.id}
-                    className='hover:bg-neutral-50/50 transition-colors'
-                  >
-                    <TableCell className='text-muted-foreground font-medium'>
-                      {(currentPage - 1) * itemsPerPage + index + 1}
-                    </TableCell>
-                    <TableCell className='text-sm font-medium text-neutral-700 whitespace-nowrap'>
-                      {item.nomor_invoice || '-'}
-                    </TableCell>
-                    <TableCell className='text-sm font-medium text-neutral-700 whitespace-nowrap'>
-                      {item.tanggal_invoice
-                        ? format(new Date(item.tanggal_invoice), 'dd MMM yyyy')
-                        : '-'}
-                    </TableCell>
-                    <TableCell className='text-sm font-medium text-neutral-700 whitespace-nowrap'>
-                      {item.project?.client?.name || '-'}
-                    </TableCell>
-                    {/* <TableCell className='font-semibold'>
+          <div className='rounded-xl overflow-hidden shadow-sm'>
+            <div className='overflow-x-auto max-w-full'>
+              <Table>
+                <TableHeader className='bg-neutral-50/80'>
+                  <TableRow>
+                    <TableHead className='w-[50px]'>No</TableHead>
+                    <TableHead
+                      className='cursor-pointer hover:bg-neutral-200/50 transition-colors'
+                      onClick={() =>
+                        setSortInvoiceDirection((prev) =>
+                          prev === 'asc' ? 'desc' : 'asc'
+                        )
+                      }
+                    >
+                      <div className='flex items-center gap-2'>
+                        NO INVOICE
+                        <ArrowUpDown className='h-3 w-3 text-neutral-400' />
+                      </div>
+                    </TableHead>
+                    <TableHead>TGL INVOICE</TableHead>
+                    <TableHead>
+                      <div className='flex flex-col items-center'>
+                        <span>CLIENT</span>
+                        <span>(Penerbit SPK)</span>
+                      </div>
+                    </TableHead>
+                    {/* <TableHead>TERMIN</TableHead> */}
+                    <TableHead>DESKRIPSI</TableHead>
+                    <TableHead>STATUS</TableHead>
+                    {/* <TableHead>PERSENTASE</TableHead> */}
+                    <TableHead>NOMINAL</TableHead>
+                    <TableHead>NO SPK</TableHead>
+                    <TableHead>NO SPH</TableHead>
+                    {/* <TableHead>TAKE OUT</TableHead> */}
+                    <TableHead>JATUH TEMPO</TableHead>
+                    <TableHead>TGL DIBAYAR</TableHead>
+                    <TableHead>
+                      <div className='flex flex-col items-center'>
+                        <span>UMUR</span>
+                        <span>PENAGIHAN</span>
+                      </div>
+                    </TableHead>
+                    <TableHead>FILE</TableHead>
+                    <TableHead className='text-right'>AKSI</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {isLoadingPenagihan ? (
+                    <TableRow>
+                      <TableCell colSpan={12} className='h-32 text-center'>
+                        <Loader2 className='h-6 w-6 animate-spin mx-auto text-neutral-400' />
+                      </TableCell>
+                    </TableRow>
+                  ) : filteredPenagihans.length === 0 ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={12}
+                        className='h-32 text-center text-muted-foreground'
+                      >
+                        Belum ada data penagihan.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    paginatedPenagihans.map((item, index) => (
+                      <TableRow
+                        key={item.id}
+                        className='hover:bg-neutral-50/50 transition-colors'
+                      >
+                        <TableCell className='text-muted-foreground font-medium'>
+                          {(currentPage - 1) * itemsPerPage + index + 1}
+                        </TableCell>
+                        <TableCell className='text-sm font-medium text-neutral-700 whitespace-nowrap'>
+                          {item.nomor_invoice || '-'}
+                        </TableCell>
+                        <TableCell className='text-sm font-medium text-neutral-700 whitespace-nowrap'>
+                          {item.tanggal_invoice
+                            ? format(
+                                new Date(item.tanggal_invoice),
+                                'dd MMM yyyy'
+                              )
+                            : '-'}
+                        </TableCell>
+                        <TableCell className='text-sm font-medium text-neutral-700 whitespace-nowrap'>
+                          {item.project?.spk?.penerbit?.name ||
+                            item.project?.client?.name ||
+                            '-'}
+                        </TableCell>
+                        {/* <TableCell className='font-semibold'>
                       {item.termin?.nama || '-'}
                     </TableCell> */}
-                    <TableCell 
-                      className='text-sm text-neutral-600 max-w-[200px] truncate'
-                      title={item?.deskripsi || '-'}
-                    >
-                      {item.deskripsi || '-'}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant='outline'
-                        className={statusBadgeClass(item.status)}
-                      >
-                        {item.status}
-                      </Badge>
-                      {item.status === 'Sebagian Dibayar' &&
-                        item.nominal_dibayar && (
-                          <div className='text-[10px] text-neutral-500 mt-1'>
-                            Rp{' '}
-                            {Number(item.nominal_dibayar).toLocaleString(
-                              'id-ID'
-                            )}
-                          </div>
-                        )}
-
-                        <Button
-                          variant='ghost'
-                          size='icon'
-                          className='h-8 w-8 text-neutral-500 hover:text-blue-600'
-                          onClick={() => openEdit(item)}
+                        <TableCell
+                          className='text-sm text-neutral-600 max-w-[200px] truncate'
+                          title={item?.deskripsi || '-'}
                         >
-                          <Pencil className='h-3.5 w-3.5' />
-                        </Button>
-                    </TableCell>
-                    {/* <TableCell className='font-bold text-blue-600'>
+                          {item.deskripsi || '-'}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant='outline'
+                            className={statusBadgeClass(item.status)}
+                          >
+                            {item.status}
+                          </Badge>
+                          {item.status === 'Sebagian Dibayar' &&
+                            item.nominal_dibayar && (
+                              <div className='text-[10px] text-neutral-500 mt-1'>
+                                Rp{' '}
+                                {Number(item.nominal_dibayar).toLocaleString(
+                                  'id-ID'
+                                )}
+                              </div>
+                            )}
+
+                          <Button
+                            variant='ghost'
+                            size='icon'
+                            className='h-8 w-8 text-neutral-500 hover:text-blue-600'
+                            onClick={() => openEdit(item)}
+                          >
+                            <Pencil className='h-3.5 w-3.5' />
+                          </Button>
+                        </TableCell>
+                        {/* <TableCell className='font-bold text-blue-600'>
                       {item.persentase}%
                     </TableCell> */}
-                    <TableCell className='font-semibold text-emerald-700'>
-                      {item.nominal_penagihan
-                        ? formatRupiah(item.nominal_penagihan)
-                        : '-'}
-                    </TableCell>
-                    <TableCell className='text-sm font-medium text-neutral-700 whitespace-nowrap max-w-[100px] truncate'
-                      title={item?.project?.spk?.nomor_spk || '-'}
-                    >
-                      {item.project?.spk?.nomor_spk || '-'}
-                    </TableCell>
-                    <TableCell className='text-sm font-medium text-neutral-700 whitespace-nowrap max-w-[100px] truncate'
-                      title={item?.project?.sph?.nomor_sph || '-'}
-                    >
-                      {item.project?.sph?.nomor_sph || '-'}
-                    </TableCell>
-                    {/* <TableCell className='font-semibold text-amber-700'>
+                        <TableCell className='font-semibold text-emerald-700'>
+                          {item.nominal_penagihan
+                            ? formatRupiah(item.nominal_penagihan)
+                            : '-'}
+                        </TableCell>
+                        <TableCell
+                          className='text-sm font-medium text-neutral-700 whitespace-nowrap max-w-[100px] truncate'
+                          title={item?.project?.spk?.nomor_spk || '-'}
+                        >
+                          {item.project?.spk?.nomor_spk || '-'}
+                        </TableCell>
+                        <TableCell
+                          className='text-sm font-medium text-neutral-700 whitespace-nowrap max-w-[100px] truncate'
+                          title={item?.project?.sph?.nomor_sph || '-'}
+                        >
+                          {item.project?.sph?.nomor_sph || '-'}
+                        </TableCell>
+                        {/* <TableCell className='font-semibold text-amber-700'>
                       {item.take_out ? formatRupiah(item.take_out) : '-'}
                     </TableCell> */}
-                    <TableCell className='text-sm'>
-                      {item.jatuh_tempo
-                        ? format(new Date(item.jatuh_tempo), 'dd MMM yyyy')
-                        : '-'}
-                    </TableCell>
-                    <TableCell className='text-sm'>
-                      {item.tanggal_dibayar
-                        ? format(new Date(item.tanggal_dibayar), 'dd MMM yyyy')
-                        : '-'}
-                    </TableCell>
-                    <TableCell className='text-sm'>
-                      {item.tanggal_invoice && item.status !== 'Lunas' ? (
-                        (() => {
-                          const diff = differenceInDays(
-                            startOfDay(new Date()),
-                            startOfDay(new Date(item.tanggal_invoice))
-                          );
-                          return (
-                            <Badge
-                              variant='outline'
-                              className='font-bold bg-neutral-50 text-neutral-700 border-neutral-200 whitespace-nowrap'
+                        <TableCell className='text-sm'>
+                          {item.jatuh_tempo
+                            ? format(new Date(item.jatuh_tempo), 'dd MMM yyyy')
+                            : '-'}
+                        </TableCell>
+                        <TableCell className='text-sm'>
+                          {item.tanggal_dibayar
+                            ? format(
+                                new Date(item.tanggal_dibayar),
+                                'dd MMM yyyy'
+                              )
+                            : '-'}
+                        </TableCell>
+                        <TableCell className='text-sm'>
+                          {item.tanggal_invoice && item.status !== 'Lunas' ? (
+                            (() => {
+                              const diff = differenceInDays(
+                                startOfDay(new Date()),
+                                startOfDay(new Date(item.tanggal_invoice))
+                              );
+                              return (
+                                <Badge
+                                  variant='outline'
+                                  className='font-bold bg-neutral-50 text-neutral-700 border-neutral-200 whitespace-nowrap'
+                                >
+                                  {diff} Hari
+                                </Badge>
+                              );
+                            })()
+                          ) : (
+                            <span className='text-muted-foreground italic text-xs'>
+                              -
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {item.file ? (
+                            <Button
+                              variant='ghost'
+                              size='icon'
+                              className='h-7 w-7 text-blue-600'
+                              asChild
                             >
-                              {diff} Hari
-                            </Badge>
-                          );
-                        })()
-                      ) : (
-                        <span className='text-muted-foreground italic text-xs'>
-                          -
-                        </span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {item.file ? (
-                        <Button
-                          variant='ghost'
-                          size='icon'
-                          className='h-7 w-7 text-blue-600'
-                          asChild
-                        >
-                          <a
-                            href={`${storageBase}/storage/${item.file}`}
-                            target='_blank'
-                            rel='noopener noreferrer'
-                          >
-                            <Download className='h-3.5 w-3.5' />
-                          </a>
-                        </Button>
-                      ) : (
-                        <span className='text-[10px] text-muted-foreground italic'>
-                          -
-                        </span>
-                      )}
-                    </TableCell>
-                    <TableCell className='text-right'>
-                      <div className='flex justify-end gap-1'>
-                        <Button
-                          variant='ghost'
-                          size='icon'
-                          className='h-8 w-8 text-neutral-500 hover:text-blue-600'
-                          onClick={() => openEdit(item)}
-                        >
-                          <Pencil className='h-3.5 w-3.5' />
-                        </Button>
-                        <Button
-                          variant='ghost'
-                          size='icon'
-                          className='h-8 w-8 text-neutral-500 hover:text-red-600'
-                          onClick={() => setDeleteTarget(item)}
-                        >
-                          <Trash2 className='h-3.5 w-3.5' />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
+                              <a
+                                href={`${storageBase}/storage/${item.file}`}
+                                target='_blank'
+                                rel='noopener noreferrer'
+                              >
+                                <Download className='h-3.5 w-3.5' />
+                              </a>
+                            </Button>
+                          ) : (
+                            <span className='text-[10px] text-muted-foreground italic'>
+                              -
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell className='text-right'>
+                          <div className='flex justify-end gap-1'>
+                            <Button
+                              variant='ghost'
+                              size='icon'
+                              className='h-8 w-8 text-neutral-500 hover:text-blue-600'
+                              onClick={() => openEdit(item)}
+                            >
+                              <Pencil className='h-3.5 w-3.5' />
+                            </Button>
+                            <Button
+                              variant='ghost'
+                              size='icon'
+                              className='h-8 w-8 text-neutral-500 hover:text-red-600'
+                              onClick={() => setDeleteTarget(item)}
+                            >
+                              <Trash2 className='h-3.5 w-3.5' />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
 
-        {/* Pagination Controls */}
-        {totalPages > 1 && (
-          <div className='flex flex-col sm:flex-row sm:items-center justify-between pt-4 gap-4'>
-            <div className='text-sm text-muted-foreground'>
-              Menampilkan {((currentPage - 1) * itemsPerPage) + 1} hingga {Math.min(currentPage * itemsPerPage, filteredPenagihans.length)} dari {filteredPenagihans.length} data
-            </div>
-            <div className='flex items-center gap-2'>
-              <Button
-                variant='outline'
-                size='sm'
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-              >
-                Sebelumnya
-              </Button>
-              <div className='flex items-center gap-1'>
-                {Array.from({ length: totalPages }, (_, i) => i + 1)
-                  .filter((p) => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
-                  .map((page, index, array) => (
-                    <React.Fragment key={page}>
-                      {index > 0 && array[index - 1] !== page - 1 && (
-                        <span className='px-2 text-neutral-400'>...</span>
-                      )}
-                      <Button
-                        variant={currentPage === page ? 'default' : 'outline'}
-                        size='sm'
-                        className={currentPage === page ? 'bg-blue-600 text-white hover:bg-blue-700' : ''}
-                        onClick={() => setCurrentPage(page)}
-                      >
-                        {page}
-                      </Button>
-                    </React.Fragment>
-                  ))}
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className='flex flex-col sm:flex-row sm:items-center justify-between pt-4 gap-4'>
+                <div className='text-sm text-muted-foreground'>
+                  Menampilkan {(currentPage - 1) * itemsPerPage + 1} hingga{' '}
+                  {Math.min(
+                    currentPage * itemsPerPage,
+                    filteredPenagihans.length
+                  )}{' '}
+                  dari {filteredPenagihans.length} data
+                </div>
+                <div className='flex items-center gap-2'>
+                  <Button
+                    variant='outline'
+                    size='sm'
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    Sebelumnya
+                  </Button>
+                  <div className='flex items-center gap-1'>
+                    {Array.from({ length: totalPages }, (_, i) => i + 1)
+                      .filter(
+                        (p) =>
+                          p === 1 ||
+                          p === totalPages ||
+                          Math.abs(p - currentPage) <= 1
+                      )
+                      .map((page, index, array) => (
+                        <React.Fragment key={page}>
+                          {index > 0 && array[index - 1] !== page - 1 && (
+                            <span className='px-2 text-neutral-400'>...</span>
+                          )}
+                          <Button
+                            variant={
+                              currentPage === page ? 'default' : 'outline'
+                            }
+                            size='sm'
+                            className={
+                              currentPage === page
+                                ? 'bg-blue-600 text-white hover:bg-blue-700'
+                                : ''
+                            }
+                            onClick={() => setCurrentPage(page)}
+                          >
+                            {page}
+                          </Button>
+                        </React.Fragment>
+                      ))}
+                  </div>
+                  <Button
+                    variant='outline'
+                    size='sm'
+                    onClick={() =>
+                      setCurrentPage((p) => Math.min(totalPages, p + 1))
+                    }
+                    disabled={currentPage === totalPages}
+                  >
+                    Selanjutnya
+                  </Button>
+                </div>
               </div>
-              <Button
-                variant='outline'
-                size='sm'
-                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-              >
-                Selanjutnya
-              </Button>
-            </div>
+            )}
           </div>
-        )}
         </div>
-      </div>
       </div>
 
       {/* Form Dialog */}
@@ -658,9 +723,7 @@ export default function RekapPenagihanPage() {
         <DialogContent className='max-w-lg'>
           <DialogHeader>
             <DialogTitle>Edit Penagihan</DialogTitle>
-            <DialogDescription>
-              Perbarui status penagihan
-            </DialogDescription>
+            <DialogDescription>Perbarui status penagihan</DialogDescription>
           </DialogHeader>
 
           <div className='space-y-4 py-2 max-h-[70vh] overflow-y-auto px-1'>
@@ -778,7 +841,8 @@ export default function RekapPenagihanPage() {
                       }
                       updateSpkNominalMutation.mutate({
                         nominal: raw,
-                        nomor_spk: editingPenagihan?.project?.spk?.nomor_spk || '',
+                        nomor_spk:
+                          editingPenagihan?.project?.spk?.nomor_spk || '',
                       });
                     }}
                   >
@@ -839,7 +903,9 @@ export default function RekapPenagihanPage() {
                   onChange={(e) => {
                     const pct = Math.min(parseFloat(e.target.value) || 0, 100);
                     const spkNominal = editingPenagihan?.project?.spk?.nominal
-                      ? parseDatabaseNominal(editingPenagihan.project.spk.nominal)
+                      ? parseDatabaseNominal(
+                          editingPenagihan.project.spk.nominal
+                        )
                       : 0;
                     const calculated = (pct / 100) * spkNominal;
                     const rawTakeOut = parseRawNumber(form.take_out || '');
@@ -871,7 +937,9 @@ export default function RekapPenagihanPage() {
                     const takeOutVal = parseFloat(rawTakeOut) || 0;
 
                     const spkNominal = editingPenagihan?.project?.spk?.nominal
-                      ? parseDatabaseNominal(editingPenagihan.project.spk.nominal)
+                      ? parseDatabaseNominal(
+                          editingPenagihan.project.spk.nominal
+                        )
                       : 0;
                     const pct =
                       spkNominal > 0
@@ -901,9 +969,12 @@ export default function RekapPenagihanPage() {
                     const takeOutVal = parseFloat(rawTakeOut) || 0;
 
                     const spkNominal = editingPenagihan?.project?.spk?.nominal
-                      ? parseDatabaseNominal(editingPenagihan.project.spk.nominal)
+                      ? parseDatabaseNominal(
+                          editingPenagihan.project.spk.nominal
+                        )
                       : 0;
-                    const baseNominal = ((form.persentase || 0) / 100) * spkNominal;
+                    const baseNominal =
+                      ((form.persentase || 0) / 100) * spkNominal;
                     const finalNominal = Math.max(baseNominal - takeOutVal, 0);
                     setForm((prev) => ({
                       ...prev,
