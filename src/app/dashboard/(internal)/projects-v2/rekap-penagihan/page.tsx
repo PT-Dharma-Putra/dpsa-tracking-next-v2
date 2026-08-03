@@ -446,6 +446,7 @@ export default function RekapPenagihanPage() {
                     {/* <TableHead>TERMIN</TableHead> */}
                     <TableHead>DESKRIPSI</TableHead>
                     <TableHead>STATUS</TableHead>
+                    <TableHead></TableHead>
                     {/* <TableHead>PERSENTASE</TableHead> */}
                     <TableHead>NOMINAL</TableHead>
                     <TableHead>NO SPK</TableHead>
@@ -529,7 +530,8 @@ export default function RekapPenagihanPage() {
                                 )}
                               </div>
                             )}
-
+                        </TableCell>
+                        <TableCell>
                           <Button
                             variant='ghost'
                             size='icon'
@@ -621,14 +623,6 @@ export default function RekapPenagihanPage() {
                         </TableCell>
                         <TableCell className='text-right'>
                           <div className='flex justify-end gap-1'>
-                            <Button
-                              variant='ghost'
-                              size='icon'
-                              className='h-8 w-8 text-neutral-500 hover:text-blue-600'
-                              onClick={() => openEdit(item)}
-                            >
-                              <Pencil className='h-3.5 w-3.5' />
-                            </Button>
                             <Button
                               variant='ghost'
                               size='icon'
