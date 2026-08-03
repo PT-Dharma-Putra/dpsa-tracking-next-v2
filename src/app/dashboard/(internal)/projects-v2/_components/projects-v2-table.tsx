@@ -3467,8 +3467,13 @@ export function ProjectsV2Table({
                           <TableCell>
                             {project.tanggal_selesai ? (
                               <div className='flex items-center gap-2'>
-                                <div className='flex items-center justify-center h-7 w-7 rounded-full bg-emerald-50 text-emerald-600 shrink-0'>
-                                  <Check className='h-4 w-4 stroke-[3]' />
+                                <div className='flex flex-col items-center gap-0.5'>
+                                  <div className='flex items-center justify-center h-7 w-7 rounded-full bg-emerald-50 text-emerald-600 shrink-0'>
+                                    <Check className='h-4 w-4 stroke-[3]' />
+                                  </div>
+                                  <span className='text-[10px] text-muted-foreground font-medium whitespace-nowrap'>
+                                    {format(new Date(project.tanggal_selesai), 'MMM d, yyyy')}
+                                  </span>
                                 </div>
                                 {project.tanggal_selesai &&
                                   project.deadline &&
@@ -3851,8 +3856,13 @@ export function ProjectsV2Table({
                             <TableCell>
                               {project.tanggal_selesai ? (
                                 <div className='flex items-center gap-2'>
-                                  <div className='flex items-center justify-center h-7 w-7 rounded-full bg-emerald-50 text-emerald-600 shrink-0'>
-                                    <Check className='h-4 w-4 stroke-[3]' />
+                                  <div className='flex flex-col items-center gap-0.5'>
+                                    <div className='flex items-center justify-center h-7 w-7 rounded-full bg-emerald-50 text-emerald-600 shrink-0'>
+                                      <Check className='h-4 w-4 stroke-[3]' />
+                                    </div>
+                                    <span className='text-[10px] text-muted-foreground font-medium whitespace-nowrap'>
+                                      {format(new Date(project.tanggal_selesai), 'MMM d, yyyy')}
+                                    </span>
                                   </div>
                                   {project.tanggal_selesai &&
                                     project.deadline &&
