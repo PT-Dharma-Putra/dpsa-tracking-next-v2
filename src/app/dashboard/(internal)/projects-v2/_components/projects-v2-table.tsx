@@ -238,6 +238,7 @@ export function ProjectsV2Table({
       setSearchInput(urlSearch);
     }
   }, [searchParams]);
+  const [selectedDivisi, setSelectedDivisi] = React.useState<string>('all');
   const [selectedMonth, setSelectedMonth] = React.useState<string>('all');
   const [selectedYear, setSelectedYear] = React.useState<string>('all');
   const [poDivisiFilter, setPoDivisiFilter] = React.useState<
@@ -496,6 +497,7 @@ export function ProjectsV2Table({
       search,
       clientId,
       marketingId,
+      selectedDivisi,
       selectedMonth,
       selectedYear,
       sortBy,
@@ -517,6 +519,7 @@ export function ProjectsV2Table({
         search,
         client_id: clientId !== 'all' ? clientId : undefined,
         marketing_id: marketingId !== 'all' ? marketingId : undefined,
+        divisi_id: selectedDivisi !== 'all' ? selectedDivisi : undefined,
         month: selectedMonth !== 'all' ? selectedMonth : undefined,
         year: selectedYear !== 'all' ? selectedYear : undefined,
         sort_by: sortBy,
@@ -540,6 +543,7 @@ export function ProjectsV2Table({
       search,
       clientId,
       marketingId,
+      selectedDivisi,
       selectedMonth,
       selectedYear,
     ],
@@ -548,6 +552,7 @@ export function ProjectsV2Table({
         search,
         client_id: clientId !== 'all' ? clientId : undefined,
         marketing_id: marketingId !== 'all' ? marketingId : undefined,
+        divisi_id: selectedDivisi !== 'all' ? selectedDivisi : undefined,
         month: selectedMonth !== 'all' ? selectedMonth : undefined,
         year: selectedYear !== 'all' ? selectedYear : undefined,
       }),
@@ -2363,6 +2368,26 @@ export function ProjectsV2Table({
             </div>
 
             <div className='flex flex-wrap gap-2 items-center'>
+              <Select
+                value={selectedDivisi}
+                onValueChange={(v: string) => {
+                  setSelectedDivisi(v);
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger className='w-[150px]'>
+                  <SelectValue placeholder='Divisi' />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='all'>Semua Divisi</SelectItem>
+                  {divisions.map((d) => (
+                    <SelectItem key={d.id} value={d.id.toString()}>
+                      {d.nama}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
               <Select
                 value={selectedMonth}
                 onValueChange={(v: string) => {

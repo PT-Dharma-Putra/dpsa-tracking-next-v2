@@ -223,6 +223,7 @@ interface GetProjectsV2Params {
   search?: string;
   client_id?: string;
   marketing_id?: string;
+  divisi_id?: string;
   month?: string;
   year?: string;
   sort_by?: string;
