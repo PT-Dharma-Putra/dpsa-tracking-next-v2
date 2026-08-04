@@ -464,6 +464,12 @@ export default function PerencanaanDetailPage() {
       queryClient.invalidateQueries({
         queryKey: ['project-v2-items', projectId],
       });
+      queryClient.invalidateQueries({
+        queryKey: ['projects-v2', projectId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['project-team', projectId],
+      });
       toast.success('Division assigned successfully');
       setEditingDivisiItemId(null);
     },
@@ -482,6 +488,12 @@ export default function PerencanaanDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ['project-v2-items', projectId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['projects-v2', projectId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['project-team', projectId],
       });
       toast.success('PO Divisi massal berhasil diupdate');
       setSelectedItemIds([]);
