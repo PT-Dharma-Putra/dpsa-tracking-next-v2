@@ -48,6 +48,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { useAuth } from '@/hooks/use-auth';
+import { usePermissions } from '@/hooks/use-permissions';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -532,7 +534,8 @@ export function ProjectsV2Table({
   const [projectToSetTeam, setProjectToSetTeam] =
     React.useState<ProjectV2 | null>(null);
 
-  const isJadwalEditable = showPerencanaan;
+  const { canUpdateDeadline } = usePermissions();
+  const isJadwalEditable = showPerencanaan && canUpdateDeadline;
   const isMainProjectsV2Page =
     !showSPD &&
     !showPerencanaan &&
@@ -3919,7 +3922,7 @@ export function ProjectsV2Table({
                       {!showAllDashboard && !showSPD && !showPiutang && (
                         <>
                           <TableCell>
-                            {showPerencanaan ? (
+                            {showPerencanaan && canUpdateDeadline ? (
                               <div
                                 className='group flex items-center gap-1.5 cursor-pointer hover:text-orange-600 transition-colors font-medium'
                                 onClick={() => handleDeadlineClick(project)}

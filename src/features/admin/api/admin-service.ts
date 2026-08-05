@@ -169,5 +169,26 @@ export const adminService = {
     deleteMenu: async (id: number) => {
         const { data } = await axiosInstance.delete(`/menus/${id}`);
         return data;
+    },
+
+    // Permission CRUD APIs
+    getPermissions: async (params?: { search?: string }) => {
+        const { data } = await axiosInstance.get<{ data: any[] }>('/permissions', { params });
+        return data.data;
+    },
+
+    createPermission: async (payload: { name: string; guard_name?: string; menu_id?: number | null; action?: string }) => {
+        const { data } = await axiosInstance.post('/permissions', payload);
+        return data;
+    },
+
+    updatePermission: async (id: number, payload: { name: string; guard_name?: string; menu_id?: number | null; action?: string }) => {
+        const { data } = await axiosInstance.put(`/permissions/${id}`, payload);
+        return data;
+    },
+
+    deletePermission: async (id: number) => {
+        const { data } = await axiosInstance.delete(`/permissions/${id}`);
+        return data;
     }
 };

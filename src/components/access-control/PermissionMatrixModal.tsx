@@ -250,7 +250,7 @@ export function PermissionMatrixModal({
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y">
-                                    {filteredMatrix.map((parent: any) => {
+                                    {filteredMatrix.map((parent: any, pIdx: number) => {
                                         const ACTION_ORDER: Record<string, number> = {
                                             create: 1,
                                             read: 2,
@@ -282,7 +282,7 @@ export function PermissionMatrixModal({
                                         const parentPerms = getUniquePerms(parent.permissions)
 
                                         return (
-                                            <React.Fragment key={parent.id}>
+                                            <React.Fragment key={parent.id ? `parent-${parent.id}` : `parent-idx-${pIdx}`}>
                                                 {/* Parent Menu Row */}
                                                 <tr className="bg-neutral-50 font-medium">
                                                     <td className="py-2.5 px-4 text-neutral-900 font-semibold">
@@ -290,10 +290,10 @@ export function PermissionMatrixModal({
                                                     </td>
                                                     <td className="py-2.5 px-4">
                                                         <div className="flex items-center gap-6 flex-wrap">
-                                                            {parentPerms.map((perm: any) => {
+                                                            {parentPerms.map((perm: any, permIdx: number) => {
                                                                 const isChecked = selectedIds.includes(perm.id)
                                                                 return (
-                                                                    <div key={perm.id} className="flex items-center gap-2">
+                                                                    <div key={perm.id ? `p-perm-${parent.id}-${perm.id}` : `p-perm-${pIdx}-${permIdx}`} className="flex items-center gap-2">
                                                                         <Switch
                                                                             checked={isChecked}
                                                                             onCheckedChange={() => togglePermission(perm.id)}
@@ -309,13 +309,13 @@ export function PermissionMatrixModal({
                                                 </tr>
 
                                                 {/* Child Submenu Rows */}
-                                                {(parent.children || []).map((child: any) => {
+                                                {(parent.children || []).map((child: any, cIdx: number) => {
                                                     const childPerms = getUniquePerms(child.permissions)
                                                     const childPermIds = childPerms.map((p: any) => p.id)
                                                     const isAllChecked = childPermIds.length > 0 && childPermIds.every((id: number) => selectedIds.includes(id))
 
                                                     return (
-                                                        <tr key={child.id} className="hover:bg-neutral-50/50 transition-colors">
+                                                        <tr key={child.id ? `child-${child.id}` : `c-idx-${pIdx}-${cIdx}`} className="hover:bg-neutral-50/50 transition-colors">
                                                             <td className="py-2.5 px-4 pl-8">
                                                                 <div className="flex items-center gap-2">
                                                                     <Checkbox
@@ -327,10 +327,10 @@ export function PermissionMatrixModal({
                                                             </td>
                                                             <td className="py-2.5 px-4">
                                                                 <div className="flex items-center gap-6 flex-wrap">
-                                                                    {childPerms.map((perm: any) => {
+                                                                    {childPerms.map((perm: any, permIdx: number) => {
                                                                         const isChecked = selectedIds.includes(perm.id)
                                                                         return (
-                                                                            <div key={perm.id} className="flex items-center gap-2">
+                                                                            <div key={perm.id ? `c-perm-${child.id}-${perm.id}` : `c-perm-${cIdx}-${permIdx}`} className="flex items-center gap-2">
                                                                                 <Switch
                                                                                     checked={isChecked}
                                                                                     onCheckedChange={() => togglePermission(perm.id)}
