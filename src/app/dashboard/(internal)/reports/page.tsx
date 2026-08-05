@@ -4,27 +4,27 @@ import React, { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
-import { 
-  FileText, 
-  CheckCircle2, 
-  CircleDollarSign, 
-  AlertTriangle, 
-  Lightbulb, 
-  CalendarDays, 
+import {
+  FileText,
+  CheckCircle2,
+  CircleDollarSign,
+  AlertTriangle,
+  Lightbulb,
+  CalendarDays,
   ArrowUp,
   ChevronDown
 } from "lucide-react"
 import {
-  PieChart, 
-  Pie, 
-  Cell, 
-  LineChart, 
-  Line, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer 
+  PieChart,
+  Pie,
+  Cell,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer
 } from "recharts"
 import { useQuery } from "@tanstack/react-query"
 import { getReportsData } from "@/features/dashboard/services/dashboard-reports-service"
@@ -140,7 +140,7 @@ export default function ReportsDashboard() {
 
   return (
     <div className="p-6 bg-slate-50/50 min-h-screen space-y-6">
-      
+
       {/* HEADER SECTION */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-2">
         <div>
@@ -187,7 +187,7 @@ export default function ReportsDashboard() {
 
       {/* ROW 1: STATUS PROYEK | PROGRES KESELURUHAN | PIUTANG */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        
+
         {/* Card 1: Status Proyek */}
         <Card className="shadow-sm border-slate-200">
           <CardHeader className="pb-2">
@@ -327,7 +327,7 @@ export default function ReportsDashboard() {
 
       {/* ROW 2: SPK PER BULAN | DEADLINE & OVERDUE | TOP 5 OVERDUE */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        
+
         {/* Card 4: Nominal SPK Per Bulan */}
         <Card className="shadow-sm border-slate-200">
           <CardHeader className="pb-0">
@@ -339,38 +339,38 @@ export default function ReportsDashboard() {
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={formattedSpkData} margin={{ top: 15, right: 15, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                  <XAxis 
-                    dataKey="name" 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{ fontSize: 10, fill: '#64748b' }} 
+                  <XAxis
+                    dataKey="name"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 10, fill: '#64748b' }}
                     dy={10}
                   />
-                  <YAxis 
-                    axisLine={false} 
-                    tickLine={false} 
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
                     tick={{ fontSize: 10, fill: '#64748b' }}
                     tickFormatter={(val) => formatShortValue(Number(val))}
                     domain={[0, 'auto']}
                   />
-                  <Tooltip 
+                  <Tooltip
                     contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                     formatter={(value: any) => [`Rp ${formatShortValue(Number(value))}`, 'Nominal']}
                   />
-                  <Line 
-                    type="linear" 
-                    dataKey="value" 
-                    stroke="#3b82f6" 
+                  <Line
+                    type="linear"
+                    dataKey="value"
+                    stroke="#3b82f6"
                     strokeWidth={2}
                     dot={{ r: 4, fill: '#3b82f6', strokeWidth: 2, stroke: '#fff' }}
                     activeDot={{ r: 6 }}
-                    label={{ 
-                      position: 'top', 
-                      fill: '#3b82f6', 
-                      fontSize: 10, 
-                      fontWeight: 600, 
-                      formatter: (val: any) => Number(val) > 0 ? formatShortValue(Number(val)) : '', 
-                      dy: -10 
+                    label={{
+                      position: 'top',
+                      fill: '#3b82f6',
+                      fontSize: 10,
+                      fontWeight: 600,
+                      formatter: (val: any) => Number(val) > 0 ? formatShortValue(Number(val)) : '',
+                      dy: -10
                     }}
                   />
                 </LineChart>
@@ -403,18 +403,18 @@ export default function ReportsDashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="w-full overflow-x-auto">
+            <div className="w-full h-[280px] overflow-auto">
               <table className="w-full text-xs text-left">
-                <thead className="bg-slate-50/50 text-[10px] font-semibold text-slate-500 tracking-wider uppercase border-b border-slate-100">
+                <thead className="sticky top-0 z-10 bg-slate-50 text-[10px] font-semibold text-slate-500 tracking-wider uppercase border-b border-slate-100">
                   <tr>
-                    <th className="py-3 px-4 w-8 text-center">#</th>
-                    <th className="py-3 px-4 min-w-[140px]">Proyek</th>
-                    <th className="py-3 px-4 min-w-[120px]">Client</th>
-                    <th className="py-3 px-4 min-w-[110px]">No SPK</th>
-                    <th className="py-3 px-4 min-w-[95px]">SPK Masuk</th>
-                    <th className="py-3 px-4 min-w-[95px]">Deadline</th>
-                    <th className="py-3 px-4 min-w-[85px] text-right">Terlambat</th>
-                    <th className="py-3 px-4 min-w-[130px]">Team</th>
+                    <th className="py-3 px-4 w-8 text-center bg-slate-50">#</th>
+                    <th className="py-3 px-4 min-w-[140px] bg-slate-50">Proyek</th>
+                    <th className="py-3 px-4 min-w-[120px] bg-slate-50">Client</th>
+                    <th className="py-3 px-4 min-w-[110px] bg-slate-50">No SPK</th>
+                    <th className="py-3 px-4 min-w-[95px] bg-slate-50">SPK Masuk</th>
+                    <th className="py-3 px-4 min-w-[95px] bg-slate-50">Deadline</th>
+                    <th className="py-3 px-4 min-w-[85px] text-right bg-slate-50">Terlambat</th>
+                    <th className="py-3 px-4 min-w-[130px] bg-slate-50">Team</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
@@ -457,7 +457,7 @@ export default function ReportsDashboard() {
       </div>
 
       {/* ROW 3: INSIGHT UTAMA */}
-      <div className="bg-indigo-50/50 border border-indigo-100 rounded-xl p-5 flex items-start gap-4 shadow-sm">
+      {/* <div className="bg-indigo-50/50 border border-indigo-100 rounded-xl p-5 flex items-start gap-4 shadow-sm">
         <div className="bg-white p-2.5 rounded-full shadow-sm shrink-0 border border-indigo-50">
           <Lightbulb className="w-6 h-6 text-indigo-600" />
         </div>
@@ -469,7 +469,7 @@ export default function ReportsDashboard() {
               : 'Semua proyek berjalan sesuai timeline dan belum ada proyek yang melewati deadline.'}
           </p>
         </div>
-      </div>
+      </div> */}
 
     </div>
   )
