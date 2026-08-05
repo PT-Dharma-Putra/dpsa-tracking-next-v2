@@ -395,78 +395,61 @@ export default function ReportsDashboard() {
           </CardContent>
         </Card>
 
-        {/* Card 5: Deadline & Overdue */}
-        <Card className="shadow-sm border-slate-200">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-semibold text-slate-800 tracking-wider">DEADLINE & OVERDUE</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col h-[280px]">
-            <div className="flex flex-row items-center flex-1 py-4">
-              <div className="h-32 w-32 relative shrink-0">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={deadlineData}
-                      innerRadius={35}
-                      outerRadius={60}
-                      paddingAngle={2}
-                      dataKey="value"
-                      stroke="none"
-                    >
-                      {deadlineData.map((entry: any, index: number) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="flex-1 pl-4 space-y-3">
-                {deadlineData.map((item: any, i: number) => (
-                  <div key={i} className="flex items-center text-xs">
-                    <div className="w-2.5 h-2.5 rounded-full mr-2 shrink-0" style={{ backgroundColor: item.color }}></div>
-                    <span className="text-slate-600 flex-1 leading-tight">{item.name}</span>
-                    <span className="font-bold text-slate-900 mx-2 shrink-0">{item.value}</span>
-                    <span className="text-slate-400 text-[10px] shrink-0">({item.percentage})</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="mt-auto bg-red-50/50 border border-red-100 rounded-lg p-3 flex items-start gap-3">
-              <AlertTriangle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
-              <p className="text-xs text-red-700/80 leading-relaxed">
-                <span className="font-semibold text-red-700">{totalWarning} proyek ({warningPct}%)</span> memiliki deadline dalam 7 hari ke depan atau sudah melewati deadline.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Card 6: Top 5 Proyek Overdue */}
-        <Card className="shadow-sm border-slate-200">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-semibold text-slate-800 tracking-wider">TOP 5 PROYEK OVERDUE (PALING LAMA)</CardTitle>
+        {/* Card 6: Top 10 Proyek Overdue */}
+        <Card className="shadow-sm border-slate-200 md:col-span-2">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-xs font-semibold text-slate-800 tracking-wider">
+              TOP 10 PROYEK OVERDUE (PALING LAMA)
+            </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="w-full text-xs">
-              <div className="grid grid-cols-[30px_1fr_90px_80px] gap-2 px-6 py-3 border-b border-slate-100 text-[10px] font-semibold text-slate-500 tracking-wider uppercase">
-                <div>#</div>
-                <div>PROYEK</div>
-                <div>DEADLINE</div>
-                <div className="text-right">TERLAMBAT</div>
-              </div>
-              <div className="flex flex-col">
-                {overdueProjects.length > 0 ? (
-                  overdueProjects.map((project: any, i: number) => (
-                    <div key={project.id} className="grid grid-cols-[30px_1fr_90px_80px] gap-2 px-6 py-3.5 border-b border-slate-50 last:border-0 hover:bg-slate-50/50 transition-colors items-center">
-                      <div className="text-slate-500">{project.id}</div>
-                      <div className="font-medium text-slate-700 truncate" title={project.name}>{project.name}</div>
-                      <div className="text-slate-500">{project.deadline}</div>
-                      <div className="text-right font-medium text-red-500">{project.days}</div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-center py-6 text-slate-500 text-sm">Tidak ada proyek overdue</div>
-                )}
-              </div>
+            <div className="w-full overflow-x-auto">
+              <table className="w-full text-xs text-left">
+                <thead className="bg-slate-50/50 text-[10px] font-semibold text-slate-500 tracking-wider uppercase border-b border-slate-100">
+                  <tr>
+                    <th className="py-3 px-4 w-8 text-center">#</th>
+                    <th className="py-3 px-4 min-w-[140px]">Proyek</th>
+                    <th className="py-3 px-4 min-w-[120px]">Client</th>
+                    <th className="py-3 px-4 min-w-[110px]">No SPK</th>
+                    <th className="py-3 px-4 min-w-[95px]">SPK Masuk</th>
+                    <th className="py-3 px-4 min-w-[95px]">Deadline</th>
+                    <th className="py-3 px-4 min-w-[85px] text-right">Terlambat</th>
+                    <th className="py-3 px-4 min-w-[130px]">Team</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {overdueProjects.length > 0 ? (
+                    overdueProjects.map((project: any) => (
+                      <tr key={project.id} className="hover:bg-slate-50/50 transition-colors">
+                        <td className="py-3.5 px-4 text-center text-slate-400 font-medium">{project.id}</td>
+                        <td className="py-3.5 px-4 font-medium text-slate-800" title={project.name}>{project.name}</td>
+                        <td className="py-3.5 px-4 text-slate-600">{project.client}</td>
+                        <td className="py-3.5 px-4 text-slate-600 font-mono text-[11px]">{project.no_spk}</td>
+                        <td className="py-3.5 px-4 text-slate-600">{project.spk_masuk}</td>
+                        <td className="py-3.5 px-4 text-slate-600">{project.deadline}</td>
+                        <td className="py-3.5 px-4 text-right font-semibold text-red-500">{project.days}</td>
+                        <td className="py-3.5 px-4">
+                          {project.team_list && project.team_list.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {project.team_list.map((t: string, idx: number) => (
+                                <span key={idx} className="inline-block bg-blue-50 text-blue-700 text-[10px] font-medium px-1.5 py-0.5 rounded border border-blue-200">
+                                  {t}
+                                </span>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-slate-400 italic text-[11px]">{project.team || '-'}</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={8} className="text-center py-8 text-slate-500 text-sm">Tidak ada proyek overdue</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
           </CardContent>
         </Card>
