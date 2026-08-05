@@ -113,17 +113,23 @@ export default function ReportsDashboard() {
 
   // Format to M (Milyar) or Jt (Juta) for charts
   const formatShortValue = (val: number) => {
-    if (val >= 1000000000) return `${(val / 1000000000).toFixed(1)} M`
-    if (val >= 1000000) return `${(val / 1000000).toFixed(1)} Jt`
+    if (!val || isNaN(val) || val === 0) return '0'
+    if (val >= 1000000000) {
+      const formatted = (val / 1000000000).toFixed(2).replace(/\.0+$/, '').replace(/(\.\d)0$/, '$1')
+      return `${formatted} M`
+    }
+    if (val >= 1000000) {
+      const formatted = (val / 1000000).toFixed(2).replace(/\.0+$/, '').replace(/(\.\d)0$/, '$1')
+      return `${formatted} Jt`
+    }
     return `${val}`
   }
 
-  // Format array for recharts nominal SPK
+  // Format array for recharts nominal SPK (keeping value as raw numeric IDR so Y-axis scaling is mathematically exact)
   const formattedSpkData = spkData.map((item: any) => ({
     name: item.name,
-    raw_value: item.raw_value,
-    value: item.raw_value >= 1000000000 ? (item.raw_value / 1000000000).toFixed(2) : (item.raw_value >= 1000000 ? (item.raw_value / 1000000).toFixed(2) : item.raw_value),
-    label: item.raw_value >= 1000000000 ? 'M' : (item.raw_value >= 1000000 ? 'Jt' : '')
+    raw_value: Number(item.raw_value || 0),
+    value: Number(item.raw_value || 0),
   }))
 
   const overduesCount = deadlineData.find((d: any) => d.name === 'Overdue')?.value || 0
@@ -344,12 +350,12 @@ export default function ReportsDashboard() {
                     axisLine={false} 
                     tickLine={false} 
                     tick={{ fontSize: 10, fill: '#64748b' }}
-                    tickFormatter={(val) => `${val}`}
+                    tickFormatter={(val) => formatShortValue(Number(val))}
                     domain={[0, 'auto']}
                   />
                   <Tooltip 
                     contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                    formatter={(value: any, name: any, props: any) => [`Rp ${value} ${props.payload.label}`, 'Nominal']}
+                    formatter={(value: any) => [`Rp ${formatShortValue(Number(value))}`, 'Nominal']}
                   />
                   <Line 
                     type="linear" 
@@ -358,7 +364,14 @@ export default function ReportsDashboard() {
                     strokeWidth={2}
                     dot={{ r: 4, fill: '#3b82f6', strokeWidth: 2, stroke: '#fff' }}
                     activeDot={{ r: 6 }}
-                    label={{ position: 'top', fill: '#3b82f6', fontSize: 10, fontWeight: 600, formatter: (val: any) => `${val}`, dy: -10 }}
+                    label={{ 
+                      position: 'top', 
+                      fill: '#3b82f6', 
+                      fontSize: 10, 
+                      fontWeight: 600, 
+                      formatter: (val: any) => Number(val) > 0 ? formatShortValue(Number(val)) : '', 
+                      dy: -10 
+                    }}
                   />
                 </LineChart>
               </ResponsiveContainer>
