@@ -55,8 +55,8 @@ export function DeadlineDialog({ open, onOpenChange, project }: DeadlineDialogPr
             toast.success("Deadline updated successfully")
             onOpenChange(false)
         },
-        onError: (error) => {
-            toast.error("Failed to update deadline")
+        onError: (error: any) => {
+            toast.error(error?.response?.data?.message || "Failed to update deadline")
             console.error(error)
         }
     })
