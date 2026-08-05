@@ -28,6 +28,7 @@ import {
 } from "recharts"
 import { useQuery } from "@tanstack/react-query"
 import { getReportsData } from "@/features/dashboard/services/dashboard-reports-service"
+import { ClientService } from "@/features/clients/services/client-service"
 import { Skeleton } from "@/components/ui/skeleton"
 
 // Custom Label for Center of Donut Chart
@@ -46,10 +47,22 @@ const renderCustomizedLabel = ({ cx, cy, value, text1, text2 }: any) => {
 
 export default function ReportsDashboard() {
   const [mounted, setMounted] = useState(false)
+  const [selectedClient, setSelectedClient] = useState<string>("all-clients")
+  const [selectedMonth, setSelectedMonth] = useState<string>("all-months")
+
+  const { data: clientsData } = useQuery({
+    queryKey: ['clients-reports-list'],
+    queryFn: () => ClientService.getClients({ page: 1 })
+  })
+
+  const clients = clientsData?.data || []
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['dashboard-reports'],
-    queryFn: getReportsData
+    queryKey: ['dashboard-reports', selectedClient, selectedMonth],
+    queryFn: () => getReportsData({
+      client_id: selectedClient !== "all-clients" ? selectedClient : undefined,
+      month: selectedMonth !== "all-months" ? selectedMonth : undefined,
+    })
   })
 
   useEffect(() => {
@@ -129,29 +142,40 @@ export default function ReportsDashboard() {
           <p className="text-slate-500 text-sm mt-1">Ringkasan kinerja proyek secara real-time</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <Select defaultValue="all-clients">
-            <SelectTrigger className="w-[140px] bg-white h-9">
+          <Select value={selectedClient} onValueChange={setSelectedClient}>
+            <SelectTrigger className="w-[160px] bg-white h-9">
               <SelectValue placeholder="All Clients" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all-clients">All Clients</SelectItem>
+              {clients.map((c: any) => (
+                <SelectItem key={c.id} value={c.id.toString()}>
+                  {c.name}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
 
-          <Select defaultValue="all-months">
+          <Select value={selectedMonth} onValueChange={setSelectedMonth}>
             <SelectTrigger className="w-[140px] bg-white h-9">
               <SelectValue placeholder="All Months" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all-months">All Months</SelectItem>
+              <SelectItem value="1">January</SelectItem>
+              <SelectItem value="2">February</SelectItem>
+              <SelectItem value="3">March</SelectItem>
+              <SelectItem value="4">April</SelectItem>
+              <SelectItem value="5">May</SelectItem>
+              <SelectItem value="6">June</SelectItem>
+              <SelectItem value="7">July</SelectItem>
+              <SelectItem value="8">August</SelectItem>
+              <SelectItem value="9">September</SelectItem>
+              <SelectItem value="10">October</SelectItem>
+              <SelectItem value="11">November</SelectItem>
+              <SelectItem value="12">December</SelectItem>
             </SelectContent>
           </Select>
-
-          <Button variant="outline" className="bg-white h-9 px-3 flex items-center gap-2 font-normal">
-            <CalendarDays className="h-4 w-4 text-slate-500" />
-            <span className="text-sm">Jun 1 - Jul 2, 2026</span>
-            <ChevronDown className="h-4 w-4 text-slate-500 ml-1" />
-          </Button>
         </div>
       </div>
 
