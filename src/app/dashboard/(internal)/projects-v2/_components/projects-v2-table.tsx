@@ -182,10 +182,23 @@ export function ProjectsV2Table({
 
   const [search, setSearch] = React.useState(searchParams.get('search') || '');
   const [searchInput, setSearchInput] = React.useState(searchParams.get('search') || '');
-  const [clientId, setClientId] = React.useState<string>('all');
-  const [marketingId, setMarketingId] = React.useState<string>('all');
+  const [clientId, setClientId] = React.useState<string>(
+    searchParams.get('client_id') || 'all'
+  );
+  const [marketingId, setMarketingId] = React.useState<string>(
+    searchParams.get('marketing_id') || 'all'
+  );
   const [sortBy, setSortBy] = React.useState<string>(searchParams.get('sort_by') || 'created_at');
   const [sortOrder, setSortOrder] = React.useState<'asc' | 'desc'>((searchParams.get('sort_order') as 'asc' | 'desc') || 'desc');
+  const [selectedDivisi, setSelectedDivisi] = React.useState<string>(
+    searchParams.get('divisi_id') || 'all'
+  );
+  const [selectedMonth, setSelectedMonth] = React.useState<string>(
+    searchParams.get('month') || 'all'
+  );
+  const [selectedYear, setSelectedYear] = React.useState<string>(
+    searchParams.get('year') || 'all'
+  );
 
   React.useEffect(() => {
     const params = new URLSearchParams(searchParams.toString());
@@ -218,6 +231,36 @@ export function ProjectsV2Table({
       pushOrReplace = 'replace';
     }
 
+    if (clientId !== (params.get('client_id') || 'all')) {
+      if (clientId === 'all') params.delete('client_id');
+      else params.set('client_id', clientId);
+      shouldUpdate = true;
+    }
+
+    if (marketingId !== (params.get('marketing_id') || 'all')) {
+      if (marketingId === 'all') params.delete('marketing_id');
+      else params.set('marketing_id', marketingId);
+      shouldUpdate = true;
+    }
+
+    if (selectedDivisi !== (params.get('divisi_id') || 'all')) {
+      if (selectedDivisi === 'all') params.delete('divisi_id');
+      else params.set('divisi_id', selectedDivisi);
+      shouldUpdate = true;
+    }
+
+    if (selectedMonth !== (params.get('month') || 'all')) {
+      if (selectedMonth === 'all') params.delete('month');
+      else params.set('month', selectedMonth);
+      shouldUpdate = true;
+    }
+
+    if (selectedYear !== (params.get('year') || 'all')) {
+      if (selectedYear === 'all') params.delete('year');
+      else params.set('year', selectedYear);
+      shouldUpdate = true;
+    }
+
     if (shouldUpdate) {
       if (pushOrReplace === 'replace') {
         router.replace(`${pathname}?${params.toString()}`, { scroll: false });
@@ -225,22 +268,43 @@ export function ProjectsV2Table({
         router.push(`${pathname}?${params.toString()}`, { scroll: false });
       }
     }
-  }, [page, sortBy, sortOrder, search, pathname, router, searchParams]);
+  }, [
+    page,
+    sortBy,
+    sortOrder,
+    search,
+    clientId,
+    marketingId,
+    selectedDivisi,
+    selectedMonth,
+    selectedYear,
+    pathname,
+    router,
+    searchParams,
+  ]);
 
   React.useEffect(() => {
     const urlSortBy = searchParams.get('sort_by') || 'created_at';
     const urlSortOrder = (searchParams.get('sort_order') as 'asc' | 'desc') || 'desc';
     const urlSearch = searchParams.get('search') || '';
+    const urlClientId = searchParams.get('client_id') || 'all';
+    const urlMarketingId = searchParams.get('marketing_id') || 'all';
+    const urlDivisiId = searchParams.get('divisi_id') || 'all';
+    const urlMonth = searchParams.get('month') || 'all';
+    const urlYear = searchParams.get('year') || 'all';
+
     if (urlSortBy !== sortBy) setSortBy(urlSortBy);
     if (urlSortOrder !== sortOrder) setSortOrder(urlSortOrder);
     if (urlSearch !== search) {
       setSearch(urlSearch);
       setSearchInput(urlSearch);
     }
+    if (urlClientId !== clientId) setClientId(urlClientId);
+    if (urlMarketingId !== marketingId) setMarketingId(urlMarketingId);
+    if (urlDivisiId !== selectedDivisi) setSelectedDivisi(urlDivisiId);
+    if (urlMonth !== selectedMonth) setSelectedMonth(urlMonth);
+    if (urlYear !== selectedYear) setSelectedYear(urlYear);
   }, [searchParams]);
-  const [selectedDivisi, setSelectedDivisi] = React.useState<string>('all');
-  const [selectedMonth, setSelectedMonth] = React.useState<string>('all');
-  const [selectedYear, setSelectedYear] = React.useState<string>('all');
   const [poDivisiFilter, setPoDivisiFilter] = React.useState<
     'completed' | 'not_completed' | null
   >(null);
