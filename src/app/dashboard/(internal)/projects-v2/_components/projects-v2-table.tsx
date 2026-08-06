@@ -3721,13 +3721,8 @@ export function ProjectsV2Table({
                                 },
                               ];
 
-                              const latest = stages
-                                .filter((s) => s.date)
-                                .sort(
-                                  (a, b) =>
-                                    new Date(b.date!).getTime() -
-                                    new Date(a.date!).getTime()
-                                )[0];
+                              const updatedStages = stages.filter((s) => s.date);
+                              const latest = updatedStages[updatedStages.length - 1];
 
                               if (!latest)
                                 return (
@@ -4310,13 +4305,8 @@ export function ProjectsV2Table({
                                   },
                                 ];
 
-                                const latest = stages
-                                  .filter((s) => s.date)
-                                  .sort(
-                                    (a, b) =>
-                                      new Date(b.date!).getTime() -
-                                      new Date(a.date!).getTime()
-                                  )[0];
+                                const updatedStages = stages.filter((s) => s.date);
+                                const latest = updatedStages[updatedStages.length - 1];
 
                                 if (!latest)
                                   return (
