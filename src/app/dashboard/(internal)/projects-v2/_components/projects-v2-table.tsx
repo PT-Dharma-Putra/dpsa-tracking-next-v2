@@ -341,6 +341,7 @@ export function ProjectsV2Table({
     | 'belum_produksi'
     | 'deadline_dekat'
     | 'overdue'
+    | 'overdue_produksi'
     | 'urgent'
     | 'po_supplier'
     | 'pakai_desain'
@@ -361,6 +362,7 @@ export function ProjectsV2Table({
       | 'belum_produksi'
       | 'deadline_dekat'
       | 'overdue'
+      | 'overdue_produksi'
       | 'urgent'
       | 'po_supplier'
       | 'pakai_desain'
@@ -1865,34 +1867,36 @@ export function ProjectsV2Table({
           </div>
 
           {/* Overdue */}
-          <div
-            onClick={() => handleDashboardFilterClick('overdue')}
-            className={cn(
-              'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-red-400 select-none',
-              dashboardFilter === 'overdue'
-                ? 'border-red-500 bg-red-50/50 ring-2 ring-red-500/20'
-                : 'border-red-200 bg-white'
-            )}
-          >
-            <div className='flex items-center gap-3'>
-              <div className='h-10 w-10 rounded-lg bg-red-100 flex items-center justify-center text-red-600 shrink-0'>
-                <AlertCircle className='h-5 w-5' />
+          {!showProduksi && (
+            <div
+              onClick={() => handleDashboardFilterClick('overdue')}
+              className={cn(
+                'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-red-400 select-none',
+                dashboardFilter === 'overdue'
+                  ? 'border-red-500 bg-red-50/50 ring-2 ring-red-500/20'
+                  : 'border-red-200 bg-white'
+              )}
+            >
+              <div className='flex items-center gap-3'>
+                <div className='h-10 w-10 rounded-lg bg-red-100 flex items-center justify-center text-red-600 shrink-0'>
+                  <AlertCircle className='h-5 w-5' />
+                </div>
+                <div>
+                  <p className='text-[10px] font-bold text-red-600 uppercase tracking-wider'>
+                    Overdue
+                  </p>
+                  <p className='text-xl font-bold text-red-800'>
+                    {stats.overdue}
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className='text-[10px] font-bold text-red-600 uppercase tracking-wider'>
-                  Overdue
-                </p>
-                <p className='text-xl font-bold text-red-800'>
-                  {stats.overdue}
-                </p>
-              </div>
+              {dashboardFilter === 'overdue' && (
+                <span className='text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
+                  Active
+                </span>
+              )}
             </div>
-            {dashboardFilter === 'overdue' && (
-              <span className='text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
-                Active
-              </span>
-            )}
-          </div>
+          )}
 
           {/* Produksi Selesai */}
           <div
@@ -1980,6 +1984,38 @@ export function ProjectsV2Table({
               </div>
               {dashboardFilter === 'belum_produksi' && (
                 <span className='text-[10px] bg-rose-100 text-rose-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
+                  Active
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Overdue Produksi — hanya produksi */}
+          {showProduksi && (
+            <div
+              onClick={() => handleDashboardFilterClick('overdue_produksi')}
+              className={cn(
+                'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-red-500 select-none',
+                dashboardFilter === 'overdue_produksi'
+                  ? 'border-red-600 bg-red-100/60 ring-2 ring-red-600/20'
+                  : 'border-red-300 bg-red-50/40'
+              )}
+            >
+              <div className='flex items-center gap-3'>
+                <div className='h-10 w-10 rounded-lg bg-red-200/70 flex items-center justify-center text-red-700 shrink-0'>
+                  <AlertTriangle className='h-5 w-5' />
+                </div>
+                <div>
+                  <p className='text-[10px] font-bold text-red-700 uppercase tracking-wider'>
+                    Overdue Produksi
+                  </p>
+                  <p className='text-xl font-bold text-red-900'>
+                    {stats.overdue_produksi ?? 0}
+                  </p>
+                </div>
+              </div>
+              {dashboardFilter === 'overdue_produksi' && (
+                <span className='text-[10px] bg-red-200 text-red-800 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
                   Active
                 </span>
               )}
