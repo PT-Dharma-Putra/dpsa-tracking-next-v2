@@ -60,6 +60,7 @@ export interface ProjectItemWithShipmentStats {
   jumlah_keluar_total: number;
   jumlah_tersetting_total: number;
   spk_number?: string | null;
+  spk_id?: number | null;
 }
 
 export const PengirimanService = {

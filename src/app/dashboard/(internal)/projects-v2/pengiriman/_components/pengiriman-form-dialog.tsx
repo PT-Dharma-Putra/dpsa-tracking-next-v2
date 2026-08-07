@@ -64,6 +64,7 @@ interface SelectedItem {
   item_name: string;
   project_name: string;
   spk_number: string;
+  spk_id?: number | null;
   jumlah: number;
   jumlah_keluar_total: number;
   jumlah_tersetting_total: number;
@@ -207,6 +208,7 @@ export function PengirimanFormDialog({ open, onOpenChange, pengiriman }: Pengiri
         item_name: item.item,
         project_name: item.project?.name || "-",
         spk_number: item.spk_number || "-",
+        spk_id: item.spk_id ?? detail?.spk_id ?? null,
         jumlah: item.jumlah,
         jumlah_keluar_total: Math.max(0, pastKeluar),
         jumlah_tersetting_total: Math.max(0, pastTersetting),
@@ -284,6 +286,7 @@ export function PengirimanFormDialog({ open, onOpenChange, pengiriman }: Pengiri
           jumlah_keluar: item.jumlah_keluar,
           jumlah_tersetting: item.jumlah_tersetting,
           keterangan: item.keterangan || null,
+          spk_id: item.spk_id ?? null,
         }))
 
       const payload = {
