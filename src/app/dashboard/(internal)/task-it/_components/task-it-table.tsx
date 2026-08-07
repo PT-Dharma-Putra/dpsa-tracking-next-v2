@@ -94,9 +94,14 @@ export function TaskItTable({ statusFilter, onClearFilter }: TaskItTableProps = 
     })
 
     const updateFieldMutation = useMutation({
-        mutationFn: ({ id, status, userId, deskripsi, tanggalSelesai, prioritas }: { id: number, status: string, userId: number, deskripsi: string, tanggalSelesai: string | null, prioritas: string }) => {
+        mutationFn: ({ id, status, userId, picId, deskripsi, tanggalSelesai, prioritas }: { id: number, status: string, userId: number, picId?: number | null, deskripsi: string, tanggalSelesai: string | null, prioritas: string }) => {
             const formData = new FormData()
             formData.append("user_id", userId.toString())
+            if (picId) {
+                formData.append("pic_id", picId.toString())
+            } else {
+                formData.append("pic_id", "")
+            }
             formData.append("deskripsi", deskripsi)
             formData.append("status", status)
             formData.append("prioritas", prioritas)
@@ -140,6 +145,7 @@ export function TaskItTable({ statusFilter, onClearFilter }: TaskItTableProps = 
         return (
             t.deskripsi.toLowerCase().includes(search.toLowerCase()) ||
             (t.user?.name.toLowerCase().includes(search.toLowerCase()) ?? false) ||
+            (t.pic?.name.toLowerCase().includes(search.toLowerCase()) ?? false) ||
             t.status.toLowerCase().includes(search.toLowerCase())
         )
     })
@@ -158,6 +164,10 @@ export function TaskItTable({ statusFilter, onClearFilter }: TaskItTableProps = 
                 case "user":
                     valA = (a.user?.name || "").toLowerCase()
                     valB = (b.user?.name || "").toLowerCase()
+                    break
+                case "pic":
+                    valA = (a.pic?.name || "").toLowerCase()
+                    valB = (b.pic?.name || "").toLowerCase()
                     break
                 case "status":
                     valA = a.status.toLowerCase()
@@ -248,6 +258,7 @@ export function TaskItTable({ statusFilter, onClearFilter }: TaskItTableProps = 
                             id: task.id,
                             status: newStatus,
                             userId: task.user_id,
+                            picId: task.pic_id,
                             deskripsi: task.deskripsi,
                             tanggalSelesai: finalTanggalSelesai,
                             prioritas: task.prioritas
@@ -297,6 +308,7 @@ export function TaskItTable({ statusFilter, onClearFilter }: TaskItTableProps = 
                             id: task.id,
                             status: task.status,
                             userId: task.user_id,
+                            picId: task.pic_id,
                             deskripsi: task.deskripsi,
                             tanggalSelesai: task.tanggal_selesai,
                             prioritas: newPrioritas
@@ -345,7 +357,7 @@ export function TaskItTable({ statusFilter, onClearFilter }: TaskItTableProps = 
                 <div className="relative max-w-sm">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
-                        placeholder="Cari deskripsi, user, atau status..."
+                        placeholder="Cari deskripsi, user, pic, atau status..."
                         value={search}
                         onChange={e => setSearch(e.target.value)}
                         className="pl-9 bg-neutral-50 border-neutral-200 focus:bg-white"
@@ -388,7 +400,8 @@ export function TaskItTable({ statusFilter, onClearFilter }: TaskItTableProps = 
                         <TableRow>
                             <TableHead className="w-[50px]">#</TableHead>
                             <TableHead className="max-w-[300px]">{sortableHeader("deskripsi", "Deskripsi")}</TableHead>
-                            <TableHead>{sortableHeader("user", "User Assigned")}</TableHead>
+                            <TableHead>{sortableHeader("user", "Request By")}</TableHead>
+                            <TableHead>{sortableHeader("pic", "PIC IT")}</TableHead>
                             <TableHead>{sortableHeader("prioritas", "Prioritas")}</TableHead>
                             <TableHead>{sortableHeader("status", "Status")}</TableHead>
                             <TableHead>{sortableHeader("created_at", "Tanggal Dibuat")}</TableHead>
@@ -400,13 +413,13 @@ export function TaskItTable({ statusFilter, onClearFilter }: TaskItTableProps = 
                     <TableBody>
                         {isLoading ? (
                             <TableRow>
-                                <TableCell colSpan={9} className="h-32 text-center">
+                                <TableCell colSpan={10} className="h-32 text-center">
                                     <Loader2 className="h-6 w-6 animate-spin mx-auto text-neutral-400" />
                                 </TableCell>
                             </TableRow>
                         ) : filtered.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={9} className="h-32 text-center text-muted-foreground text-sm">
+                                <TableCell colSpan={10} className="h-32 text-center text-muted-foreground text-sm">
                                     {search ? "Tidak ada task yang cocok." : "Belum ada task IT. Klik 'Tambah Task' untuk memulai."}
                                 </TableCell>
                             </TableRow>
@@ -422,6 +435,16 @@ export function TaskItTable({ statusFilter, onClearFilter }: TaskItTableProps = 
                                             <span className="text-sm font-semibold text-neutral-700">{task.user?.name || "Unassigned"}</span>
                                             <span className="text-xs text-muted-foreground">{task.user?.email || "-"}</span>
                                         </div>
+                                    </TableCell>
+                                    <TableCell>
+                                        {task.pic?.name ? (
+                                            <div className="flex flex-col">
+                                                <span className="text-sm font-semibold text-neutral-700">{task.pic.name}</span>
+                                                <span className="text-xs text-muted-foreground">{task.pic.email}</span>
+                                            </div>
+                                        ) : (
+                                            <span className="text-xs text-muted-foreground italic">-</span>
+                                        )}
                                     </TableCell>
                                     <TableCell>
                                         {getPrioritasSelect(task)}

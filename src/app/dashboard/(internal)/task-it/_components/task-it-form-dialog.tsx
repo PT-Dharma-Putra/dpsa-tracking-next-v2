@@ -48,6 +48,7 @@ export function TaskItFormDialog({ open, onOpenChange, task }: TaskItFormDialogP
     const queryClient = useQueryClient()
     const [deskripsi, setDeskripsi] = React.useState("")
     const [userId, setUserId] = React.useState("")
+    const [picId, setPicId] = React.useState("")
     const [status, setStatus] = React.useState("Pending")
     const [prioritas, setPrioritas] = React.useState("Medium")
     const [tanggalSelesai, setTanggalSelesai] = React.useState("")
@@ -55,6 +56,7 @@ export function TaskItFormDialog({ open, onOpenChange, task }: TaskItFormDialogP
     const [existingFile, setExistingFile] = React.useState<string | null>(null)
     const [removeExistingFile, setRemoveExistingFile] = React.useState(false)
     const [userPopoverOpen, setUserPopoverOpen] = React.useState(false)
+    const [picPopoverOpen, setPicPopoverOpen] = React.useState(false)
 
     const fileInputRef = React.useRef<HTMLInputElement>(null)
 
@@ -70,6 +72,7 @@ export function TaskItFormDialog({ open, onOpenChange, task }: TaskItFormDialogP
         if (task) {
             setDeskripsi(task.deskripsi)
             setUserId(task.user_id.toString())
+            setPicId(task.pic_id ? task.pic_id.toString() : "")
             setStatus(task.status)
             setTanggalSelesai(
                 task.tanggal_selesai
@@ -86,6 +89,7 @@ export function TaskItFormDialog({ open, onOpenChange, task }: TaskItFormDialogP
         } else {
             setDeskripsi("")
             setUserId("")
+            setPicId("")
             setStatus("Pending")
             setPrioritas("Medium")
             setTanggalSelesai("")
@@ -125,6 +129,11 @@ export function TaskItFormDialog({ open, onOpenChange, task }: TaskItFormDialogP
 
         const formData = new FormData()
         formData.append("user_id", userId)
+        if (picId) {
+            formData.append("pic_id", picId)
+        } else {
+            formData.append("pic_id", "")
+        }
         formData.append("deskripsi", deskripsi)
         formData.append("status", status)
         formData.append("prioritas", prioritas)
@@ -153,58 +162,123 @@ export function TaskItFormDialog({ open, onOpenChange, task }: TaskItFormDialogP
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
-                        <div className="grid gap-2">
-                            <Label htmlFor="user_id">User Assigned</Label>
-                            <Popover open={userPopoverOpen} onOpenChange={setUserPopoverOpen}>
-                                <PopoverTrigger asChild>
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        role="combobox"
-                                        aria-expanded={userPopoverOpen}
-                                        className={cn(
-                                            "w-full justify-between bg-neutral-50 border-neutral-200 font-normal",
-                                            !userId && "text-muted-foreground"
-                                        )}
-                                    >
-                                        {userId && users.length > 0
-                                            ? (() => {
-                                                const u = users.find(user => user.id.toString() === userId)
-                                                return u ? `${u.name} (${u.email})` : "Pilih User..."
-                                              })()
-                                            : "Pilih User..."}
-                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
-                                    <Command>
-                                        <CommandInput placeholder="Cari user..." />
-                                        <CommandList>
-                                            <CommandEmpty>User tidak ditemukan.</CommandEmpty>
-                                            <CommandGroup>
-                                                {users.map((user) => (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="grid gap-2">
+                                <Label htmlFor="user_id">User Assigned</Label>
+                                <Popover open={userPopoverOpen} onOpenChange={setUserPopoverOpen}>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            role="combobox"
+                                            aria-expanded={userPopoverOpen}
+                                            className={cn(
+                                                "w-full justify-between bg-neutral-50 border-neutral-200 font-normal text-xs",
+                                                !userId && "text-muted-foreground"
+                                            )}
+                                        >
+                                            {userId && users.length > 0
+                                                ? (() => {
+                                                    const u = users.find(user => user.id.toString() === userId)
+                                                    return u ? u.name : "Pilih User..."
+                                                  })()
+                                                : "Pilih User..."}
+                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                                        <Command>
+                                            <CommandInput placeholder="Cari user..." />
+                                            <CommandList>
+                                                <CommandEmpty>User tidak ditemukan.</CommandEmpty>
+                                                <CommandGroup>
+                                                    {users.map((user) => (
+                                                        <CommandItem
+                                                            key={user.id}
+                                                            value={`${user.name} ${user.email}`}
+                                                            onSelect={() => {
+                                                                setUserId(user.id.toString())
+                                                                setUserPopoverOpen(false)
+                                                            }}
+                                                        >
+                                                            <Check
+                                                                className={cn(
+                                                                    "mr-2 h-4 w-4",
+                                                                    userId === user.id.toString() ? "opacity-100" : "opacity-0"
+                                                                )}
+                                                            />
+                                                            {user.name} ({user.email})
+                                                        </CommandItem>
+                                                    ))}
+                                                </CommandGroup>
+                                            </CommandList>
+                                        </Command>
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
+
+                            <div className="grid gap-2">
+                                <Label htmlFor="pic_id">PIC IT</Label>
+                                <Popover open={picPopoverOpen} onOpenChange={setPicPopoverOpen}>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            role="combobox"
+                                            aria-expanded={picPopoverOpen}
+                                            className={cn(
+                                                "w-full justify-between bg-neutral-50 border-neutral-200 font-normal text-xs",
+                                                !picId && "text-muted-foreground"
+                                            )}
+                                        >
+                                            {picId && users.length > 0
+                                                ? (() => {
+                                                    const u = users.find(user => user.id.toString() === picId)
+                                                    return u ? u.name : "Pilih PIC..."
+                                                  })()
+                                                : "Pilih PIC..."}
+                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                                        <Command>
+                                            <CommandInput placeholder="Cari PIC..." />
+                                            <CommandList>
+                                                <CommandEmpty>User tidak ditemukan.</CommandEmpty>
+                                                <CommandGroup>
                                                     <CommandItem
-                                                        key={user.id}
-                                                        value={`${user.name} ${user.email}`}
+                                                        value="none-tanpa-pic"
                                                         onSelect={() => {
-                                                            setUserId(user.id.toString())
-                                                            setUserPopoverOpen(false)
+                                                            setPicId("")
+                                                            setPicPopoverOpen(false)
                                                         }}
                                                     >
-                                                        <Check
-                                                            className={cn(
-                                                                "mr-2 h-4 w-4",
-                                                                userId === user.id.toString() ? "opacity-100" : "opacity-0"
-                                                            )}
-                                                        />
-                                                        {user.name} ({user.email})
+                                                        <span className="text-muted-foreground italic text-xs">Tanpa PIC</span>
                                                     </CommandItem>
-                                                ))}
-                                            </CommandGroup>
-                                        </CommandList>
-                                    </Command>
-                                </PopoverContent>
-                            </Popover>
+                                                    {users.map((user) => (
+                                                        <CommandItem
+                                                            key={user.id}
+                                                            value={`${user.name} ${user.email}`}
+                                                            onSelect={() => {
+                                                                setPicId(user.id.toString())
+                                                                setPicPopoverOpen(false)
+                                                            }}
+                                                        >
+                                                            <Check
+                                                                className={cn(
+                                                                    "mr-2 h-4 w-4",
+                                                                    picId === user.id.toString() ? "opacity-100" : "opacity-0"
+                                                                )}
+                                                            />
+                                                            {user.name} ({user.email})
+                                                        </CommandItem>
+                                                    ))}
+                                                </CommandGroup>
+                                            </CommandList>
+                                        </Command>
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
                         </div>
                         
                         <div className="grid gap-2">
