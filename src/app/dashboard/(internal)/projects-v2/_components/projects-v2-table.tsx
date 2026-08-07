@@ -2568,6 +2568,7 @@ export function ProjectsV2Table({
                         <TableHead>MKT</TableHead>
                       )}
                       <TableHead>CLIENT</TableHead>
+                      {(showPiutang || showMarketingFilter) && <TableHead>CLIENT (PENERBIT SPK)</TableHead>}
                       {(!showSPD || showEngineer) && <TableHead>NO SPK</TableHead>}
                       {showPiutang && <TableHead>NOIMNAL</TableHead>}
                         <TableHead
@@ -3594,6 +3595,11 @@ export function ProjectsV2Table({
                           {!showAllDashboard && (
                             <TableCell className='font-semibold'>
                               {project.client?.name || '-'}
+                            </TableCell>
+                          )}
+                          {(showPiutang || showMarketingFilter) && (
+                            <TableCell className='font-semibold'>
+                              {project.spk?.penerbit?.name || '-'}
                             </TableCell>
                           )}
                           {(!showSPD || showEngineer) && (
