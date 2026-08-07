@@ -3,6 +3,7 @@ import { axiosInstance as apiClient } from '@/lib/axios';
 export interface TaskIt {
     id: number;
     user_id: number;
+    pic_id?: number | null;
     deskripsi: string;
     file: string | null;
     file_url?: string | null;
@@ -17,6 +18,11 @@ export interface TaskIt {
         name: string;
         email: string;
     };
+    pic?: {
+        id: number;
+        name: string;
+        email: string;
+    } | null;
 }
 
 export const taskItService = {
