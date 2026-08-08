@@ -824,6 +824,14 @@ export const projectV2Service = {
     return data;
   },
 
+  verifyDokubahPassword: async (password: string) => {
+    const { data } = await apiClient.post(
+      `/projects-v2/dokubah-password/verify`,
+      { password }
+    );
+    return data;
+  },
+
   updateProjectItemPic: async (itemId: number, picId: number) => {
     const { data } = await apiClient.post<ProjectItemV2>(
       `/projects-v2-items/${itemId}`,

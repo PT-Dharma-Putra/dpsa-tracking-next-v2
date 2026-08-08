@@ -3072,11 +3072,7 @@ export function ProjectsV2Table({
                                     >
                                       Rekap
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      onClick={() => handleSetTeamClick(project)}
-                                    >
-                                      Set Team/Divisi
-                                    </DropdownMenuItem>
+
                                   </DropdownMenuContent>
                                 </DropdownMenu>
                               )}
@@ -3203,12 +3199,6 @@ export function ProjectsV2Table({
                                     >
                                       <FileText className='mr-2 h-4 w-4' />
                                       Rekap
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      onClick={() => handleSetTeamClick(project)}
-                                    >
-                                      <Users className='mr-2 h-4 w-4' />
-                                      Set Team/Divisi
                                     </DropdownMenuItem>
                                   </>
                                 )}
