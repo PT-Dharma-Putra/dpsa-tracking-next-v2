@@ -291,7 +291,6 @@ export default function ProjectItemsPage() {
     uploadSpdMutation.mutate({
       file: spdFile,
       date: targetSelesaiDate,
-      pendukung: spdPendukungUrl,
     });
   };
 
@@ -2203,18 +2202,7 @@ export default function ProjectItemsPage() {
                 className='h-9 text-xs'
               />
             </div>
-            <div className='space-y-1.5 pt-2'>
-              <Label className='text-xs font-medium'>
-                Link Pendukung (Opsional)
-              </Label>
-              <Input
-                type='url'
-                placeholder='Masukkan link URL'
-                value={spdPendukungUrl}
-                onChange={(e) => setSpdPendukungUrl(e.target.value)}
-                className='h-9 text-xs'
-              />
-            </div>
+
           </div>
           <DialogFooter>
             <Button
