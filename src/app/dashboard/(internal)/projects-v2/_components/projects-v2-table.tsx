@@ -3972,9 +3972,9 @@ export function ProjectsV2Table({
                             </div>
                           ) : isJadwalEditable ? (
                             <Button
-                              variant='ghost'
+                              variant='outline'
                               size='sm'
-                              className='h-8 text-xs text-muted-foreground hover:text-orange-600'
+                              className='h-8 text-xs text-muted-foreground hover:text-orange-600 border border-neutral-200 shadow-sm bg-white'
                               onClick={() => handleScheduleClick(project)}
                             >
                               <CalendarDays className='mr-1.5 h-3.5 w-3.5' />
