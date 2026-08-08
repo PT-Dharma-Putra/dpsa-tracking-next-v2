@@ -29,10 +29,19 @@ import {
   BarChart3,
   History,
   Search,
+  Lock,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import Link from 'next/link';
 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import {
   Table,
   TableBody,
@@ -101,7 +110,7 @@ export default function PerencanaanDetailPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const projectId = parseInt(params.id as string);
-  const { canUpdateDeadline } = usePermissions();
+  const { canUpdateDeadline, canUploadDokubah } = usePermissions();
 
   // Data Queries
   const { data: project, isLoading: isLoadingProject } = useQuery({
@@ -226,6 +235,42 @@ export default function PerencanaanDetailPage() {
     setDokubahFile(project?.dokubah?.file || null);
     setDokubahRekapFile(project?.dokubah?.file_rekap_dokubah || null);
     setIsDokubahDialogOpen(true);
+  };
+
+  // Dokubah Password Verification State
+  const [isDokubahPasswordModalOpen, setIsDokubahPasswordModalOpen] = React.useState(false);
+  const [pendingDokubahUrl, setPendingDokubahUrl] = React.useState<string>('');
+  const [dokubahPasswordInput, setDokubahPasswordInput] = React.useState('');
+  const [dokubahPasswordError, setDokubahPasswordError] = React.useState('');
+  const [isVerifyingDokubahPassword, setIsVerifyingDokubahPassword] = React.useState(false);
+
+  const handleOpenDokubahLink = (url: string) => {
+    setPendingDokubahUrl(url);
+    setDokubahPasswordInput('');
+    setDokubahPasswordError('');
+    setIsDokubahPasswordModalOpen(true);
+  };
+
+  const handleVerifyDokubahPassword = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!dokubahPasswordInput) {
+      setDokubahPasswordError('Password tidak boleh kosong');
+      return;
+    }
+    try {
+      setIsVerifyingDokubahPassword(true);
+      setDokubahPasswordError('');
+      await projectV2Service.verifyDokubahPassword(dokubahPasswordInput);
+      setIsDokubahPasswordModalOpen(false);
+      if (pendingDokubahUrl) {
+        window.open(pendingDokubahUrl, '_blank');
+      }
+    } catch (error: any) {
+      const msg = error?.response?.data?.message || 'Password salah. Silakan coba lagi.';
+      setDokubahPasswordError(msg);
+    } finally {
+      setIsVerifyingDokubahPassword(false);
+    }
   };
 
   // Stok Material State
@@ -1150,14 +1195,16 @@ export default function PerencanaanDetailPage() {
                           <span className='text-[8px] text-blue-600/85 truncate' title={project.dokubah.file.split('/').pop()}>{project.dokubah.file.split('/').pop()}</span>
                         </div>
                       </div>
-                      <Button variant='ghost' size='icon' className='h-7 w-7 text-blue-600 hover:bg-blue-100 bg-white border border-blue-100 shadow-sm shrink-0' asChild>
-                        <a 
-                          href={project.dokubah.file.startsWith('http') ? project.dokubah.file : `${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '')}/storage/${project.dokubah.file}`} 
-                          target='_blank' 
-                          rel='noopener noreferrer'
-                        >
-                          <Eye className='h-3.5 w-3.5' />
-                        </a>
+                      <Button 
+                        variant='ghost' 
+                        size='icon' 
+                        className='h-7 w-7 text-blue-600 hover:bg-blue-100 bg-white border border-blue-100 shadow-sm shrink-0'
+                        onClick={() => {
+                          const targetUrl = project.dokubah.file.startsWith('http') ? project.dokubah.file : `${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '')}/storage/${project.dokubah.file}`;
+                          handleOpenDokubahLink(targetUrl);
+                        }}
+                      >
+                        <Eye className='h-3.5 w-3.5' />
                       </Button>
                     </div>
                   )}
@@ -1173,27 +1220,31 @@ export default function PerencanaanDetailPage() {
                           <span className='text-[8px] text-indigo-600/85 truncate' title={project.dokubah.file_rekap_dokubah.split('/').pop()}>{project.dokubah.file_rekap_dokubah.split('/').pop()}</span>
                         </div>
                       </div>
-                      <Button variant='ghost' size='icon' className='h-7 w-7 text-indigo-600 hover:bg-indigo-100 bg-white border border-indigo-100 shadow-sm shrink-0' asChild>
-                        <a 
-                          href={project.dokubah.file_rekap_dokubah.startsWith('http') ? project.dokubah.file_rekap_dokubah : `${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '')}/storage/${project.dokubah.file_rekap_dokubah}`} 
-                          target='_blank' 
-                          rel='noopener noreferrer'
-                        >
-                          <Eye className='h-3.5 w-3.5' />
-                        </a>
+                      <Button 
+                        variant='ghost' 
+                        size='icon' 
+                        className='h-7 w-7 text-indigo-600 hover:bg-indigo-100 bg-white border border-indigo-100 shadow-sm shrink-0'
+                        onClick={() => {
+                          const targetUrl = project.dokubah.file_rekap_dokubah.startsWith('http') ? project.dokubah.file_rekap_dokubah : `${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '')}/storage/${project.dokubah.file_rekap_dokubah}`;
+                          handleOpenDokubahLink(targetUrl);
+                        }}
+                      >
+                        <Eye className='h-3.5 w-3.5' />
                       </Button>
                     </div>
                   )}
 
-                  <Button 
-                    variant='outline' 
-                    size='sm' 
-                    className='h-7 w-full text-[10px] border-blue-200 text-blue-600 hover:bg-blue-50 gap-1.5 bg-blue-50/30 font-bold mt-2'
-                    onClick={openDokubahUpload}
-                  >
-                    <Upload className='h-3 w-3' />
-                    Upload Dokubah
-                  </Button>
+                  {canUploadDokubah && (
+                    <Button 
+                      variant='outline' 
+                      size='sm' 
+                      className='h-7 w-full text-[10px] border-blue-200 text-blue-600 hover:bg-blue-50 gap-1.5 bg-blue-50/30 font-bold mt-2'
+                      onClick={openDokubahUpload}
+                    >
+                      <Upload className='h-3 w-3' />
+                      Upload Dokubah
+                    </Button>
+                  )}
                </div>
             </CardContent>
           )}
@@ -2148,6 +2199,71 @@ export default function PerencanaanDetailPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Dokubah Password Verification Modal */}
+      <Dialog open={isDokubahPasswordModalOpen} onOpenChange={setIsDokubahPasswordModalOpen}>
+        <DialogContent className='max-w-md'>
+          <DialogHeader>
+            <DialogTitle className='flex items-center gap-2 text-base font-bold'>
+              <Lock className='h-5 w-5 text-blue-600' />
+              Verifikasi Password Dokubah
+            </DialogTitle>
+            <DialogDescription className='text-xs'>
+              Masukkan password untuk membuka dokumen dokubah.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleVerifyDokubahPassword} className='space-y-4 py-2'>
+            <div className='space-y-2'>
+              <Label htmlFor='dokubah-password-input' className='text-xs font-medium'>
+                Password
+              </Label>
+              <Input
+                id='dokubah-password-input'
+                type='password'
+                placeholder='Masukkan password dokubah...'
+                value={dokubahPasswordInput}
+                onChange={(e) => {
+                  setDokubahPasswordInput(e.target.value);
+                  if (dokubahPasswordError) setDokubahPasswordError('');
+                }}
+                className='text-xs'
+                autoFocus
+              />
+              {dokubahPasswordError && (
+                <p className='text-xs font-semibold text-red-500 animate-in fade-in-50 duration-200'>
+                  {dokubahPasswordError}
+                </p>
+              )}
+            </div>
+            <DialogFooter className='pt-2'>
+              <Button
+                type='button'
+                variant='outline'
+                size='sm'
+                onClick={() => setIsDokubahPasswordModalOpen(false)}
+                disabled={isVerifyingDokubahPassword}
+              >
+                Batal
+              </Button>
+              <Button
+                type='submit'
+                size='sm'
+                className='bg-blue-600 hover:bg-blue-700 font-semibold'
+                disabled={isVerifyingDokubahPassword}
+              >
+                {isVerifyingDokubahPassword ? (
+                  <>
+                    <Loader2 className='mr-2 h-3.5 w-3.5 animate-spin' />
+                    Memverifikasi...
+                  </>
+                ) : (
+                  'Buka Dokumen'
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {/* Stok Material Dialog */}
       <AlertDialog open={isStokDialogOpen} onOpenChange={setIsStokDialogOpen}>
