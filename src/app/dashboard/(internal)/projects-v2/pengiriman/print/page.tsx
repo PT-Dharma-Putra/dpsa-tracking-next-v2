@@ -104,9 +104,8 @@ export default function PrintSuratJalanPage() {
           '',
           '',
           '',
-          '',
         ]); // 3
-        merges.push({ s: { r: 2, c: 0 }, e: { r: 2, c: 11 } }); // merge A3:L3
+        merges.push({ s: { r: 2, c: 0 }, e: { r: 2, c: 10 } }); // merge A3:K3
 
         wsData.push([]); // 4
         wsData.push([]); // 5
@@ -145,14 +144,12 @@ export default function PrintSuratJalanPage() {
           '',
           '',
           '',
-          '',
-          '',
-          '',
           { v: 'Tujuan', t: 's', s: normalStyle },
-          { v: `: ${pengiriman.client?.name || '-'}`, t: 's', s: boldStyle },
           '',
+          { v: `: ${pengiriman.client?.name || '-'}`, t: 's', s: boldStyle },
         ]); // 6
-        merges.push({ s: { r: 5, c: 10 }, e: { r: 5, c: 11 } });
+        let rTujuan = wsData.length - 1;
+        merges.push({ s: { r: rTujuan, c: 6 }, e: { r: rTujuan, c: 7 } });
 
         wsData.push([
           {
@@ -187,14 +184,12 @@ export default function PrintSuratJalanPage() {
           '',
           '',
           '',
-          '',
-          '',
-          '',
           { v: 'No. Kendaraan', t: 's', s: normalStyle },
-          { v: `: ${pengiriman.no_kendaraan || '-'}`, t: 's', s: normalStyle },
           '',
+          { v: `: ${pengiriman.no_kendaraan || '-'}`, t: 's', s: normalStyle },
         ]); // 7
-        merges.push({ s: { r: 6, c: 10 }, e: { r: 6, c: 11 } });
+        let rKendaraan = wsData.length - 1;
+        merges.push({ s: { r: rKendaraan, c: 6 }, e: { r: rKendaraan, c: 7 } });
 
         wsData.push([
           '',
@@ -203,18 +198,31 @@ export default function PrintSuratJalanPage() {
           '',
           '',
           '',
-          '',
-          '',
-          '',
           { v: 'Nama Sopir', t: 's', s: normalStyle },
-          { v: `: ${pengiriman.supir || '-'}`, t: 's', s: normalStyle },
           '',
+          { v: `: ${pengiriman.supir || '-'}`, t: 's', s: normalStyle },
         ]); // 8
-        merges.push({ s: { r: 7, c: 10 }, e: { r: 7, c: 11 } });
+        let rSupir = wsData.length - 1;
+        merges.push({ s: { r: rSupir, c: 6 }, e: { r: rSupir, c: 7 } });
+
+        wsData.push([
+          '',
+          '',
+          '',
+          '',
+          '',
+          '',
+          { v: 'No. Telepon', t: 's', s: normalStyle },
+          '',
+          { v: `: ${pengiriman.no_hp || '-'}`, t: 's', s: normalStyle },
+        ]); // 8
+        let rNoHp = wsData.length - 1;
+        merges.push({ s: { r: rNoHp, c: 6 }, e: { r: rNoHp, c: 7 } });
 
         wsData.push([]); // 9
 
         // Table Header Line 1
+        const rHeader1 = wsData.length;
         wsData.push([
           { v: 'NO', t: 's', s: headerStyle },
           { v: 'NO. SPK', t: 's', s: headerStyle },
@@ -227,35 +235,34 @@ export default function PrintSuratJalanPage() {
           { v: 'SAT', t: 's', s: headerStyle },
           { v: 'JML', t: 's', s: headerStyle },
           { v: 'KET', t: 's', s: headerStyle },
-          { v: '', t: 's', s: headerStyle },
-        ]); // 10 (r: 9)
+        ]);
 
         // Table Header Line 2
+        const rHeader2 = wsData.length;
         wsData.push([
-          '',
-          '',
-          '',
-          '',
+          { v: '', t: 's', s: headerStyle },
+          { v: '', t: 's', s: headerStyle },
+          { v: '', t: 's', s: headerStyle },
+          { v: '', t: 's', s: headerStyle },
           { v: 'P', t: 's', s: headerStyle },
           { v: 'L', t: 's', s: headerStyle },
           { v: 'T', t: 's', s: headerStyle },
-          '',
-          '',
-          '',
-          '',
-          '',
-        ]); // 11 (r: 10)
+          { v: '', t: 's', s: headerStyle },
+          { v: '', t: 's', s: headerStyle },
+          { v: '', t: 's', s: headerStyle },
+          { v: '', t: 's', s: headerStyle },
+        ]);
 
         // Merges for header
-        merges.push({ s: { r: 9, c: 0 }, e: { r: 10, c: 0 } }); // NO
-        merges.push({ s: { r: 9, c: 1 }, e: { r: 10, c: 1 } }); // NO. SPK
-        merges.push({ s: { r: 9, c: 2 }, e: { r: 10, c: 2 } }); // RUANG
-        merges.push({ s: { r: 9, c: 3 }, e: { r: 10, c: 3 } }); // ITEM/PERABOT
-        merges.push({ s: { r: 9, c: 4 }, e: { r: 9, c: 6 } }); // DIMENSI
-        merges.push({ s: { r: 9, c: 7 }, e: { r: 10, c: 7 } }); // VOL
-        merges.push({ s: { r: 9, c: 8 }, e: { r: 10, c: 8 } }); // SAT
-        merges.push({ s: { r: 9, c: 9 }, e: { r: 10, c: 9 } }); // JML
-        merges.push({ s: { r: 9, c: 10 }, e: { r: 10, c: 11 } }); // KET
+        merges.push({ s: { r: rHeader1, c: 0 }, e: { r: rHeader2, c: 0 } }); // NO
+        merges.push({ s: { r: rHeader1, c: 1 }, e: { r: rHeader2, c: 1 } }); // NO. SPK
+        merges.push({ s: { r: rHeader1, c: 2 }, e: { r: rHeader2, c: 2 } }); // RUANG
+        merges.push({ s: { r: rHeader1, c: 3 }, e: { r: rHeader2, c: 3 } }); // ITEM/PERABOT
+        merges.push({ s: { r: rHeader1, c: 4 }, e: { r: rHeader1, c: 6 } }); // DIMENSI
+        merges.push({ s: { r: rHeader1, c: 7 }, e: { r: rHeader2, c: 7 } }); // VOL
+        merges.push({ s: { r: rHeader1, c: 8 }, e: { r: rHeader2, c: 8 } }); // SAT
+        merges.push({ s: { r: rHeader1, c: 9 }, e: { r: rHeader2, c: 9 } }); // JML
+        merges.push({ s: { r: rHeader1, c: 10 }, e: { r: rHeader2, c: 10 } }); // KET (1 column)
 
         // Data
         if (pengiriman.details) {
@@ -300,55 +307,11 @@ export default function PrintSuratJalanPage() {
               },
               { v: detail.jumlah_keluar || 0, t: 'n', s: dataStyleCenter },
               { v: detail.keterangan || '-', t: 's', s: dataStyleLeft },
-              { v: '', t: 's', s: dataStyleLeft },
             ]);
-            const rData = wsData.length - 1;
-            merges.push({ s: { r: rData, c: 10 }, e: { r: rData, c: 11 } });
           });
         }
 
-        wsData.push([]);
-
-        if (
-          pengiriman.tanggal_mulai_setting ||
-          pengiriman.tanggal_selesai_setting
-        ) {
-          const tglMulai = pengiriman.tanggal_mulai_setting
-            ? format(new Date(pengiriman.tanggal_mulai_setting), 'dd MMMM yyyy')
-            : '-';
-          const tglSelesai = pengiriman.tanggal_selesai_setting
-            ? format(
-                new Date(pengiriman.tanggal_selesai_setting),
-                'dd MMMM yyyy'
-              )
-            : '-';
-          const catatan = `Catatan Pemasangan / Setting:\nInstalasi dijadwalkan mulai tanggal ${tglMulai} s/d ${tglSelesai}.`;
-
-          wsData.push([
-            {
-              v: catatan,
-              t: 's',
-              s: { font: { sz: 10 }, alignment: { wrapText: true } },
-            },
-            '',
-            '',
-            '',
-            '',
-            '',
-            '',
-            '',
-            '',
-            '',
-            '',
-            '',
-          ]);
-          merges.push({
-            s: { r: wsData.length - 1, c: 0 },
-            e: { r: wsData.length - 1, c: 11 },
-          });
-        }
-
-        wsData.push([]);
+        wsData.push([]);  
         wsData.push([
           {
             v: `Yogyakarta, ${format(new Date(), 'dd MMMM yyyy', {
@@ -367,8 +330,9 @@ export default function PrintSuratJalanPage() {
           '',
           '',
           '',
-          '',
         ]);
+        let rYogyakarta = wsData.length - 1;
+        merges.push({ s: { r: rYogyakarta, c: 0 }, e: { r: rYogyakarta, c: 3 } });
         wsData.push([]);
 
         const centerStyle = {
@@ -386,7 +350,6 @@ export default function PrintSuratJalanPage() {
           '',
           { v: 'Diterima Oleh:', t: 's', s: centerStyle },
           '',
-          '',
           { v: 'Mengetahui:', t: 's', s: centerStyle },
           '',
           '',
@@ -396,16 +359,15 @@ export default function PrintSuratJalanPage() {
         ]);
         const sigRow1 = wsData.length - 1;
         merges.push({ s: { r: sigRow1, c: 0 }, e: { r: sigRow1, c: 2 } });
-        merges.push({ s: { r: sigRow1, c: 3 }, e: { r: sigRow1, c: 5 } });
-        merges.push({ s: { r: sigRow1, c: 6 }, e: { r: sigRow1, c: 8 } });
-        merges.push({ s: { r: sigRow1, c: 9 }, e: { r: sigRow1, c: 11 } });
+        merges.push({ s: { r: sigRow1, c: 3 }, e: { r: sigRow1, c: 4 } });
+        merges.push({ s: { r: sigRow1, c: 5 }, e: { r: sigRow1, c: 7 } });
+        merges.push({ s: { r: sigRow1, c: 8 }, e: { r: sigRow1, c: 10 } });
 
         wsData.push([
           { v: 'Petugas Gudang', t: 's', s: centerBoldStyle },
           '',
           '',
           { v: 'Petugas Pengiriman', t: 's', s: centerBoldStyle },
-          '',
           '',
           { v: 'Security DPSA', t: 's', s: centerBoldStyle },
           '',
@@ -416,9 +378,9 @@ export default function PrintSuratJalanPage() {
         ]);
         const sigRow2 = wsData.length - 1;
         merges.push({ s: { r: sigRow2, c: 0 }, e: { r: sigRow2, c: 2 } });
-        merges.push({ s: { r: sigRow2, c: 3 }, e: { r: sigRow2, c: 5 } });
-        merges.push({ s: { r: sigRow2, c: 6 }, e: { r: sigRow2, c: 8 } });
-        merges.push({ s: { r: sigRow2, c: 9 }, e: { r: sigRow2, c: 11 } });
+        merges.push({ s: { r: sigRow2, c: 3 }, e: { r: sigRow2, c: 4 } });
+        merges.push({ s: { r: sigRow2, c: 5 }, e: { r: sigRow2, c: 7 } });
+        merges.push({ s: { r: sigRow2, c: 8 }, e: { r: sigRow2, c: 10 } });
 
         wsData.push([], [], []);
 
@@ -427,7 +389,6 @@ export default function PrintSuratJalanPage() {
           '',
           '',
           { v: '( ............................ )', t: 's', s: centerStyle },
-          '',
           '',
           { v: '( ............................ )', t: 's', s: centerStyle },
           '',
@@ -438,9 +399,9 @@ export default function PrintSuratJalanPage() {
         ]);
         const sigRow3 = wsData.length - 1;
         merges.push({ s: { r: sigRow3, c: 0 }, e: { r: sigRow3, c: 2 } });
-        merges.push({ s: { r: sigRow3, c: 3 }, e: { r: sigRow3, c: 5 } });
-        merges.push({ s: { r: sigRow3, c: 6 }, e: { r: sigRow3, c: 8 } });
-        merges.push({ s: { r: sigRow3, c: 9 }, e: { r: sigRow3, c: 11 } });
+        merges.push({ s: { r: sigRow3, c: 3 }, e: { r: sigRow3, c: 4 } });
+        merges.push({ s: { r: sigRow3, c: 5 }, e: { r: sigRow3, c: 7 } });
+        merges.push({ s: { r: sigRow3, c: 8 }, e: { r: sigRow3, c: 10 } });
       } else {
         // SETRIM Layout
         wsData.push([]); // 1
@@ -722,13 +683,13 @@ export default function PrintSuratJalanPage() {
         wsData.push([
           { v: '', t: 's', s: headerStyle },
           { v: '', t: 's', s: headerStyle },
-          '',
+          { v: '', t: 's', s: headerStyle },
           { v: 'P', t: 's', s: headerStyle },
           { v: 'L', t: 's', s: headerStyle },
           { v: 'T', t: 's', s: headerStyle },
-          '',
           { v: '', t: 's', s: headerStyle },
-          '',
+          { v: '', t: 's', s: headerStyle },
+          { v: '', t: 's', s: headerStyle },
           { v: '', t: 's', s: headerStyle },
         ]); // 11 (r: 10)
         let rHeader2 = wsData.length - 1;
@@ -741,65 +702,6 @@ export default function PrintSuratJalanPage() {
         merges.push({ s: { r: rHeader1, c: 7 }, e: { r: rHeader2, c: 7 } }); // SAT
         merges.push({ s: { r: rHeader1, c: 8 }, e: { r: rHeader2, c: 8 } }); // JML
         merges.push({ s: { r: rHeader1, c: 9 }, e: { r: rHeader2, c: 9 } }); // KET
-
-        const totalDetails = pengiriman.details ? pengiriman.details.length : 0;
-        const minRows = Math.max(15, totalDetails);
-
-        for (let i = 0; i < minRows; i++) {
-          const detail = pengiriman.details?.[i];
-          if (detail) {
-            wsData.push([
-              { v: i + 1, t: 'n', s: dataStyleCenter },
-              {
-                v: detail.project_item?.ruang || '-',
-                t: 's',
-                s: dataStyleLeft,
-              },
-              { v: detail.project_item?.item || '-', t: 's', s: dataStyleLeft },
-              {
-                v: detail.project_item?.panjang || '-',
-                t: 's',
-                s: dataStyleCenter,
-              },
-              {
-                v: detail.project_item?.lebar || '-',
-                t: 's',
-                s: dataStyleCenter,
-              },
-              {
-                v: detail.project_item?.tinggi || '-',
-                t: 's',
-                s: dataStyleCenter,
-              },
-              {
-                v: detail.project_item?.volume ?? '-',
-                t: 's',
-                s: dataStyleCenter,
-              },
-              {
-                v: detail.project_item?.satuan || '-',
-                t: 's',
-                s: dataStyleCenter,
-              },
-              { v: detail.jumlah_keluar || 0, t: 'n', s: dataStyleCenter },
-              { v: detail.keterangan || '-', t: 's', s: dataStyleLeft },
-            ]);
-          } else {
-            wsData.push([
-              { v: '', t: 's', s: dataStyleCenter },
-              { v: '', t: 's', s: dataStyleLeft },
-              { v: '', t: 's', s: dataStyleLeft },
-              { v: '', t: 's', s: dataStyleCenter },
-              { v: '', t: 's', s: dataStyleCenter },
-              { v: '', t: 's', s: dataStyleCenter },
-              { v: '', t: 's', s: dataStyleCenter },
-              { v: '', t: 's', s: dataStyleCenter },
-              { v: '', t: 's', s: dataStyleCenter },
-              { v: '', t: 's', s: dataStyleLeft },
-            ]);
-          }
-        }
-
         wsData.push([]);
 
         // SETRIM Note
@@ -998,11 +900,10 @@ export default function PrintSuratJalanPage() {
           { wch: 5 }, // P
           { wch: 5 }, // L
           { wch: 5 }, // T
-          { wch: 5 }, // VOL
+          { wch: 6 }, // VOL
           { wch: 5 }, // SAT
           { wch: 5 }, // JML
-          { wch: 7 }, // KET (1/2)
-          { wch: 7 }, // KET (2/2)
+          { wch: 5 }, // KET
         ];
       } else {
         ws['!cols'] = [
@@ -1217,12 +1118,6 @@ export default function PrintSuratJalanPage() {
             Download Excel
           </button>
           <button
-            onClick={downloadDocx}
-            className='px-4 py-2 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700 transition-colors'
-          >
-            Download Docx
-          </button>
-          <button
             onClick={() => window.print()}
             className='px-4 py-2 bg-neutral-800 text-white rounded text-sm font-medium hover:bg-neutral-900 transition-colors'
           >
@@ -1276,6 +1171,10 @@ export default function PrintSuratJalanPage() {
               <div className='grid grid-cols-3 gap-2'>
                 <span className='text-neutral-500'>Nama Sopir</span>
                 <span className='col-span-2'>: {pengiriman.supir || '-'}</span>
+              </div>
+              <div className='grid grid-cols-3 gap-2'>
+                <span className='text-neutral-500'>No. Telepon</span>
+                <span className='col-span-2'>: {pengiriman.no_hp || '-'}</span>
               </div>
             </div>
           </div>
@@ -1394,37 +1293,6 @@ export default function PrintSuratJalanPage() {
                 })}
             </tbody>
           </table>
-
-          {/* Notes (Catatan Pemasangan / Setting) */}
-          {(pengiriman.tanggal_mulai_setting ||
-            pengiriman.tanggal_selesai_setting) && (
-            <div className='border border-black p-3 rounded mb-8 text-xs'>
-              <span className='font-semibold block mb-1'>
-                Catatan Pemasangan / Setting:
-              </span>
-              <p>
-                Instalasi dijadwalkan mulai tanggal{' '}
-                <span className='font-semibold'>
-                  {pengiriman.tanggal_mulai_setting
-                    ? format(
-                        new Date(pengiriman.tanggal_mulai_setting),
-                        'dd MMMM yyyy'
-                      )
-                    : '-'}
-                </span>{' '}
-                s/d{' '}
-                <span className='font-semibold'>
-                  {pengiriman.tanggal_selesai_setting
-                    ? format(
-                        new Date(pengiriman.tanggal_selesai_setting),
-                        'dd MMMM yyyy'
-                      )
-                    : '-'}
-                </span>
-                .
-              </p>
-            </div>
-          )}
 
           {/* Date and Signature Blocks */}
           <div className='mt-8'>
@@ -1669,25 +1537,6 @@ export default function PrintSuratJalanPage() {
                       </td>
                     </tr>
                   ))}
-                {Array.from({
-                  length: Math.max(0, 15 - (pengiriman.details?.length || 0)),
-                }).map((_, idx) => (
-                  <tr
-                    key={`empty-${idx}`}
-                    className='border-b border-black h-6'
-                  >
-                    <td className='p-1.5 border-r border-black'></td>
-                    <td className='p-1.5 border-r border-black'></td>
-                    <td className='p-1.5 border-r border-black'></td>
-                    <td className='p-1.5 border-r border-black'></td>
-                    <td className='p-1.5 border-r border-black'></td>
-                    <td className='p-1.5 border-r border-black'></td>
-                    <td className='p-1.5 border-r border-black'></td>
-                    <td className='p-1.5 border-r border-black'></td>
-                    <td className='p-1.5 border-r border-black'></td>
-                    <td className='p-1.5'></td>
-                  </tr>
-                ))}
               </tbody>
             </table>
           </div>

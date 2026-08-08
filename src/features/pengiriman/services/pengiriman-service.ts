@@ -38,6 +38,7 @@ export interface Pengiriman {
   koor_setting?: string | null;
   no_kendaraan?: string | null;
   supir?: string | null;
+  no_hp?: string | null;
   created_at?: string;
   details?: DetailPengiriman[];
   details_count?: number;
