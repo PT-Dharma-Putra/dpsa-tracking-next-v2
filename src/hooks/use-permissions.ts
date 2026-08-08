@@ -20,6 +20,7 @@ export function usePermissions() {
     const canViewConfidential = can('view confidential');
     const canManageMDL = can('manage mdl');
     const canUpdateDeadline = can('update deadline');
+    const canUploadDokubah = can('upload dokubah');
     const canOrderInternational =
         user?.role !== 'Client' || hasClientCategory('internasional');
 
@@ -31,5 +32,6 @@ export function usePermissions() {
         canManageMDL,
         canUpdateDeadline,
         canOrderInternational,
+        canUploadDokubah
     };
 }
