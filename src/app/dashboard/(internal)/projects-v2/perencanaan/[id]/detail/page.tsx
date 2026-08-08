@@ -1200,7 +1200,9 @@ export default function PerencanaanDetailPage() {
                         size='icon' 
                         className='h-7 w-7 text-blue-600 hover:bg-blue-100 bg-white border border-blue-100 shadow-sm shrink-0'
                         onClick={() => {
-                          const targetUrl = project.dokubah.file.startsWith('http') ? project.dokubah.file : `${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '')}/storage/${project.dokubah.file}`;
+                          if (!project?.dokubah?.file) return;
+                          const file = project.dokubah.file;
+                          const targetUrl = file.startsWith('http') ? file : `${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '')}/storage/${file}`;
                           handleOpenDokubahLink(targetUrl);
                         }}
                       >
@@ -1225,7 +1227,9 @@ export default function PerencanaanDetailPage() {
                         size='icon' 
                         className='h-7 w-7 text-indigo-600 hover:bg-indigo-100 bg-white border border-indigo-100 shadow-sm shrink-0'
                         onClick={() => {
-                          const targetUrl = project.dokubah.file_rekap_dokubah.startsWith('http') ? project.dokubah.file_rekap_dokubah : `${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '')}/storage/${project.dokubah.file_rekap_dokubah}`;
+                          if (!project?.dokubah?.file_rekap_dokubah) return;
+                          const fileRekap = project.dokubah.file_rekap_dokubah;
+                          const targetUrl = fileRekap.startsWith('http') ? fileRekap : `${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '')}/storage/${fileRekap}`;
                           handleOpenDokubahLink(targetUrl);
                         }}
                       >
