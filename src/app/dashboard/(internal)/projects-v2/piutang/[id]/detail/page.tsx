@@ -210,6 +210,12 @@ export default function PiutangDetailPage() {
     nama: string;
   } | null>(null);
 
+  const usedTerminIds = React.useMemo(() => {
+    return penagihanList
+      .filter((p) => editingId === null || p.id !== editingId)
+      .map((p) => p.termin_id);
+  }, [penagihanList, editingId]);
+
   // Mutations
   const createMutation = useMutation({
     mutationFn: (payload: CreatePenagihanPayload) =>
@@ -299,7 +305,12 @@ export default function PiutangDetailPage() {
 
   const openCreate = () => {
     setEditingId(null);
-    setForm(emptyForm);
+    const currentUsedIds = penagihanList.map((p) => p.termin_id);
+    const nextAvailableTermin = terminList.find((t) => !currentUsedIds.includes(t.id));
+    setForm({
+      ...emptyForm,
+      termin_id: nextAvailableTermin ? nextAvailableTermin.id : (terminList[0]?.id || 0),
+    });
     setFileInput(null);
     setIsFormOpen(true);
   };
@@ -1116,7 +1127,8 @@ export default function PiutangDetailPage() {
                       <TabsTrigger
                         key={t.id}
                         value={t.id.toString()}
-                        className='flex-1 data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-sm'
+                        disabled={usedTerminIds.includes(t.id)}
+                        className='flex-1 data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-sm disabled:opacity-50 disabled:cursor-not-allowed'
                       >
                         {t.nama}
                       </TabsTrigger>

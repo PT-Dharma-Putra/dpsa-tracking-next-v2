@@ -2607,7 +2607,7 @@ export default function PerencanaanDetailPage() {
                               / {item.jumlah}
                             </Badge>
                           ) : (
-                            <span className='text-[9px] text-muted-foreground italic hover:text-blue-600 transition-colors'>
+                            <span className='inline-flex items-center justify-center rounded border border-neutral-300 bg-white text-[10px] font-semibold text-neutral-600 hover:text-blue-600 hover:border-blue-300 hover:bg-neutral-50 px-2 py-0.5 h-5 shadow-xs transition-colors w-fit'>
                               Record
                             </span>
                           )}
