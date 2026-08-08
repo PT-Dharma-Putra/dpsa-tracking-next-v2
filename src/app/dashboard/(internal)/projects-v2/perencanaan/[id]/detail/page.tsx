@@ -94,12 +94,14 @@ import { PengirimanService } from '@/features/pengiriman/services/pengiriman-ser
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Switch } from '@/components/ui/switch';
+import { usePermissions } from '@/hooks/use-permissions';
 
 export default function PerencanaanDetailPage() {
   const params = useParams();
   const router = useRouter();
   const queryClient = useQueryClient();
   const projectId = parseInt(params.id as string);
+  const { canUpdateDeadline } = usePermissions();
 
   // Data Queries
   const { data: project, isLoading: isLoadingProject } = useQuery({
@@ -464,6 +466,12 @@ export default function PerencanaanDetailPage() {
       queryClient.invalidateQueries({
         queryKey: ['project-v2-items', projectId],
       });
+      queryClient.invalidateQueries({
+        queryKey: ['projects-v2', projectId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['project-team', projectId],
+      });
       toast.success('Division assigned successfully');
       setEditingDivisiItemId(null);
     },
@@ -482,6 +490,12 @@ export default function PerencanaanDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ['project-v2-items', projectId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['projects-v2', projectId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['project-team', projectId],
       });
       toast.success('PO Divisi massal berhasil diupdate');
       setSelectedItemIds([]);
@@ -1525,44 +1539,46 @@ export default function PerencanaanDetailPage() {
             {selectedItemIds.length > 0 && (
               <div className='flex items-center gap-3 pr-2 border-r border-neutral-200'>
                 <span className='text-xs text-muted-foreground font-medium'>{selectedItemIds.length} item dipilih</span>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button 
-                      size='sm' 
-                      variant='outline' 
-                      className='h-8 bg-white'
-                      disabled={bulkUpdateItemDivisiMutation.isPending}
-                    >
-                      {bulkUpdateItemDivisiMutation.isPending ? (
-                        <Loader2 className='h-3.5 w-3.5 mr-2 animate-spin' />
-                      ) : (
-                        <Building2 className='h-3.5 w-3.5 mr-2' />
-                      )}
-                      Set PO Divisi Massal
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className='w-[200px] p-0' align='end'>
-                    <Command>
-                      <CommandInput placeholder='Cari divisi...' />
-                      <CommandList>
-                        <CommandEmpty>No divisi found.</CommandEmpty>
-                        <CommandGroup>
-                          {divisions?.map((divisi) => (
-                            <CommandItem
-                              key={divisi.id}
-                              onSelect={() => {
-                                bulkUpdateItemDivisiMutation.mutate(divisi.id);
-                              }}
-                            >
-                              <Building2 className='h-4 w-4 mr-2 text-muted-foreground' />
-                              {divisi.nama}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
+                {canUpdateDeadline && (
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button 
+                        size='sm' 
+                        variant='outline' 
+                        className='h-8 bg-white'
+                        disabled={bulkUpdateItemDivisiMutation.isPending}
+                      >
+                        {bulkUpdateItemDivisiMutation.isPending ? (
+                          <Loader2 className='h-3.5 w-3.5 mr-2 animate-spin' />
+                        ) : (
+                          <Building2 className='h-3.5 w-3.5 mr-2' />
+                        )}
+                        Set PO Divisi Massal
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className='w-[200px] p-0' align='end'>
+                      <Command>
+                        <CommandInput placeholder='Cari divisi...' />
+                        <CommandList>
+                          <CommandEmpty>No divisi found.</CommandEmpty>
+                          <CommandGroup>
+                            {divisions?.map((divisi) => (
+                              <CommandItem
+                                key={divisi.id}
+                                onSelect={() => {
+                                  bulkUpdateItemDivisiMutation.mutate(divisi.id);
+                                }}
+                              >
+                                <Building2 className='h-4 w-4 mr-2 text-muted-foreground' />
+                                {divisi.nama}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                )}
 
                 <Button 
                   size='sm' 
@@ -1744,12 +1760,19 @@ export default function PerencanaanDetailPage() {
                         {item.divisi && editingDivisiItemId !== item.id ? (
                           <Badge
                             variant='outline'
-                            className='bg-emerald-50 text-emerald-700 border-emerald-100 font-bold text-[9px] px-1.5 h-5 cursor-pointer hover:bg-emerald-100 transition-colors'
-                            onClick={() => setEditingDivisiItemId(item.id)}
+                            className={cn(
+                              'bg-emerald-50 text-emerald-700 border-emerald-100 font-bold text-[9px] px-1.5 h-5 transition-colors',
+                              canUpdateDeadline ? 'cursor-pointer hover:bg-emerald-100' : 'cursor-default'
+                            )}
+                            onClick={() => {
+                              if (canUpdateDeadline) {
+                                setEditingDivisiItemId(item.id);
+                              }
+                            }}
                           >
                             {item.divisi.nama}
                           </Badge>
-                        ) : (
+                        ) : canUpdateDeadline ? (
                           <div className='flex items-center gap-1'>
                             <Popover open={openDivisiPopover === item.id} onOpenChange={(open) => setOpenDivisiPopover(open ? item.id : null)}>
                               <PopoverTrigger asChild>
@@ -1804,6 +1827,15 @@ export default function PerencanaanDetailPage() {
                               </PopoverContent>
                             </Popover>
                           </div>
+                        ) : item.divisi ? (
+                          <Badge
+                            variant='outline'
+                            className='bg-emerald-50 text-emerald-700 border-emerald-100 font-bold text-[9px] px-1.5 h-5 cursor-default'
+                          >
+                            {item.divisi.nama}
+                          </Badge>
+                        ) : (
+                          <span className='text-[9px] text-muted-foreground italic'>-</span>
                         )}
                         <Button 
                           variant='ghost' 

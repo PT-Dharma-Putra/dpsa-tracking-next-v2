@@ -543,8 +543,8 @@ export default function ProjectItemsPage() {
   });
 
   const handleSpkUpload = () => {
-    if (!spkFile || !spkNumber) {
-      toast.error('Please provide both file and SPK number');
+    if (!spkFile || !spkNumber || !spkPenerbitId) {
+      toast.error('Harap lengkapi file SPK, nomor SPK, dan diterbitkan oleh');
       return;
     }
     uploadSpkMutation.mutate({
@@ -2996,8 +2996,9 @@ export default function ProjectItemsPage() {
             </div>
 
             <div className='space-y-1.5'>
-              <Label className='text-xs font-medium text-purple-700'>
-                Diterbitkan Oleh
+              <Label className='text-xs font-medium text-purple-700 flex items-center gap-1'>
+                <span>Diterbitkan Oleh</span>
+                <span className='text-red-500'>*</span>
               </Label>
               <Popover
                 open={clientPopoverOpen}
@@ -3098,7 +3099,7 @@ export default function ProjectItemsPage() {
                 handleSpkUpload();
                 setIsSpkModalOpen(false);
               }}
-              disabled={!spkFile || !spkNumber || uploadSpkMutation.isPending}
+              disabled={!spkFile || !spkNumber || !spkPenerbitId || uploadSpkMutation.isPending}
             >
               {uploadSpkMutation.isPending ? (
                 <Loader2 className='h-4 w-4 animate-spin' />

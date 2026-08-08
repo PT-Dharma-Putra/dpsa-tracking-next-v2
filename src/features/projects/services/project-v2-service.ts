@@ -196,6 +196,7 @@ export interface ProjectV2Stats {
   belum_produksi: number;
   deadline_dekat: number;
   overdue: number;
+  overdue_produksi?: number;
   urgent: number;
   po_divisi_completed: number;
   po_divisi_not_completed: number;
@@ -223,6 +224,7 @@ interface GetProjectsV2Params {
   search?: string;
   client_id?: string;
   marketing_id?: string;
+  divisi_id?: string;
   month?: string;
   year?: string;
   sort_by?: string;

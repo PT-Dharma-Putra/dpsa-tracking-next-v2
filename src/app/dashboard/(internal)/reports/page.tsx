@@ -4,30 +4,31 @@ import React, { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
-import { 
-  FileText, 
-  CheckCircle2, 
-  CircleDollarSign, 
-  AlertTriangle, 
-  Lightbulb, 
-  CalendarDays, 
+import {
+  FileText,
+  CheckCircle2,
+  CircleDollarSign,
+  AlertTriangle,
+  Lightbulb,
+  CalendarDays,
   ArrowUp,
   ChevronDown
 } from "lucide-react"
 import {
-  PieChart, 
-  Pie, 
-  Cell, 
-  LineChart, 
-  Line, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer 
+  PieChart,
+  Pie,
+  Cell,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer
 } from "recharts"
 import { useQuery } from "@tanstack/react-query"
 import { getReportsData } from "@/features/dashboard/services/dashboard-reports-service"
+import { ClientService } from "@/features/clients/services/client-service"
 import { Skeleton } from "@/components/ui/skeleton"
 
 // Custom Label for Center of Donut Chart
@@ -46,10 +47,22 @@ const renderCustomizedLabel = ({ cx, cy, value, text1, text2 }: any) => {
 
 export default function ReportsDashboard() {
   const [mounted, setMounted] = useState(false)
+  const [selectedClient, setSelectedClient] = useState<string>("all-clients")
+  const [selectedMonth, setSelectedMonth] = useState<string>("all-months")
+
+  const { data: clientsData } = useQuery({
+    queryKey: ['clients-reports-list'],
+    queryFn: () => ClientService.getClients({ page: 1 })
+  })
+
+  const clients = clientsData?.data || []
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['dashboard-reports'],
-    queryFn: getReportsData
+    queryKey: ['dashboard-reports', selectedClient, selectedMonth],
+    queryFn: () => getReportsData({
+      client_id: selectedClient !== "all-clients" ? selectedClient : undefined,
+      month: selectedMonth !== "all-months" ? selectedMonth : undefined,
+    })
   })
 
   useEffect(() => {
@@ -100,17 +113,23 @@ export default function ReportsDashboard() {
 
   // Format to M (Milyar) or Jt (Juta) for charts
   const formatShortValue = (val: number) => {
-    if (val >= 1000000000) return `${(val / 1000000000).toFixed(1)} M`
-    if (val >= 1000000) return `${(val / 1000000).toFixed(1)} Jt`
+    if (!val || isNaN(val) || val === 0) return '0'
+    if (val >= 1000000000) {
+      const formatted = (val / 1000000000).toFixed(2).replace(/\.0+$/, '').replace(/(\.\d)0$/, '$1')
+      return `${formatted} M`
+    }
+    if (val >= 1000000) {
+      const formatted = (val / 1000000).toFixed(2).replace(/\.0+$/, '').replace(/(\.\d)0$/, '$1')
+      return `${formatted} Jt`
+    }
     return `${val}`
   }
 
-  // Format array for recharts nominal SPK
+  // Format array for recharts nominal SPK (keeping value as raw numeric IDR so Y-axis scaling is mathematically exact)
   const formattedSpkData = spkData.map((item: any) => ({
     name: item.name,
-    raw_value: item.raw_value,
-    value: item.raw_value >= 1000000000 ? (item.raw_value / 1000000000).toFixed(2) : (item.raw_value >= 1000000 ? (item.raw_value / 1000000).toFixed(2) : item.raw_value),
-    label: item.raw_value >= 1000000000 ? 'M' : (item.raw_value >= 1000000 ? 'Jt' : '')
+    raw_value: Number(item.raw_value || 0),
+    value: Number(item.raw_value || 0),
   }))
 
   const overduesCount = deadlineData.find((d: any) => d.name === 'Overdue')?.value || 0
@@ -121,7 +140,7 @@ export default function ReportsDashboard() {
 
   return (
     <div className="p-6 bg-slate-50/50 min-h-screen space-y-6">
-      
+
       {/* HEADER SECTION */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-2">
         <div>
@@ -129,35 +148,46 @@ export default function ReportsDashboard() {
           <p className="text-slate-500 text-sm mt-1">Ringkasan kinerja proyek secara real-time</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <Select defaultValue="all-clients">
-            <SelectTrigger className="w-[140px] bg-white h-9">
+          <Select value={selectedClient} onValueChange={setSelectedClient}>
+            <SelectTrigger className="w-[160px] bg-white h-9">
               <SelectValue placeholder="All Clients" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all-clients">All Clients</SelectItem>
+              {clients.map((c: any) => (
+                <SelectItem key={c.id} value={c.id.toString()}>
+                  {c.name}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
 
-          <Select defaultValue="all-months">
+          <Select value={selectedMonth} onValueChange={setSelectedMonth}>
             <SelectTrigger className="w-[140px] bg-white h-9">
               <SelectValue placeholder="All Months" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all-months">All Months</SelectItem>
+              <SelectItem value="1">January</SelectItem>
+              <SelectItem value="2">February</SelectItem>
+              <SelectItem value="3">March</SelectItem>
+              <SelectItem value="4">April</SelectItem>
+              <SelectItem value="5">May</SelectItem>
+              <SelectItem value="6">June</SelectItem>
+              <SelectItem value="7">July</SelectItem>
+              <SelectItem value="8">August</SelectItem>
+              <SelectItem value="9">September</SelectItem>
+              <SelectItem value="10">October</SelectItem>
+              <SelectItem value="11">November</SelectItem>
+              <SelectItem value="12">December</SelectItem>
             </SelectContent>
           </Select>
-
-          <Button variant="outline" className="bg-white h-9 px-3 flex items-center gap-2 font-normal">
-            <CalendarDays className="h-4 w-4 text-slate-500" />
-            <span className="text-sm">Jun 1 - Jul 2, 2026</span>
-            <ChevronDown className="h-4 w-4 text-slate-500 ml-1" />
-          </Button>
         </div>
       </div>
 
       {/* ROW 1: STATUS PROYEK | PROGRES KESELURUHAN | PIUTANG */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        
+
         {/* Card 1: Status Proyek */}
         <Card className="shadow-sm border-slate-200">
           <CardHeader className="pb-2">
@@ -297,7 +327,7 @@ export default function ReportsDashboard() {
 
       {/* ROW 2: SPK PER BULAN | DEADLINE & OVERDUE | TOP 5 OVERDUE */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        
+
         {/* Card 4: Nominal SPK Per Bulan */}
         <Card className="shadow-sm border-slate-200">
           <CardHeader className="pb-0">
@@ -309,32 +339,39 @@ export default function ReportsDashboard() {
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={formattedSpkData} margin={{ top: 15, right: 15, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                  <XAxis 
-                    dataKey="name" 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{ fontSize: 10, fill: '#64748b' }} 
+                  <XAxis
+                    dataKey="name"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 10, fill: '#64748b' }}
                     dy={10}
                   />
-                  <YAxis 
-                    axisLine={false} 
-                    tickLine={false} 
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
                     tick={{ fontSize: 10, fill: '#64748b' }}
-                    tickFormatter={(val) => `${val}`}
+                    tickFormatter={(val) => formatShortValue(Number(val))}
                     domain={[0, 'auto']}
                   />
-                  <Tooltip 
+                  <Tooltip
                     contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                    formatter={(value: any, name: any, props: any) => [`Rp ${value} ${props.payload.label}`, 'Nominal']}
+                    formatter={(value: any) => [`Rp ${formatShortValue(Number(value))}`, 'Nominal']}
                   />
-                  <Line 
-                    type="linear" 
-                    dataKey="value" 
-                    stroke="#3b82f6" 
+                  <Line
+                    type="linear"
+                    dataKey="value"
+                    stroke="#3b82f6"
                     strokeWidth={2}
                     dot={{ r: 4, fill: '#3b82f6', strokeWidth: 2, stroke: '#fff' }}
                     activeDot={{ r: 6 }}
-                    label={{ position: 'top', fill: '#3b82f6', fontSize: 10, fontWeight: 600, formatter: (val: any) => `${val}`, dy: -10 }}
+                    label={{
+                      position: 'top',
+                      fill: '#3b82f6',
+                      fontSize: 10,
+                      fontWeight: 600,
+                      formatter: (val: any) => Number(val) > 0 ? formatShortValue(Number(val)) : '',
+                      dy: -10
+                    }}
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -358,78 +395,61 @@ export default function ReportsDashboard() {
           </CardContent>
         </Card>
 
-        {/* Card 5: Deadline & Overdue */}
-        <Card className="shadow-sm border-slate-200">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-semibold text-slate-800 tracking-wider">DEADLINE & OVERDUE</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col h-[280px]">
-            <div className="flex flex-row items-center flex-1 py-4">
-              <div className="h-32 w-32 relative shrink-0">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={deadlineData}
-                      innerRadius={35}
-                      outerRadius={60}
-                      paddingAngle={2}
-                      dataKey="value"
-                      stroke="none"
-                    >
-                      {deadlineData.map((entry: any, index: number) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="flex-1 pl-4 space-y-3">
-                {deadlineData.map((item: any, i: number) => (
-                  <div key={i} className="flex items-center text-xs">
-                    <div className="w-2.5 h-2.5 rounded-full mr-2 shrink-0" style={{ backgroundColor: item.color }}></div>
-                    <span className="text-slate-600 flex-1 leading-tight">{item.name}</span>
-                    <span className="font-bold text-slate-900 mx-2 shrink-0">{item.value}</span>
-                    <span className="text-slate-400 text-[10px] shrink-0">({item.percentage})</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="mt-auto bg-red-50/50 border border-red-100 rounded-lg p-3 flex items-start gap-3">
-              <AlertTriangle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
-              <p className="text-xs text-red-700/80 leading-relaxed">
-                <span className="font-semibold text-red-700">{totalWarning} proyek ({warningPct}%)</span> memiliki deadline dalam 7 hari ke depan atau sudah melewati deadline.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Card 6: Top 5 Proyek Overdue */}
-        <Card className="shadow-sm border-slate-200">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-semibold text-slate-800 tracking-wider">TOP 5 PROYEK OVERDUE (PALING LAMA)</CardTitle>
+        {/* Card 6: Top 10 Proyek Overdue */}
+        <Card className="shadow-sm border-slate-200 md:col-span-2">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-xs font-semibold text-slate-800 tracking-wider">
+              TOP 10 PROYEK OVERDUE (PALING LAMA)
+            </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="w-full text-xs">
-              <div className="grid grid-cols-[30px_1fr_90px_80px] gap-2 px-6 py-3 border-b border-slate-100 text-[10px] font-semibold text-slate-500 tracking-wider uppercase">
-                <div>#</div>
-                <div>PROYEK</div>
-                <div>DEADLINE</div>
-                <div className="text-right">TERLAMBAT</div>
-              </div>
-              <div className="flex flex-col">
-                {overdueProjects.length > 0 ? (
-                  overdueProjects.map((project: any, i: number) => (
-                    <div key={project.id} className="grid grid-cols-[30px_1fr_90px_80px] gap-2 px-6 py-3.5 border-b border-slate-50 last:border-0 hover:bg-slate-50/50 transition-colors items-center">
-                      <div className="text-slate-500">{project.id}</div>
-                      <div className="font-medium text-slate-700 truncate" title={project.name}>{project.name}</div>
-                      <div className="text-slate-500">{project.deadline}</div>
-                      <div className="text-right font-medium text-red-500">{project.days}</div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-center py-6 text-slate-500 text-sm">Tidak ada proyek overdue</div>
-                )}
-              </div>
+            <div className="w-full h-[280px] overflow-auto">
+              <table className="w-full text-xs text-left">
+                <thead className="sticky top-0 z-10 bg-slate-50 text-[10px] font-semibold text-slate-500 tracking-wider uppercase border-b border-slate-100">
+                  <tr>
+                    <th className="py-3 px-4 w-8 text-center bg-slate-50">#</th>
+                    <th className="py-3 px-4 min-w-[140px] bg-slate-50">Proyek</th>
+                    <th className="py-3 px-4 min-w-[120px] bg-slate-50">Client</th>
+                    <th className="py-3 px-4 min-w-[110px] bg-slate-50">No SPK</th>
+                    <th className="py-3 px-4 min-w-[95px] bg-slate-50">SPK Masuk</th>
+                    <th className="py-3 px-4 min-w-[95px] bg-slate-50">Deadline</th>
+                    <th className="py-3 px-4 min-w-[85px] text-right bg-slate-50">Terlambat</th>
+                    <th className="py-3 px-4 min-w-[130px] bg-slate-50">Team</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {overdueProjects.length > 0 ? (
+                    overdueProjects.map((project: any) => (
+                      <tr key={project.id} className="hover:bg-slate-50/50 transition-colors">
+                        <td className="py-3.5 px-4 text-center text-slate-400 font-medium">{project.id}</td>
+                        <td className="py-3.5 px-4 font-medium text-slate-800" title={project.name}>{project.name}</td>
+                        <td className="py-3.5 px-4 text-slate-600">{project.client}</td>
+                        <td className="py-3.5 px-4 text-slate-600 font-mono text-[11px]">{project.no_spk}</td>
+                        <td className="py-3.5 px-4 text-slate-600">{project.spk_masuk}</td>
+                        <td className="py-3.5 px-4 text-slate-600">{project.deadline}</td>
+                        <td className="py-3.5 px-4 text-right font-semibold text-red-500">{project.days}</td>
+                        <td className="py-3.5 px-4">
+                          {project.team_list && project.team_list.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {project.team_list.map((t: string, idx: number) => (
+                                <span key={idx} className="inline-block bg-blue-50 text-blue-700 text-[10px] font-medium px-1.5 py-0.5 rounded border border-blue-200">
+                                  {t}
+                                </span>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-slate-400 italic text-[11px]">{project.team || '-'}</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={8} className="text-center py-8 text-slate-500 text-sm">Tidak ada proyek overdue</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
           </CardContent>
         </Card>
@@ -437,7 +457,7 @@ export default function ReportsDashboard() {
       </div>
 
       {/* ROW 3: INSIGHT UTAMA */}
-      <div className="bg-indigo-50/50 border border-indigo-100 rounded-xl p-5 flex items-start gap-4 shadow-sm">
+      {/* <div className="bg-indigo-50/50 border border-indigo-100 rounded-xl p-5 flex items-start gap-4 shadow-sm">
         <div className="bg-white p-2.5 rounded-full shadow-sm shrink-0 border border-indigo-50">
           <Lightbulb className="w-6 h-6 text-indigo-600" />
         </div>
@@ -449,7 +469,7 @@ export default function ReportsDashboard() {
               : 'Semua proyek berjalan sesuai timeline dan belum ada proyek yang melewati deadline.'}
           </p>
         </div>
-      </div>
+      </div> */}
 
     </div>
   )

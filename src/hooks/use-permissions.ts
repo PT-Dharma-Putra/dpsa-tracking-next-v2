@@ -4,8 +4,11 @@ export function usePermissions() {
     const user = useAuthStore((s) => s.user);
 
     const can = (permission: string): boolean => {
-        if (!user?.permissions) return false;
-        if (user.role === 'Super-Admin') return true;
+        if (!user) return false;
+        const isSuperAdmin = user.role === 'Super-Admin' || 
+            (Array.isArray(user.roles) && user.roles.some((r: any) => typeof r === 'string' ? r === 'Super-Admin' : r.name === 'Super-Admin'));
+        if (isSuperAdmin) return true;
+        if (!user.permissions) return false;
         return user.permissions.includes(permission);
     };
 
@@ -16,6 +19,7 @@ export function usePermissions() {
     const canViewPrice = can('view price');
     const canViewConfidential = can('view confidential');
     const canManageMDL = can('manage mdl');
+    const canUpdateDeadline = can('update deadline');
     const canOrderInternational =
         user?.role !== 'Client' || hasClientCategory('internasional');
 
@@ -25,6 +29,7 @@ export function usePermissions() {
         canViewPrice,
         canViewConfidential,
         canManageMDL,
+        canUpdateDeadline,
         canOrderInternational,
     };
 }

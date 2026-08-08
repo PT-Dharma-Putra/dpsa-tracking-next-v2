@@ -48,6 +48,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { useAuth } from '@/hooks/use-auth';
+import { usePermissions } from '@/hooks/use-permissions';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -182,64 +184,74 @@ export function ProjectsV2Table({
 
   const [search, setSearch] = React.useState(searchParams.get('search') || '');
   const [searchInput, setSearchInput] = React.useState(searchParams.get('search') || '');
-  const [clientId, setClientId] = React.useState<string>('all');
-  const [marketingId, setMarketingId] = React.useState<string>('all');
+  const [clientId, setClientId] = React.useState<string>(
+    searchParams.get('client_id') || 'all'
+  );
+  const [marketingId, setMarketingId] = React.useState<string>(
+    searchParams.get('marketing_id') || 'all'
+  );
   const [sortBy, setSortBy] = React.useState<string>(searchParams.get('sort_by') || 'created_at');
   const [sortOrder, setSortOrder] = React.useState<'asc' | 'desc'>((searchParams.get('sort_order') as 'asc' | 'desc') || 'desc');
+  const [selectedDivisi, setSelectedDivisi] = React.useState<string>(
+    searchParams.get('divisi_id') || 'all'
+  );
+  const [selectedMonth, setSelectedMonth] = React.useState<string>(
+    searchParams.get('month') || 'all'
+  );
+  const [selectedYear, setSelectedYear] = React.useState<string>(
+    searchParams.get('year') || 'all'
+  );
 
-  React.useEffect(() => {
+  const handleFilterParamChange = (key: string, value: string | null) => {
     const params = new URLSearchParams(searchParams.toString());
-    let shouldUpdate = false;
-    let pushOrReplace = 'push';
-
-    const urlPage = Number(params.get('page')) || 1;
-    if (page === 1 && urlPage > 1) {
-      params.delete('page');
-      shouldUpdate = true;
-      pushOrReplace = 'replace';
+    if (value && value !== 'all') {
+      params.set(key, value);
+    } else {
+      params.delete(key);
     }
+    params.delete('page');
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+  };
 
-    if (sortBy !== (params.get('sort_by') || 'created_at')) {
-      if (sortBy === 'created_at') params.delete('sort_by');
-      else params.set('sort_by', sortBy);
-      shouldUpdate = true;
+  const handleSortChange = (column: string) => {
+    const currentSort = searchParams.get('sort_by') || 'created_at';
+    const currentOrder = searchParams.get('sort_order') || 'desc';
+    let newOrder = 'asc';
+    if (currentSort === column) {
+      newOrder = currentOrder === 'asc' ? 'desc' : 'asc';
     }
-
-    if (sortOrder !== (params.get('sort_order') || 'desc')) {
-      if (sortOrder === 'desc') params.delete('sort_order');
-      else params.set('sort_order', sortOrder);
-      shouldUpdate = true;
-    }
-
-    if (search !== (params.get('search') || '')) {
-      if (search) params.set('search', search);
-      else params.delete('search');
-      shouldUpdate = true;
-      pushOrReplace = 'replace';
-    }
-
-    if (shouldUpdate) {
-      if (pushOrReplace === 'replace') {
-        router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-      } else {
-        router.push(`${pathname}?${params.toString()}`, { scroll: false });
-      }
-    }
-  }, [page, sortBy, sortOrder, search, pathname, router, searchParams]);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('sort_by', column);
+    params.set('sort_order', newOrder);
+    params.delete('page');
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+  };
 
   React.useEffect(() => {
+    const urlPage = Number(searchParams.get('page')) || 1;
     const urlSortBy = searchParams.get('sort_by') || 'created_at';
     const urlSortOrder = (searchParams.get('sort_order') as 'asc' | 'desc') || 'desc';
     const urlSearch = searchParams.get('search') || '';
-    if (urlSortBy !== sortBy) setSortBy(urlSortBy);
-    if (urlSortOrder !== sortOrder) setSortOrder(urlSortOrder);
-    if (urlSearch !== search) {
-      setSearch(urlSearch);
-      setSearchInput(urlSearch);
-    }
+    const urlClientId = searchParams.get('client_id') || 'all';
+    const urlMarketingId = searchParams.get('marketing_id') || 'all';
+    const urlDivisiId = searchParams.get('divisi_id') || 'all';
+    const urlMonth = searchParams.get('month') || 'all';
+    const urlYear = searchParams.get('year') || 'all';
+    const urlDashboardFilter = (searchParams.get('dashboard_filter') as any) || null;
+
+    setPage(urlPage);
+    setSortBy(urlSortBy);
+    setSortOrder(urlSortOrder);
+    setSearch(urlSearch);
+    setSearchInput(urlSearch);
+    setClientId(urlClientId);
+    setMarketingId(urlMarketingId);
+    setSelectedDivisi(urlDivisiId);
+    setSelectedMonth(urlMonth);
+    setSelectedYear(urlYear);
+    setDashboardFilter(urlDashboardFilter);
   }, [searchParams]);
-  const [selectedMonth, setSelectedMonth] = React.useState<string>('all');
-  const [selectedYear, setSelectedYear] = React.useState<string>('all');
+
   const [poDivisiFilter, setPoDivisiFilter] = React.useState<
     'completed' | 'not_completed' | null
   >(null);
@@ -274,15 +286,12 @@ export function ProjectsV2Table({
     | 'belum_produksi'
     | 'deadline_dekat'
     | 'overdue'
+    | 'overdue_produksi'
     | 'urgent'
     | 'po_supplier'
     | 'pakai_desain'
     | null
   >(searchParams.get('dashboard_filter') as any || null);
-
-  React.useEffect(() => {
-    setDashboardFilter(searchParams.get('dashboard_filter') as any || null);
-  }, [searchParams]);
 
   const handleDashboardFilterClick = (
     filter:
@@ -294,6 +303,7 @@ export function ProjectsV2Table({
       | 'belum_produksi'
       | 'deadline_dekat'
       | 'overdue'
+      | 'overdue_produksi'
       | 'urgent'
       | 'po_supplier'
       | 'pakai_desain'
@@ -467,7 +477,8 @@ export function ProjectsV2Table({
   const [projectToSetTeam, setProjectToSetTeam] =
     React.useState<ProjectV2 | null>(null);
 
-  const isJadwalEditable = showPerencanaan;
+  const { canUpdateDeadline } = usePermissions();
+  const isJadwalEditable = showPerencanaan && canUpdateDeadline;
   const isMainProjectsV2Page =
     !showSPD &&
     !showPerencanaan &&
@@ -496,6 +507,7 @@ export function ProjectsV2Table({
       search,
       clientId,
       marketingId,
+      selectedDivisi,
       selectedMonth,
       selectedYear,
       sortBy,
@@ -517,6 +529,7 @@ export function ProjectsV2Table({
         search,
         client_id: clientId !== 'all' ? clientId : undefined,
         marketing_id: marketingId !== 'all' ? marketingId : undefined,
+        divisi_id: selectedDivisi !== 'all' ? selectedDivisi : undefined,
         month: selectedMonth !== 'all' ? selectedMonth : undefined,
         year: selectedYear !== 'all' ? selectedYear : undefined,
         sort_by: sortBy,
@@ -540,6 +553,7 @@ export function ProjectsV2Table({
       search,
       clientId,
       marketingId,
+      selectedDivisi,
       selectedMonth,
       selectedYear,
     ],
@@ -548,6 +562,7 @@ export function ProjectsV2Table({
         search,
         client_id: clientId !== 'all' ? clientId : undefined,
         marketing_id: marketingId !== 'all' ? marketingId : undefined,
+        divisi_id: selectedDivisi !== 'all' ? selectedDivisi : undefined,
         month: selectedMonth !== 'all' ? selectedMonth : undefined,
         year: selectedYear !== 'all' ? selectedYear : undefined,
       }),
@@ -1793,34 +1808,36 @@ export function ProjectsV2Table({
           </div>
 
           {/* Overdue */}
-          <div
-            onClick={() => handleDashboardFilterClick('overdue')}
-            className={cn(
-              'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-red-400 select-none',
-              dashboardFilter === 'overdue'
-                ? 'border-red-500 bg-red-50/50 ring-2 ring-red-500/20'
-                : 'border-red-200 bg-white'
-            )}
-          >
-            <div className='flex items-center gap-3'>
-              <div className='h-10 w-10 rounded-lg bg-red-100 flex items-center justify-center text-red-600 shrink-0'>
-                <AlertCircle className='h-5 w-5' />
+          {!showProduksi && (
+            <div
+              onClick={() => handleDashboardFilterClick('overdue')}
+              className={cn(
+                'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-red-400 select-none',
+                dashboardFilter === 'overdue'
+                  ? 'border-red-500 bg-red-50/50 ring-2 ring-red-500/20'
+                  : 'border-red-200 bg-white'
+              )}
+            >
+              <div className='flex items-center gap-3'>
+                <div className='h-10 w-10 rounded-lg bg-red-100 flex items-center justify-center text-red-600 shrink-0'>
+                  <AlertCircle className='h-5 w-5' />
+                </div>
+                <div>
+                  <p className='text-[10px] font-bold text-red-600 uppercase tracking-wider'>
+                    Overdue
+                  </p>
+                  <p className='text-xl font-bold text-red-800'>
+                    {stats.overdue}
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className='text-[10px] font-bold text-red-600 uppercase tracking-wider'>
-                  Overdue
-                </p>
-                <p className='text-xl font-bold text-red-800'>
-                  {stats.overdue}
-                </p>
-              </div>
+              {dashboardFilter === 'overdue' && (
+                <span className='text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
+                  Active
+                </span>
+              )}
             </div>
-            {dashboardFilter === 'overdue' && (
-              <span className='text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
-                Active
-              </span>
-            )}
-          </div>
+          )}
 
           {/* Produksi Selesai */}
           <div
@@ -1908,6 +1925,38 @@ export function ProjectsV2Table({
               </div>
               {dashboardFilter === 'belum_produksi' && (
                 <span className='text-[10px] bg-rose-100 text-rose-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
+                  Active
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Overdue Produksi — hanya produksi */}
+          {showProduksi && (
+            <div
+              onClick={() => handleDashboardFilterClick('overdue_produksi')}
+              className={cn(
+                'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-red-500 select-none',
+                dashboardFilter === 'overdue_produksi'
+                  ? 'border-red-600 bg-red-100/60 ring-2 ring-red-600/20'
+                  : 'border-red-300 bg-red-50/40'
+              )}
+            >
+              <div className='flex items-center gap-3'>
+                <div className='h-10 w-10 rounded-lg bg-red-200/70 flex items-center justify-center text-red-700 shrink-0'>
+                  <AlertTriangle className='h-5 w-5' />
+                </div>
+                <div>
+                  <p className='text-[10px] font-bold text-red-700 uppercase tracking-wider'>
+                    Overdue Produksi
+                  </p>
+                  <p className='text-xl font-bold text-red-900'>
+                    {stats.overdue_produksi ?? 0}
+                  </p>
+                </div>
+              </div>
+              {dashboardFilter === 'overdue_produksi' && (
+                <span className='text-[10px] bg-red-200 text-red-800 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
                   Active
                 </span>
               )}
@@ -2288,9 +2337,8 @@ export function ProjectsV2Table({
                         <CommandItem
                           value='all'
                           onSelect={() => {
-                            setClientId('all');
-                            setPage(1);
                             setClientPopoverOpen(false);
+                            handleFilterParamChange('client_id', 'all');
                           }}
                         >
                           <Check
@@ -2306,9 +2354,8 @@ export function ProjectsV2Table({
                             value={client.id.toString()}
                             key={client.id}
                             onSelect={() => {
-                              setClientId(client.id.toString());
-                              setPage(1);
                               setClientPopoverOpen(false);
+                              handleFilterParamChange('client_id', client.id.toString());
                             }}
                           >
                             <Check
@@ -2342,10 +2389,7 @@ export function ProjectsV2Table({
               {showMarketingFilter && (
                 <Select
                   value={marketingId}
-                  onValueChange={(v) => {
-                    setMarketingId(v);
-                    setPage(1);
-                  }}
+                  onValueChange={(v) => handleFilterParamChange('marketing_id', v)}
                 >
                   <SelectTrigger className='w-[160px]'>
                     <SelectValue placeholder='All Marketing' />
@@ -2364,11 +2408,25 @@ export function ProjectsV2Table({
 
             <div className='flex flex-wrap gap-2 items-center'>
               <Select
+                value={selectedDivisi}
+                onValueChange={(v: string) => handleFilterParamChange('divisi_id', v)}
+              >
+                <SelectTrigger className='w-[150px]'>
+                  <SelectValue placeholder='Divisi' />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='all'>Semua Divisi</SelectItem>
+                  {divisions.map((d) => (
+                    <SelectItem key={d.id} value={d.id.toString()}>
+                      {d.nama}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select
                 value={selectedMonth}
-                onValueChange={(v: string) => {
-                  setSelectedMonth(v);
-                  setPage(1);
-                }}
+                onValueChange={(v: string) => handleFilterParamChange('month', v)}
               >
                 <SelectTrigger className='w-[130px]'>
                   <SelectValue placeholder='Month' />
@@ -2392,10 +2450,7 @@ export function ProjectsV2Table({
 
               <Select
                 value={selectedYear}
-                onValueChange={(v: string) => {
-                  setSelectedYear(v);
-                  setPage(1);
-                }}
+                onValueChange={(v: string) => handleFilterParamChange('year', v)}
               >
                 <SelectTrigger className='w-[110px]'>
                   <SelectValue placeholder='Year' />
@@ -2439,15 +2494,7 @@ export function ProjectsV2Table({
                       <TableHead>NO SPK</TableHead>
                       <TableHead
                         className='cursor-pointer hover:bg-neutral-100 transition-colors group'
-                        onClick={() => {
-                          if (sortBy === 'spk_masuk') {
-                            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                          } else {
-                            setSortBy('spk_masuk');
-                            setSortOrder('asc');
-                          }
-                          setPage(1);
-                        }}
+                        onClick={() => handleSortChange('spk_masuk')}
                       >
                         <div className='flex items-center gap-1'>
                           SPK MASUK
@@ -2464,15 +2511,7 @@ export function ProjectsV2Table({
                       </TableHead>
                       <TableHead
                         className='cursor-pointer hover:bg-neutral-100 transition-colors group'
-                        onClick={() => {
-                          if (sortBy === 'prioritas') {
-                            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                          } else {
-                            setSortBy('prioritas');
-                            setSortOrder('asc');
-                          }
-                          setPage(1);
-                        }}
+                        onClick={() => handleSortChange('prioritas')}
                       >
                         <div className='flex items-center gap-1'>
                           PRIORITAS
@@ -2490,15 +2529,7 @@ export function ProjectsV2Table({
                       <TableHead>TEAM</TableHead>
                       <TableHead
                         className='cursor-pointer hover:bg-neutral-100 transition-colors group'
-                        onClick={() => {
-                          if (sortBy === 'deadline') {
-                            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                          } else {
-                            setSortBy('deadline');
-                            setSortOrder('asc');
-                          }
-                          setPage(1);
-                        }}
+                        onClick={() => handleSortChange('deadline')}
                       >
                         <div className='flex items-center gap-1'>
                           DEADLINE
@@ -2515,15 +2546,7 @@ export function ProjectsV2Table({
                       </TableHead>
                       <TableHead
                         className='cursor-pointer hover:bg-neutral-100 transition-colors group'
-                        onClick={() => {
-                          if (sortBy === 'sisa_hari') {
-                            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                          } else {
-                            setSortBy('sisa_hari');
-                            setSortOrder('asc');
-                          }
-                          setPage(1);
-                        }}
+                        onClick={() => handleSortChange('sisa_hari')}
                       >
                         <div className='flex items-center gap-1'>
                           SISA HARI
@@ -2545,21 +2568,12 @@ export function ProjectsV2Table({
                         <TableHead>MKT</TableHead>
                       )}
                       <TableHead>CLIENT</TableHead>
+                      {(showPiutang || showMarketingFilter) && <TableHead>CLIENT (PENERBIT SPK)</TableHead>}
                       {(!showSPD || showEngineer) && <TableHead>NO SPK</TableHead>}
                       {showPiutang && <TableHead>NOIMNAL</TableHead>}
                         <TableHead
                           className='cursor-pointer hover:bg-neutral-100 transition-colors group'
-                          onClick={() => {
-                            if (sortBy === 'spk_masuk') {
-                              setSortOrder(
-                                sortOrder === 'asc' ? 'desc' : 'asc'
-                              );
-                            } else {
-                              setSortBy('spk_masuk');
-                              setSortOrder('asc');
-                            }
-                            setPage(1);
-                          }}
+                          onClick={() => handleSortChange('spk_masuk')}
                         >
                           <div className='flex items-center gap-1'>
                             SPK MASUK
@@ -2583,17 +2597,7 @@ export function ProjectsV2Table({
                         <>
                           <TableHead
                             className='cursor-pointer hover:bg-neutral-100 transition-colors group'
-                            onClick={() => {
-                              if (sortBy === 'prioritas') {
-                                setSortOrder(
-                                  sortOrder === 'asc' ? 'desc' : 'asc'
-                                );
-                              } else {
-                                setSortBy('prioritas');
-                                setSortOrder('asc');
-                              }
-                              setPage(1);
-                            }}
+                            onClick={() => handleSortChange('prioritas')}
                           >
                             <div className='flex items-center gap-1'>
                               PRIORITAS
@@ -2614,17 +2618,7 @@ export function ProjectsV2Table({
                       {showPiutang && (
                     <TableHead
                       className='text-center cursor-pointer hover:bg-neutral-100 transition-colors group'
-                      onClick={() => {
-                        if (sortBy === 'progres_produksi') {
-                          setSortOrder(
-                            sortOrder === 'asc' ? 'desc' : 'asc'
-                          );
-                        } else {
-                          setSortBy('progres_produksi');
-                          setSortOrder('asc');
-                        }
-                        setPage(1);
-                      }}
+                      onClick={() => handleSortChange('progres_produksi')}
                     >
                       <div className="flex items-center">
                         <div className="flex flex-col items-center">
@@ -2647,17 +2641,7 @@ export function ProjectsV2Table({
                       {showPiutang && (
                         <TableHead
                           className='cursor-pointer hover:bg-neutral-100 transition-colors group'
-                          onClick={() => {
-                            if (sortBy === 'progres_pengiriman') {
-                              setSortOrder(
-                                sortOrder === 'asc' ? 'desc' : 'asc'
-                              );
-                            } else {
-                              setSortBy('progres_pengiriman');
-                              setSortOrder('asc');
-                            }
-                            setPage(1);
-                          }}
+                          onClick={() => handleSortChange('progres_pengiriman')}
                         >
                       <div className="flex items-center">
                         <div className="flex flex-col items-center">
@@ -2679,17 +2663,7 @@ export function ProjectsV2Table({
                       {showPiutang && (
                         <TableHead
                           className='cursor-pointer hover:bg-neutral-100 transition-colors group'
-                          onClick={() => {
-                            if (sortBy === 'total_penagihan') {
-                              setSortOrder(
-                                sortOrder === 'asc' ? 'desc' : 'asc'
-                              );
-                            } else {
-                              setSortBy('total_penagihan');
-                              setSortOrder('asc');
-                            }
-                            setPage(1);
-                          }}
+                          onClick={() => handleSortChange('total_penagihan')}
                         >
                       <div className="flex items-center">
                         <div className="flex flex-col items-center">
@@ -2744,17 +2718,7 @@ export function ProjectsV2Table({
                       {!showPiutang && (
                         <TableHead
                           className='cursor-pointer hover:bg-neutral-100 transition-colors group'
-                          onClick={() => {
-                            if (sortBy === 'sisa_hari') {
-                              setSortOrder(
-                                sortOrder === 'asc' ? 'desc' : 'asc'
-                              );
-                            } else {
-                              setSortBy('sisa_hari');
-                              setSortOrder('asc');
-                            }
-                            setPage(1);
-                          }}
+                          onClick={() => handleSortChange('sisa_hari')}
                         >
                           <div className='flex items-center gap-1'>
                             SISA HARI
@@ -2780,15 +2744,7 @@ export function ProjectsV2Table({
                     !showQC && (
                       <TableHead
                         className='cursor-pointer hover:bg-neutral-100 transition-colors group'
-                        onClick={() => {
-                          if (sortBy === 'need_design') {
-                            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                          } else {
-                            setSortBy('need_design');
-                            setSortOrder('asc');
-                          }
-                          setPage(1);
-                        }}
+                        onClick={() => handleSortChange('need_design')}
                       >
                       <div className="flex items-center">
                         <div className="flex flex-col items-center">
@@ -2826,17 +2782,7 @@ export function ProjectsV2Table({
                   {(showPengirimanV2 || showQC) && (
                     <TableHead
                       className='text-center cursor-pointer hover:bg-neutral-100 transition-colors group'
-                      onClick={() => {
-                        if (sortBy === 'progres_produksi') {
-                          setSortOrder(
-                            sortOrder === 'asc' ? 'desc' : 'asc'
-                          );
-                        } else {
-                          setSortBy('progres_produksi');
-                          setSortOrder('asc');
-                        }
-                        setPage(1);
-                      }}
+                      onClick={() => handleSortChange('progres_produksi')}
                     >
                       <div className="flex items-center">
                         <div className="flex flex-col items-center">
@@ -2860,17 +2806,7 @@ export function ProjectsV2Table({
                   {showPengirimanV2 && (
                     <TableHead
                           className='cursor-pointer hover:bg-neutral-100 transition-colors group'
-                          onClick={() => {
-                            if (sortBy === 'progres_pengiriman') {
-                              setSortOrder(
-                                sortOrder === 'asc' ? 'desc' : 'asc'
-                              );
-                            } else {
-                              setSortBy('progres_pengiriman');
-                              setSortOrder('asc');
-                            }
-                            setPage(1);
-                          }}
+                          onClick={() => handleSortChange('progres_pengiriman')}
                         >
                       <div className="flex items-center">
                         <div className="flex flex-col items-center">
@@ -2895,15 +2831,7 @@ export function ProjectsV2Table({
                       <TableHead>JADWAL KIRIM</TableHead>
                       <TableHead
                         className='cursor-pointer hover:bg-neutral-100 transition-colors group'
-                        onClick={() => {
-                          if (sortBy === 'persentase_kerja') {
-                            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                          } else {
-                            setSortBy('persentase_kerja');
-                            setSortOrder('asc');
-                          }
-                          setPage(1);
-                        }}
+                        onClick={() => handleSortChange('persentase_kerja')}
                       >
                       <div className="flex items-center">
                         <div className="flex flex-col items-center">
@@ -2948,17 +2876,7 @@ export function ProjectsV2Table({
                   {(showProduksi || showPurchasing) && (
                     <TableHead
                       className='text-center cursor-pointer hover:bg-neutral-100 transition-colors group'
-                      onClick={() => {
-                        if (sortBy === 'progres_produksi') {
-                          setSortOrder(
-                            sortOrder === 'asc' ? 'desc' : 'asc'
-                          );
-                        } else {
-                          setSortBy('progres_produksi');
-                          setSortOrder('asc');
-                        }
-                        setPage(1);
-                      }}
+                      onClick={() => handleSortChange('progres_produksi')}
                     >
                       <div className="flex items-center">
                         <div className="flex flex-col items-center">
@@ -2981,15 +2899,7 @@ export function ProjectsV2Table({
                   {showProduksi && (
                     <TableHead
                       className='cursor-pointer hover:bg-neutral-100 transition-colors group text-center'
-                      onClick={() => {
-                        if (sortBy === 'gudang_barang_jadi') {
-                          setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                        } else {
-                          setSortBy('gudang_barang_jadi');
-                          setSortOrder('asc');
-                        }
-                        setPage(1);
-                      }}
+                      onClick={() => handleSortChange('gudang_barang_jadi')}
                     >
                       <div className='flex items-center justify-center gap-1'>
                         <div className="flex flex-col items-center">
@@ -3014,17 +2924,7 @@ export function ProjectsV2Table({
                       <>
                         <TableHead
                           className='cursor-pointer hover:bg-neutral-100 transition-colors group'
-                          onClick={() => {
-                            if (sortBy === 'persentase_kerja') {
-                              setSortOrder(
-                                sortOrder === 'asc' ? 'desc' : 'asc'
-                              );
-                            } else {
-                              setSortBy('persentase_kerja');
-                              setSortOrder('asc');
-                            }
-                            setPage(1);
-                          }}
+                          onClick={() => handleSortChange('persentase_kerja')}
                         >
                       <div className="flex items-center">
                         <div className="flex flex-col items-center">
@@ -3467,8 +3367,13 @@ export function ProjectsV2Table({
                           <TableCell>
                             {project.tanggal_selesai ? (
                               <div className='flex items-center gap-2'>
-                                <div className='flex items-center justify-center h-7 w-7 rounded-full bg-emerald-50 text-emerald-600 shrink-0'>
-                                  <Check className='h-4 w-4 stroke-[3]' />
+                                <div className='flex flex-col items-center gap-0.5'>
+                                  <div className='flex items-center justify-center h-7 w-7 rounded-full bg-emerald-50 text-emerald-600 shrink-0'>
+                                    <Check className='h-4 w-4 stroke-[3]' />
+                                  </div>
+                                  <span className='text-[10px] text-muted-foreground font-medium whitespace-nowrap'>
+                                    {format(new Date(project.tanggal_selesai), 'MMM d, yyyy')}
+                                  </span>
                                 </div>
                                 {project.tanggal_selesai &&
                                   project.deadline &&
@@ -3624,13 +3529,8 @@ export function ProjectsV2Table({
                                 },
                               ];
 
-                              const latest = stages
-                                .filter((s) => s.date)
-                                .sort(
-                                  (a, b) =>
-                                    new Date(b.date!).getTime() -
-                                    new Date(a.date!).getTime()
-                                )[0];
+                              const updatedStages = stages.filter((s) => s.date);
+                              const latest = updatedStages[updatedStages.length - 1];
 
                               if (!latest)
                                 return (
@@ -3695,6 +3595,11 @@ export function ProjectsV2Table({
                           {!showAllDashboard && (
                             <TableCell className='font-semibold'>
                               {project.client?.name || '-'}
+                            </TableCell>
+                          )}
+                          {(showPiutang || showMarketingFilter) && (
+                            <TableCell className='font-semibold'>
+                              {project.spk?.penerbit?.name || '-'}
                             </TableCell>
                           )}
                           {(!showSPD || showEngineer) && (
@@ -3825,7 +3730,7 @@ export function ProjectsV2Table({
                       {!showAllDashboard && !showSPD && !showPiutang && (
                         <>
                           <TableCell>
-                            {showPerencanaan ? (
+                            {showPerencanaan && canUpdateDeadline ? (
                               <div
                                 className='group flex items-center gap-1.5 cursor-pointer hover:text-orange-600 transition-colors font-medium'
                                 onClick={() => handleDeadlineClick(project)}
@@ -3851,8 +3756,13 @@ export function ProjectsV2Table({
                             <TableCell>
                               {project.tanggal_selesai ? (
                                 <div className='flex items-center gap-2'>
-                                  <div className='flex items-center justify-center h-7 w-7 rounded-full bg-emerald-50 text-emerald-600 shrink-0'>
-                                    <Check className='h-4 w-4 stroke-[3]' />
+                                  <div className='flex flex-col items-center gap-0.5'>
+                                    <div className='flex items-center justify-center h-7 w-7 rounded-full bg-emerald-50 text-emerald-600 shrink-0'>
+                                      <Check className='h-4 w-4 stroke-[3]' />
+                                    </div>
+                                    <span className='text-[10px] text-muted-foreground font-medium whitespace-nowrap'>
+                                      {format(new Date(project.tanggal_selesai), 'MMM d, yyyy')}
+                                    </span>
                                   </div>
                                   {project.tanggal_selesai &&
                                     project.deadline &&
@@ -4208,13 +4118,8 @@ export function ProjectsV2Table({
                                   },
                                 ];
 
-                                const latest = stages
-                                  .filter((s) => s.date)
-                                  .sort(
-                                    (a, b) =>
-                                      new Date(b.date!).getTime() -
-                                      new Date(a.date!).getTime()
-                                  )[0];
+                                const updatedStages = stages.filter((s) => s.date);
+                                const latest = updatedStages[updatedStages.length - 1];
 
                                 if (!latest)
                                   return (
