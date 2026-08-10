@@ -88,6 +88,7 @@ import {
   ArrowUpDown,
   FileText,
   CircleDollarSign,
+  Clock,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { getReportsData } from '@/features/dashboard/services/dashboard-reports-service';
@@ -130,6 +131,7 @@ import {
 } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { cn } from '@/lib/utils';
 
 const storageBase = (
   process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
@@ -144,6 +146,9 @@ export default function RekapPenagihanPage() {
   >('asc');
   const [filterMonth, setFilterMonth] = React.useState<string>('all');
   const [filterYear, setFilterYear] = React.useState<string>('all');
+  const [filterAging, setFilterAging] = React.useState<
+    'under30' | 'between31And60' | 'over60' | null
+  >(null);
   const [isFormOpen, setIsFormOpen] = React.useState(false);
   const [currentPage, setCurrentPage] = React.useState(1);
   const itemsPerPage = 10;
@@ -190,6 +195,39 @@ export default function RekapPenagihanPage() {
     sisa_piutang: 0,
     persentase_sisa: 0,
   };
+
+  const agingStats = React.useMemo(() => {
+    let under30Count = 0;
+    let between31And60Count = 0;
+    let over60Count = 0;
+
+    const today = startOfDay(new Date());
+
+    penagihanList.forEach((item) => {
+      if (item.status !== 'Lunas' && item.tanggal_invoice) {
+        const invDate = startOfDay(new Date(item.tanggal_invoice));
+        if (!isNaN(invDate.getTime())) {
+          const diff = differenceInDays(today, invDate);
+          if (diff <= 30) {
+            under30Count++;
+          } else if (diff <= 60) {
+            between31And60Count++;
+          } else {
+            over60Count++;
+          }
+        }
+      }
+    });
+
+    const totalActiveCount = under30Count + between31And60Count + over60Count;
+
+    return {
+      under30Count,
+      between31And60Count,
+      over60Count,
+      totalActiveCount,
+    };
+  }, [penagihanList]);
 
   const { data: terminList = [], isLoading: isLoadingTermin } = useQuery({
     queryKey: ['termin-all'],
@@ -361,7 +399,29 @@ export default function RekapPenagihanPage() {
         }
       }
 
-      return matchesSearch && matchesMonth && matchesYear;
+      let matchesAging = true;
+      if (filterAging) {
+        if (p.status === 'Lunas' || !p.tanggal_invoice) {
+          matchesAging = false;
+        } else {
+          const invDate = startOfDay(new Date(p.tanggal_invoice));
+          if (isNaN(invDate.getTime())) {
+            matchesAging = false;
+          } else {
+            const today = startOfDay(new Date());
+            const diff = differenceInDays(today, invDate);
+            if (filterAging === 'under30') {
+              matchesAging = diff <= 30;
+            } else if (filterAging === 'between31And60') {
+              matchesAging = diff >= 31 && diff <= 60;
+            } else if (filterAging === 'over60') {
+              matchesAging = diff > 60;
+            }
+          }
+        }
+      }
+
+      return matchesSearch && matchesMonth && matchesYear && matchesAging;
     })
     .sort((a, b) => {
       const getNum = (inv: string | null | undefined) => {
@@ -375,7 +435,7 @@ export default function RekapPenagihanPage() {
 
   React.useEffect(() => {
     setCurrentPage(1);
-  }, [search, filterMonth, filterYear]);
+  }, [search, filterMonth, filterYear, filterAging]);
 
   const totalPages = Math.ceil(filteredPenagihans.length / itemsPerPage);
   const paginatedPenagihans = filteredPenagihans.slice(
@@ -394,36 +454,113 @@ export default function RekapPenagihanPage() {
         </p>
       </div>
 
-      {/* Card Piutang */}
-      <div className='flex flex-col gap-2 p-4 rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md max-w-sm'>
-        <div className='flex items-center gap-2 border-b border-slate-100 pb-2'>
-          <div className='h-6 w-6 rounded bg-amber-100 flex items-center justify-center text-amber-600 shrink-0'>
-            <CircleDollarSign className='h-3.5 w-3.5' />
+      {/* Summary Cards: Sisa Piutang & Umur Penagihan */}
+      <div className='flex flex-col md:flex-row items-stretch gap-4 w-full'>
+        {/* Card 1: Sisa Piutang */}
+        <div className='flex-1 flex flex-col gap-2 p-4 rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md max-w-md'>
+          <div className='flex items-center gap-2 border-b border-slate-100 pb-2'>
+            <div className='h-6 w-6 rounded bg-amber-100 flex items-center justify-center text-amber-600 shrink-0'>
+              <CircleDollarSign className='h-3.5 w-3.5' />
+            </div>
+            <p className='text-[10px] font-bold text-slate-500 uppercase tracking-wider'>
+              Sisa Piutang
+            </p>
+            <div className='ml-auto flex items-center gap-1.5'>
+              <span className='text-lg font-bold text-slate-800'>
+                {formatShortValue(piutang.sisa_piutang)}
+              </span>
+              <span className='text-[10px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-md'>
+                {piutang.persentase_sisa}%
+              </span>
+            </div>
           </div>
-          <p className='text-[10px] font-bold text-slate-500 uppercase tracking-wider'>
-            Sisa Piutang
-          </p>
-          <div className='ml-auto flex items-center gap-1.5'>
-            <span className='text-lg font-bold text-slate-800'>
-              {formatShortValue(piutang.sisa_piutang)}
-            </span>
-            <span className='text-[10px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-md'>
-              {piutang.persentase_sisa}%
-            </span>
+
+          <div className='flex flex-row gap-1.5 mt-auto'>
+            {/* Tagihan Luncur */}
+            <div className='flex-1 flex items-center justify-between p-1.5 rounded-lg border border-blue-100 bg-blue-50/50 text-[10px] select-none text-blue-700'>
+              <span className='truncate mr-1 font-medium'>Tagihan Luncur</span>
+              <span className='font-bold'>{formatShortValue(piutang.total_tagihan)}</span>
+            </div>
+
+            {/* Terbayar */}
+            <div className='flex-1 flex items-center justify-between p-1.5 rounded-lg border border-emerald-100 bg-emerald-50/50 text-[10px] select-none text-emerald-700'>
+              <span className='truncate mr-1 font-medium'>Terbayar</span>
+              <span className='font-bold'>{formatShortValue(piutang.total_terbayar)}</span>
+            </div>
           </div>
         </div>
 
-        <div className='flex flex-row gap-1.5 mt-auto'>
-          {/* Tagihan Luncur */}
-          <div className='flex-1 flex items-center justify-between p-1.5 rounded-lg border border-blue-100 bg-blue-50/50 text-[10px] select-none text-blue-700'>
-            <span className='truncate mr-1 font-medium'>Tagihan Luncur</span>
-            <span className='font-bold'>{formatShortValue(piutang.total_tagihan)}</span>
+        {/* Card 2: Umur Penagihan */}
+        <div className='flex-1 flex flex-col gap-2 p-4 rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md max-w-md'>
+          <div className='flex items-center gap-2 border-b border-slate-100 pb-2'>
+            <div className='h-6 w-6 rounded bg-purple-100 flex items-center justify-center text-purple-600 shrink-0'>
+              <Clock className='h-3.5 w-3.5' />
+            </div>
+            <p className='text-[10px] font-bold text-slate-500 uppercase tracking-wider'>
+              Tagihan belum Lunas
+            </p>
+            <div className='ml-auto flex items-center gap-1'>
+              <span className='text-[10px] font-semibold text-slate-500'>Total:</span>
+              <span className='text-lg font-bold text-slate-800 ml-0.5'>
+                {agingStats.totalActiveCount}
+              </span>
+              <span className='text-[10px] font-medium text-slate-500'>Tagihan</span>
+            </div>
           </div>
 
-          {/* Terbayar */}
-          <div className='flex-1 flex items-center justify-between p-1.5 rounded-lg border border-emerald-100 bg-emerald-50/50 text-[10px] select-none text-emerald-700'>
-            <span className='truncate mr-1 font-medium'>Terbayar</span>
-            <span className='font-bold'>{formatShortValue(piutang.total_terbayar)}</span>
+          <div className='grid grid-cols-3 gap-1.5 mt-auto'>
+            {/* < 30 Hari */}
+            <div
+              onClick={() =>
+                setFilterAging(filterAging === 'under30' ? null : 'under30')
+              }
+              className={cn(
+                'flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                filterAging === 'under30'
+                  ? 'border-emerald-500 bg-emerald-100 text-emerald-800 ring-2 ring-emerald-500/20 font-bold'
+                  : 'border-emerald-100 bg-emerald-50/50 hover:border-emerald-300 text-emerald-700'
+              )}
+              title='Klik untuk memfilter umur penagihan < 30 Hari'
+            >
+              <span className='truncate font-medium'>&lt; 30 Hari</span>
+              <span className='font-bold ml-1'>{agingStats.under30Count}</span>
+            </div>
+
+            {/* 31 - 60 Hari */}
+            <div
+              onClick={() =>
+                setFilterAging(
+                  filterAging === 'between31And60' ? null : 'between31And60'
+                )
+              }
+              className={cn(
+                'flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                filterAging === 'between31And60'
+                  ? 'border-amber-500 bg-amber-100 text-amber-800 ring-2 ring-amber-500/20 font-bold'
+                  : 'border-amber-100 bg-amber-50/50 hover:border-amber-300 text-amber-700'
+              )}
+              title='Klik untuk memfilter umur penagihan 31-60 Hari'
+            >
+              <span className='truncate font-medium'>31-60 Hari</span>
+              <span className='font-bold ml-1'>{agingStats.between31And60Count}</span>
+            </div>
+
+            {/* > 60 Hari */}
+            <div
+              onClick={() =>
+                setFilterAging(filterAging === 'over60' ? null : 'over60')
+              }
+              className={cn(
+                'flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                filterAging === 'over60'
+                  ? 'border-rose-500 bg-rose-100 text-rose-800 ring-2 ring-rose-500/20 font-bold'
+                  : 'border-rose-100 bg-rose-50/50 hover:border-rose-300 text-rose-700'
+              )}
+              title='Klik untuk memfilter umur penagihan > 60 Hari'
+            >
+              <span className='truncate font-medium'>&gt; 60 Hari</span>
+              <span className='font-bold ml-1'>{agingStats.over60Count}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -436,8 +573,18 @@ export default function RekapPenagihanPage() {
                 <Receipt className='h-5 w-5 text-blue-600' />
               </div>
               <div>
-                <p className='text-sm font-semibold text-neutral-800'>
-                  Daftar Penagihan
+                <p className='text-sm font-semibold text-neutral-800 flex items-center gap-2'>
+                  <span>Daftar Penagihan</span>
+                  {filterAging && (
+                    <Badge
+                      variant='outline'
+                      className='text-[10px] bg-purple-50 text-purple-700 border-purple-200 cursor-pointer hover:bg-purple-100 transition-colors'
+                      onClick={() => setFilterAging(null)}
+                      title='Klik untuk menghapus filter umur penagihan'
+                    >
+                      Filter Umur: {filterAging === 'under30' ? '< 30 Hari' : filterAging === 'between31And60' ? '31-60 Hari' : '> 60 Hari'} ✕
+                    </Badge>
+                  )}
                 </p>
                 <p className='text-xs text-muted-foreground'>
                   {filteredPenagihans.length} tagihan terdaftar
