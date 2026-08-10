@@ -1686,6 +1686,7 @@ export default function ProjectItemsPage() {
                   onChange={(e) => setSpkTanggalMasuk(e.target.value)}
                   className='h-9 text-xs border-purple-200 w-full'
                 />
+              </div>
             </div>
             <div className='space-y-1.5'>
               <Label className='text-xs font-medium text-purple-700'>Prioritas Pekerjaan</Label>
