@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { Plus, Pencil, Trash2, Loader2, Users, Search, Mail, Phone, MapPin, ChevronLeft, ChevronRight, ArrowUpDown } from "lucide-react"
+import { Plus, Pencil, Trash2, Loader2, Users, Search, Mail, Phone, MapPin, ChevronLeft, ChevronRight, ArrowUpDown, Building, Building2 } from "lucide-react"
 import { toast } from "sonner"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
@@ -37,16 +37,18 @@ export function ClientTable() {
     const [page, setPage] = React.useState(1)
     const [search, setSearch] = React.useState("")
     const [sortDirection, setSortDirection] = React.useState<'asc' | 'desc' | null>(null)
+    const [herminaFilter, setHerminaFilter] = React.useState<number | null>(null)
     const [isFormOpen, setIsFormOpen] = React.useState(false)
     const [selectedClient, setSelectedClient] = React.useState<Client | null>(null)
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false)
     const [clientToDelete, setClientToDelete] = React.useState<Client | null>(null)
 
     const { data: clientResponse, isLoading } = useQuery({
-        queryKey: ["clients", page, search, sortDirection],
+        queryKey: ["clients", page, search, sortDirection, herminaFilter],
         queryFn: () => ClientService.getClients({
             page,
             search,
+            hermina: herminaFilter !== null ? herminaFilter : undefined,
             sort_by: sortDirection ? "projects_count" : undefined,
             sort_order: sortDirection || undefined
         }),
@@ -54,6 +56,7 @@ export function ClientTable() {
 
     const clients = clientResponse?.data || []
     const meta = clientResponse?.meta || { current_page: 1, last_page: 1, total: 0 }
+    const stats = clientResponse?.stats || { total: meta.total || 0, hermina: 0, non_hermina: 0 }
 
     const deleteMutation = useMutation({
         mutationFn: (id: number) => ClientService.deleteClient(id),
@@ -86,23 +89,129 @@ export function ClientTable() {
     const filtered = clients // Filtered by backend now
 
     return (
-        <div className="p-6 space-y-4">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                    <div className="h-9 w-9 rounded-lg bg-orange-100 flex items-center justify-center">
-                        <Users className="h-5 w-5 text-orange-600" />
-                    </div>
-                    <div>
-                        <p className="text-sm font-semibold text-neutral-800">Daftar Client</p>
-                        <p className="text-xs text-muted-foreground">{meta.total} client terdaftar</p>
+        <div className="space-y-6">
+            {/* Summary Cards: Hermina & Non Hermina (OUTSIDE table container card) */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full">
+                {/* Card 1: Total Client */}
+                <div
+                    onClick={() => {
+                        setHerminaFilter(null);
+                        setPage(1);
+                    }}
+                    className={cn(
+                        "flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md select-none",
+                        herminaFilter === null
+                            ? "border-slate-400 bg-slate-50/80 ring-2 ring-slate-400/20"
+                            : "border-neutral-200 bg-white"
+                    )}
+                >
+                    <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 shrink-0">
+                            <Users className="h-5 w-5" />
+                        </div>
+                        <div>
+                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                                Total Client
+                            </p>
+                            <p className="text-2xl font-bold text-slate-800">
+                                {stats.total}
+                            </p>
+                        </div>
                     </div>
                 </div>
-                <Button onClick={handleCreate} className="bg-orange-600 hover:bg-orange-700 text-white">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Tambah Client
-                </Button>
+
+                {/* Card 2: Client Hermina */}
+                <div
+                    onClick={() => {
+                        setHerminaFilter(herminaFilter === 1 ? null : 1);
+                        setPage(1);
+                    }}
+                    className={cn(
+                        "flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md select-none",
+                        herminaFilter === 1
+                            ? "border-blue-500 bg-blue-50/60 ring-2 ring-blue-500/20"
+                            : "border-blue-100 bg-white hover:border-blue-300"
+                    )}
+                >
+                    <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 shrink-0">
+                            <Building2 className="h-5 w-5" />
+                        </div>
+                        <div>
+                            <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">
+                                Client Hermina
+                            </p>
+                            <p className="text-2xl font-bold text-slate-800">
+                                {stats.hermina}
+                            </p>
+                        </div>
+                    </div>
+                    <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-[10px]">
+                        Hermina
+                    </Badge>
+                </div>
+
+                {/* Card 3: Client Non Hermina */}
+                <div
+                    onClick={() => {
+                        setHerminaFilter(herminaFilter === 0 ? null : 0);
+                        setPage(1);
+                    }}
+                    className={cn(
+                        "flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md select-none",
+                        herminaFilter === 0
+                            ? "border-orange-500 bg-orange-50/60 ring-2 ring-orange-500/20"
+                            : "border-orange-100 bg-white hover:border-orange-300"
+                    )}
+                >
+                    <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-lg bg-orange-100 flex items-center justify-center text-orange-600 shrink-0">
+                            <Building className="h-5 w-5" />
+                        </div>
+                        <div>
+                            <p className="text-[10px] font-bold text-orange-600 uppercase tracking-wider">
+                                Client Non Hermina
+                            </p>
+                            <p className="text-2xl font-bold text-slate-800">
+                                {stats.non_hermina}
+                            </p>
+                        </div>
+                    </div>
+                    <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 text-[10px]">
+                        Non Hermina
+                    </Badge>
+                </div>
             </div>
+
+            {/* Table Container Card */}
+            <div className="bg-white rounded-xl shadow-sm border border-neutral-200 p-6 space-y-4">
+                {/* Header */}
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="h-9 w-9 rounded-lg bg-orange-100 flex items-center justify-center">
+                            <Users className="h-5 w-5 text-orange-600" />
+                        </div>
+                        <div>
+                            <p className="text-sm font-semibold text-neutral-800 flex items-center gap-2">
+                                <span>Daftar Client</span>
+                                {herminaFilter !== null && (
+                                    <Badge
+                                        variant="outline"
+                                        className="text-[10px] bg-orange-50 text-orange-700 border-orange-200 cursor-pointer hover:bg-orange-100 transition-colors"
+                                        onClick={() => setHerminaFilter(null)}
+                                        title="Klik untuk menghapus filter kategori"
+                                    >
+                                        Kategori: {herminaFilter === 1 ? 'Hermina' : 'Non Hermina'} ✕
+                                    </Badge>
+                                )}
+                            </p>
+                        </div>
+                    </div>
+                    <Button onClick={handleCreate} className="bg-orange-600 hover:bg-orange-700 text-white">
+                        <Plus className="mr-2 h-4 w-4" />
+                        Tambah Client
+                    </Button>
+                </div>
 
             {/* Search */}
             <div className="relative max-w-sm">
@@ -271,6 +380,7 @@ export function ClientTable() {
                         <ChevronRight className="h-4 w-4" />
                     </Button>
                 </div>
+            </div>
             </div>
 
             {/* Form Dialog */}
