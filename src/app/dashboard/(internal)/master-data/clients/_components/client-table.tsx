@@ -2,9 +2,10 @@
 
 import * as React from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { Plus, Pencil, Trash2, Loader2, Users, Search, Mail, Phone, MapPin, ChevronLeft, ChevronRight } from "lucide-react"
+import { Plus, Pencil, Trash2, Loader2, Users, Search, Mail, Phone, MapPin, ChevronLeft, ChevronRight, ArrowUpDown } from "lucide-react"
 import { toast } from "sonner"
 import { format } from "date-fns"
+import { cn } from "@/lib/utils"
 
 import {
     Table,
@@ -35,14 +36,20 @@ export function ClientTable() {
     const queryClient = useQueryClient()
     const [page, setPage] = React.useState(1)
     const [search, setSearch] = React.useState("")
+    const [sortDirection, setSortDirection] = React.useState<'asc' | 'desc' | null>(null)
     const [isFormOpen, setIsFormOpen] = React.useState(false)
     const [selectedClient, setSelectedClient] = React.useState<Client | null>(null)
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false)
     const [clientToDelete, setClientToDelete] = React.useState<Client | null>(null)
 
     const { data: clientResponse, isLoading } = useQuery({
-        queryKey: ["clients", page, search],
-        queryFn: () => ClientService.getClients({ page, search }),
+        queryKey: ["clients", page, search, sortDirection],
+        queryFn: () => ClientService.getClients({
+            page,
+            search,
+            sort_by: sortDirection ? "projects_count" : undefined,
+            sort_order: sortDirection || undefined
+        }),
     })
 
     const clients = clientResponse?.data || []
@@ -120,7 +127,21 @@ export function ClientTable() {
                             <TableHead>Client</TableHead>
                             <TableHead>Kontak</TableHead>
                             <TableHead>Alamat</TableHead>
-                            <TableHead>Total Project</TableHead>
+                            <TableHead
+                                className="cursor-pointer hover:bg-neutral-200/50 transition-colors select-none"
+                                onClick={() => {
+                                    setSortDirection((prev) => {
+                                        if (prev === null) return "desc"
+                                        if (prev === "desc") return "asc"
+                                        return null
+                                    })
+                                }}
+                            >
+                                <div className="flex items-center gap-1.5">
+                                    Total Project
+                                    <ArrowUpDown className={cn("h-3 w-3", sortDirection ? "text-orange-600 font-bold" : "text-neutral-400")} />
+                                </div>
+                            </TableHead>
                             <TableHead className="w-[120px] text-right">Aksi</TableHead>
                         </TableRow>
                     </TableHeader>
