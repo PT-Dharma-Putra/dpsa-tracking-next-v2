@@ -395,50 +395,38 @@ export default function RekapPenagihanPage() {
       </div>
 
       {/* Card Piutang */}
-      <Card className="shadow-sm border-slate-200 bg-white">
-        <CardHeader className="pb-4">
-          <CardTitle className="text-xs font-semibold text-slate-800 tracking-wider">PIUTANG</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-blue-50/50 border border-blue-100 rounded-lg p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="bg-blue-100 p-1.5 rounded text-blue-600">
-                  <FileText className="w-4 h-4" />
-                </div>
-                <span className="text-[10px] font-bold text-blue-600 tracking-wider">TAGIHAN LUNCUR</span>
-              </div>
-              <div className="text-xl font-bold text-slate-900 mb-1">{formatShortValue(piutang.total_tagihan)}</div>
-              <div className="text-[10px] text-slate-500">Total Tagihan</div>
-            </div>
-            <div className="bg-emerald-50/50 border border-emerald-100 rounded-lg p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="bg-emerald-100 p-1.5 rounded text-emerald-600">
-                  <CheckCircle2 className="w-4 h-4" />
-                </div>
-                <span className="text-[10px] font-bold text-emerald-600 tracking-wider">NOMINAL TERBAYARKAN</span>
-              </div>
-              <div className="text-xl font-bold text-slate-900 mb-1">{formatShortValue(piutang.total_terbayar)}</div>
-              <div className="text-[10px] text-slate-500">Total Terbayar</div>
-            </div>
+      <div className='flex flex-col gap-2 p-4 rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md max-w-sm'>
+        <div className='flex items-center gap-2 border-b border-slate-100 pb-2'>
+          <div className='h-6 w-6 rounded bg-amber-100 flex items-center justify-center text-amber-600 shrink-0'>
+            <CircleDollarSign className='h-3.5 w-3.5' />
           </div>
-          <div className="bg-amber-50/50 border border-amber-100 rounded-lg p-4 flex items-center justify-between">
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <div className="bg-amber-100 p-1.5 rounded-full text-amber-600">
-                  <CircleDollarSign className="w-4 h-4" />
-                </div>
-                <span className="text-[10px] font-bold text-amber-700 tracking-wider">SISA PIUTANG</span>
-              </div>
-              <div className="text-2xl font-bold text-slate-900">{formatShortValue(piutang.sisa_piutang)}</div>
-            </div>
-            <div className="text-right">
-              <div className="text-xl font-bold text-amber-700">{piutang.persentase_sisa}%</div>
-              <div className="text-[10px] text-slate-500">dari total tagihan</div>
-            </div>
+          <p className='text-[10px] font-bold text-slate-500 uppercase tracking-wider'>
+            Sisa Piutang
+          </p>
+          <div className='ml-auto flex items-center gap-1.5'>
+            <span className='text-lg font-bold text-slate-800'>
+              {formatShortValue(piutang.sisa_piutang)}
+            </span>
+            <span className='text-[10px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-md'>
+              {piutang.persentase_sisa}%
+            </span>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+
+        <div className='flex flex-row gap-1.5 mt-auto'>
+          {/* Tagihan Luncur */}
+          <div className='flex-1 flex items-center justify-between p-1.5 rounded-lg border border-blue-100 bg-blue-50/50 text-[10px] select-none text-blue-700'>
+            <span className='truncate mr-1 font-medium'>Tagihan Luncur</span>
+            <span className='font-bold'>{formatShortValue(piutang.total_tagihan)}</span>
+          </div>
+
+          {/* Terbayar */}
+          <div className='flex-1 flex items-center justify-between p-1.5 rounded-lg border border-emerald-100 bg-emerald-50/50 text-[10px] select-none text-emerald-700'>
+            <span className='truncate mr-1 font-medium'>Terbayar</span>
+            <span className='font-bold'>{formatShortValue(piutang.total_terbayar)}</span>
+          </div>
+        </div>
+      </div>
 
       <div className='bg-white rounded-xl shadow-sm border border-neutral-200'>
         <div className='p-6 space-y-4'>
