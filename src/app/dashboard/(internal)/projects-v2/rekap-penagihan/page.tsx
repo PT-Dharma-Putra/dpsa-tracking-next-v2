@@ -56,6 +56,25 @@ const parseDatabaseNominal = (value: string | number | null | undefined) => {
     .replace(/,/g, '.');
   return parseFloat(cleanStr) || 0;
 };
+
+const formatShortValue = (val: number) => {
+  if (!val || isNaN(val) || val === 0) return '0';
+  if (val >= 1000000000) {
+    const formatted = (val / 1000000000)
+      .toFixed(2)
+      .replace(/\.0+$/, '')
+      .replace(/(\.\d)0$/, '$1');
+    return `${formatted} M`;
+  }
+  if (val >= 1000000) {
+    const formatted = (val / 1000000)
+      .toFixed(2)
+      .replace(/\.0+$/, '')
+      .replace(/(\.\d)0$/, '$1');
+    return `${formatted} Jt`;
+  }
+  return `${val}`;
+};
 import { format, differenceInDays, startOfDay } from 'date-fns';
 import {
   Receipt,
@@ -67,7 +86,11 @@ import {
   X,
   Search,
   ArrowUpDown,
+  FileText,
+  CircleDollarSign,
 } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { getReportsData } from '@/features/dashboard/services/dashboard-reports-service';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -152,6 +175,22 @@ export default function RekapPenagihanPage() {
     queryFn: () => penagihanService.getAllPenagihan(),
   });
 
+  const { data: reportsData } = useQuery({
+    queryKey: ['dashboard-reports', filterMonth, filterYear],
+    queryFn: () =>
+      getReportsData({
+        month: filterMonth !== 'all' ? filterMonth : undefined,
+        year: filterYear !== 'all' ? filterYear : undefined,
+      }),
+  });
+
+  const piutang = reportsData?.piutang || {
+    total_tagihan: 0,
+    total_terbayar: 0,
+    sisa_piutang: 0,
+    persentase_sisa: 0,
+  };
+
   const { data: terminList = [], isLoading: isLoadingTermin } = useQuery({
     queryKey: ['termin-all'],
     queryFn: () => penagihanService.getTermin(),
@@ -167,6 +206,7 @@ export default function RekapPenagihanPage() {
     }) => penagihanService.updatePenagihan(id, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['penagihan-all'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-reports'] });
       toast.success('Penagihan berhasil diperbarui');
       closeForm();
     },
@@ -177,6 +217,7 @@ export default function RekapPenagihanPage() {
     mutationFn: (id: number) => penagihanService.deletePenagihan(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['penagihan-all'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-reports'] });
       toast.success('Penagihan berhasil dihapus');
       setDeleteTarget(null);
     },
@@ -201,6 +242,7 @@ export default function RekapPenagihanPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['penagihan-all'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-reports'] });
       toast.success('Nominal SPK berhasil diperbarui');
       setIsEditingSpkNominal(false);
       setSpkNominalInput('');
@@ -351,6 +393,52 @@ export default function RekapPenagihanPage() {
           Daftar seluruh penagihan dari semua proyek
         </p>
       </div>
+
+      {/* Card Piutang */}
+      <Card className="shadow-sm border-slate-200 bg-white">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-xs font-semibold text-slate-800 tracking-wider">PIUTANG</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-blue-50/50 border border-blue-100 rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="bg-blue-100 p-1.5 rounded text-blue-600">
+                  <FileText className="w-4 h-4" />
+                </div>
+                <span className="text-[10px] font-bold text-blue-600 tracking-wider">TAGIHAN LUNCUR</span>
+              </div>
+              <div className="text-xl font-bold text-slate-900 mb-1">{formatShortValue(piutang.total_tagihan)}</div>
+              <div className="text-[10px] text-slate-500">Total Tagihan</div>
+            </div>
+            <div className="bg-emerald-50/50 border border-emerald-100 rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="bg-emerald-100 p-1.5 rounded text-emerald-600">
+                  <CheckCircle2 className="w-4 h-4" />
+                </div>
+                <span className="text-[10px] font-bold text-emerald-600 tracking-wider">NOMINAL TERBAYARKAN</span>
+              </div>
+              <div className="text-xl font-bold text-slate-900 mb-1">{formatShortValue(piutang.total_terbayar)}</div>
+              <div className="text-[10px] text-slate-500">Total Terbayar</div>
+            </div>
+          </div>
+          <div className="bg-amber-50/50 border border-amber-100 rounded-lg p-4 flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <div className="bg-amber-100 p-1.5 rounded-full text-amber-600">
+                  <CircleDollarSign className="w-4 h-4" />
+                </div>
+                <span className="text-[10px] font-bold text-amber-700 tracking-wider">SISA PIUTANG</span>
+              </div>
+              <div className="text-2xl font-bold text-slate-900">{formatShortValue(piutang.sisa_piutang)}</div>
+            </div>
+            <div className="text-right">
+              <div className="text-xl font-bold text-amber-700">{piutang.persentase_sisa}%</div>
+              <div className="text-[10px] text-slate-500">dari total tagihan</div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className='bg-white rounded-xl shadow-sm border border-neutral-200'>
         <div className='p-6 space-y-4'>
