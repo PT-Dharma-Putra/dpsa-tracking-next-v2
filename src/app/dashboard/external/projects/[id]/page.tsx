@@ -346,7 +346,6 @@ function DocumentsTabContent({ projectId }: { projectId: string }) {
 
     // Client SPK Upload State
     const [spkNumber, setSpkNumber] = useState("");
-    const [spkDeadline, setSpkDeadline] = useState("");
     const [spkFile, setSpkFile] = useState<File | null>(null);
     const spkFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -385,7 +384,6 @@ function DocumentsTabContent({ projectId }: { projectId: string }) {
             toast.success("SPK berhasil diupload!");
             queryClient.invalidateQueries({ queryKey: ["spk", projectId] });
             setSpkNumber("");
-            setSpkDeadline("");
             setSpkFile(null);
             if (spkFileInputRef.current) spkFileInputRef.current.value = "";
         },
@@ -396,7 +394,6 @@ function DocumentsTabContent({ projectId }: { projectId: string }) {
         if (!spkNumber.trim() || !spkFile) return;
         uploadClientSPKMutation.mutate({
             spk_number: spkNumber.trim(),
-            deadline: spkDeadline || undefined,
             file: spkFile,
         });
     };
