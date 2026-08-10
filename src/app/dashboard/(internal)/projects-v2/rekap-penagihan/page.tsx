@@ -141,9 +141,8 @@ export default function RekapPenagihanPage() {
   const queryClient = useQueryClient();
 
   const [search, setSearch] = React.useState('');
-  const [sortInvoiceDirection, setSortInvoiceDirection] = React.useState<
-    'asc' | 'desc'
-  >('asc');
+  const [sortBy, setSortBy] = React.useState<'invoice' | 'aging'>('invoice');
+  const [sortDirection, setSortDirection] = React.useState<'asc' | 'desc'>('asc');
   const [filterMonth, setFilterMonth] = React.useState<string>('all');
   const [filterYear, setFilterYear] = React.useState<string>('all');
   const [filterAging, setFilterAging] = React.useState<
@@ -424,18 +423,31 @@ export default function RekapPenagihanPage() {
       return matchesSearch && matchesMonth && matchesYear && matchesAging;
     })
     .sort((a, b) => {
+      if (sortBy === 'aging') {
+        const getAging = (item: Penagihan) => {
+          if (item.status === 'Lunas' || !item.tanggal_invoice) return -1;
+          const invDate = startOfDay(new Date(item.tanggal_invoice));
+          if (isNaN(invDate.getTime())) return -1;
+          return differenceInDays(startOfDay(new Date()), invDate);
+        };
+        const agingA = getAging(a);
+        const agingB = getAging(b);
+        const diff = agingA - agingB;
+        return sortDirection === 'asc' ? diff : -diff;
+      }
+
       const getNum = (inv: string | null | undefined) => {
         if (!inv) return Number.MAX_SAFE_INTEGER;
         const match = inv.match(/^(\d+)/);
         return match ? parseInt(match[1], 10) : Number.MAX_SAFE_INTEGER;
       };
       const diff = getNum(a.nomor_invoice) - getNum(b.nomor_invoice);
-      return sortInvoiceDirection === 'asc' ? diff : -diff;
+      return sortDirection === 'asc' ? diff : -diff;
     });
 
   React.useEffect(() => {
     setCurrentPage(1);
-  }, [search, filterMonth, filterYear, filterAging]);
+  }, [search, filterMonth, filterYear, filterAging, sortBy, sortDirection]);
 
   const totalPages = Math.ceil(filteredPenagihans.length / itemsPerPage);
   const paginatedPenagihans = filteredPenagihans.slice(
@@ -647,16 +659,24 @@ export default function RekapPenagihanPage() {
                   <TableRow>
                     <TableHead className='w-[50px]'>No</TableHead>
                     <TableHead
-                      className='cursor-pointer hover:bg-neutral-200/50 transition-colors'
-                      onClick={() =>
-                        setSortInvoiceDirection((prev) =>
-                          prev === 'asc' ? 'desc' : 'asc'
-                        )
-                      }
+                      className='cursor-pointer hover:bg-neutral-200/50 transition-colors select-none'
+                      onClick={() => {
+                        if (sortBy === 'invoice') {
+                          setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+                        } else {
+                          setSortBy('invoice');
+                          setSortDirection('asc');
+                        }
+                      }}
                     >
                       <div className='flex items-center gap-2'>
                         NO INVOICE
-                        <ArrowUpDown className='h-3 w-3 text-neutral-400' />
+                        <ArrowUpDown
+                          className={cn(
+                            'h-3 w-3',
+                            sortBy === 'invoice' ? 'text-blue-600 font-bold' : 'text-neutral-400'
+                          )}
+                        />
                       </div>
                     </TableHead>
                     <TableHead>TGL INVOICE</TableHead>
@@ -677,10 +697,28 @@ export default function RekapPenagihanPage() {
                     {/* <TableHead>TAKE OUT</TableHead> */}
                     <TableHead>JATUH TEMPO</TableHead>
                     <TableHead>TGL DIBAYAR</TableHead>
-                    <TableHead>
-                      <div className='flex flex-col items-center'>
-                        <span>UMUR</span>
-                        <span>PENAGIHAN</span>
+                    <TableHead
+                      className='cursor-pointer hover:bg-neutral-200/50 transition-colors select-none'
+                      onClick={() => {
+                        if (sortBy === 'aging') {
+                          setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+                        } else {
+                          setSortBy('aging');
+                          setSortDirection('desc'); // Default to longest unpaid first
+                        }
+                      }}
+                    >
+                      <div className='flex items-center justify-center gap-1.5'>
+                        <div className='flex flex-col items-center leading-tight'>
+                          <span>UMUR</span>
+                          <span>PENAGIHAN</span>
+                        </div>
+                        <ArrowUpDown
+                          className={cn(
+                            'h-3 w-3',
+                            sortBy === 'aging' ? 'text-purple-600 font-bold' : 'text-neutral-400'
+                          )}
+                        />
                       </div>
                     </TableHead>
                     <TableHead>FILE</TableHead>

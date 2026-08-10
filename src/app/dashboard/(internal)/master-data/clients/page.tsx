@@ -12,9 +12,7 @@ export default function ClientsPage() {
                 </p>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-neutral-200">
-                <ClientTable />
-            </div>
+            <ClientTable />
         </div>
     )
 }

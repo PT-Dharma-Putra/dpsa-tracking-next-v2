@@ -13,7 +13,7 @@ export interface Client {
 }
 
 export const ClientService = {
-    getClients: async (params?: { page?: number; search?: string; per_page?: number }): Promise<{ data: Client[]; meta: any }> => {
+    getClients: async (params?: { page?: number; search?: string; per_page?: number; sort_by?: string; sort_order?: string; hermina?: number }): Promise<{ data: Client[]; meta: any; stats?: { total: number; hermina: number; non_hermina: number } }> => {
         const response = await apiClient.get("/clients", { params });
         return response.data;
     },
