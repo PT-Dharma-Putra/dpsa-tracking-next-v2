@@ -713,7 +713,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-                <SidebarMenuItem>
+                {/* <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild
                     tooltip='Reports'
@@ -724,7 +724,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                       <span>Analytics & Reports</span>
                     </Link>
                   </SidebarMenuButton>
-                </SidebarMenuItem>
+                </SidebarMenuItem> */}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
