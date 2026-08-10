@@ -243,6 +243,9 @@ export default function EngineerDetailPage() {
         if (sortConfig.key === "divisi") {
           aValue = a.divisi?.nama || "";
           bValue = b.divisi?.nama || "";
+        } else if (sortConfig.key === "pic") {
+          aValue = a.pic_engineer?.name || "";
+          bValue = b.pic_engineer?.name || "";
         }
         if (aValue < bValue) return sortConfig.direction === "asc" ? -1 : 1;
         if (aValue > bValue) return sortConfig.direction === "asc" ? 1 : -1;
@@ -1068,9 +1071,9 @@ export default function EngineerDetailPage() {
               <TableHeader className="bg-neutral-50 sticky top-0 z-10 shadow-sm shadow-neutral-200/50">
                 <TableRow>
                   <TableHead className="w-[60px] text-center">#</TableHead>
-                  <TableHead className="text-[12px] uppercase font-bold text-neutral-500">
+                  {/* <TableHead className="text-[12px] uppercase font-bold text-neutral-500">
                     Kode Barang
-                  </TableHead>
+                  </TableHead> */}
                   <TableHead className="text-[12px] uppercase font-bold text-neutral-500">
                     Lantai | Ruang
                   </TableHead>
@@ -1122,8 +1125,22 @@ export default function EngineerDetailPage() {
                       }}
                     />
                   </TableHead>
-                  <TableHead className="text-[12px] uppercase font-bold text-neutral-500">
-                    PIC
+                  <TableHead
+                    className="text-[12px] uppercase font-bold text-neutral-500 cursor-pointer hover:bg-neutral-100 transition-colors select-none"
+                    onClick={() => handleSort("pic")}
+                  >
+                    <div className="flex items-center gap-1">
+                      PIC
+                      {sortConfig?.key === "pic" ? (
+                        sortConfig.direction === "asc" ? (
+                          <ArrowUp className="h-3.5 w-3.5" />
+                        ) : (
+                          <ArrowDown className="h-3.5 w-3.5" />
+                        )
+                      ) : (
+                        <ChevronsUpDown className="h-3.5 w-3.5 opacity-50" />
+                      )}
+                    </div>
                   </TableHead>
                   {/* <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>GK MDL</TableHead> */}
                   <TableHead className="text-[12px] uppercase font-bold text-neutral-500">
@@ -1165,7 +1182,7 @@ export default function EngineerDetailPage() {
                       <TableCell className="text-center font-medium text-neutral-400">
                         {index + 1}
                       </TableCell>
-                      <TableCell className="text-xs text-neutral-500 font-mono">
+                      {/* <TableCell className="text-xs text-neutral-500 font-mono">
                         {item.mdl_item?.kode_barang ? (
                           <CopyableCode code={item.mdl_item.kode_barang} />
                         ) : (
@@ -1173,7 +1190,7 @@ export default function EngineerDetailPage() {
                             -
                           </span>
                         )}
-                      </TableCell>
+                      </TableCell> */}
                       <TableCell>
                         <div className="flex flex-col gap-0.5">
                           <span className="text-xs font-bold text-neutral-800">
