@@ -281,6 +281,7 @@ export function ProjectsV2Table({
     | 'spk'
     | 'sph'
     | 'sph_only'
+    | 'belum_sph_spk'
     | 'selesai'
     | 'on_progress'
     | 'belum_produksi'
@@ -298,6 +299,7 @@ export function ProjectsV2Table({
       | 'spk'
       | 'sph'
       | 'sph_only'
+      | 'belum_sph_spk'
       | 'selesai'
       | 'on_progress'
       | 'belum_produksi'
@@ -1390,7 +1392,7 @@ export function ProjectsV2Table({
       )}
 
       {showMarketingFilter && stats && (
-        <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 w-full'>
+        <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full'>
           {/* Total Projek */}
           <div className='flex flex-col gap-2 p-4 rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md'>
             <div className='flex items-center gap-2 border-b border-slate-100 pb-2'>
@@ -1405,33 +1407,47 @@ export function ProjectsV2Table({
               </span>
             </div>
 
-            <div className='flex flex-row gap-1.5 mt-auto'>
+            <div className='flex flex-wrap gap-1.5 mt-auto'>
+              {/* Belum Terbit SPH & SPK */}
+              <div
+                onClick={() => handleDashboardFilterClick('belum_sph_spk')}
+                className={cn(
+                  'flex-1 min-w-[90px] flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  dashboardFilter === 'belum_sph_spk'
+                    ? 'border-rose-500 bg-rose-50 text-rose-700 font-semibold'
+                    : 'border-rose-100 bg-rose-50/50 hover:border-rose-300 text-rose-700'
+                )}
+              >
+                <span className='mr-1 font-medium leading-tight'>Belum Terbit SPH & SPK</span>
+                <span className='font-bold shrink-0 ml-1'>{stats.belum_sph_spk ?? 0}</span>
+              </div>
+
               {/* Terbit SPH */}
               <div
                 onClick={() => handleDashboardFilterClick('sph_only')}
                 className={cn(
-                  'flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  'flex-1 min-w-[70px] flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
                   dashboardFilter === 'sph_only'
                     ? 'border-amber-500 bg-amber-50 text-amber-700 font-semibold'
                     : 'border-amber-100 bg-amber-50/50 hover:border-amber-300 text-amber-700'
                 )}
               >
-                <span className='truncate mr-1 font-medium'>Terbit SPH</span>
-                <span className='font-bold'>{stats.sph_only ?? 0}</span>
+                <span className='mr-1 font-medium leading-tight'>Terbit SPH</span>
+                <span className='font-bold shrink-0 ml-1'>{stats.sph_only ?? 0}</span>
               </div>
 
               {/* Terbit SPK */}
               <div
                 onClick={() => handleDashboardFilterClick('spk')}
                 className={cn(
-                  'flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  'flex-1 min-w-[70px] flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
                   dashboardFilter === 'spk'
                     ? 'border-indigo-500 bg-indigo-50 text-indigo-700 font-semibold'
                     : 'border-indigo-100 bg-indigo-50/50 hover:border-indigo-300 text-indigo-700'
                 )}
               >
-                <span className='truncate mr-1 font-medium'>Terbit SPK</span>
-                <span className='font-bold'>{stats.total_spk}</span>
+                <span className='mr-1 font-medium leading-tight'>Terbit SPK</span>
+                <span className='font-bold shrink-0 ml-1'>{stats.total_spk}</span>
               </div>
             </div>
           </div>
