@@ -283,7 +283,9 @@ export function ProjectsV2Table({
     | 'sph_only'
     | 'belum_sph_spk'
     | 'selesai'
+    | 'produksi_selesai'
     | 'on_progress'
+    | 'produksi_on_progress'
     | 'belum_produksi'
     | 'deadline_dekat'
     | 'overdue'
@@ -301,7 +303,9 @@ export function ProjectsV2Table({
       | 'sph_only'
       | 'belum_sph_spk'
       | 'selesai'
+      | 'produksi_selesai'
       | 'on_progress'
+      | 'produksi_on_progress'
       | 'belum_produksi'
       | 'deadline_dekat'
       | 'overdue'
@@ -1793,36 +1797,6 @@ export function ProjectsV2Table({
             </div>
           </div>
 
-          {/* Deadline Terdekat */}
-          <div
-            onClick={() => handleDashboardFilterClick('deadline_dekat')}
-            className={cn(
-              'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-amber-400 select-none',
-              dashboardFilter === 'deadline_dekat'
-                ? 'border-amber-500 bg-amber-50/50 ring-2 ring-amber-500/20'
-                : 'border-amber-200 bg-white'
-            )}
-          >
-            <div className='flex items-center gap-3'>
-              <div className='h-10 w-10 rounded-lg bg-amber-100 flex items-center justify-center text-amber-600 shrink-0'>
-                <Clock className='h-5 w-5' />
-              </div>
-              <div>
-                <p className='text-[10px] font-bold text-amber-600 uppercase tracking-wider'>
-                  Deadline Dekat
-                </p>
-                <p className='text-xl font-bold text-slate-800'>
-                  {stats.deadline_dekat}
-                </p>
-              </div>
-            </div>
-            {dashboardFilter === 'deadline_dekat' && (
-              <span className='text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
-                Active
-              </span>
-            )}
-          </div>
-
           {/* Overdue */}
           {!showProduksi && (
             <div
@@ -1857,10 +1831,14 @@ export function ProjectsV2Table({
 
           {/* Produksi Selesai */}
           <div
-            onClick={() => handleDashboardFilterClick('selesai')}
+            onClick={() =>
+              handleDashboardFilterClick(
+                showProduksi ? 'produksi_selesai' : 'selesai'
+              )
+            }
             className={cn(
               'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-emerald-400 select-none',
-              dashboardFilter === 'selesai'
+              dashboardFilter === (showProduksi ? 'produksi_selesai' : 'selesai')
                 ? 'border-emerald-500 bg-emerald-50/50 ring-2 ring-emerald-500/20'
                 : 'border-emerald-200 bg-white'
             )}
@@ -1874,23 +1852,29 @@ export function ProjectsV2Table({
                   Produksi Selesai
                 </p>
                 <p className='text-xl font-bold text-slate-800'>
-                  {stats.selesai}
+                  {showProduksi
+                    ? (stats.produksi_selesai ?? 0)
+                    : stats.selesai}
                 </p>
               </div>
             </div>
-            {dashboardFilter === 'selesai' && (
+            {dashboardFilter === (showProduksi ? 'produksi_selesai' : 'selesai') && (
               <span className='text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
                 Active
               </span>
             )}
           </div>
 
-          {/* In Progress */}
+          {/* Produksi In Progress */}
           <div
-            onClick={() => handleDashboardFilterClick('on_progress')}
+            onClick={() =>
+              handleDashboardFilterClick(
+                showProduksi ? 'produksi_on_progress' : 'on_progress'
+              )
+            }
             className={cn(
               'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-blue-400 select-none',
-              dashboardFilter === 'on_progress'
+              dashboardFilter === (showProduksi ? 'produksi_on_progress' : 'on_progress')
                 ? 'border-blue-500 bg-blue-50/50 ring-2 ring-blue-500/20'
                 : 'border-blue-200 bg-white'
             )}
@@ -1901,14 +1885,16 @@ export function ProjectsV2Table({
               </div>
               <div>
                 <p className='text-[10px] font-bold text-blue-600 uppercase tracking-wider'>
-                  In Progress
+                  Produksi In Progress
                 </p>
                 <p className='text-xl font-bold text-slate-800'>
-                  {stats.on_progress}
+                  {showProduksi
+                    ? (stats.produksi_on_progress ?? 0)
+                    : stats.on_progress}
                 </p>
               </div>
             </div>
-            {dashboardFilter === 'on_progress' && (
+            {dashboardFilter === (showProduksi ? 'produksi_on_progress' : 'on_progress') && (
               <span className='text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
                 Active
               </span>
@@ -1946,6 +1932,37 @@ export function ProjectsV2Table({
               )}
             </div>
           )}
+
+          
+          {/* Deadline Terdekat */}
+          <div
+            onClick={() => handleDashboardFilterClick('deadline_dekat')}
+            className={cn(
+              'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-amber-400 select-none',
+              dashboardFilter === 'deadline_dekat'
+                ? 'border-amber-500 bg-amber-50/50 ring-2 ring-amber-500/20'
+                : 'border-amber-200 bg-white'
+            )}
+          >
+            <div className='flex items-center gap-3'>
+              <div className='h-10 w-10 rounded-lg bg-amber-100 flex items-center justify-center text-amber-600 shrink-0'>
+                <Clock className='h-5 w-5' />
+              </div>
+              <div>
+                <p className='text-[10px] font-bold text-amber-600 uppercase tracking-wider'>
+                  Deadline Dekat
+                </p>
+                <p className='text-xl font-bold text-slate-800'>
+                  {stats.deadline_dekat}
+                </p>
+              </div>
+            </div>
+            {dashboardFilter === 'deadline_dekat' && (
+              <span className='text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
+                Active
+              </span>
+            )}
+          </div>
 
           {/* Overdue Produksi — hanya produksi */}
           {showProduksi && (

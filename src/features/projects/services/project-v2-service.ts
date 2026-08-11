@@ -193,7 +193,9 @@ export interface ProjectV2Stats {
   sph_only: number;
   belum_sph_spk?: number;
   selesai: number;
+  produksi_selesai?: number;
   on_progress: number;
+  produksi_on_progress?: number;
   belum_produksi: number;
   deadline_dekat: number;
   overdue: number;
