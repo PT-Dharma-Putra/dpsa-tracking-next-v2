@@ -2014,95 +2014,64 @@ export function ProjectsV2Table({
       )}
 
       {showAllDashboard && stats && (
-        <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-9 gap-4 w-full'>
-          {/* Total Project */}
-          <div
-            onClick={() => handleDashboardFilterClick(null)}
-            className={cn(
-              'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-slate-400 select-none',
-              dashboardFilter === null
-                ? 'border-slate-500 bg-slate-50 ring-2 ring-slate-500/20'
-                : 'border-slate-200 bg-white'
-            )}
-          >
-            <div className='flex items-center gap-3'>
-              <div className='h-10 w-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 shrink-0'>
-                <Briefcase className='h-5 w-5' />
+        <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-7 gap-4 w-full'>
+          {/* Total Projek */}
+          <div className='flex flex-col gap-2 p-4 rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md'>
+            <div className='flex items-center gap-2 border-b border-slate-100 pb-2'>
+              <div className='h-6 w-6 rounded bg-slate-100 flex items-center justify-center text-slate-600 shrink-0'>
+                <Briefcase className='h-3.5 w-3.5' />
               </div>
-              <div>
-                <p className='text-[10px] font-bold text-slate-500 uppercase tracking-wider'>
-                  Total Project
-                </p>
-                <p className='text-xl font-bold text-slate-800'>
-                  {stats.total_project}
-                </p>
-              </div>
-            </div>
-            {dashboardFilter === null && (
-              <span className='text-[10px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
-                Active
+              <p className='text-[10px] font-bold text-slate-500 uppercase tracking-wider'>
+                Total Projek
+              </p>
+              <span className='ml-auto text-lg font-bold text-slate-800'>
+                {stats.total_project}
               </span>
-            )}
-          </div>
+            </div>
 
-          {/* Total SPK */}
-          <div
-            onClick={() => handleDashboardFilterClick('spk')}
-            className={cn(
-              'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-indigo-400 select-none',
-              dashboardFilter === 'spk'
-                ? 'border-indigo-500 bg-indigo-50/50 ring-2 ring-indigo-500/20'
-                : 'border-indigo-200 bg-white'
-            )}
-          >
-            <div className='flex items-center gap-3'>
-              <div className='h-10 w-10 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600 shrink-0'>
-                <FileText className='h-5 w-5' />
+            <div className='flex flex-wrap gap-1.5 mt-auto'>
+              {/* Belum Terbit SPH & SPK */}
+              <div
+                onClick={() => handleDashboardFilterClick('belum_sph_spk')}
+                className={cn(
+                  'flex-1 min-w-[90px] flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  dashboardFilter === 'belum_sph_spk'
+                    ? 'border-rose-500 bg-rose-50 text-rose-700 font-semibold'
+                    : 'border-rose-100 bg-rose-50/50 hover:border-rose-300 text-rose-700'
+                )}
+              >
+                <span className='mr-1 font-medium leading-tight'>Belum Terbit SPH & SPK</span>
+                <span className='font-bold shrink-0 ml-1'>{stats.belum_sph_spk ?? 0}</span>
               </div>
-              <div>
-                <p className='text-[10px] font-bold text-indigo-600 uppercase tracking-wider'>
-                  Total SPK
-                </p>
-                <p className='text-xl font-bold text-slate-800'>
-                  {stats.total_spk}
-                </p>
-              </div>
-            </div>
-            {dashboardFilter === 'spk' && (
-              <span className='text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
-                Active
-              </span>
-            )}
-          </div>
 
-          {/* Total SPH */}
-          <div
-            onClick={() => handleDashboardFilterClick('sph')}
-            className={cn(
-              'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-orange-400 select-none',
-              dashboardFilter === 'sph'
-                ? 'border-orange-500 bg-orange-50/50 ring-2 ring-orange-500/20'
-                : 'border-orange-200 bg-white'
-            )}
-          >
-            <div className='flex items-center gap-3'>
-              <div className='h-10 w-10 rounded-lg bg-orange-100 flex items-center justify-center text-orange-600 shrink-0'>
-                <FileText className='h-5 w-5' />
+              {/* Terbit SPH */}
+              <div
+                onClick={() => handleDashboardFilterClick('sph_only')}
+                className={cn(
+                  'flex-1 min-w-[70px] flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  dashboardFilter === 'sph_only'
+                    ? 'border-amber-500 bg-amber-50 text-amber-700 font-semibold'
+                    : 'border-amber-100 bg-amber-50/50 hover:border-amber-300 text-amber-700'
+                )}
+              >
+                <span className='mr-1 font-medium leading-tight'>Terbit SPH, Belum terbit SPK</span>
+                <span className='font-bold shrink-0 ml-1'>{stats.sph_only ?? 0}</span>
               </div>
-              <div>
-                <p className='text-[10px] font-bold text-orange-600 uppercase tracking-wider'>
-                  Total SPH
-                </p>
-                <p className='text-xl font-bold text-orange-800'>
-                  {stats.total_sph}
-                </p>
+
+              {/* Terbit SPK */}
+              <div
+                onClick={() => handleDashboardFilterClick('spk')}
+                className={cn(
+                  'flex-1 min-w-[70px] flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  dashboardFilter === 'spk'
+                    ? 'border-indigo-500 bg-indigo-50 text-indigo-700 font-semibold'
+                    : 'border-indigo-100 bg-indigo-50/50 hover:border-indigo-300 text-indigo-700'
+                )}
+              >
+                <span className='mr-1 font-medium leading-tight'>Terbit SPK</span>
+                <span className='font-bold shrink-0 ml-1'>{stats.total_spk}</span>
               </div>
             </div>
-            {dashboardFilter === 'sph' && (
-              <span className='text-[10px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
-                Active
-              </span>
-            )}
           </div>
 
           {/* Selesai */}
