@@ -2014,7 +2014,7 @@ export function ProjectsV2Table({
       )}
 
       {showAllDashboard && stats && (
-        <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-7 gap-4 w-full'>
+        <div className='grid grid-cols-1 md:grid-cols-3 gap-4 w-full'>
           {/* Total Projek */}
           <div className='flex flex-col gap-2 p-4 rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md'>
             <div className='flex items-center gap-2 border-b border-slate-100 pb-2'>
@@ -2074,184 +2074,119 @@ export function ProjectsV2Table({
             </div>
           </div>
 
-          {/* Selesai */}
-          <div
-            onClick={() => handleDashboardFilterClick('selesai')}
-            className={cn(
-              'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-emerald-400 select-none',
-              dashboardFilter === 'selesai'
-                ? 'border-emerald-500 bg-emerald-50/50 ring-2 ring-emerald-500/20'
-                : 'border-emerald-200 bg-white'
-            )}
-          >
-            <div className='flex items-center gap-3'>
-              <div className='h-10 w-10 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0'>
-                <CheckCircle2 className='h-5 w-5' />
+          {/* Pantau Proyek */}
+          <div className='flex flex-col gap-2 p-4 rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md'>
+            <div className='flex items-center gap-2 border-b border-slate-100 pb-2'>
+              <div className='h-6 w-6 rounded bg-slate-100 flex items-center justify-center text-slate-600 shrink-0'>
+                <Briefcase className='h-3.5 w-3.5' />
               </div>
-              <div>
-                <p className='text-[10px] font-bold text-emerald-600 uppercase tracking-wider'>
-                  Selesai
-                </p>
-                <p className='text-xl font-bold text-emerald-800'>
-                  {stats.selesai}
-                </p>
+              <p className='text-[10px] font-bold text-slate-500 uppercase tracking-wider'>
+                Pantau Proyek
+              </p>
+              <span className='ml-auto text-lg font-bold text-slate-800'>
+                {stats.total_spk}
+              </span>
+            </div>
+
+            <div className='flex flex-wrap gap-1.5 mt-auto'>
+              {/* Selesai */}
+              <div
+                onClick={() => handleDashboardFilterClick('selesai')}
+                className={cn(
+                  'flex-1 min-w-[90px] flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  dashboardFilter === 'selesai'
+                    ? 'border-rose-500 bg-rose-50 text-rose-700 font-semibold'
+                    : 'border-rose-100 bg-rose-50/50 hover:border-rose-300 text-rose-700'
+                )}
+              >
+                <span className='mr-1 font-medium leading-tight'>Selesai</span>
+                <span className='font-bold shrink-0 ml-1'>{stats.selesai ?? 0}</span>
+              </div>
+
+              {/* On Progress */}
+              <div
+                onClick={() => handleDashboardFilterClick('on_progress')}
+                className={cn(
+                  'flex-1 min-w-[70px] flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  dashboardFilter === 'on_progress'
+                    ? 'border-amber-500 bg-amber-50 text-amber-700 font-semibold'
+                    : 'border-amber-100 bg-amber-50/50 hover:border-amber-300 text-amber-700'
+                )}
+              >
+                <span className='mr-1 font-medium leading-tight'>On Progres</span>
+                <span className='font-bold shrink-0 ml-1'>{stats.on_progress ?? 0}</span>
+              </div>
+
+              {/* Belum Produksi */}
+              <div
+                onClick={() => handleDashboardFilterClick('belum_produksi')}
+                className={cn(
+                  'flex-1 min-w-[70px] flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  dashboardFilter === 'belum_produksi'
+                    ? 'border-indigo-500 bg-indigo-50 text-indigo-700 font-semibold'
+                    : 'border-indigo-100 bg-indigo-50/50 hover:border-indigo-300 text-indigo-700'
+                )}
+              >
+                <span className='mr-1 font-medium leading-tight'>Belum Produksi</span>
+                <span className='font-bold shrink-0 ml-1'>{stats.belum_produksi ?? 0}</span>
               </div>
             </div>
-            {dashboardFilter === 'selesai' && (
-              <span className='text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
-                Active
-              </span>
-            )}
           </div>
 
-          {/* On Progress */}
-          <div
-            onClick={() => handleDashboardFilterClick('on_progress')}
-            className={cn(
-              'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-blue-400 select-none',
-              dashboardFilter === 'on_progress'
-                ? 'border-blue-500 bg-blue-50/50 ring-2 ring-blue-500/20'
-                : 'border-blue-200 bg-white'
-            )}
-          >
-            <div className='flex items-center gap-3'>
-              <div className='h-10 w-10 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 shrink-0'>
-                <Activity className='h-5 w-5' />
+          {/* Perhatian */}
+          <div className='flex flex-col gap-2 p-4 rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md'>
+            <div className='flex items-center gap-2 border-b border-slate-100 pb-2'>
+              <div className='h-6 w-6 rounded bg-slate-100 flex items-center justify-center text-slate-600 shrink-0'>
+                <Briefcase className='h-3.5 w-3.5' />
               </div>
-              <div>
-                <p className='text-[10px] font-bold text-blue-600 uppercase tracking-wider'>
-                  On Progress
-                </p>
-                <p className='text-xl font-bold text-blue-800'>
-                  {stats.on_progress}
-                </p>
-              </div>
+              <p className='text-[10px] font-bold text-slate-500 uppercase tracking-wider'>
+                Perhatian
+              </p>
             </div>
-            {dashboardFilter === 'on_progress' && (
-              <span className='text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
-                Active
-              </span>
-            )}
-          </div>
 
-          {/* SPK Belum Produksi */}
-          <div
-            onClick={() => handleDashboardFilterClick('belum_produksi')}
-            className={cn(
-              'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-amber-400 select-none',
-              dashboardFilter === 'belum_produksi'
-                ? 'border-amber-500 bg-amber-50/50 ring-2 ring-amber-500/20'
-                : 'border-amber-200 bg-white'
-            )}
-          >
-            <div className='flex items-center gap-3'>
-              <div className='h-10 w-10 rounded-lg bg-amber-100 flex items-center justify-center text-amber-600 shrink-0'>
-                <Clock className='h-5 w-5' />
+            <div className='flex flex-wrap gap-1.5 mt-auto'>
+              {/* Urgent */}
+              <div
+                onClick={() => handleDashboardFilterClick('urgent')}
+                className={cn(
+                  'flex-1 min-w-[90px] flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  dashboardFilter === 'urgent'
+                    ? 'border-rose-500 bg-rose-50 text-rose-700 font-semibold'
+                    : 'border-rose-100 bg-rose-50/50 hover:border-rose-300 text-rose-700'
+                )}
+              >
+                <span className='mr-1 font-medium leading-tight'>Urgent</span>
+                <span className='font-bold shrink-0 ml-1'>{stats.urgent ?? 0}</span>
               </div>
-              <div>
-                <p className='text-[10px] font-bold text-amber-600 uppercase tracking-wider'>
-                  SPK Belum Produksi
-                </p>
-                <p className='text-xl font-bold text-amber-800'>
-                  {stats.belum_produksi}
-                </p>
-              </div>
-            </div>
-            {dashboardFilter === 'belum_produksi' && (
-              <span className='text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
-                Active
-              </span>
-            )}
-          </div>
 
-          {/* Deadline Dekat */}
-          <div
-            onClick={() => handleDashboardFilterClick('deadline_dekat')}
-            className={cn(
-              'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-orange-400 select-none',
-              dashboardFilter === 'deadline_dekat'
-                ? 'border-orange-500 bg-orange-50/50 ring-2 ring-orange-500/20'
-                : 'border-orange-200 bg-white'
-            )}
-          >
-            <div className='flex items-center gap-3'>
-              <div className='h-10 w-10 rounded-lg bg-orange-100 flex items-center justify-center text-orange-600 shrink-0'>
-                <AlertTriangle className='h-5 w-5' />
+              {/* Deadline Dekat*/}
+              <div
+                onClick={() => handleDashboardFilterClick('deadline_dekat')}
+                className={cn(
+                  'flex-1 min-w-[70px] flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  dashboardFilter === 'deadline_dekat'
+                    ? 'border-amber-500 bg-amber-50 text-amber-700 font-semibold'
+                    : 'border-amber-100 bg-amber-50/50 hover:border-amber-300 text-amber-700'
+                )}
+              >
+                <span className='mr-1 font-medium leading-tight'>Deadline Dekat</span>
+                <span className='font-bold shrink-0 ml-1'>{stats.deadline_dekat ?? 0}</span>
               </div>
-              <div>
-                <p className='text-[10px] font-bold text-orange-600 uppercase tracking-wider'>
-                  Deadline Dekat
-                </p>
-                <p className='text-xl font-bold text-orange-800'>
-                  {stats.deadline_dekat}
-                </p>
-              </div>
-            </div>
-            {dashboardFilter === 'deadline_dekat' && (
-              <span className='text-[10px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
-                Active
-              </span>
-            )}
-          </div>
 
-          {/* Overdue */}
-          <div
-            onClick={() => handleDashboardFilterClick('overdue')}
-            className={cn(
-              'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-red-400 select-none',
-              dashboardFilter === 'overdue'
-                ? 'border-red-500 bg-red-50/50 ring-2 ring-red-500/20'
-                : 'border-red-200 bg-white'
-            )}
-          >
-            <div className='flex items-center gap-3'>
-              <div className='h-10 w-10 rounded-lg bg-red-100 flex items-center justify-center text-red-600 shrink-0'>
-                <AlertCircle className='h-5 w-5' />
-              </div>
-              <div>
-                <p className='text-[10px] font-bold text-red-600 uppercase tracking-wider'>
-                  Overdue
-                </p>
-                <p className='text-xl font-bold text-red-800'>
-                  {stats.overdue}
-                </p>
+              {/* Overdue */}
+              <div
+                onClick={() => handleDashboardFilterClick('overdue')}
+                className={cn(
+                  'flex-1 min-w-[70px] flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  dashboardFilter === 'overdue'
+                    ? 'border-indigo-500 bg-indigo-50 text-indigo-700 font-semibold'
+                    : 'border-indigo-100 bg-indigo-50/50 hover:border-indigo-300 text-indigo-700'
+                )}
+              >
+                <span className='mr-1 font-medium leading-tight'>Overdue</span>
+                <span className='font-bold shrink-0 ml-1'>{stats.overdue ?? 0}</span>
               </div>
             </div>
-            {dashboardFilter === 'overdue' && (
-              <span className='text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
-                Active
-              </span>
-            )}
-          </div>
-
-          {/* Urgent */}
-          <div
-            onClick={() => handleDashboardFilterClick('urgent')}
-            className={cn(
-              'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-rose-400 select-none',
-              dashboardFilter === 'urgent'
-                ? 'border-rose-500 bg-rose-50/50 ring-2 ring-rose-500/20'
-                : 'border-rose-200 bg-white'
-            )}
-          >
-            <div className='flex items-center gap-3'>
-              <div className='h-10 w-10 rounded-lg bg-rose-100 flex items-center justify-center text-rose-600 shrink-0'>
-                <Zap className='h-5 w-5' />
-              </div>
-              <div>
-                <p className='text-[10px] font-bold text-rose-600 uppercase tracking-wider'>
-                  Urgent
-                </p>
-                <p className='text-xl font-bold text-rose-800'>
-                  {stats.urgent}
-                </p>
-              </div>
-            </div>
-            {dashboardFilter === 'urgent' && (
-              <span className='text-[10px] bg-rose-100 text-rose-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
-                Active
-              </span>
-            )}
           </div>
         </div>
       )}
