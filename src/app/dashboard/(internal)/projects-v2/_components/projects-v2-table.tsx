@@ -2564,7 +2564,7 @@ export function ProjectsV2Table({
                     </>
                   ) : (
                     <>
-                      {!showEngineer && !showProduksi && !showPurchasing && (
+                      {!showProduksi && !showPurchasing && (
                         <TableHead>MKT</TableHead>
                       )}
                       <TableHead>CLIENT</TableHead>
@@ -2682,6 +2682,7 @@ export function ProjectsV2Table({
                           </div>
                         </TableHead>
                       )}
+                      {showEngineer && <TableHead>TEAM</TableHead>}
                       {!showPiutang && (
                         <TableHead>NAMA PROJEK</TableHead>
                       )}
@@ -3575,7 +3576,6 @@ export function ProjectsV2Table({
                       ) : (
                         <>
                           {!showAllDashboard &&
-                            !showEngineer &&
                             !showProduksi &&
                             !showPurchasing && (
                               <TableCell>
@@ -3707,6 +3707,34 @@ export function ProjectsV2Table({
                         </TableCell>
                       )}
 
+                      {showEngineer && (
+                        <TableCell>
+                          {project.project_team?.divisi_id ? (
+                            <div className='flex flex-wrap gap-1 max-w-[200px]'>
+                              {project.project_team.divisi_id
+                                .split(',')
+                                .map((idStr) => {
+                                  const id = parseInt(idStr.trim(), 10);
+                                  const name = divisionsMap.get(id);
+                                  if (!name) return null;
+                                  return (
+                                    <Badge
+                                      key={id}
+                                      variant='outline'
+                                      className='text-[11px] bg-blue-50 text-blue-700 border-blue-200 whitespace-nowrap'
+                                    >
+                                      {name}
+                                    </Badge>
+                                  );
+                                })}
+                            </div>
+                          ) : (
+                            <span className='text-muted-foreground italic text-xs'>
+                              -
+                            </span>
+                          )}
+                        </TableCell>
+                      )}
                       {!showAllDashboard &&
                         !showPiutang && (
                           <TableCell className='max-w-[200px] truncate'>
