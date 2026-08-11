@@ -1408,18 +1408,18 @@ export function ProjectsV2Table({
             </div>
 
             <div className='flex flex-wrap gap-1.5 mt-auto'>
-              {/* Belum Terbit SPH & SPK */}
+              {/* Terbit SPK */}
               <div
-                onClick={() => handleDashboardFilterClick('belum_sph_spk')}
+                onClick={() => handleDashboardFilterClick('spk')}
                 className={cn(
-                  'flex-1 min-w-[90px] flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
-                  dashboardFilter === 'belum_sph_spk'
-                    ? 'border-rose-500 bg-rose-50 text-rose-700 font-semibold'
-                    : 'border-rose-100 bg-rose-50/50 hover:border-rose-300 text-rose-700'
+                  'flex-1 min-w-[70px] flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  dashboardFilter === 'spk'
+                    ? 'border-indigo-500 bg-indigo-50 text-indigo-700 font-semibold'
+                    : 'border-indigo-100 bg-indigo-50/50 hover:border-indigo-300 text-indigo-700'
                 )}
               >
-                <span className='mr-1 font-medium leading-tight'>Belum Terbit SPH & SPK</span>
-                <span className='font-bold shrink-0 ml-1'>{stats.belum_sph_spk ?? 0}</span>
+                <span className='mr-1 font-medium leading-tight'>Terbit SPK</span>
+                <span className='font-bold shrink-0 ml-1'>{stats.total_spk}</span>
               </div>
 
               {/* Terbit SPH */}
@@ -1436,18 +1436,18 @@ export function ProjectsV2Table({
                 <span className='font-bold shrink-0 ml-1'>{stats.sph_only ?? 0}</span>
               </div>
 
-              {/* Terbit SPK */}
+              {/* Belum Terbit SPH & SPK */}
               <div
-                onClick={() => handleDashboardFilterClick('spk')}
+                onClick={() => handleDashboardFilterClick('belum_sph_spk')}
                 className={cn(
-                  'flex-1 min-w-[70px] flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
-                  dashboardFilter === 'spk'
-                    ? 'border-indigo-500 bg-indigo-50 text-indigo-700 font-semibold'
-                    : 'border-indigo-100 bg-indigo-50/50 hover:border-indigo-300 text-indigo-700'
+                  'flex-1 min-w-[90px] flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  dashboardFilter === 'belum_sph_spk'
+                    ? 'border-rose-500 bg-rose-50 text-rose-700 font-semibold'
+                    : 'border-rose-100 bg-rose-50/50 hover:border-rose-300 text-rose-700'
                 )}
               >
-                <span className='mr-1 font-medium leading-tight'>Terbit SPK</span>
-                <span className='font-bold shrink-0 ml-1'>{stats.total_spk}</span>
+                <span className='mr-1 font-medium leading-tight'>Belum Terbit SPH & SPK</span>
+                <span className='font-bold shrink-0 ml-1'>{stats.belum_sph_spk ?? 0}</span>
               </div>
             </div>
           </div>
@@ -2029,19 +2029,19 @@ export function ProjectsV2Table({
               </span>
             </div>
 
-            <div className='flex flex-wrap gap-1.5 mt-auto'>
-              {/* Belum Terbit SPH & SPK */}
+                        <div className='flex flex-wrap gap-1.5 mt-auto'>
+              {/* Terbit SPK */}
               <div
-                onClick={() => handleDashboardFilterClick('belum_sph_spk')}
+                onClick={() => handleDashboardFilterClick('spk')}
                 className={cn(
-                  'flex-1 min-w-[90px] flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
-                  dashboardFilter === 'belum_sph_spk'
-                    ? 'border-rose-500 bg-rose-50 text-rose-700 font-semibold'
-                    : 'border-rose-100 bg-rose-50/50 hover:border-rose-300 text-rose-700'
+                  'flex-1 min-w-[70px] flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  dashboardFilter === 'spk'
+                    ? 'border-indigo-500 bg-indigo-50 text-indigo-700 font-semibold'
+                    : 'border-indigo-100 bg-indigo-50/50 hover:border-indigo-300 text-indigo-700'
                 )}
               >
-                <span className='mr-1 font-medium leading-tight'>Belum Terbit SPH & SPK</span>
-                <span className='font-bold shrink-0 ml-1'>{stats.belum_sph_spk ?? 0}</span>
+                <span className='mr-1 font-medium leading-tight'>Terbit SPK</span>
+                <span className='font-bold shrink-0 ml-1'>{stats.total_spk}</span>
               </div>
 
               {/* Terbit SPH */}
@@ -2058,30 +2058,30 @@ export function ProjectsV2Table({
                 <span className='font-bold shrink-0 ml-1'>{stats.sph_only ?? 0}</span>
               </div>
 
-              {/* Terbit SPK */}
+              {/* Belum Terbit SPH & SPK */}
               <div
-                onClick={() => handleDashboardFilterClick('spk')}
+                onClick={() => handleDashboardFilterClick('belum_sph_spk')}
                 className={cn(
-                  'flex-1 min-w-[70px] flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
-                  dashboardFilter === 'spk'
-                    ? 'border-indigo-500 bg-indigo-50 text-indigo-700 font-semibold'
-                    : 'border-indigo-100 bg-indigo-50/50 hover:border-indigo-300 text-indigo-700'
+                  'flex-1 min-w-[90px] flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  dashboardFilter === 'belum_sph_spk'
+                    ? 'border-rose-500 bg-rose-50 text-rose-700 font-semibold'
+                    : 'border-rose-100 bg-rose-50/50 hover:border-rose-300 text-rose-700'
                 )}
               >
-                <span className='mr-1 font-medium leading-tight'>Terbit SPK</span>
-                <span className='font-bold shrink-0 ml-1'>{stats.total_spk}</span>
+                <span className='mr-1 font-medium leading-tight'>Belum Terbit SPH & SPK</span>
+                <span className='font-bold shrink-0 ml-1'>{stats.belum_sph_spk ?? 0}</span>
               </div>
             </div>
           </div>
 
-          {/* Pantau Proyek */}
+          {/* Pantau SPK */}
           <div className='flex flex-col gap-2 p-4 rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md'>
             <div className='flex items-center gap-2 border-b border-slate-100 pb-2'>
               <div className='h-6 w-6 rounded bg-slate-100 flex items-center justify-center text-slate-600 shrink-0'>
                 <Briefcase className='h-3.5 w-3.5' />
               </div>
               <p className='text-[10px] font-bold text-slate-500 uppercase tracking-wider'>
-                Pantau Proyek
+                Pantau SPK
               </p>
               <span className='ml-auto text-lg font-bold text-slate-800'>
                 {stats.total_spk}
@@ -2095,8 +2095,8 @@ export function ProjectsV2Table({
                 className={cn(
                   'flex-1 min-w-[90px] flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
                   dashboardFilter === 'selesai'
-                    ? 'border-rose-500 bg-rose-50 text-rose-700 font-semibold'
-                    : 'border-rose-100 bg-rose-50/50 hover:border-rose-300 text-rose-700'
+                    ? 'border-indigo-500 bg-indigo-50 text-indigo-700 font-semibold'
+                    : 'border-indigo-100 bg-indigo-50/50 hover:border-indigo-300 text-indigo-700'
                 )}
               >
                 <span className='mr-1 font-medium leading-tight'>Selesai</span>
@@ -2123,8 +2123,8 @@ export function ProjectsV2Table({
                 className={cn(
                   'flex-1 min-w-[70px] flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
                   dashboardFilter === 'belum_produksi'
-                    ? 'border-indigo-500 bg-indigo-50 text-indigo-700 font-semibold'
-                    : 'border-indigo-100 bg-indigo-50/50 hover:border-indigo-300 text-indigo-700'
+                    ? 'border-rose-500 bg-rose-50 text-rose-700 font-semibold'
+                    : 'border-rose-100 bg-rose-50/50 hover:border-rose-300 text-rose-700'
                 )}
               >
                 <span className='mr-1 font-medium leading-tight'>Belum Produksi</span>
@@ -2151,8 +2151,8 @@ export function ProjectsV2Table({
                 className={cn(
                   'flex-1 min-w-[90px] flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
                   dashboardFilter === 'urgent'
-                    ? 'border-rose-500 bg-rose-50 text-rose-700 font-semibold'
-                    : 'border-rose-100 bg-rose-50/50 hover:border-rose-300 text-rose-700'
+                    ? 'border-indigo-500 bg-indigo-50 text-indigo-700 font-semibold'
+                    : 'border-indigo-100 bg-indigo-50/50 hover:border-indigo-300 text-indigo-700'
                 )}
               >
                 <span className='mr-1 font-medium leading-tight'>Urgent</span>
@@ -2179,8 +2179,8 @@ export function ProjectsV2Table({
                 className={cn(
                   'flex-1 min-w-[70px] flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
                   dashboardFilter === 'overdue'
-                    ? 'border-indigo-500 bg-indigo-50 text-indigo-700 font-semibold'
-                    : 'border-indigo-100 bg-indigo-50/50 hover:border-indigo-300 text-indigo-700'
+                    ? 'border-rose-500 bg-rose-50 text-rose-700 font-semibold'
+                    : 'border-rose-100 bg-rose-50/50 hover:border-rose-300 text-rose-700'
                 )}
               >
                 <span className='mr-1 font-medium leading-tight'>Overdue</span>
