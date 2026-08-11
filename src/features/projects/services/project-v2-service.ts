@@ -191,6 +191,7 @@ export interface ProjectV2Stats {
   total_spk: number;
   total_sph: number;
   sph_only: number;
+  belum_sph_spk?: number;
   selesai: number;
   on_progress: number;
   belum_produksi: number;
