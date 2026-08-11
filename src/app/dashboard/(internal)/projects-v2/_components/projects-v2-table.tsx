@@ -1432,7 +1432,7 @@ export function ProjectsV2Table({
                     : 'border-amber-100 bg-amber-50/50 hover:border-amber-300 text-amber-700'
                 )}
               >
-                <span className='mr-1 font-medium leading-tight'>Terbit SPH</span>
+                <span className='mr-1 font-medium leading-tight'>Terbit SPH, Belum terbit SPK</span>
                 <span className='font-bold shrink-0 ml-1'>{stats.sph_only ?? 0}</span>
               </div>
 
