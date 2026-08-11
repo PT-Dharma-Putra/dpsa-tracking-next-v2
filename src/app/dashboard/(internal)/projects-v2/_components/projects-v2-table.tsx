@@ -2489,6 +2489,7 @@ export function ProjectsV2Table({
                   </TableHead>
                   {showAllDashboard ? (
                     <>
+                      <TableHead>MKT</TableHead>
                       <TableHead>CLIENT</TableHead>
                       <TableHead>NAMA PROJEK</TableHead>
                       <TableHead>NO SPK</TableHead>
@@ -3281,6 +3282,7 @@ export function ProjectsV2Table({
                       )}
                       {showAllDashboard ? (
                         <>
+                          <TableCell>{project.marketing?.name || '-'}</TableCell>
                           <TableCell>{project.client?.name || '-'}</TableCell>
                           <TableCell className='max-w-[200px] truncate'>
                             {project.name || (
