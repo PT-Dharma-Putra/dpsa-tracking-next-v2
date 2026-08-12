@@ -11,7 +11,6 @@ import {
   AlertTriangle,
   Lightbulb,
   CalendarDays,
-  ArrowUp,
   ChevronDown
 } from "lucide-react"
 import {
@@ -92,7 +91,7 @@ export default function ReportsDashboard() {
   const {
     statusData = [],
     progressData = [],
-    piutang = { total_tagihan: 0, total_terbayar: 0, sisa_piutang: 0, persentase_sisa: 0 },
+    piutang = { total_spk: 0, total_tagihan: 0, total_terbayar: 0, sisa_piutang: 0, persentase_sisa: 0 },
     spkData = [],
     totalSpkPeriode = 0,
     deadlineData = [],
@@ -185,7 +184,7 @@ export default function ReportsDashboard() {
         </div>
       </div>
 
-      {/* ROW 1: STATUS PROYEK | PROGRES KESELURUHAN | PIUTANG */}
+      {/* ROW 1: STATUS PROYEK | TOP 10 PROYEK OVERDUE */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
         {/* Card 1: Status Proyek */}
@@ -235,167 +234,7 @@ export default function ReportsDashboard() {
           </CardContent>
         </Card>
 
-        {/* Card 2: Progres Keseluruhan */}
-        <Card className="shadow-sm border-slate-200">
-          <CardHeader className="pb-0">
-            <CardTitle className="text-xs font-semibold text-slate-800 tracking-wider">PROGRES KESELURUHAN</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col items-center pt-6">
-            <div className="h-32 w-full relative -mt-4">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={progressData}
-                    cx="50%"
-                    cy="100%"
-                    startAngle={180}
-                    endAngle={0}
-                    innerRadius={70}
-                    outerRadius={95}
-                    paddingAngle={0}
-                    dataKey="value"
-                    stroke="none"
-                  >
-                    {progressData.map((entry: any, index: number) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="absolute bottom-0 left-0 right-0 flex flex-col items-center justify-end pointer-events-none pb-2">
-                <span className="text-4xl font-bold text-slate-900 leading-none">{progressData[0]?.value || 0}%</span>
-                <span className="text-xs text-slate-500 mt-1">Rata-rata Progres</span>
-              </div>
-            </div>
-            <div className="mt-6 flex items-center gap-1 bg-emerald-50 text-emerald-600 px-3 py-1 rounded-md text-xs font-medium">
-              <ArrowUp className="w-3 h-3" />
-              6% dari periode lalu
-            </div>
-            <div className="mt-auto pt-6 w-full text-left">
-              <p className="text-[10px] text-slate-400">Total progres kerja seluruh proyek aktif</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Card 3: Piutang */}
-        <Card className="shadow-sm border-slate-200">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-xs font-semibold text-slate-800 tracking-wider">PIUTANG</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-blue-50/50 border border-blue-100 rounded-lg p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="bg-blue-100 p-1.5 rounded text-blue-600">
-                    <FileText className="w-4 h-4" />
-                  </div>
-                  <span className="text-[10px] font-bold text-blue-600 tracking-wider">TAGIHAN LUNCUR</span>
-                </div>
-                <div className="text-xl font-bold text-slate-900 mb-1">{formatShortValue(piutang.total_tagihan)}</div>
-                <div className="text-[10px] text-slate-500">Total Tagihan</div>
-              </div>
-              <div className="bg-emerald-50/50 border border-emerald-100 rounded-lg p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="bg-emerald-100 p-1.5 rounded text-emerald-600">
-                    <CheckCircle2 className="w-4 h-4" />
-                  </div>
-                  <span className="text-[10px] font-bold text-emerald-600 tracking-wider">NOMINAL TERBAYARKAN</span>
-                </div>
-                <div className="text-xl font-bold text-slate-900 mb-1">{formatShortValue(piutang.total_terbayar)}</div>
-                <div className="text-[10px] text-slate-500">Total Terbayar</div>
-              </div>
-            </div>
-            <div className="bg-amber-50/50 border border-amber-100 rounded-lg p-4 flex items-center justify-between">
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="bg-amber-100 p-1.5 rounded-full text-amber-600">
-                    <CircleDollarSign className="w-4 h-4" />
-                  </div>
-                  <span className="text-[10px] font-bold text-amber-700 tracking-wider">SISA PIUTANG</span>
-                </div>
-                <div className="text-2xl font-bold text-slate-900">{formatShortValue(piutang.sisa_piutang)}</div>
-              </div>
-              <div className="text-right">
-                <div className="text-xl font-bold text-amber-700">{piutang.persentase_sisa}%</div>
-                <div className="text-[10px] text-slate-500">dari total tagihan</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-      </div>
-
-      {/* ROW 2: SPK PER BULAN | DEADLINE & OVERDUE | TOP 5 OVERDUE */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-
-        {/* Card 4: Nominal SPK Per Bulan */}
-        <Card className="shadow-sm border-slate-200">
-          <CardHeader className="pb-0">
-            <CardTitle className="text-xs font-semibold text-slate-800 tracking-wider">NOMINAL SPK PER BULAN</CardTitle>
-            <CardDescription className="text-[10px] text-slate-400 mt-1">(Rp)</CardDescription>
-          </CardHeader>
-          <CardContent className="pt-2 flex flex-col h-[280px]">
-            <div className="flex-1 w-full -ml-4">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={formattedSpkData} margin={{ top: 15, right: 15, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                  <XAxis
-                    dataKey="name"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fontSize: 10, fill: '#64748b' }}
-                    dy={10}
-                  />
-                  <YAxis
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fontSize: 10, fill: '#64748b' }}
-                    tickFormatter={(val) => formatShortValue(Number(val))}
-                    domain={[0, 'auto']}
-                  />
-                  <Tooltip
-                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                    formatter={(value: any) => [`Rp ${formatShortValue(Number(value))}`, 'Nominal']}
-                  />
-                  <Line
-                    type="linear"
-                    dataKey="value"
-                    stroke="#3b82f6"
-                    strokeWidth={2}
-                    dot={{ r: 4, fill: '#3b82f6', strokeWidth: 2, stroke: '#fff' }}
-                    activeDot={{ r: 6 }}
-                    label={{
-                      position: 'top',
-                      fill: '#3b82f6',
-                      fontSize: 10,
-                      fontWeight: 600,
-                      formatter: (val: any) => Number(val) > 0 ? formatShortValue(Number(val)) : '',
-                      dy: -10
-                    }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="mt-4 bg-slate-50 border border-slate-100 rounded-lg p-3 flex items-center gap-3">
-              <div className="bg-blue-100/50 p-2 rounded text-blue-600">
-                <FileText className="w-5 h-5" />
-              </div>
-              <div>
-                <div className="text-[10px] text-slate-500 mb-0.5">Total Nominal SPK (Periode)</div>
-                <div className="flex items-center gap-3">
-                  <span className="text-lg font-bold text-slate-900 leading-none">{formatShortValue(totalSpkPeriode)}</span>
-                  {/* Badge placeholder for period diff. Optional depending on API capability */}
-                  {/* <div className="flex items-center gap-1 bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded text-[10px] font-medium">
-                    <ArrowUp className="w-3 h-3" />
-                    12.4% <span className="text-emerald-600/70 ml-1 font-normal">dari periode lalu</span>
-                  </div> */}
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Card 6: Top 10 Proyek Overdue */}
+        {/* Card 2: Top 10 Proyek Overdue */}
         <Card className="shadow-sm border-slate-200 md:col-span-2">
           <CardHeader className="pb-3">
             <CardTitle className="text-xs font-semibold text-slate-800 tracking-wider">
@@ -450,6 +289,118 @@ export default function ReportsDashboard() {
                   )}
                 </tbody>
               </table>
+            </div>
+          </CardContent>
+        </Card>
+
+      </div>
+
+      {/* ROW 2: SPK PER BULAN | KEUANGAN */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+        {/* Card 3: Nominal SPK Per Bulan */}
+        <Card className="shadow-sm border-slate-200">
+          <CardHeader className="pb-0">
+            <CardTitle className="text-xs font-semibold text-slate-800 tracking-wider">NOMINAL SPK PER BULAN</CardTitle>
+            <CardDescription className="text-[10px] text-slate-400 mt-1">(Rp)</CardDescription>
+          </CardHeader>
+          <CardContent className="pt-2 flex flex-col h-[280px]">
+            <div className="flex-1 w-full -ml-4">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={formattedSpkData} margin={{ top: 15, right: 15, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <XAxis
+                    dataKey="name"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 10, fill: '#64748b' }}
+                    dy={10}
+                  />
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 10, fill: '#64748b' }}
+                    tickFormatter={(val) => formatShortValue(Number(val))}
+                    domain={[0, 'auto']}
+                  />
+                  <Tooltip
+                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                    formatter={(value: any) => [`Rp ${formatShortValue(Number(value))}`, 'Nominal']}
+                  />
+                  <Line
+                    type="linear"
+                    dataKey="value"
+                    stroke="#3b82f6"
+                    strokeWidth={2}
+                    dot={{ r: 4, fill: '#3b82f6', strokeWidth: 2, stroke: '#fff' }}
+                    activeDot={{ r: 6 }}
+                    label={{
+                      position: 'top',
+                      fill: '#3b82f6',
+                      fontSize: 10,
+                      fontWeight: 600,
+                      formatter: (val: any) => Number(val) > 0 ? formatShortValue(Number(val)) : '',
+                      dy: -10
+                    }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Card 4: Keuangan */}
+        <Card className="shadow-sm border-slate-200 md:col-span-2">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-xs font-semibold text-slate-800 tracking-wider">KEUANGAN</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="bg-indigo-50/50 border border-indigo-100 rounded-lg p-3.5">
+                <div className="flex items-center gap-2 mb-2.5">
+                  <div className="bg-indigo-100 p-1.5 rounded text-indigo-600">
+                    <FileText className="w-4 h-4" />
+                  </div>
+                  <span className="text-[10px] font-bold text-indigo-600 tracking-wider">TOTAL NOMINAL SPK</span>
+                </div>
+                <div className="text-lg font-bold text-slate-900 mb-0.5">{formatShortValue(piutang.total_spk ?? totalSpkPeriode)}</div>
+                <div className="text-[10px] text-slate-500">Total SPK</div>
+              </div>
+              <div className="bg-blue-50/50 border border-blue-100 rounded-lg p-3.5">
+                <div className="flex items-center gap-2 mb-2.5">
+                  <div className="bg-blue-100 p-1.5 rounded text-blue-600">
+                    <FileText className="w-4 h-4" />
+                  </div>
+                  <span className="text-[10px] font-bold text-blue-600 tracking-wider">TAGIHAN LUNCUR</span>
+                </div>
+                <div className="text-lg font-bold text-slate-900 mb-0.5">{formatShortValue(piutang.total_tagihan)}</div>
+                <div className="text-[10px] text-slate-500">Total Tagihan</div>
+              </div>
+              <div className="bg-emerald-50/50 border border-emerald-100 rounded-lg p-3.5">
+                <div className="flex items-center gap-2 mb-2.5">
+                  <div className="bg-emerald-100 p-1.5 rounded text-emerald-600">
+                    <CheckCircle2 className="w-4 h-4" />
+                  </div>
+                  <span className="text-[10px] font-bold text-emerald-600 tracking-wider">NOMINAL TERBAYARKAN</span>
+                </div>
+                <div className="text-lg font-bold text-slate-900 mb-0.5">{formatShortValue(piutang.total_terbayar)}</div>
+                <div className="text-[10px] text-slate-500">Total Terbayar</div>
+              </div>
+            </div>
+            <div className="bg-amber-50/50 border border-amber-100 rounded-lg p-4 flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="bg-amber-100 p-1.5 rounded-full text-amber-600">
+                    <CircleDollarSign className="w-4 h-4" />
+                  </div>
+                  <span className="text-[10px] font-bold text-amber-700 tracking-wider">SISA PIUTANG</span>
+                </div>
+                <div className="text-2xl font-bold text-slate-900">{formatShortValue(piutang.sisa_piutang)}</div>
+              </div>
+              <div className="text-right">
+                <div className="text-xl font-bold text-amber-700">{piutang.persentase_sisa}%</div>
+                <div className="text-[10px] text-slate-500">dari total tagihan</div>
+              </div>
             </div>
           </CardContent>
         </Card>
