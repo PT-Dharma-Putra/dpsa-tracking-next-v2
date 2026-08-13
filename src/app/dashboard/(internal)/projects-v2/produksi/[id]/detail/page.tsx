@@ -21,8 +21,10 @@ import {
   QrCode,
   Printer,
   Search,
+  FileSpreadsheet,
 } from 'lucide-react';
 import { format } from 'date-fns';
+import * as XLSX from 'xlsx-js-style';
 
 import {
   Table,
@@ -225,6 +227,153 @@ export default function ProduksiDetailPage() {
     
     return Array.from(grouped.values());
   }, [filteredItems, isGrouped]);
+
+  // Export Excel Function
+  const handleExportExcel = () => {
+    if (!displayItems || displayItems.length === 0) {
+      toast.error('Tidak ada data item untuk diekspor');
+      return;
+    }
+
+    const clientName = project?.client?.name || '-';
+    const nomorSpk = project?.spk_number || project?.spk?.nomor_spk || '-';
+    const deadlineStr = project?.deadline
+      ? format(new Date(project.deadline), 'dd/MM/yyyy')
+      : '-';
+
+    const headerLabelStyle = {
+      font: { bold: true, sz: 10 },
+      alignment: { horizontal: 'left', vertical: 'center' },
+    };
+
+    const headerValueStyle = {
+      font: { sz: 10 },
+      alignment: { horizontal: 'left', vertical: 'center' },
+    };
+
+    const tableHeaderStyle = {
+      font: { bold: true, sz: 10 },
+      alignment: { horizontal: 'center', vertical: 'center' },
+      border: {
+        top: { style: 'thin' },
+        bottom: { style: 'thin' },
+        left: { style: 'thin' },
+        right: { style: 'thin' },
+      },
+      fill: { fgColor: { rgb: 'F5F5F5' } },
+    };
+
+    const cellStyleLeft = {
+      font: { sz: 10 },
+      alignment: { horizontal: 'left', vertical: 'center', wrapText: true },
+      border: {
+        top: { style: 'thin' },
+        bottom: { style: 'thin' },
+        left: { style: 'thin' },
+        right: { style: 'thin' },
+      },
+    };
+
+    const cellStyleCenter = {
+      font: { sz: 10 },
+      alignment: { horizontal: 'center', vertical: 'center' },
+      border: {
+        top: { style: 'thin' },
+        bottom: { style: 'thin' },
+        left: { style: 'thin' },
+        right: { style: 'thin' },
+      },
+    };
+
+    const wsData: any[][] = [
+      [
+        { v: 'Client:', t: 's', s: headerLabelStyle },
+        { v: clientName, t: 's', s: headerValueStyle },
+      ],
+      [
+        { v: 'Nomor SPK:', t: 's', s: headerLabelStyle },
+        { v: nomorSpk, t: 's', s: headerValueStyle },
+      ],
+      [
+        { v: 'Deadline:', t: 's', s: headerLabelStyle },
+        { v: deadlineStr, t: 's', s: headerValueStyle },
+      ],
+      [],
+      [
+        { v: 'No', t: 's', s: tableHeaderStyle },
+        { v: 'Nama Item', t: 's', s: tableHeaderStyle },
+        { v: 'Deskripsi', t: 's', s: tableHeaderStyle },
+        { v: 'Vol', t: 's', s: tableHeaderStyle },
+        { v: 'Dimensi', t: 's', s: tableHeaderStyle },
+        { v: 'Qty', t: 's', s: tableHeaderStyle },
+        { v: 'Satuan', t: 's', s: tableHeaderStyle },
+        { v: 'PO Divisi', t: 's', s: tableHeaderStyle },
+        { v: 'Stok Material', t: 's', s: tableHeaderStyle },
+        { v: 'Produksi', t: 's', s: tableHeaderStyle },
+        { v: 'QC Cek', t: 's', s: tableHeaderStyle },
+        { v: 'B. Jadi', t: 's', s: tableHeaderStyle },
+      ],
+    ];
+
+    displayItems.forEach((item, index) => {
+      const dimensiStr = `${item.panjang || '-'} x ${item.lebar || '-'} x ${item.tinggi || '-'}`;
+      const poDivisiStr = item.divisi?.nama || '-';
+      const stokMaterialStr = item.bahan_baku?.ketersediaan_stok || '-';
+      const produksiStr = `${Math.round(item.produksi?.persen || 0)}%`;
+      const qcCekStr = isGrouped
+        ? '-'
+        : item.qc_cek
+        ? `${item.qc_cek.qty} Unit`
+        : '-';
+      const bJadiStr = isGrouped
+        ? '-'
+        : item.barang_jadi_masuk && item.barang_jadi_masuk.length > 0
+        ? `${item.barang_jadi_masuk.reduce(
+            (sum, bj) => sum + Number(bj.jumlah),
+            0
+          )} / ${item.jumlah}`
+        : `0 / ${item.jumlah}`;
+
+      wsData.push([
+        { v: index + 1, t: 'n', s: cellStyleCenter },
+        { v: item.item || '-', t: 's', s: cellStyleLeft },
+        { v: item.keterangan || '-', t: 's', s: cellStyleLeft },
+        { v: item.volume ?? '-', t: typeof item.volume === 'number' ? 'n' : 's', s: cellStyleCenter },
+        { v: dimensiStr, t: 's', s: cellStyleCenter },
+        { v: item.jumlah ?? 0, t: 'n', s: cellStyleCenter },
+        { v: item.satuan || '-', t: 's', s: cellStyleCenter },
+        { v: poDivisiStr, t: 's', s: cellStyleLeft },
+        { v: stokMaterialStr, t: 's', s: cellStyleCenter },
+        { v: produksiStr, t: 's', s: cellStyleCenter },
+        { v: qcCekStr, t: 's', s: cellStyleCenter },
+        { v: bJadiStr, t: 's', s: cellStyleCenter },
+      ]);
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+    ws['!cols'] = [
+      { wch: 6 },  // No
+      { wch: 30 }, // Nama Item
+      { wch: 30 }, // Deskripsi
+      { wch: 10 }, // Vol
+      { wch: 20 }, // Dimensi
+      { wch: 8 },  // Qty
+      { wch: 10 }, // Satuan
+      { wch: 18 }, // PO Divisi
+      { wch: 16 }, // Stok Material
+      { wch: 12 }, // Produksi
+      { wch: 12 }, // QC Cek
+      { wch: 14 }, // B. Jadi
+    ];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Detail Produksi');
+
+    const safeProjectName = (project?.name || 'Project').replace(/[^a-zA-Z0-9 _-]/g, '');
+    const fileName = `Detail_Produksi_${safeProjectName}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+  };
 
   // QR Code per-item State
   const [isItemQrDialogOpen, setIsItemQrDialogOpen] = React.useState(false);
@@ -1285,6 +1434,14 @@ export default function ProduksiDetailPage() {
           </h2>
 
           <div className='flex items-center gap-2'>
+            <Button
+              variant='outline'
+              onClick={handleExportExcel}
+              className='shadow-sm h-8 text-xs gap-1.5 border-emerald-600 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800'
+            >
+              <FileSpreadsheet className='w-4 h-4 text-emerald-600' />
+              Export Excel
+            </Button>
             <Button
               variant={isGrouped ? 'default' : 'outline'}
               onClick={() => setIsGrouped(!isGrouped)}

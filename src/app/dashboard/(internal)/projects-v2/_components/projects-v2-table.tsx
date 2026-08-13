@@ -37,8 +37,10 @@ import {
   Hammer,
   ExternalLink,
   Users,
+  FileSpreadsheet,
 } from 'lucide-react';
 import { format, differenceInDays, startOfDay } from 'date-fns';
+import * as XLSX from 'xlsx-js-style';
 
 import {
   Table,
@@ -93,6 +95,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   projectV2Service,
   ProjectV2,
@@ -736,6 +739,466 @@ export function ProjectsV2Table({
   };
 
   const projects = data?.data || [];
+
+  // Multiple Selection & Export Excel State for Produksi
+  const [selectedProjectIds, setSelectedProjectIds] = React.useState<number[]>([]);
+  const [isExporting, setIsExporting] = React.useState(false);
+
+  const currentDisplayedIds = React.useMemo(
+    () => projects.map((p) => p.id),
+    [projects]
+  );
+
+  const isAllDisplayedSelected = React.useMemo(() => {
+    if (currentDisplayedIds.length === 0) return false;
+    return currentDisplayedIds.every((id) => selectedProjectIds.includes(id));
+  }, [currentDisplayedIds, selectedProjectIds]);
+
+  const isSomeDisplayedSelected = React.useMemo(() => {
+    if (currentDisplayedIds.length === 0) return false;
+    const selectedCount = currentDisplayedIds.filter((id) =>
+      selectedProjectIds.includes(id)
+    ).length;
+    return selectedCount > 0 && selectedCount < currentDisplayedIds.length;
+  }, [currentDisplayedIds, selectedProjectIds]);
+
+  const handleToggleSelectAllDisplayed = () => {
+    if (isAllDisplayedSelected) {
+      setSelectedProjectIds((prev) =>
+        prev.filter((id) => !currentDisplayedIds.includes(id))
+      );
+    } else {
+      setSelectedProjectIds((prev) => {
+        const set = new Set([...prev, ...currentDisplayedIds]);
+        return Array.from(set);
+      });
+    }
+  };
+
+  const handleToggleSelectProject = (projectId: number) => {
+    setSelectedProjectIds((prev) =>
+      prev.includes(projectId)
+        ? prev.filter((id) => id !== projectId)
+        : [...prev, projectId]
+    );
+  };
+
+  const handleExportExcelSelected = async () => {
+    if (selectedProjectIds.length === 0) return;
+    setIsExporting(true);
+
+    try {
+      // 1. Get selected projects
+      const currentMap = new Map<number, ProjectV2>();
+      projects.forEach((p) => currentMap.set(p.id, p));
+
+      const missingIds = selectedProjectIds.filter(
+        (id) => !currentMap.has(id)
+      );
+      if (missingIds.length > 0) {
+        const fetchedMissing = await Promise.all(
+          missingIds.map((id) =>
+            projectV2Service.getProject(id).catch(() => null)
+          )
+        );
+        fetchedMissing.forEach((p) => {
+          if (p) currentMap.set(p.id, p);
+        });
+      }
+
+      const selectedProjects = selectedProjectIds
+        .map((id) => currentMap.get(id))
+        .filter((p): p is ProjectV2 => Boolean(p));
+
+      if (selectedProjects.length === 0) {
+        toast.error('Gagal menyiapkan data untuk export Excel');
+        setIsExporting(false);
+        return;
+      }
+
+      // 2. Fetch project items for each selected project
+      const projectsWithItems = await Promise.all(
+        selectedProjects.map(async (project) => {
+          try {
+            const items = await projectV2Service.getProjectItems(project.id);
+            return { project, items: items || [] };
+          } catch (err) {
+            console.error(`Failed to load items for project ${project.id}`, err);
+            return { project, items: [] };
+          }
+        })
+      );
+
+      // Styles
+      const groupHeaderStyle = {
+        font: { bold: true, sz: 11, color: { rgb: 'FFFFFF' } },
+        alignment: { horizontal: 'center', vertical: 'center' },
+        fill: { fgColor: { rgb: '1E3A8A' } }, // Dark blue
+        border: {
+          top: { style: 'thin' },
+          bottom: { style: 'thin' },
+          left: { style: 'thin' },
+          right: { style: 'thin' },
+        },
+      };
+
+      const subHeaderStyle = {
+        font: { bold: true, sz: 10 },
+        alignment: { horizontal: 'center', vertical: 'center' },
+        fill: { fgColor: { rgb: 'F1F5F9' } }, // Slate-100
+        border: {
+          top: { style: 'thin' },
+          bottom: { style: 'thin' },
+          left: { style: 'thin' },
+          right: { style: 'thin' },
+        },
+      };
+
+      const yellowSeparatorStyle = {
+        fill: { fgColor: { rgb: 'FEF08A' } }, // Yellow-200 separator
+        border: {
+          top: { style: 'thin' },
+          bottom: { style: 'thin' },
+          left: { style: 'thin' },
+          right: { style: 'thin' },
+        },
+      };
+
+      const cellStyleLeft = {
+        font: { sz: 10 },
+        alignment: { horizontal: 'left', vertical: 'center', wrapText: true },
+        border: {
+          top: { style: 'thin' },
+          bottom: { style: 'thin' },
+          left: { style: 'thin' },
+          right: { style: 'thin' },
+        },
+      };
+
+      const cellStyleCenter = {
+        font: { sz: 10 },
+        alignment: { horizontal: 'center', vertical: 'center' },
+        border: {
+          top: { style: 'thin' },
+          bottom: { style: 'thin' },
+          left: { style: 'thin' },
+          right: { style: 'thin' },
+        },
+      };
+
+      // Header Row 1: Group Headers
+      const groupHeaderRow: any[] = [
+        // Project Info (Cols 0..8)
+        { v: 'PROJECT', t: 's', s: groupHeaderStyle },
+        '', '', '', '', '', '', '', '',
+        // Item Info (Cols 9..13)
+        { v: 'ITEM', t: 's', s: groupHeaderStyle },
+        '', '', '', '',
+        // Spesifikasi (Cols 14..19)
+        { v: 'SPESIFIKASI', t: 's', s: groupHeaderStyle },
+        '', '', '', '', '',
+        // Procurement / Material (Cols 20..23)
+        { v: 'PROCUREMENT / MATERIAL', t: 's', s: groupHeaderStyle },
+        '', '', '',
+        // Progress (Cols 24..26)
+        { v: 'PROGRESS', t: 's', s: groupHeaderStyle },
+        '', '',
+      ];
+
+      // Header Row 2: Sub Column Headers
+      const colHeaderRow: any[] = [
+        { v: 'No', t: 's', s: subHeaderStyle },
+        { v: 'Client', t: 's', s: subHeaderStyle },
+        { v: 'No SPK', t: 's', s: subHeaderStyle },
+        { v: 'SPK Masuk', t: 's', s: subHeaderStyle },
+        { v: 'Nama Project', t: 's', s: subHeaderStyle },
+        { v: 'Prioritas', t: 's', s: subHeaderStyle },
+        { v: 'Team', t: 's', s: subHeaderStyle },
+        { v: 'Deadline', t: 's', s: subHeaderStyle },
+        { v: 'Jadwal Kirim', t: 's', s: subHeaderStyle },
+
+        { v: 'No Item', t: 's', s: subHeaderStyle },
+        { v: 'Lantai', t: 's', s: subHeaderStyle },
+        { v: 'Ruang', t: 's', s: subHeaderStyle },
+        { v: 'Nama Item', t: 's', s: subHeaderStyle },
+        { v: 'Deskripsi', t: 's', s: subHeaderStyle },
+
+        { v: 'Panjang', t: 's', s: subHeaderStyle },
+        { v: 'Lebar', t: 's', s: subHeaderStyle },
+        { v: 'Tinggi', t: 's', s: subHeaderStyle },
+        { v: 'Volume', t: 's', s: subHeaderStyle },
+        { v: 'Qty', t: 's', s: subHeaderStyle },
+        { v: 'Satuan', t: 's', s: subHeaderStyle },
+
+        { v: 'GK MDL', t: 's', s: subHeaderStyle },
+        { v: 'GK Custom', t: 's', s: subHeaderStyle },
+        { v: 'PO Divisi', t: 's', s: subHeaderStyle },
+        { v: 'Stok Material', t: 's', s: subHeaderStyle },
+
+        { v: 'Produksi', t: 's', s: subHeaderStyle },
+        { v: 'QC Cek', t: 's', s: subHeaderStyle },
+        { v: 'B. Jadi', t: 's', s: subHeaderStyle },
+      ];
+
+      const wsData: any[][] = [groupHeaderRow, colHeaderRow];
+      let rowCounter = 1;
+
+      projectsWithItems.forEach(({ project, items }, projIdx) => {
+        if (projIdx > 0) {
+          // Yellow blank separator row between projects
+          wsData.push(
+            Array.from({ length: 27 }, () => ({
+              v: '',
+              t: 's',
+              s: yellowSeparatorStyle,
+            }))
+          );
+        }
+        const clientStr = project.client?.name || '-';
+        const noSpkStr = project.spk?.nomor_spk || project.spk_number || '-';
+        const spkMasukStr = project.spk?.tanggal_masuk
+          ? format(new Date(project.spk.tanggal_masuk), 'dd MMM yyyy')
+          : '-';
+        const nameStr = project.name || '-';
+        const prioritasStr = project.prioritas || '-';
+
+        let teamStr = '-';
+        if (project.project_team?.divisi_id) {
+          const teamNames = project.project_team.divisi_id
+            .split(',')
+            .map((idStr) => {
+              const id = parseInt(idStr.trim(), 10);
+              return divisionsMap.get(id);
+            })
+            .filter(Boolean);
+          if (teamNames.length > 0) {
+            teamStr = teamNames.join(', ');
+          }
+        }
+
+        const deadlineStr = project.deadline
+          ? format(new Date(project.deadline), 'dd MMM yyyy')
+          : '-';
+
+        const jadwalKirimStr = project.jadwal_pengiriman?.tanggal_pengiriman
+          ?.tanggal
+          ? format(
+              new Date(project.jadwal_pengiriman.tanggal_pengiriman.tanggal),
+              'dd MMM yyyy'
+            )
+          : '-';
+
+        if (items.length === 0) {
+          // Push 1 row with project info and empty item fields if no items
+          wsData.push([
+            { v: rowCounter++, t: 'n', s: cellStyleCenter },
+            { v: clientStr, t: 's', s: cellStyleLeft },
+            { v: noSpkStr, t: 's', s: cellStyleCenter },
+            { v: spkMasukStr, t: 's', s: cellStyleCenter },
+            { v: nameStr, t: 's', s: cellStyleLeft },
+            { v: prioritasStr, t: 's', s: cellStyleCenter },
+            { v: teamStr, t: 's', s: cellStyleLeft },
+            { v: deadlineStr, t: 's', s: cellStyleCenter },
+            { v: jadwalKirimStr, t: 's', s: cellStyleCenter },
+            // Item fields
+            { v: '-', t: 's', s: cellStyleCenter },
+            { v: '-', t: 's', s: cellStyleCenter },
+            { v: '-', t: 's', s: cellStyleCenter },
+            { v: '-', t: 's', s: cellStyleLeft },
+            { v: '-', t: 's', s: cellStyleLeft },
+            { v: '-', t: 's', s: cellStyleCenter },
+            { v: '-', t: 's', s: cellStyleCenter },
+            { v: '-', t: 's', s: cellStyleCenter },
+            { v: '-', t: 's', s: cellStyleCenter },
+            { v: '-', t: 's', s: cellStyleCenter },
+            { v: '-', t: 's', s: cellStyleCenter },
+            { v: '-', t: 's', s: cellStyleCenter },
+            { v: '-', t: 's', s: cellStyleCenter },
+            { v: '-', t: 's', s: cellStyleCenter },
+            { v: '-', t: 's', s: cellStyleCenter },
+            { v: '-', t: 's', s: cellStyleCenter },
+            { v: '-', t: 's', s: cellStyleCenter },
+            { v: '-', t: 's', s: cellStyleCenter },
+          ]);
+        } else {
+          items.forEach((item, itemIdx) => {
+            const noItemVal = itemIdx + 1;
+            const lantaiStr = item.lantai || '-';
+            const ruangStr = item.ruang || '-';
+            const namaItemStr = item.item || '-';
+            const deskripsiStr = item.keterangan || '-';
+
+            const panjangVal =
+              item.panjang !== null && item.panjang !== undefined
+                ? Number(item.panjang)
+                : '-';
+            const lebarVal =
+              item.lebar !== null && item.lebar !== undefined
+                ? Number(item.lebar)
+                : '-';
+            const tinggiVal =
+              item.tinggi !== null && item.tinggi !== undefined
+                ? Number(item.tinggi)
+                : '-';
+            const volumeVal =
+              item.volume !== null && item.volume !== undefined
+                ? Number(item.volume)
+                : '-';
+            const qtyVal =
+              item.jumlah !== null && item.jumlah !== undefined
+                ? Number(item.jumlah)
+                : 0;
+            const satuanStr = item.satuan || '-';
+
+            const gkMdlStr = item.mdl_item?.link_gambar_kerja ? 'Ada' : '-';
+            const gkCustomStr = item.gambar_kerja?.file ? 'Ada' : '-';
+            const poDivisiStr = item.divisi?.nama || '-';
+            const stokMaterialStr = item.bahan_baku?.ketersediaan_stok || '-';
+
+            const produksiStr = `${Math.round(item.produksi?.persen || 0)}%`;
+            const qcCekStr = item.qc_cek ? `${item.qc_cek.qty} Unit` : '-';
+            const bJadiStr =
+              item.barang_jadi_masuk && item.barang_jadi_masuk.length > 0
+                ? `${item.barang_jadi_masuk.reduce(
+                    (sum, bj) => sum + Number(bj.jumlah),
+                    0
+                  )} / ${item.jumlah}`
+                : `0 / ${item.jumlah}`;
+
+            wsData.push([
+              { v: rowCounter++, t: 'n', s: cellStyleCenter },
+              { v: clientStr, t: 's', s: cellStyleLeft },
+              { v: noSpkStr, t: 's', s: cellStyleCenter },
+              { v: spkMasukStr, t: 's', s: cellStyleCenter },
+              { v: nameStr, t: 's', s: cellStyleLeft },
+              { v: prioritasStr, t: 's', s: cellStyleCenter },
+              { v: teamStr, t: 's', s: cellStyleLeft },
+              { v: deadlineStr, t: 's', s: cellStyleCenter },
+              { v: jadwalKirimStr, t: 's', s: cellStyleCenter },
+
+              { v: noItemVal, t: 'n', s: cellStyleCenter },
+              { v: lantaiStr, t: 's', s: cellStyleCenter },
+              { v: ruangStr, t: 's', s: cellStyleLeft },
+              { v: namaItemStr, t: 's', s: cellStyleLeft },
+              { v: deskripsiStr, t: 's', s: cellStyleLeft },
+
+              {
+                v: panjangVal,
+                t: typeof panjangVal === 'number' ? 'n' : 's',
+                s: cellStyleCenter,
+              },
+              {
+                v: lebarVal,
+                t: typeof lebarVal === 'number' ? 'n' : 's',
+                s: cellStyleCenter,
+              },
+              {
+                v: tinggiVal,
+                t: typeof tinggiVal === 'number' ? 'n' : 's',
+                s: cellStyleCenter,
+              },
+              {
+                v: volumeVal,
+                t: typeof volumeVal === 'number' ? 'n' : 's',
+                s: cellStyleCenter,
+              },
+              { v: qtyVal, t: 'n', s: cellStyleCenter },
+              { v: satuanStr, t: 's', s: cellStyleCenter },
+
+              { v: gkMdlStr, t: 's', s: cellStyleCenter },
+              { v: gkCustomStr, t: 's', s: cellStyleCenter },
+              { v: poDivisiStr, t: 's', s: cellStyleLeft },
+              { v: stokMaterialStr, t: 's', s: cellStyleCenter },
+
+              { v: produksiStr, t: 's', s: cellStyleCenter },
+              { v: qcCekStr, t: 's', s: cellStyleCenter },
+              { v: bJadiStr, t: 's', s: cellStyleCenter },
+            ]);
+          });
+        }
+      });
+
+      const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+      // Header Merges for Group Header Row
+      ws['!merges'] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 8 } },   // PROJECT
+        { s: { r: 0, c: 9 }, e: { r: 0, c: 13 } },  // ITEM
+        { s: { r: 0, c: 14 }, e: { r: 0, c: 19 } }, // SPESIFIKASI
+        { s: { r: 0, c: 20 }, e: { r: 0, c: 23 } }, // PROCUREMENT / MATERIAL
+        { s: { r: 0, c: 24 }, e: { r: 0, c: 26 } }, // PROGRESS
+      ];
+
+      // Auto Filter on Header Row 2
+      ws['!autofilter'] = {
+        ref: XLSX.utils.encode_range({
+          s: { r: 1, c: 0 },
+          e: { r: wsData.length - 1, c: 26 },
+        }),
+      };
+
+      // Freeze Row 1 & 2
+      ws['!views'] = [{ state: 'frozen', xSplit: 0, ySplit: 2 }];
+
+      // Column Widths
+      ws['!cols'] = [
+        { wch: 8 },  // No
+        { wch: 25 }, // Client
+        { wch: 15 }, // No SPK
+        { wch: 15 }, // SPK Masuk
+        { wch: 30 }, // Nama Project
+        { wch: 15 }, // Prioritas
+        { wch: 20 }, // Team
+        { wch: 15 }, // Deadline
+        { wch: 15 }, // Jadwal Kirim
+
+        { wch: 10 }, // No Item
+        { wch: 15 }, // Lantai
+        { wch: 20 }, // Ruang
+        { wch: 30 }, // Nama Item
+        { wch: 40 }, // Deskripsi
+
+        { wch: 12 }, // Panjang
+        { wch: 12 }, // Lebar
+        { wch: 12 }, // Tinggi
+        { wch: 12 }, // Volume
+        { wch: 10 }, // Qty
+        { wch: 12 }, // Satuan
+
+        { wch: 15 }, // GK MDL
+        { wch: 15 }, // GK Custom
+        { wch: 15 }, // PO Divisi
+        { wch: 18 }, // Stok Material
+
+        { wch: 15 }, // Produksi
+        { wch: 15 }, // QC Cek
+        { wch: 15 }, // B. Jadi
+      ];
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Project Items');
+
+      const dateStr = format(new Date(), 'yyyy-MM-dd');
+      let fileName = `Export_Project_Items_${dateStr}.xlsx`;
+      if (selectedProjects.length === 1) {
+        const spkNo = (
+          selectedProjects[0].spk?.nomor_spk ||
+          selectedProjects[0].spk_number ||
+          'Project'
+        ).replace(/[^a-zA-Z0-9 _-]/g, '');
+        fileName = `Export_Project_${spkNo}_${dateStr}.xlsx`;
+      }
+
+      XLSX.writeFile(wb, fileName);
+
+      toast.success('Excel berhasil diexport');
+    } catch (error) {
+      console.error('Failed to export excel:', error);
+      toast.error('Gagal melakukan export Excel');
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   return (
     <div className='space-y-6 w-full max-w-full overflow-hidden'>
@@ -2416,10 +2879,63 @@ export function ProjectsV2Table({
             )}
           </div>
 
+          {showProduksi && selectedProjectIds.length > 0 && (
+            <div className='flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl border border-emerald-200 bg-emerald-50/70 text-emerald-900 shadow-sm animate-in fade-in slide-in-from-top-1 duration-200'>
+              <div className='flex items-center gap-2 text-xs font-semibold'>
+                <CheckCircle2 className='h-4 w-4 text-emerald-600' />
+                <span>{selectedProjectIds.length} project dipilih</span>
+              </div>
+              <div className='flex items-center gap-2'>
+                <Button
+                  size='sm'
+                  disabled={isExporting}
+                  onClick={handleExportExcelSelected}
+                  className='h-8 text-xs gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-xs'
+                >
+                  {isExporting ? (
+                    <>
+                      <Loader2 className='h-3.5 w-3.5 animate-spin' />
+                      Menyiapkan Excel...
+                    </>
+                  ) : (
+                    <>
+                      <FileSpreadsheet className='h-3.5 w-3.5' />
+                      Export Excel
+                    </>
+                  )}
+                </Button>
+                <Button
+                  size='sm'
+                  variant='outline'
+                  disabled={isExporting}
+                  onClick={() => setSelectedProjectIds([])}
+                  className='h-8 text-xs border-emerald-300 text-emerald-800 hover:bg-emerald-100 hover:text-emerald-900 bg-white'
+                >
+                  Batal
+                </Button>
+              </div>
+            </div>
+          )}
+
           <div className='rounded-md border overflow-x-auto w-full'>
             <Table>
               <TableHeader className='bg-neutral-50'>
                 <TableRow>
+                  {showProduksi && (
+                    <TableHead className='w-[40px] px-3 text-center'>
+                      <Checkbox
+                        checked={
+                          isAllDisplayedSelected
+                            ? true
+                            : isSomeDisplayedSelected
+                            ? 'indeterminate'
+                            : false
+                        }
+                        onCheckedChange={handleToggleSelectAllDisplayed}
+                        aria-label='Select all projects'
+                      />
+                    </TableHead>
+                  )}
                   <TableHead className='w-[50px]'>#</TableHead>
                   <TableHead className='w-[100px] text-left'>
                     ACTION
@@ -2905,7 +3421,7 @@ export function ProjectsV2Table({
                           : showPurchasing
                           ? 11
                           : showProduksi
-                          ? 11
+                          ? 12
                           : showPiutang
                           ? 14
                           : isMainProjectsV2Page || showPerencanaan
@@ -2930,7 +3446,7 @@ export function ProjectsV2Table({
                           : showPurchasing
                           ? 11
                           : showProduksi
-                          ? 11
+                          ? 12
                           : showPiutang
                           ? 14
                           : isMainProjectsV2Page || showPerencanaan
@@ -2945,6 +3461,17 @@ export function ProjectsV2Table({
                 ) : (
                   projects.map((project, index) => (
                     <TableRow key={project.id}>
+                      {showProduksi && (
+                        <TableCell className='w-[40px] px-3 text-center'>
+                          <Checkbox
+                            checked={selectedProjectIds.includes(project.id)}
+                            onCheckedChange={() =>
+                              handleToggleSelectProject(project.id)
+                            }
+                            aria-label={`Select project ${project.name}`}
+                          />
+                        </TableCell>
+                      )}
 
                       <TableCell className='font-medium text-muted-foreground'>
                         {(page - 1) * 10 + index + 1}
