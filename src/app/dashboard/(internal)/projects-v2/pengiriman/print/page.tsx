@@ -702,6 +702,53 @@ export default function PrintSuratJalanPage() {
         merges.push({ s: { r: rHeader1, c: 7 }, e: { r: rHeader2, c: 7 } }); // SAT
         merges.push({ s: { r: rHeader1, c: 8 }, e: { r: rHeader2, c: 8 } }); // JML
         merges.push({ s: { r: rHeader1, c: 9 }, e: { r: rHeader2, c: 9 } }); // KET
+
+        // Data
+        if (pengiriman.details) {
+          pengiriman.details.forEach((detail, index) => {
+            wsData.push([
+              { v: index + 1, t: 'n', s: dataStyleCenter },
+              {
+                v: detail.project_item?.ruang || '-',
+                t: 's',
+                s: dataStyleCenter,
+              },
+              {
+                v: detail.project_item?.item || '-',
+                t: 's',
+                s: dataStyleLeft,
+              },
+              {
+                v: detail.project_item?.panjang || '-',
+                t: 's',
+                s: dataStyleCenter,
+              },
+              {
+                v: detail.project_item?.lebar || '-',
+                t: 's',
+                s: dataStyleCenter,
+              },
+              {
+                v: detail.project_item?.tinggi || '-',
+                t: 's',
+                s: dataStyleCenter,
+              },
+              {
+                v: detail.project_item?.volume ?? '-',
+                t: 's',
+                s: dataStyleCenter,
+              },
+              {
+                v: detail.project_item?.satuan || '-',
+                t: 's',
+                s: dataStyleCenter,
+              },
+              { v: detail.jumlah_keluar || 0, t: 'n', s: dataStyleCenter },
+              { v: detail.keterangan || '-', t: 's', s: dataStyleLeft },
+            ]);
+          });
+        }
+
         wsData.push([]);
 
         // SETRIM Note
@@ -1058,6 +1105,7 @@ export default function PrintSuratJalanPage() {
             overflow: visible !important;
             padding: 0 !important;
             margin: 0 !important;
+            background: #fff !important;
           }
           body * {
             visibility: hidden;
@@ -1068,20 +1116,33 @@ export default function PrintSuratJalanPage() {
             visibility: visible;
           }
           #print-area {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-            margin: 0;
-            padding: 0;
+            position: relative !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            max-width: 100% !important;
+            height: auto !important;
+            overflow: visible !important;
           }
           .no-print {
             display: none !important;
           }
+          table {
+            page-break-inside: auto;
+          }
+          tr {
+            page-break-inside: avoid;
+            page-break-after: auto;
+          }
+          thead {
+            display: table-header-group;
+          }
         }
         @page {
           size: A4;
-          margin: 15mm 15mm 15mm 15mm;
+          margin: 15mm;
         }
       `,
         }}
