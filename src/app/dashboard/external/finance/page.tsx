@@ -34,8 +34,8 @@ export default function FinanceOverviewPage() {
     })
 
     const { data: penagihanList = [], isLoading: isLoadingPenagihan } = useQuery({
-        queryKey: ["penagihan-all"],
-        queryFn: () => penagihanService.getAllPenagihan()
+        queryKey: ["penagihan-all", user?.client_id],
+        queryFn: () => penagihanService.getAllPenagihan(user?.client_id ?? undefined)
     })
 
     const filteredPenagihanList = React.useMemo(() => {
@@ -61,11 +61,59 @@ export default function FinanceOverviewPage() {
         });
     }, [penagihanList, user]);
 
-    if (isLoading) {
+    const totalTagihan = React.useMemo(() => {
+        return filteredPenagihanList.reduce((acc: number, inv: any) => {
+            const val = typeof inv.nominal_penagihan === 'number'
+                ? inv.nominal_penagihan
+                : parseFloat(inv.nominal_penagihan || '0');
+            return acc + (isNaN(val) ? 0 : val);
+        }, 0);
+    }, [filteredPenagihanList]);
+
+    const totalTerbayar = React.useMemo(() => {
+        return filteredPenagihanList.reduce((acc: number, inv: any) => {
+            const status = String(inv.status || '').toLowerCase();
+            const nominalPenagihan = typeof inv.nominal_penagihan === 'number'
+                ? inv.nominal_penagihan
+                : parseFloat(inv.nominal_penagihan || '0');
+            const nominalDibayar = typeof inv.nominal_dibayar === 'number'
+                ? inv.nominal_dibayar
+                : parseFloat(inv.nominal_dibayar || '0');
+
+            if (status === 'lunas' || status === 'paid') {
+                const amount = !isNaN(nominalDibayar) && nominalDibayar > 0 ? nominalDibayar : nominalPenagihan;
+                return acc + (isNaN(amount) ? 0 : amount);
+            } else if (status === 'sebagian dibayar') {
+                return acc + (isNaN(nominalDibayar) ? 0 : nominalDibayar);
+            }
+            return acc;
+        }, 0);
+    }, [filteredPenagihanList]);
+
+    const totalBelumTerbayar = React.useMemo(() => {
+        return Math.max(0, totalTagihan - totalTerbayar);
+    }, [totalTagihan, totalTerbayar]);
+
+    const nextDueDate = React.useMemo(() => {
+        const upcoming = filteredPenagihanList
+            .filter((inv: any) => inv.jatuh_tempo && String(inv.status || '').toLowerCase() !== 'lunas')
+            .map((inv: any) => inv.jatuh_tempo)
+            .sort();
+        if (upcoming.length > 0) {
+            try {
+                return format(new Date(upcoming[0]), 'dd MMM yyyy');
+            } catch {
+                return upcoming[0];
+            }
+        }
+        return '-';
+    }, [filteredPenagihanList]);
+
+    if (isLoading || isLoadingPenagihan) {
         return <div className="p-8"><Skeleton className="h-96 w-full rounded-xl" /></div>
     }
 
-    const summary: any = (data as any)?.summary || {};
+    const paidPercentage = totalTagihan > 0 ? ((totalTerbayar / totalTagihan) * 100).toFixed(1) : '0.0';
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
@@ -83,39 +131,39 @@ export default function FinanceOverviewPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <Card className="bg-neutral-900 text-white border-neutral-800">
                     <CardHeader className="pb-2">
-                        <CardDescription className="text-neutral-400">Total Contract Value</CardDescription>
-                        <CardTitle className="text-3xl font-medium">Rp {summary.total_contract_value?.toLocaleString()}</CardTitle>
+                        <CardDescription className="text-neutral-400">Total Tagihan</CardDescription>
+                        <CardTitle className="text-3xl font-medium">Rp {totalTagihan.toLocaleString('id-ID')}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="flex items-center gap-2 text-sm text-neutral-400">
                             <TrendingUp className="h-4 w-4 text-emerald-400" />
-                            <span>Across all active projects</span>
+                            <span>Across all active invoices</span>
                         </div>
                     </CardContent>
                 </Card>
 
                 <Card>
                     <CardHeader className="pb-2">
-                        <CardDescription>Total Paid</CardDescription>
-                        <CardTitle className="text-3xl font-medium text-emerald-600">Rp {summary.total_paid?.toLocaleString()}</CardTitle>
+                        <CardDescription>Total Terbayar</CardDescription>
+                        <CardTitle className="text-3xl font-medium text-emerald-600">Rp {totalTerbayar.toLocaleString('id-ID')}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="flex items-center gap-2 text-sm text-neutral-500">
                             <CreditCard className="h-4 w-4 text-neutral-400" />
-                            <span>{((summary.total_paid || 0) / (summary.total_contract_value || 1) * 100).toFixed(1)}% of total value</span>
+                            <span>{paidPercentage}% dari total tagihan</span>
                         </div>
                     </CardContent>
                 </Card>
 
                 <Card>
                     <CardHeader className="pb-2">
-                        <CardDescription>Outstanding (Unpaid)</CardDescription>
-                        <CardTitle className="text-3xl font-medium text-orange-600">Rp {summary.total_outstanding?.toLocaleString()}</CardTitle>
+                        <CardDescription>Belum terbayar</CardDescription>
+                        <CardTitle className="text-3xl font-medium text-orange-600">Rp {totalBelumTerbayar.toLocaleString('id-ID')}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="flex items-center gap-2 text-sm text-neutral-500">
                             <AlertCircle className="h-4 w-4 text-orange-400" />
-                            <span>Next Due: {summary.upcoming_due_date}</span>
+                            <span>Next Due: {nextDueDate}</span>
                         </div>
                     </CardContent>
                 </Card>
@@ -136,15 +184,16 @@ export default function FinanceOverviewPage() {
                                     <th className="px-4 py-3">Nomor SPK</th>
                                     <th className="px-4 py-3">Project</th>
                                     <th className="px-4 py-3">Due Date</th>
-                                    <th className="px-4 py-3">Status</th>
                                     <th className="px-4 py-3 text-right">Nominal Tagihan</th>
-                                    <th className="px-4 py-3 text-right">Action</th>
+                                    <th className="px-4 py-3 text-right">Nominal Terbayar</th>
+                                    <th className="px-4 py-3 text-center">Status</th>
+                                    <th className="px-4 py-3 text-right">File</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-neutral-100 bg-white">
                                 {isLoadingPenagihan ? (
                                     <tr>
-                                        <td colSpan={7} className="py-8 text-center text-neutral-400">
+                                        <td colSpan={8} className="py-8 text-center text-neutral-400">
                                             <div className="flex items-center justify-center gap-2">
                                                 <Loader2 className="h-4 w-4 animate-spin text-neutral-500" />
                                                 <span>Loading invoice data...</span>
@@ -153,7 +202,7 @@ export default function FinanceOverviewPage() {
                                     </tr>
                                 ) : filteredPenagihanList.length === 0 ? (
                                     <tr>
-                                        <td colSpan={7} className="text-center py-8 text-neutral-400">No invoices found.</td>
+                                        <td colSpan={8} className="text-center py-8 text-neutral-400">No invoices found.</td>
                                     </tr>
                                 ) : (
                                     filteredPenagihanList.map((inv: Penagihan) => {
@@ -175,6 +224,10 @@ export default function FinanceOverviewPage() {
                                             : (inv as any).due_date || '-';
 
                                         const statusStr = String(inv.status || '');
+                                        const isLunas = statusStr.toLowerCase() === 'lunas' || statusStr.toLowerCase() === 'paid';
+                                        const nominalTerbayarVal = isLunas && (!inv.nominal_dibayar || Number(inv.nominal_dibayar) === 0)
+                                            ? inv.nominal_penagihan
+                                            : inv.nominal_dibayar;
 
                                         return (
                                             <tr key={inv.id} className="hover:bg-neutral-50 transition-colors">
@@ -190,21 +243,24 @@ export default function FinanceOverviewPage() {
                                                 <td className="px-4 py-4 text-neutral-500">
                                                     {dueDateStr}
                                                 </td>
-                                                <td className="px-4 py-4">
+                                                <td className="px-4 py-4 text-right text-neutral-900 font-medium">
+                                                    {formatRupiah(inv.nominal_penagihan)}
+                                                </td>
+                                                <td className="px-4 py-4 text-right text-emerald-600 font-medium">
+                                                    {formatRupiah(nominalTerbayarVal)}
+                                                </td>
+                                                <td className="px-4 py-4 text-center">
                                                     <Badge
                                                         variant="secondary"
                                                         className={cn(
                                                             "font-semibold text-xs",
-                                                            (statusStr === 'Lunas' || statusStr === 'paid') && 'bg-emerald-100 text-emerald-700 border-emerald-200',
+                                                            isLunas && 'bg-emerald-100 text-emerald-700 border-emerald-200',
                                                             (statusStr === 'Sebagian Dibayar' || statusStr === 'unpaid') && 'bg-amber-100 text-amber-700 border-amber-200',
                                                             (statusStr === 'Belum Bayar' || statusStr === 'overdue') && 'bg-red-100 text-red-700 border-red-200'
                                                         )}
                                                     >
                                                         {inv.status || '-'}
                                                     </Badge>
-                                                </td>
-                                                <td className="px-4 py-4 text-right text-neutral-900 font-medium">
-                                                    {formatRupiah(inv.nominal_penagihan)}
                                                 </td>
                                                 <td className="px-4 py-4 text-right">
                                                     {fileUrl ? (
