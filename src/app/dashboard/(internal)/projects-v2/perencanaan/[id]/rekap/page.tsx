@@ -323,6 +323,23 @@ export default function PerencanaanRekapPage() {
   const handleExportExcel = () => {
     try {
       const wb = XLSX.utils.book_new();
+
+      const clientName = project?.client?.name || '-';
+      const nomorSpk = project?.spk_number || project?.spk?.nomor_spk || '-';
+      const deadlineStr = project?.deadline
+        ? format(new Date(project.deadline), 'dd/MM/yyyy')
+        : '-';
+
+      const headerLabelStyle = {
+        font: { bold: true, sz: 10 },
+        alignment: { horizontal: 'left', vertical: 'center' },
+      };
+
+      const headerValueStyle = {
+        font: { sz: 10 },
+        alignment: { horizontal: 'left', vertical: 'center' },
+      };
+
       const headerStyle = {
         font: { bold: true, sz: 10 },
         alignment: { horizontal: 'center', vertical: 'center' },
@@ -358,6 +375,19 @@ export default function PerencanaanRekapPage() {
       };
 
       const wsData: any[][] = [
+        [
+          { v: 'Client:', t: 's', s: headerLabelStyle },
+          { v: clientName, t: 's', s: headerValueStyle },
+        ],
+        [
+          { v: 'Nomor SPK:', t: 's', s: headerLabelStyle },
+          { v: nomorSpk, t: 's', s: headerValueStyle },
+        ],
+        [
+          { v: 'Deadline:', t: 's', s: headerLabelStyle },
+          { v: deadlineStr, t: 's', s: headerValueStyle },
+        ],
+        [],
         [
           { v: 'NO', t: 's', s: headerStyle },
           { v: 'ITEM NAME', t: 's', s: headerStyle },
