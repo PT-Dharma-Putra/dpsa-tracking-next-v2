@@ -65,7 +65,7 @@ export default function FinanceOverviewPage() {
         return <div className="p-8"><Skeleton className="h-96 w-full rounded-xl" /></div>
     }
 
-    const { summary } = data || { summary: {} }
+    const summary: any = (data as any)?.summary || {};
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
@@ -174,6 +174,8 @@ export default function FinanceOverviewPage() {
                                             ? format(new Date(inv.jatuh_tempo), 'dd MMM yyyy')
                                             : (inv as any).due_date || '-';
 
+                                        const statusStr = String(inv.status || '');
+
                                         return (
                                             <tr key={inv.id} className="hover:bg-neutral-50 transition-colors">
                                                 <td className="px-4 py-4 font-medium text-neutral-900">
@@ -193,9 +195,9 @@ export default function FinanceOverviewPage() {
                                                         variant="secondary"
                                                         className={cn(
                                                             "font-semibold text-xs",
-                                                            (inv.status === 'Lunas' || inv.status === 'paid') && 'bg-emerald-100 text-emerald-700 border-emerald-200',
-                                                            (inv.status === 'Sebagian Dibayar' || inv.status === 'unpaid') && 'bg-amber-100 text-amber-700 border-amber-200',
-                                                            (inv.status === 'Belum Bayar' || inv.status === 'overdue') && 'bg-red-100 text-red-700 border-red-200'
+                                                            (statusStr === 'Lunas' || statusStr === 'paid') && 'bg-emerald-100 text-emerald-700 border-emerald-200',
+                                                            (statusStr === 'Sebagian Dibayar' || statusStr === 'unpaid') && 'bg-amber-100 text-amber-700 border-amber-200',
+                                                            (statusStr === 'Belum Bayar' || statusStr === 'overdue') && 'bg-red-100 text-red-700 border-red-200'
                                                         )}
                                                     >
                                                         {inv.status || '-'}
