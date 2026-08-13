@@ -71,7 +71,7 @@ export default function ClientProjectDetailPage({ params }: { params: Promise<{ 
                     <TabsTrigger value="tracking" className="px-6 data-[state=active]:bg-white data-[state=active]:text-orange-600 data-[state=active]:shadow-sm">Tracking & Status</TabsTrigger>
                     <TabsTrigger value="designs" className="px-6 data-[state=active]:bg-white data-[state=active]:text-orange-600 data-[state=active]:shadow-sm">Design Approvals</TabsTrigger>
                     <TabsTrigger value="docs" className="px-6 data-[state=active]:bg-white data-[state=active]:text-orange-600 data-[state=active]:shadow-sm">Documents</TabsTrigger>
-                    <TabsTrigger value="chat" className="px-6 data-[state=active]:bg-white data-[state=active]:text-orange-600 data-[state=active]:shadow-sm">Discussion</TabsTrigger>
+                    {/* <TabsTrigger value="chat" className="px-6 data-[state=active]:bg-white data-[state=active]:text-orange-600 data-[state=active]:shadow-sm">Discussion</TabsTrigger> */}
                 </TabsList>
 
                 <TabsContent value="tracking" className="space-y-6">
@@ -789,7 +789,7 @@ function DocumentsTabContent({ projectId }: { projectId: string }) {
             )}
 
             {/* 4. Invoices */}
-            <Card>
+            {/* <Card>
                 <CardHeader>
                     <CardTitle>Invoices</CardTitle>
                     <CardDescription>Payment history and pending bills.</CardDescription>
@@ -818,7 +818,7 @@ function DocumentsTabContent({ projectId }: { projectId: string }) {
                         ))
                     )}
                 </CardContent>
-            </Card>
+            </Card> */}
         </div >
     )
 }

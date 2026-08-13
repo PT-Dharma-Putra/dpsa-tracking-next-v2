@@ -34,6 +34,8 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 
+import { Checkbox } from '@/components/ui/checkbox';
+import { cn } from '@/lib/utils';
 import {
   PengirimanService,
   Pengiriman,
@@ -47,6 +49,7 @@ export default function PengirimanPage() {
   const [clientId, setClientId] = React.useState('');
   const [page, setPage] = React.useState(1);
   const [debouncedSearch, setDebouncedSearch] = React.useState('');
+  const [selectedIds, setSelectedIds] = React.useState<number[]>([]);
 
   // Form dialog state
   const [dialogOpen, setDialogOpen] = React.useState(false);
@@ -82,6 +85,39 @@ export default function PengirimanPage() {
         per_page: 10,
       }),
   });
+
+  const currentShipments = shipmentsData?.data || [];
+  const currentIds = currentShipments.map((s) => s.id);
+
+  const isAllSelected =
+    currentIds.length > 0 && currentIds.every((id) => selectedIds.includes(id));
+  const isSomeSelected =
+    currentIds.some((id) => selectedIds.includes(id)) && !isAllSelected;
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      const combined = Array.from(new Set([...selectedIds, ...currentIds]));
+      setSelectedIds(combined);
+    } else {
+      setSelectedIds(selectedIds.filter((id) => !currentIds.includes(id)));
+    }
+  };
+
+  const handleToggleRow = (id: number) => {
+    if (selectedIds.includes(id)) {
+      setSelectedIds(selectedIds.filter((item) => item !== id));
+    } else {
+      setSelectedIds([...selectedIds, id]);
+    }
+  };
+
+  const handleBulkPrint = () => {
+    if (selectedIds.length === 0) return;
+    window.open(
+      `/dashboard/projects-v2/pengiriman/print?ids=${selectedIds.join(',')}`,
+      '_blank'
+    );
+  };
 
   // Fetch Clients for Filter dropdown (small list is fine)
   const { data: clientsResponse } = useQuery({
@@ -184,6 +220,37 @@ export default function PengirimanPage() {
         </div>
       </div>
 
+      {/* Contextual Bulk Action Bar */}
+      {selectedIds.length > 0 && (
+        <div className='bg-neutral-900 text-white rounded-xl p-4 flex flex-wrap items-center justify-between gap-4 shadow-lg animate-in fade-in slide-in-from-top-2 duration-300'>
+          <div className='flex items-center gap-3'>
+            <span className='inline-flex items-center justify-center bg-primary text-white text-xs font-semibold px-2.5 py-1 rounded-full'>
+              ✓ {selectedIds.length} pengiriman dipilih
+            </span>
+            <span className='text-xs text-neutral-300 hidden sm:inline'>
+              Siap untuk dicetak sekaligus dalam satu dokumen Surat Jalan.
+            </span>
+          </div>
+
+          <div className='flex items-center gap-2'>
+            <Button
+              onClick={handleBulkPrint}
+              className='bg-white text-neutral-900 hover:bg-neutral-100 font-medium text-xs h-9 gap-2'
+            >
+              <Printer className='h-4 w-4 text-neutral-700' />
+              Cetak Surat Jalan ({selectedIds.length})
+            </Button>
+            <Button
+              variant='outline'
+              onClick={() => setSelectedIds([])}
+              className='border-neutral-700 text-neutral-300 hover:bg-neutral-800 hover:text-white text-xs h-9'
+            >
+              Batal
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Table Card */}
       <div className='bg-white rounded-xl shadow-sm border border-neutral-200 overflow-hidden'>
         {isLoadingShipments ? (
@@ -201,6 +268,19 @@ export default function PengirimanPage() {
             <table className='w-full text-sm text-left border-collapse'>
               <thead>
                 <tr className='bg-neutral-50/70 border-b border-neutral-200 text-neutral-500 font-semibold text-xs uppercase tracking-wider'>
+                  <th className='p-4 w-10 text-center'>
+                    <Checkbox
+                      checked={
+                        isAllSelected
+                          ? true
+                          : isSomeSelected
+                          ? 'indeterminate'
+                          : false
+                      }
+                      onCheckedChange={(checked) => handleSelectAll(!!checked)}
+                      aria-label='Pilih semua pengiriman'
+                    />
+                  </th>
                   <th className='p-4'>Tanggal</th>
                   <th className='p-4'>Client</th>
                   <th className='p-4'>Surat Jalan</th>
@@ -214,8 +294,19 @@ export default function PengirimanPage() {
                 {shipmentsData.data.map((item) => (
                   <tr
                     key={item.id}
-                    className='hover:bg-neutral-50/50 transition-colors'
+                    className={cn(
+                      'hover:bg-neutral-50/50 transition-colors',
+                      selectedIds.includes(item.id) && 'bg-blue-50/40 hover:bg-blue-50/60'
+                    )}
                   >
+                    {/* Checkbox */}
+                    <td className='p-4 text-center'>
+                      <Checkbox
+                        checked={selectedIds.includes(item.id)}
+                        onCheckedChange={() => handleToggleRow(item.id)}
+                        aria-label={`Pilih pengiriman ${item.id}`}
+                      />
+                    </td>
                     {/* Tanggal */}
                     <td className='p-4 whitespace-nowrap font-medium text-neutral-700'>
                       <div className='flex items-center gap-2'>
