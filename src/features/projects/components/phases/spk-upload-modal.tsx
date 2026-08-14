@@ -20,13 +20,12 @@ interface SPKUploadModalProps {
 export function SPKUploadModal({ open, onOpenChange, projectId, onSuccess }: SPKUploadModalProps) {
     const queryClient = useQueryClient()
     const [spkNumber, setSpkNumber] = useState("")
-    const [deadline, setDeadline] = useState("")
     const [file, setFile] = useState<File | null>(null)
 
     // Mutation 1: Save Number
     const saveNumberMutation = useMutation({
-        mutationFn: (variable: { id: number, number: string, deadline?: string }) =>
-            ProjectService.saveSPKNumber(variable.id, variable.number, variable.deadline)
+        mutationFn: (variable: { id: number, number: string }) =>
+            ProjectService.saveSPKNumber(variable.id, variable.number)
     })
 
     // Mutation 2: Upload File
@@ -43,7 +42,7 @@ export function SPKUploadModal({ open, onOpenChange, projectId, onSuccess }: SPK
 
         try {
             // 1. Save Number first
-            await saveNumberMutation.mutateAsync({ id: projectId, number: spkNumber, deadline: deadline || undefined })
+            await saveNumberMutation.mutateAsync({ id: projectId, number: spkNumber })
 
             // 2. Upload File
             await uploadFileMutation.mutateAsync({ id: projectId, file: file })
@@ -72,23 +71,13 @@ export function SPKUploadModal({ open, onOpenChange, projectId, onSuccess }: SPK
                 </DialogHeader>
 
                 <div className="space-y-4 py-4">
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label>SPK Number</Label>
-                            <Input
-                                placeholder="e.g. 001/SPK/DPSA/I/2026"
-                                value={spkNumber}
-                                onChange={(e) => setSpkNumber(e.target.value)}
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Deadline (Optional)</Label>
-                            <Input
-                                type="date"
-                                value={deadline}
-                                onChange={(e) => setDeadline(e.target.value)}
-                            />
-                        </div>
+                    <div className="space-y-2">
+                        <Label>SPK Number</Label>
+                        <Input
+                            placeholder="e.g. 001/SPK/DPSA/I/2026"
+                            value={spkNumber}
+                            onChange={(e) => setSpkNumber(e.target.value)}
+                        />
                     </div>
 
                     <div className="space-y-2">

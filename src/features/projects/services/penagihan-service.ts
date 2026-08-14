@@ -66,8 +66,10 @@ export const penagihanService = {
     },
 
     // Penagihan CRUD
-    getAllPenagihan: async (): Promise<Penagihan[]> => {
-        const { data } = await apiClient.get<Penagihan[]>('/penagihan/all');
+    getAllPenagihan: async (clientId?: number): Promise<Penagihan[]> => {
+        const { data } = await apiClient.get<Penagihan[]>('/penagihan/all', {
+            params: clientId ? { client_id: clientId } : {},
+        });
         return data;
     },
 

@@ -191,8 +191,11 @@ export interface ProjectV2Stats {
   total_spk: number;
   total_sph: number;
   sph_only: number;
+  belum_sph_spk?: number;
   selesai: number;
+  produksi_selesai?: number;
   on_progress: number;
+  produksi_on_progress?: number;
   belum_produksi: number;
   deadline_dekat: number;
   overdue: number;
@@ -554,7 +557,6 @@ export const projectV2Service = {
     payload: {
       nomor_spk: string;
       tanggal_spk?: string;
-      deadline?: string;
       prioritas?: string;
       tanggal_masuk?: string;
       nominal_dpp?: string;
@@ -569,7 +571,6 @@ export const projectV2Service = {
     if (payload.file) formData.append('file', payload.file);
     if (payload.tanggal_spk)
       formData.append('tanggal_spk', payload.tanggal_spk);
-    if (payload.deadline) formData.append('deadline', payload.deadline);
     if (payload.prioritas) formData.append('prioritas', payload.prioritas);
     if (payload.tanggal_masuk)
       formData.append('tanggal_masuk', payload.tanggal_masuk);
@@ -588,7 +589,6 @@ export const projectV2Service = {
     projectId: number,
     file: File,
     nomor_spk: string,
-    deadline?: string,
     prioritas?: string,
     tanggal_masuk?: string,
     nominal_dpp?: string,
@@ -600,7 +600,6 @@ export const projectV2Service = {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('nomor_spk', nomor_spk);
-    if (deadline) formData.append('deadline', deadline);
     if (prioritas) formData.append('prioritas', prioritas);
     if (tanggal_masuk) formData.append('tanggal_masuk', tanggal_masuk);
     if (nominal_dpp) formData.append('nominal_dpp', nominal_dpp);

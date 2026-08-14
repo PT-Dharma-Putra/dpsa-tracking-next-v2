@@ -56,6 +56,25 @@ const parseDatabaseNominal = (value: string | number | null | undefined) => {
     .replace(/,/g, '.');
   return parseFloat(cleanStr) || 0;
 };
+
+const formatShortValue = (val: number) => {
+  if (!val || isNaN(val) || val === 0) return '0';
+  if (val >= 1000000000) {
+    const formatted = (val / 1000000000)
+      .toFixed(2)
+      .replace(/\.0+$/, '')
+      .replace(/(\.\d)0$/, '$1');
+    return `${formatted} M`;
+  }
+  if (val >= 1000000) {
+    const formatted = (val / 1000000)
+      .toFixed(2)
+      .replace(/\.0+$/, '')
+      .replace(/(\.\d)0$/, '$1');
+    return `${formatted} Jt`;
+  }
+  return `${val}`;
+};
 import { format, differenceInDays, startOfDay } from 'date-fns';
 import {
   Receipt,
@@ -67,7 +86,12 @@ import {
   X,
   Search,
   ArrowUpDown,
+  FileText,
+  CircleDollarSign,
+  Clock,
 } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { getReportsData } from '@/features/dashboard/services/dashboard-reports-service';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -107,6 +131,7 @@ import {
 } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { cn } from '@/lib/utils';
 
 const storageBase = (
   process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
@@ -116,11 +141,13 @@ export default function RekapPenagihanPage() {
   const queryClient = useQueryClient();
 
   const [search, setSearch] = React.useState('');
-  const [sortInvoiceDirection, setSortInvoiceDirection] = React.useState<
-    'asc' | 'desc'
-  >('asc');
+  const [sortBy, setSortBy] = React.useState<'invoice' | 'aging'>('invoice');
+  const [sortDirection, setSortDirection] = React.useState<'asc' | 'desc'>('asc');
   const [filterMonth, setFilterMonth] = React.useState<string>('all');
   const [filterYear, setFilterYear] = React.useState<string>('all');
+  const [filterAging, setFilterAging] = React.useState<
+    'under30' | 'between31And60' | 'over60' | null
+  >(null);
   const [isFormOpen, setIsFormOpen] = React.useState(false);
   const [currentPage, setCurrentPage] = React.useState(1);
   const itemsPerPage = 10;
@@ -152,6 +179,55 @@ export default function RekapPenagihanPage() {
     queryFn: () => penagihanService.getAllPenagihan(),
   });
 
+  const { data: reportsData } = useQuery({
+    queryKey: ['dashboard-reports', filterMonth, filterYear],
+    queryFn: () =>
+      getReportsData({
+        month: filterMonth !== 'all' ? filterMonth : undefined,
+        year: filterYear !== 'all' ? filterYear : undefined,
+      }),
+  });
+
+  const piutang = reportsData?.piutang || {
+    total_tagihan: 0,
+    total_terbayar: 0,
+    sisa_piutang: 0,
+    persentase_sisa: 0,
+  };
+
+  const agingStats = React.useMemo(() => {
+    let under30Count = 0;
+    let between31And60Count = 0;
+    let over60Count = 0;
+
+    const today = startOfDay(new Date());
+
+    penagihanList.forEach((item) => {
+      if (item.status !== 'Lunas' && item.tanggal_invoice) {
+        const invDate = startOfDay(new Date(item.tanggal_invoice));
+        if (!isNaN(invDate.getTime())) {
+          const diff = differenceInDays(today, invDate);
+          if (diff <= 30) {
+            under30Count++;
+          } else if (diff <= 60) {
+            between31And60Count++;
+          } else {
+            over60Count++;
+          }
+        }
+      }
+    });
+
+    const totalActiveCount = under30Count + between31And60Count + over60Count;
+
+    return {
+      under30Count,
+      between31And60Count,
+      over60Count,
+      totalActiveCount,
+    };
+  }, [penagihanList]);
+
   const { data: terminList = [], isLoading: isLoadingTermin } = useQuery({
     queryKey: ['termin-all'],
     queryFn: () => penagihanService.getTermin(),
@@ -167,6 +243,7 @@ export default function RekapPenagihanPage() {
     }) => penagihanService.updatePenagihan(id, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['penagihan-all'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-reports'] });
       toast.success('Penagihan berhasil diperbarui');
       closeForm();
     },
@@ -177,6 +254,7 @@ export default function RekapPenagihanPage() {
     mutationFn: (id: number) => penagihanService.deletePenagihan(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['penagihan-all'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-reports'] });
       toast.success('Penagihan berhasil dihapus');
       setDeleteTarget(null);
     },
@@ -201,6 +279,7 @@ export default function RekapPenagihanPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['penagihan-all'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-reports'] });
       toast.success('Nominal SPK berhasil diperbarui');
       setIsEditingSpkNominal(false);
       setSpkNominalInput('');
@@ -319,21 +398,56 @@ export default function RekapPenagihanPage() {
         }
       }
 
-      return matchesSearch && matchesMonth && matchesYear;
+      let matchesAging = true;
+      if (filterAging) {
+        if (p.status === 'Lunas' || !p.tanggal_invoice) {
+          matchesAging = false;
+        } else {
+          const invDate = startOfDay(new Date(p.tanggal_invoice));
+          if (isNaN(invDate.getTime())) {
+            matchesAging = false;
+          } else {
+            const today = startOfDay(new Date());
+            const diff = differenceInDays(today, invDate);
+            if (filterAging === 'under30') {
+              matchesAging = diff <= 30;
+            } else if (filterAging === 'between31And60') {
+              matchesAging = diff >= 31 && diff <= 60;
+            } else if (filterAging === 'over60') {
+              matchesAging = diff > 60;
+            }
+          }
+        }
+      }
+
+      return matchesSearch && matchesMonth && matchesYear && matchesAging;
     })
     .sort((a, b) => {
+      if (sortBy === 'aging') {
+        const getAging = (item: Penagihan) => {
+          if (item.status === 'Lunas' || !item.tanggal_invoice) return -1;
+          const invDate = startOfDay(new Date(item.tanggal_invoice));
+          if (isNaN(invDate.getTime())) return -1;
+          return differenceInDays(startOfDay(new Date()), invDate);
+        };
+        const agingA = getAging(a);
+        const agingB = getAging(b);
+        const diff = agingA - agingB;
+        return sortDirection === 'asc' ? diff : -diff;
+      }
+
       const getNum = (inv: string | null | undefined) => {
         if (!inv) return Number.MAX_SAFE_INTEGER;
         const match = inv.match(/^(\d+)/);
         return match ? parseInt(match[1], 10) : Number.MAX_SAFE_INTEGER;
       };
       const diff = getNum(a.nomor_invoice) - getNum(b.nomor_invoice);
-      return sortInvoiceDirection === 'asc' ? diff : -diff;
+      return sortDirection === 'asc' ? diff : -diff;
     });
 
   React.useEffect(() => {
     setCurrentPage(1);
-  }, [search, filterMonth, filterYear]);
+  }, [search, filterMonth, filterYear, filterAging, sortBy, sortDirection]);
 
   const totalPages = Math.ceil(filteredPenagihans.length / itemsPerPage);
   const paginatedPenagihans = filteredPenagihans.slice(
@@ -352,6 +466,117 @@ export default function RekapPenagihanPage() {
         </p>
       </div>
 
+      {/* Summary Cards: Sisa Piutang & Umur Penagihan */}
+      <div className='flex flex-col md:flex-row items-stretch gap-4 w-full'>
+        {/* Card 1: Sisa Piutang */}
+        <div className='flex-1 flex flex-col gap-2 p-4 rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md max-w-md'>
+          <div className='flex items-center gap-2 border-b border-slate-100 pb-2'>
+            <div className='h-6 w-6 rounded bg-amber-100 flex items-center justify-center text-amber-600 shrink-0'>
+              <CircleDollarSign className='h-3.5 w-3.5' />
+            </div>
+            <p className='text-[10px] font-bold text-slate-500 uppercase tracking-wider'>
+              Sisa Piutang
+            </p>
+            <div className='ml-auto flex items-center gap-1.5'>
+              <span className='text-lg font-bold text-slate-800'>
+                {formatShortValue(piutang.sisa_piutang)}
+              </span>
+              <span className='text-[10px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-md'>
+                {piutang.persentase_sisa}%
+              </span>
+            </div>
+          </div>
+
+          <div className='flex flex-row gap-1.5 mt-auto'>
+            {/* Tagihan Luncur */}
+            <div className='flex-1 flex items-center justify-between p-1.5 rounded-lg border border-blue-100 bg-blue-50/50 text-[10px] select-none text-blue-700'>
+              <span className='truncate mr-1 font-medium'>Tagihan Luncur</span>
+              <span className='font-bold'>{formatShortValue(piutang.total_tagihan)}</span>
+            </div>
+
+            {/* Terbayar */}
+            <div className='flex-1 flex items-center justify-between p-1.5 rounded-lg border border-emerald-100 bg-emerald-50/50 text-[10px] select-none text-emerald-700'>
+              <span className='truncate mr-1 font-medium'>Terbayar</span>
+              <span className='font-bold'>{formatShortValue(piutang.total_terbayar)}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Card 2: Umur Penagihan */}
+        <div className='flex-1 flex flex-col gap-2 p-4 rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md max-w-md'>
+          <div className='flex items-center gap-2 border-b border-slate-100 pb-2'>
+            <div className='h-6 w-6 rounded bg-purple-100 flex items-center justify-center text-purple-600 shrink-0'>
+              <Clock className='h-3.5 w-3.5' />
+            </div>
+            <p className='text-[10px] font-bold text-slate-500 uppercase tracking-wider'>
+              Tagihan belum Lunas
+            </p>
+            <div className='ml-auto flex items-center gap-1'>
+              <span className='text-[10px] font-semibold text-slate-500'>Total:</span>
+              <span className='text-lg font-bold text-slate-800 ml-0.5'>
+                {agingStats.totalActiveCount}
+              </span>
+              <span className='text-[10px] font-medium text-slate-500'>Tagihan</span>
+            </div>
+          </div>
+
+          <div className='grid grid-cols-3 gap-1.5 mt-auto'>
+            {/* < 30 Hari */}
+            <div
+              onClick={() =>
+                setFilterAging(filterAging === 'under30' ? null : 'under30')
+              }
+              className={cn(
+                'flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                filterAging === 'under30'
+                  ? 'border-emerald-500 bg-emerald-100 text-emerald-800 ring-2 ring-emerald-500/20 font-bold'
+                  : 'border-emerald-100 bg-emerald-50/50 hover:border-emerald-300 text-emerald-700'
+              )}
+              title='Klik untuk memfilter umur penagihan < 30 Hari'
+            >
+              <span className='truncate font-medium'>&lt; 30 Hari</span>
+              <span className='font-bold ml-1'>{agingStats.under30Count}</span>
+            </div>
+
+            {/* 31 - 60 Hari */}
+            <div
+              onClick={() =>
+                setFilterAging(
+                  filterAging === 'between31And60' ? null : 'between31And60'
+                )
+              }
+              className={cn(
+                'flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                filterAging === 'between31And60'
+                  ? 'border-amber-500 bg-amber-100 text-amber-800 ring-2 ring-amber-500/20 font-bold'
+                  : 'border-amber-100 bg-amber-50/50 hover:border-amber-300 text-amber-700'
+              )}
+              title='Klik untuk memfilter umur penagihan 31-60 Hari'
+            >
+              <span className='truncate font-medium'>31-60 Hari</span>
+              <span className='font-bold ml-1'>{agingStats.between31And60Count}</span>
+            </div>
+
+            {/* > 60 Hari */}
+            <div
+              onClick={() =>
+                setFilterAging(filterAging === 'over60' ? null : 'over60')
+              }
+              className={cn(
+                'flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                filterAging === 'over60'
+                  ? 'border-rose-500 bg-rose-100 text-rose-800 ring-2 ring-rose-500/20 font-bold'
+                  : 'border-rose-100 bg-rose-50/50 hover:border-rose-300 text-rose-700'
+              )}
+              title='Klik untuk memfilter umur penagihan > 60 Hari'
+            >
+              <span className='truncate font-medium'>&gt; 60 Hari</span>
+              <span className='font-bold ml-1'>{agingStats.over60Count}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className='bg-white rounded-xl shadow-sm border border-neutral-200'>
         <div className='p-6 space-y-4'>
           <div className='flex flex-col md:flex-row md:items-center justify-between gap-4'>
@@ -360,8 +585,18 @@ export default function RekapPenagihanPage() {
                 <Receipt className='h-5 w-5 text-blue-600' />
               </div>
               <div>
-                <p className='text-sm font-semibold text-neutral-800'>
-                  Daftar Penagihan
+                <p className='text-sm font-semibold text-neutral-800 flex items-center gap-2'>
+                  <span>Daftar Penagihan</span>
+                  {filterAging && (
+                    <Badge
+                      variant='outline'
+                      className='text-[10px] bg-purple-50 text-purple-700 border-purple-200 cursor-pointer hover:bg-purple-100 transition-colors'
+                      onClick={() => setFilterAging(null)}
+                      title='Klik untuk menghapus filter umur penagihan'
+                    >
+                      Filter Umur: {filterAging === 'under30' ? '< 30 Hari' : filterAging === 'between31And60' ? '31-60 Hari' : '> 60 Hari'} ✕
+                    </Badge>
+                  )}
                 </p>
                 <p className='text-xs text-muted-foreground'>
                   {filteredPenagihans.length} tagihan terdaftar
@@ -424,16 +659,24 @@ export default function RekapPenagihanPage() {
                   <TableRow>
                     <TableHead className='w-[50px]'>No</TableHead>
                     <TableHead
-                      className='cursor-pointer hover:bg-neutral-200/50 transition-colors'
-                      onClick={() =>
-                        setSortInvoiceDirection((prev) =>
-                          prev === 'asc' ? 'desc' : 'asc'
-                        )
-                      }
+                      className='cursor-pointer hover:bg-neutral-200/50 transition-colors select-none'
+                      onClick={() => {
+                        if (sortBy === 'invoice') {
+                          setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+                        } else {
+                          setSortBy('invoice');
+                          setSortDirection('asc');
+                        }
+                      }}
                     >
                       <div className='flex items-center gap-2'>
                         NO INVOICE
-                        <ArrowUpDown className='h-3 w-3 text-neutral-400' />
+                        <ArrowUpDown
+                          className={cn(
+                            'h-3 w-3',
+                            sortBy === 'invoice' ? 'text-blue-600 font-bold' : 'text-neutral-400'
+                          )}
+                        />
                       </div>
                     </TableHead>
                     <TableHead>TGL INVOICE</TableHead>
@@ -454,10 +697,28 @@ export default function RekapPenagihanPage() {
                     {/* <TableHead>TAKE OUT</TableHead> */}
                     <TableHead>JATUH TEMPO</TableHead>
                     <TableHead>TGL DIBAYAR</TableHead>
-                    <TableHead>
-                      <div className='flex flex-col items-center'>
-                        <span>UMUR</span>
-                        <span>PENAGIHAN</span>
+                    <TableHead
+                      className='cursor-pointer hover:bg-neutral-200/50 transition-colors select-none'
+                      onClick={() => {
+                        if (sortBy === 'aging') {
+                          setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+                        } else {
+                          setSortBy('aging');
+                          setSortDirection('desc'); // Default to longest unpaid first
+                        }
+                      }}
+                    >
+                      <div className='flex items-center justify-center gap-1.5'>
+                        <div className='flex flex-col items-center leading-tight'>
+                          <span>UMUR</span>
+                          <span>PENAGIHAN</span>
+                        </div>
+                        <ArrowUpDown
+                          className={cn(
+                            'h-3 w-3',
+                            sortBy === 'aging' ? 'text-purple-600 font-bold' : 'text-neutral-400'
+                          )}
+                        />
                       </div>
                     </TableHead>
                     <TableHead>FILE</TableHead>

@@ -430,7 +430,6 @@ export default function ProjectItemsPage() {
   const [spkFile, setSpkFile] = React.useState<File | null>(null);
   const [spkNumber, setSpkNumber] = React.useState<string>('');
   const [spkTanggalSpk, setSpkTanggalSpk] = React.useState<string>('');
-  const [spkDeadline, setSpkDeadline] = React.useState<string>('');
   const [spkTanggalMasuk, setSpkTanggalMasuk] = React.useState<string>('');
   const [spkNominal, setSpkNominal] = React.useState<string>('');
   const [spkPpn, setSpkPpn] = React.useState<string>('');
@@ -492,7 +491,6 @@ export default function ProjectItemsPage() {
     mutationFn: ({
       file,
       number,
-      deadline,
       tanggal_masuk,
       nominal_dpp,
       tanggal_spk,
@@ -502,7 +500,6 @@ export default function ProjectItemsPage() {
     }: {
       file: File;
       number: string;
-      deadline?: string;
       tanggal_masuk?: string;
       nominal_dpp?: string;
       tanggal_spk?: string;
@@ -514,7 +511,6 @@ export default function ProjectItemsPage() {
         projectId,
         file,
         number,
-        deadline,
         undefined, // prioritas is no longer passed from this form
         tanggal_masuk,
         nominal_dpp,
@@ -529,7 +525,6 @@ export default function ProjectItemsPage() {
       setSpkFile(null);
       setSpkNumber('');
       setSpkTanggalSpk('');
-      setSpkDeadline('');
       setSpkTanggalMasuk('');
       setSpkNominal('');
       setSpkPpn('');
@@ -549,7 +544,6 @@ export default function ProjectItemsPage() {
     uploadSpkMutation.mutate({
       file: spkFile,
       number: spkNumber,
-      deadline: spkDeadline,
       tanggal_masuk: spkTanggalMasuk,
       nominal_dpp: parseRawNumber(spkNominal),
       tanggal_spk: spkTanggalSpk,
@@ -610,7 +604,6 @@ export default function ProjectItemsPage() {
   const [editSpkFile, setEditSpkFile] = React.useState<File | null>(null);
   const [editSpkNumber, setEditSpkNumber] = React.useState<string>('');
   const [editSpkTanggalSpk, setEditSpkTanggalSpk] = React.useState<string>('');
-  const [editSpkDeadline, setEditSpkDeadline] = React.useState<string>('');
   const [editSpkTanggalMasuk, setEditSpkTanggalMasuk] =
     React.useState<string>('');
   const [editSpkNominal, setEditSpkNominal] = React.useState<string>('');
@@ -624,7 +617,6 @@ export default function ProjectItemsPage() {
         nomor_spk: editSpkNumber,
         file: editSpkFile,
         tanggal_spk: editSpkTanggalSpk || undefined,
-        deadline: editSpkDeadline || undefined,
         tanggal_masuk: editSpkTanggalMasuk || undefined,
         nominal_dpp: editSpkNominal
           ? parseRawNumber(editSpkNominal)
@@ -653,7 +645,6 @@ export default function ProjectItemsPage() {
     if (existingSpk) {
       setEditSpkNumber(existingSpk.nomor_spk || '');
       setEditSpkTanggalSpk(toDateInput(existingSpk.tanggal_spk));
-      setEditSpkDeadline(toDateInput(project?.deadline));
       setEditSpkTanggalMasuk(toDateInput(existingSpk.tanggal_masuk));
       setEditSpkNominal(
         existingSpk.nominal_dpp

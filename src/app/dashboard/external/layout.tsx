@@ -74,14 +74,14 @@ export default function CustomerLayout({ children }: { children: ReactNode }) {
                             <LayoutDashboard className="h-4 w-4 mr-2" />
                             Dashboard
                         </NavLink>
-                        <NavLink href="/dashboard/external/projects" active={pathname.startsWith("/dashboard/external/projects")}>
+                        {/* <NavLink href="/dashboard/external/projects" active={pathname.startsWith("/dashboard/external/projects")}>
                             <FileText className="h-4 w-4 mr-2" />
                             My Projects
-                        </NavLink>
-                        <NavLink href="/dashboard/external/mdl" active={pathname.startsWith("/dashboard/external/mdl")}>
+                        </NavLink> */}
+                        {/* <NavLink href="/dashboard/external/mdl" active={pathname.startsWith("/dashboard/external/mdl")}>
                             <ShoppingBag className="h-4 w-4 mr-2" />
                             Catalog
-                        </NavLink>
+                        </NavLink> */}
                         <NavLink href="/dashboard/external/finance" active={pathname.startsWith("/dashboard/external/finance")}>
                             <CreditCard className="h-4 w-4 mr-2" />
                             Finance
