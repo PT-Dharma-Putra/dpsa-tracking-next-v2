@@ -583,6 +583,7 @@ export default function EngineerDetailPage() {
   const [isAccCollapsed, setIsAccCollapsed] = React.useState(true);
   const [isProgressCollapsed, setIsProgressCollapsed] = React.useState(true);
   const [isLfCollapsed, setIsLfCollapsed] = React.useState(true);
+  const [isSpkCollapsed, setIsSpkCollapsed] = React.useState(false);
 
   const orderGk = project?.order_gambar_kerja?.[0];
   const existingSpd = project?.designs?.[0];
@@ -633,10 +634,22 @@ export default function EngineerDetailPage() {
   const flowSteps = [
     {
       id: 1,
+      title: "SPK",
+      description: "Surat Perintah Kerja",
+      isCompleted: !!project.spk?.file || !!project.spk?.spk_signed_file,
+      isActive: true,
+      icon: FileText,
+      color: "text-purple-600",
+      bgColor: "bg-purple-500",
+      lightBg: "bg-purple-50",
+      borderColor: "border-purple-200",
+    },
+    {
+      id: 2,
       title: "Order Gambar Kerja",
       description: "Engineering Order",
       isCompleted: !!orderGk?.file,
-      isActive: true,
+      isActive: !!project.spk?.file || !!project.spk?.spk_signed_file,
       icon: FileText,
       color: "text-orange-600",
       bgColor: "bg-orange-500",
@@ -644,7 +657,7 @@ export default function EngineerDetailPage() {
       borderColor: "border-orange-200",
     },
     {
-      id: 2,
+      id: 3,
       title: "Gambar Kerja",
       description: "Technical Drawings",
       isCompleted: hasProgress,
@@ -690,7 +703,7 @@ export default function EngineerDetailPage() {
                   <FileText className="h-3 w-3 text-neutral-400" />
                   {project.spk_number || project.spk?.nomor_spk}
                   <CopyButton
-                    text={
+                     text={
                       (project.spk_number || project.spk?.nomor_spk) as string
                     }
                     tooltip="Salin Nomor SPK"
@@ -774,12 +787,111 @@ export default function EngineerDetailPage() {
       </div>
 
       {/* Document Section at Top */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
-        {/* 1. ORDER GAMBAR KERJA SECTION */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
+        {/* 1. SPK SECTION */}
         <Card
           className={`relative border shadow-sm transition-all duration-300 ${
-            flowSteps[0].isActive
-              ? flowSteps[0].isCompleted
+            project.spk?.file || project.spk?.spk_signed_file
+              ? "border-purple-200 bg-white ring-1 ring-purple-100"
+              : "border-neutral-200 bg-neutral-50/80 opacity-60 grayscale-[0.5]"
+          }`}
+        >
+          {(project.spk?.file || project.spk?.spk_signed_file) && (
+            <div className="absolute -top-1.5 -right-1.5 h-5 w-5 bg-emerald-500 rounded-full flex items-center justify-center shadow-sm z-10 animate-in zoom-in duration-300">
+              <CheckCircle2 className="h-3 w-3 text-white" />
+            </div>
+          )}
+          <CardHeader className="pb-3 flex flex-row items-center justify-between gap-3">
+            <button
+              className="flex items-center gap-3 flex-1 text-left"
+              onClick={() => setIsSpkCollapsed((v) => !v)}
+            >
+              <div
+                className={`h-8 w-8 rounded-full flex items-center justify-center font-bold shrink-0 ${
+                  project.spk?.file || project.spk?.spk_signed_file
+                    ? "bg-purple-100 text-purple-600"
+                    : "bg-neutral-200 text-neutral-500"
+                }`}
+              >
+                1
+              </div>
+              <div className="flex-1 min-w-0">
+                <CardTitle className="text-base text-neutral-800 truncate">
+                  SPK
+                </CardTitle>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider truncate">
+                  Surat Perintah Kerja
+                </p>
+              </div>
+              <ChevronDown
+                className={`h-4 w-4 text-neutral-400 transition-transform duration-200 mr-1 ${
+                  isSpkCollapsed ? "-rotate-90" : ""
+                }`}
+              />
+            </button>
+          </CardHeader>
+          {!isSpkCollapsed && (
+            <CardContent>
+              {project.spk?.file || project.spk?.spk_signed_file ? (
+                <div className="space-y-2">
+                  <div className="p-3 rounded-xl bg-purple-50/80 border border-purple-100 flex items-center justify-between shadow-sm gap-2">
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <div className="h-8 w-8 rounded-lg bg-white shadow-sm border border-purple-100 flex items-center justify-center text-purple-600 shrink-0">
+                        <FileText className="h-4 w-4" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-bold text-purple-900 truncate">
+                          {project.spk.nomor_spk || "File SPK"}
+                        </p>
+                        {project.spk.tanggal_spk && (
+                          <p className="text-[10px] text-purple-600/80 truncate">
+                            Tanggal SPK:{" "}
+                            {format(new Date(project.spk.tanggal_spk), "MMM d, yyyy")}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-purple-600 hover:bg-purple-200 bg-white shadow-sm border border-purple-100"
+                        asChild
+                      >
+                        <a
+                          href={(() => {
+                            const file = project.spk.spk_signed_file || project.spk.file;
+                            return file?.startsWith("http")
+                              ? file
+                              : `${(
+                                  process.env.NEXT_PUBLIC_API_URL ||
+                                  "http://localhost:8000"
+                                ).replace("/api", "")}/storage/${file}`;
+                          })()}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          download
+                        >
+                          <FileDown className="h-4 w-4" />
+                        </a>
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-3 rounded-xl bg-red-50/80 border border-red-100 text-center text-xs font-semibold text-red-600 animate-pulse">
+                  blm ada spk
+                </div>
+              )}
+            </CardContent>
+          )}
+        </Card>
+
+        {/* 2. ORDER GAMBAR KERJA SECTION */}
+        <Card
+          className={`relative border shadow-sm transition-all duration-300 ${
+            flowSteps[1].isActive
+              ? flowSteps[1].isCompleted
                 ? "border-orange-200 bg-white ring-1 ring-orange-100"
                 : "border-orange-300 bg-white ring-2 ring-orange-500 ring-offset-2"
               : "border-neutral-200 bg-neutral-50/80 opacity-60 grayscale-[0.5]"
@@ -797,12 +909,12 @@ export default function EngineerDetailPage() {
             >
               <div
                 className={`h-8 w-8 rounded-full flex items-center justify-center font-bold ${
-                  flowSteps[0].isActive
+                  flowSteps[1].isActive
                     ? "bg-orange-100 text-orange-600"
                     : "bg-neutral-200 text-neutral-500"
                 }`}
               >
-                1
+                2
               </div>
               <div className="flex-1">
                 <CardTitle className="text-base text-neutral-800">
@@ -883,7 +995,7 @@ export default function EngineerDetailPage() {
           )}
         </Card>
 
-        {/* 2. DESIGN PROGRESS SECTION */}
+        {/* 3. DESIGN PROGRESS SECTION */}
         <Card
           className={`relative border shadow-sm transition-all duration-300 ${
             gambarKerjaCount === totalItems && totalItems > 0
@@ -910,7 +1022,7 @@ export default function EngineerDetailPage() {
                     : "bg-neutral-200 text-neutral-500"
                 }`}
               >
-                2
+                3
               </div>
               <div className="flex-1">
                 <CardTitle className="text-base text-neutral-800">

@@ -2689,8 +2689,8 @@ export function ProjectsV2Table({
       >
         <div className='flex flex-col gap-4 p-4 w-full max-w-full overflow-hidden'>
           <div className='flex flex-col sm:flex-row justify-between gap-4 items-start sm:items-center'>
-            <div className='flex flex-1 gap-2 items-center w-full sm:max-w-md'>
-              <div className='relative flex-1'>
+            <div className='flex flex-1 gap-2 items-center w-full sm:max-w-2xl'>
+              <div className='relative flex-1 min-w-[200px] sm:min-w-[250px]'>
                 <Search className='absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground' />
                 <Input
                   placeholder='Search projects...'
