@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow, format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 
 interface Project {
@@ -16,6 +16,8 @@ interface Project {
     description?: string | null;
     last_updated_at?: string;
     nomor_spk?: string | null;
+    tanggal_spk?: string | null;
+    tanggal_masuk?: string | null;
 }
 
 export function ClientProjectCard({ project }: { project: Project }) {
@@ -41,6 +43,30 @@ export function ClientProjectCard({ project }: { project: Project }) {
                             {/* <Badge variant="outline" className={`border-none px-0 w-fit ${getStatusColor(project.status)} bg-transparent font-bold uppercase tracking-wider`}>
                                 {project.status.replace(/_/g, " ")}
                             </Badge> */}
+
+                            {project.tanggal_spk && (
+                                <span className="text-xs font-medium text-neutral-400">
+                                    Tgl SPK: {(() => {
+                                        try {
+                                            return format(new Date(project.tanggal_spk), "d MMMM yyyy", { locale: idLocale });
+                                        } catch {
+                                            return project.tanggal_spk;
+                                        }
+                                    })()}
+                                </span>
+                            )}
+
+                            {project.tanggal_masuk && (
+                                <span className="text-xs font-medium text-neutral-400">
+                                    Tgl Masuk: {(() => {
+                                        try {
+                                            return format(new Date(project.tanggal_masuk), "d MMMM yyyy", { locale: idLocale });
+                                        } catch {
+                                            return project.tanggal_masuk;
+                                        }
+                                    })()}
+                                </span>
+                            )}
 
                             {project.nomor_spk && (
                                 <span className="text-sm font-semibold text-neutral-500">

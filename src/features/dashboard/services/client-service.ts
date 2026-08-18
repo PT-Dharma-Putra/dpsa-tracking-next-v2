@@ -11,6 +11,8 @@ export interface ClientProject {
     last_updated_at?: string;
     created_at: string;
     nomor_spk?: string | null;
+    tanggal_spk?: string | null;
+    tanggal_masuk?: string | null;
 }
 
 
