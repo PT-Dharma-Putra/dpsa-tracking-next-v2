@@ -177,7 +177,7 @@ export default function PengirimanPage() {
             pemasangan (setting) item proyek.
           </p>
         </div>
-        <div>
+        {/* <div>
           <Button
             onClick={handleCreate}
             className='w-full md:w-auto bg-primary text-white hover:bg-primary/90 flex items-center gap-2'
@@ -185,7 +185,7 @@ export default function PengirimanPage() {
             <Plus className='h-4 w-4' />
             Tambah Pengiriman
           </Button>
-        </div>
+        </div> */}
       </div>
 
       {/* Filters Card */}
