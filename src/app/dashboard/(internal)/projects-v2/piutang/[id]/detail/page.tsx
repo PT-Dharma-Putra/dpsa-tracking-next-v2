@@ -674,30 +674,28 @@ export default function PiutangDetailPage() {
                               )}
                               {p.surat_jalan && (
                                 <a
-                                  href={`${(
-                                    process.env.NEXT_PUBLIC_API_URL ||
-                                    'http://localhost:8000'
-                                  ).replace('/api', '')}/storage/${
-                                    p.surat_jalan
-                                  }`}
+                                  href={`${storageBase}/storage/${p.surat_jalan}`}
                                   target='_blank'
-                                  rel='noreferrer'
-                                  className='text-[9px] font-semibold text-neutral-600 bg-neutral-100 px-1.5 py-0.5 rounded hover:bg-neutral-200 flex items-center gap-0.5'
+                                  rel='noopener noreferrer'
+                                  className='inline-flex items-center justify-between p-1.5 px-2 rounded-lg bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 text-xs font-semibold text-neutral-700 transition-colors'
                                 >
-                                  <Eye className='h-2.5 w-2.5' /> Lihat SJ
+                                  <span className='flex items-center gap-1.5'>
+                                    <Download className='h-3.5 w-3.5 text-blue-500' />{' '}
+                                    Lihat SJ
+                                  </span>
                                 </a>
                               )}
                               {p.setrim && (
                                 <a
-                                  href={`${(
-                                    process.env.NEXT_PUBLIC_API_URL ||
-                                    'http://localhost:8000'
-                                  ).replace('/api', '')}/storage/${p.setrim}`}
+                                  href={`${storageBase}/storage/${p.setrim}`}
                                   target='_blank'
-                                  rel='noreferrer'
-                                  className='text-[9px] font-semibold text-neutral-600 bg-neutral-100 px-1.5 py-0.5 rounded hover:bg-neutral-200 flex items-center gap-0.5'
+                                  rel='noopener noreferrer'
+                                  className='inline-flex items-center justify-between p-1.5 px-2 rounded-lg bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 text-xs font-semibold text-neutral-700 transition-colors'
                                 >
-                                  <Eye className='h-2.5 w-2.5' /> Lihat Setrim
+                                  <span className='flex items-center gap-1.5'>
+                                    <Download className='h-3.5 w-3.5 text-blue-500' />{' '}
+                                    Lihat Setrim
+                                  </span>
                                 </a>
                               )}
                               {totalTersetting > 0 && (
@@ -782,7 +780,7 @@ export default function PiutangDetailPage() {
               </div>
 
               <div className='pt-2 space-y-2 border-t border-neutral-100 mt-2'>
-                <div className='grid grid-cols-2 gap-2'>
+                <div className='grid grid-cols-1 sm:grid-cols-3 gap-2'>
                   {project.spk?.spk_signed_file || project.spk?.file ? (
                     <a
                       href={`${storageBase}/storage/${
@@ -810,6 +808,22 @@ export default function PiutangDetailPage() {
                       <span className='flex items-center gap-1.5'>
                         <Download className='h-3.5 w-3.5 text-blue-500' /> File
                         SPH
+                      </span>
+                    </a>
+                  ) : null}
+                  {project.basts?.[0]?.file_url || project.basts?.[0]?.file_path ? (
+                    <a
+                      href={
+                        project.basts[0].file_url ||
+                        `${storageBase}/storage/${project.basts[0].file_path}`
+                      }
+                      target='_blank'
+                      rel='noopener noreferrer'
+                      className='inline-flex items-center justify-between p-2 rounded-lg bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 text-xs font-semibold text-neutral-700 transition-colors'
+                    >
+                      <span className='flex items-center gap-1.5'>
+                        <Download className='h-3.5 w-3.5 text-teal-600' /> File
+                        BAST
                       </span>
                     </a>
                   ) : null}

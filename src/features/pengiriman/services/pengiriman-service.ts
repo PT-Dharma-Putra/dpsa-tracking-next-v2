@@ -53,6 +53,10 @@ export interface ProjectItemWithShipmentStats {
   id: number;
   item: string;
   jumlah: number;
+  panjang?: number | null;
+  lebar?: number | null;
+  tinggi?: number | null;
+  satuan?: string | null;
   project_id: number;
   project?: {
     id: number;
