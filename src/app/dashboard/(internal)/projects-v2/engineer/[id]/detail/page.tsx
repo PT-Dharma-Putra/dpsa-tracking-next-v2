@@ -1192,6 +1192,9 @@ export default function EngineerDetailPage() {
                   <TableHead className="text-[12px] uppercase font-bold text-neutral-500">
                     Nama Item
                   </TableHead>
+                  <TableHead className="text-[12px] uppercase font-bold text-neutral-500">
+                    Deskripsi
+                  </TableHead>
                   <TableHead className="text-[12px] text-center uppercase font-bold text-neutral-500">
                     Ukuran
                   </TableHead>
@@ -1318,34 +1321,17 @@ export default function EngineerDetailPage() {
                       </TableCell>
 
                       <TableCell>
-                        {item.keterangan ? (
-                          <TooltipProvider delayDuration={200}>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <div className="flex flex-col gap-0.5 cursor-help">
-                                  <span className="text-sm font-bold text-neutral-900 group-hover:text-blue-600 transition-colors">
-                                    {item.item}
-                                  </span>
-                                  <span className="text-sm text-muted-foreground truncate max-w-[200px]">
-                                    {item.keterangan || "-"}
-                                  </span>
-                                </div>
-                              </TooltipTrigger>
-                              <TooltipContent
-                                side="top"
-                                className="max-w-[300px] break-words"
-                              >
-                                <p className="text-xs">{item.keterangan}</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        ) : (
-                          <div className="flex flex-col gap-0.5">
-                            <span className="text-xs font-bold text-neutral-900 group-hover:text-blue-600 transition-colors">
-                              {item.item}
-                            </span>
-                          </div>
-                        )}
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-xs font-bold text-neutral-900 group-hover:text-blue-600 transition-colors">
+                            {item.item}
+                          </span>
+                        </div>
+                      </TableCell>
+
+                      <TableCell className="max-w-[300px] break-words">
+                        <span className="text-sm text-muted-foreground whitespace-pre-wrap">
+                          {item.keterangan || "-"}
+                        </span>
                       </TableCell>
 
                       <TableCell className="text-center text-sm tabular-nums text-neutral-600">
