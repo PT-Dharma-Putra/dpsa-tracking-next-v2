@@ -97,6 +97,7 @@ export interface ProjectV2 {
     tanggal_selesai: string | null;
     updated_at: string;
   };
+  basts?: Bast[];
   jadwal_pengiriman?: JadwalPengiriman;
   order_gambar_kerja?: Array<{
     id: number;
@@ -1302,4 +1303,47 @@ export interface JadwalPengiriman {
   tanggal_pengiriman?: TanggalPengiriman;
   created_at: string;
   updated_at: string;
+}
+
+export interface Bast {
+  id: number;
+  project_id: number;
+  no_surat: string;
+  date: string;
+  file_path: string;
+  file_url: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function getBasts(projectId: number): Promise<Bast[]> {
+  const { data } = await apiClient.get<{ data: Bast[] }>(`/projects/${projectId}/basts`);
+  return data.data;
+}
+
+export async function uploadBast(
+  projectId: number,
+  payload: {
+    no_surat: string;
+    date: string;
+    file?: File | null;
+  }
+): Promise<{ message: string }> {
+  const formData = new FormData();
+  formData.append('no_surat', payload.no_surat);
+  formData.append('date', payload.date);
+  if (payload.file) {
+    formData.append('file', payload.file);
+  }
+
+  const { data } = await apiClient.post<{ message: string }>(
+    `/projects/${projectId}/basts`,
+    formData,
+    {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    }
+  );
+  return data;
 }
