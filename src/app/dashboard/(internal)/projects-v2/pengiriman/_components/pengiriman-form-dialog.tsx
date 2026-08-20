@@ -62,6 +62,10 @@ type FormValues = z.infer<typeof formSchema>
 interface SelectedItem {
   project_item_id: number;
   item_name: string;
+  panjang?: number | null;
+  lebar?: number | null;
+  tinggi?: number | null;
+  satuan?: string | null;
   project_name: string;
   spk_number: string;
   spk_id?: number | null;
@@ -206,6 +210,10 @@ export function PengirimanFormDialog({ open, onOpenChange, pengiriman }: Pengiri
       return {
         project_item_id: item.id,
         item_name: item.item,
+        panjang: item.panjang ?? detail?.project_item?.panjang ?? null,
+        lebar: item.lebar ?? detail?.project_item?.lebar ?? null,
+        tinggi: item.tinggi ?? detail?.project_item?.tinggi ?? null,
+        satuan: item.satuan ?? detail?.project_item?.satuan ?? null,
         project_name: item.project?.name || "-",
         spk_number: item.spk_number || "-",
         spk_id: item.spk_id ?? detail?.spk_id ?? null,
@@ -631,6 +639,10 @@ export function PengirimanFormDialog({ open, onOpenChange, pengiriman }: Pengiri
                         </th>
                         <th className="p-3">No. SPK</th>
                         <th className="p-3">Item Proyek</th>
+                        <th className="p-3 text-center">Panjang</th>
+                        <th className="p-3 text-center">Lebar</th>
+                        <th className="p-3 text-center">Tinggi</th>
+                        <th className="p-3 text-center">Satuan</th>
                         <th className="p-3 text-center">Jumlah Order</th>
                         <th className="p-3 text-center">Terkirim (Sebelumnya)</th>
                         <th className="p-3 text-center">Kirim Sekarang</th>
@@ -653,6 +665,10 @@ export function PengirimanFormDialog({ open, onOpenChange, pengiriman }: Pengiri
                             <td className="p-3 max-w-[350px] truncate">
                               <span className="font-semibold">{item.item_name}</span>
                             </td>
+                            <td className="p-3 text-center text-xs">{item.panjang ?? "-"}</td>
+                            <td className="p-3 text-center text-xs">{item.lebar ?? "-"}</td>
+                            <td className="p-3 text-center text-xs">{item.tinggi ?? "-"}</td>
+                            <td className="p-3 text-center text-xs">{item.satuan ?? "-"}</td>
                             <td className="p-3 text-center font-bold text-muted-foreground">{item.jumlah}</td>
                             <td className="p-3 text-center">
                               <span className="text-xs text-muted-foreground">{item.jumlah_keluar_total} / {item.jumlah}</span>
