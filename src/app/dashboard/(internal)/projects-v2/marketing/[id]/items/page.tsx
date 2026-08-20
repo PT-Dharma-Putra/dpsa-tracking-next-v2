@@ -769,6 +769,13 @@ export default function ProjectItemsPage() {
   const existingAcc = existingSpd?.acc_design;
   const existingSpk = project?.spk;
 
+  const spkNominalVal =
+    existingSpk?.nominal !== undefined && existingSpk?.nominal !== null
+      ? Number(existingSpk.nominal)
+      : null;
+  const isSpkBelow50Juta =
+    spkNominalVal !== null && spkNominalVal > 0 && spkNominalVal < 50000000;
+
   // Sync state when project data loads
   React.useEffect(() => {
     if (existingAcc) {
@@ -895,8 +902,10 @@ export default function ProjectItemsPage() {
     {
       id: 6,
       title: 'Upload BAST',
-      description: 'Berita Acara Serah Terima',
-      isCompleted: !!project?.basts?.[0]?.file_path,
+      description: isSpkBelow50Juta
+        ? 'Tanpa BAST'
+        : 'Berita Acara Serah Terima',
+      isCompleted: isSpkBelow50Juta || !!project?.basts?.[0]?.file_path,
       isActive: !!existingSpk?.file || !!existingSpk?.spk_signed_file,
       icon: ShieldCheck,
       color: 'text-teal-600',
@@ -2054,18 +2063,22 @@ export default function ProjectItemsPage() {
               ) : (
                 <div className='space-y-3'>
                   <p className='text-xs text-muted-foreground italic'>
-                    Belum ada file BAST.
+                    {isSpkBelow50Juta
+                      ? 'Nominal SPK kurang dari 50 juta, Tanpa BAST'
+                      : 'Belum ada file BAST.'}
                   </p>
-                  <Button
-                    size='sm'
-                    variant='outline'
-                    className='w-full h-8 text-[10px] border-teal-200 text-teal-600 hover:bg-teal-50 shrink-0'
-                    disabled={!flowSteps[5].isActive}
-                    onClick={() => setIsBastModalOpen(true)}
-                  >
-                    <Upload className='h-3 w-3 mr-1' />
-                    Upload BAST
-                  </Button>
+                  {!isSpkBelow50Juta && (
+                    <Button
+                      size='sm'
+                      variant='outline'
+                      className='w-full h-8 text-[10px] border-teal-200 text-teal-600 hover:bg-teal-50 shrink-0'
+                      disabled={!flowSteps[5].isActive}
+                      onClick={() => setIsBastModalOpen(true)}
+                    >
+                      <Upload className='h-3 w-3 mr-1' />
+                      Upload BAST
+                    </Button>
+                  )}
                 </div>
               )}
             </CardContent>
