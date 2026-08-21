@@ -287,6 +287,7 @@ export default function PengirimanPage() {
                   <th className='p-4'>Supir & Kendaraan</th>
                   <th className='p-4'>Setrim</th>
                   <th className='p-4'>Setting (Pemasangan)</th>
+                  <th className='p-4'>Dibuat Oleh</th>
                   <th className='p-4 text-center'>Aksi</th>
                 </tr>
               </thead>
@@ -426,6 +427,16 @@ export default function PengirimanPage() {
                           !item.tanggal_selesai_setting && (
                             <span className='text-neutral-400'>-</span>
                           )}
+                      </div>
+                    </td>
+
+                    {/* Dibuat Oleh */}
+                    <td className='p-4 whitespace-nowrap text-neutral-700'>
+                      <div className='flex items-center gap-2'>
+                        <User className='h-4 w-4 text-neutral-400 shrink-0' />
+                        <span className='truncate max-w-[150px] font-medium'>
+                          {item.user?.name || '-'}
+                        </span>
                       </div>
                     </td>
 
