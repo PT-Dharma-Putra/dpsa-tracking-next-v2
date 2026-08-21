@@ -58,11 +58,11 @@ export default function ClientDashboardPage() {
                         <div className="text-3xl font-bold text-neutral-900 tracking-tight">{activeProjects}</div>
                         <div className="text-xs text-neutral-400 uppercase tracking-widest font-medium mt-1">Active Projects</div>
                     </div>
-                    <div className="w-px bg-neutral-200 h-12"></div>
-                    <div className="text-center">
+                    {/* <div className="w-px bg-neutral-200 h-12"></div> */}
+                    {/* <div className="text-center">
                         <div className="text-3xl font-bold text-orange-600 tracking-tight">{actionNeeded}</div>
                         <div className="text-xs text-neutral-400 uppercase tracking-widest font-medium mt-1">Action Needed</div>
-                    </div>
+                    </div> */}
                 </div>
             </div>
 
