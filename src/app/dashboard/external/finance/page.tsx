@@ -3,7 +3,7 @@
 import * as React from "react"
 import { useQuery } from "@tanstack/react-query"
 import { useAuthStore } from "@/lib/auth-store"
-import { format } from "date-fns"
+import { format, differenceInDays, startOfDay } from "date-fns"
 import { ClientService } from "@/features/dashboard/services/client-service"
 import { penagihanService, Penagihan } from "@/features/projects/services/penagihan-service"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -23,6 +23,40 @@ const formatRupiah = (val: string | number | null | undefined) => {
     const num = typeof val === 'number' ? val : parseFloat(val.toString());
     if (isNaN(num)) return String(val);
     return `Rp ${num.toLocaleString('id-ID')}`;
+};
+
+const getUmurTagihanInfo = (inv: Penagihan) => {
+    const statusStr = String(inv.status || '').toLowerCase();
+    const isLunas = statusStr === 'lunas' || statusStr === 'paid';
+
+    const baseDateStr = inv.tanggal_invoice || inv.created_at || inv.jatuh_tempo;
+    if (!baseDateStr) return { text: '-', colorClass: 'text-neutral-400' };
+
+    const baseDate = startOfDay(new Date(baseDateStr));
+    if (isNaN(baseDate.getTime())) return { text: '-', colorClass: 'text-neutral-400' };
+
+    let targetDate = startOfDay(new Date());
+    if (isLunas && inv.tanggal_dibayar) {
+        const paidDate = startOfDay(new Date(inv.tanggal_dibayar));
+        if (!isNaN(paidDate.getTime())) {
+            targetDate = paidDate;
+        }
+    }
+
+    const diffDays = Math.max(0, differenceInDays(targetDate, baseDate));
+    const text = `${diffDays} Hari`;
+
+    if (isLunas) {
+        return { text, colorClass: 'text-neutral-500 text-xs' };
+    }
+
+    if (diffDays <= 30) {
+        return { text, colorClass: 'text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 text-xs inline-block' };
+    } else if (diffDays <= 60) {
+        return { text, colorClass: 'text-amber-700 font-semibold bg-amber-50 px-2 py-0.5 rounded border border-amber-200 text-xs inline-block' };
+    } else {
+        return { text, colorClass: 'text-red-700 font-semibold bg-red-50 px-2 py-0.5 rounded border border-red-200 text-xs inline-block' };
+    }
 };
 
 export default function FinanceOverviewPage() {
@@ -122,9 +156,9 @@ export default function FinanceOverviewPage() {
                     <h1 className="text-2xl font-bold tracking-tight text-neutral-900">Finance Overview</h1>
                     <p className="text-muted-foreground">Track your project expenses, contracting values, and invoice history.</p>
                 </div>
-                <Button variant="outline">
+                {/* <Button variant="outline">
                     <Download className="mr-2 h-4 w-4" /> Download Statement
-                </Button>
+                </Button> */}
             </div>
 
             {/* Stats Cards */}
@@ -184,6 +218,7 @@ export default function FinanceOverviewPage() {
                                     <th className="px-4 py-3">Nomor SPK</th>
                                     <th className="px-4 py-3">Project</th>
                                     <th className="px-4 py-3">Due Date</th>
+                                    <th className="px-4 py-3 text-center">Umur Tagihan</th>
                                     <th className="px-4 py-3 text-right">Nominal Tagihan</th>
                                     <th className="px-4 py-3 text-right">Nominal Terbayar</th>
                                     <th className="px-4 py-3 text-center">Status</th>
@@ -193,7 +228,7 @@ export default function FinanceOverviewPage() {
                             <tbody className="divide-y divide-neutral-100 bg-white">
                                 {isLoadingPenagihan ? (
                                     <tr>
-                                        <td colSpan={8} className="py-8 text-center text-neutral-400">
+                                        <td colSpan={9} className="py-8 text-center text-neutral-400">
                                             <div className="flex items-center justify-center gap-2">
                                                 <Loader2 className="h-4 w-4 animate-spin text-neutral-500" />
                                                 <span>Loading invoice data...</span>
@@ -202,7 +237,7 @@ export default function FinanceOverviewPage() {
                                     </tr>
                                 ) : filteredPenagihanList.length === 0 ? (
                                     <tr>
-                                        <td colSpan={8} className="text-center py-8 text-neutral-400">No invoices found.</td>
+                                        <td colSpan={9} className="text-center py-8 text-neutral-400">No invoices found.</td>
                                     </tr>
                                 ) : (
                                     filteredPenagihanList.map((inv: Penagihan) => {
@@ -223,6 +258,8 @@ export default function FinanceOverviewPage() {
                                             ? format(new Date(inv.jatuh_tempo), 'dd MMM yyyy')
                                             : (inv as any).due_date || '-';
 
+                                        const agingInfo = getUmurTagihanInfo(inv);
+
                                         const statusStr = String(inv.status || '');
                                         const isLunas = statusStr.toLowerCase() === 'lunas' || statusStr.toLowerCase() === 'paid';
                                         const nominalTerbayarVal = isLunas && (!inv.nominal_dibayar || Number(inv.nominal_dibayar) === 0)
@@ -242,6 +279,11 @@ export default function FinanceOverviewPage() {
                                                 </td>
                                                 <td className="px-4 py-4 text-neutral-500">
                                                     {dueDateStr}
+                                                </td>
+                                                <td className="px-4 py-4 text-center whitespace-nowrap">
+                                                    <span className={agingInfo.colorClass}>
+                                                        {agingInfo.text}
+                                                    </span>
                                                 </td>
                                                 <td className="px-4 py-4 text-right text-neutral-900 font-medium">
                                                     {formatRupiah(inv.nominal_penagihan)}
