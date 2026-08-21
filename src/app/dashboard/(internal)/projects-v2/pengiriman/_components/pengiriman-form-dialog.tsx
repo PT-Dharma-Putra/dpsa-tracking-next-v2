@@ -62,6 +62,7 @@ type FormValues = z.infer<typeof formSchema>
 interface SelectedItem {
   project_item_id: number;
   item_name: string;
+  po_divisi?: string | null;
   lantai?: string | null;
   ruang?: string | null;
   deskripsi?: string | null;
@@ -210,9 +211,17 @@ export function PengirimanFormDialog({ open, onOpenChange, pengiriman }: Pengiri
       const pastKeluar = detail ? item.jumlah_keluar_total - detail.jumlah_keluar : item.jumlah_keluar_total
       const pastTersetting = detail ? item.jumlah_tersetting_total - detail.jumlah_tersetting : item.jumlah_tersetting_total
 
+      const rawDivisi = item.divisi ?? detail?.project_item?.divisi ?? item.po_divisi
+      const poDivisiStr = typeof rawDivisi === "object" && rawDivisi !== null
+        ? (rawDivisi.nama || rawDivisi.name || "-")
+        : typeof rawDivisi === "string"
+        ? rawDivisi
+        : "-"
+
       return {
         project_item_id: item.id,
         item_name: item.item,
+        po_divisi: poDivisiStr,
         lantai: item.lantai ?? detail?.project_item?.lantai ?? null,
         ruang: item.ruang ?? detail?.project_item?.ruang ?? null,
         deskripsi: item.keterangan ?? item.deskripsi ?? detail?.project_item?.keterangan ?? detail?.project_item?.deskripsi ?? null,
@@ -653,6 +662,7 @@ export function PengirimanFormDialog({ open, onOpenChange, pengiriman }: Pengiri
                             className="h-4 w-4 rounded border-neutral-300 text-primary focus:ring-primary cursor-pointer"
                           />
                         </th>
+                        <th className="p-3">PO Divisi</th>
                         <th className="p-3">Lantai</th>
                         <th className="p-3">Ruang</th>
                         <th className="p-3">Item Proyek</th>
@@ -679,6 +689,7 @@ export function PengirimanFormDialog({ open, onOpenChange, pengiriman }: Pengiri
                                 className="h-4 w-4 rounded border-neutral-300 text-primary focus:ring-primary cursor-pointer"
                               />
                             </td>
+                            <td className="p-3 text-xs font-medium text-neutral-700">{item.po_divisi || "-"}</td>
                             <td className="p-3 text-xs">{item.lantai || "-"}</td>
                             <td className="p-3 text-xs">{item.ruang || "-"}</td>
                             <td className="p-3 max-w-[350px] truncate">

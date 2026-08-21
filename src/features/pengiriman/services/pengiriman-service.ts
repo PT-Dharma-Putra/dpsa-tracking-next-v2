@@ -12,6 +12,13 @@ export interface DetailPengiriman {
     id: number;
     item: string;
     jumlah: number;
+    divisi_id?: number | null;
+    divisi?: {
+      id: number;
+      nama?: string | null;
+      name?: string | null;
+    } | string | null;
+    po_divisi?: string | null;
     lantai?: string | null;
     ruang?: string | null;
     keterangan?: string | null;
@@ -60,6 +67,13 @@ export interface Pengiriman {
 export interface ProjectItemWithShipmentStats {
   id: number;
   item: string;
+  divisi_id?: number | null;
+  divisi?: {
+    id: number;
+    nama?: string | null;
+    name?: string | null;
+  } | string | null;
+  po_divisi?: string | null;
   lantai?: string | null;
   ruang?: string | null;
   keterangan?: string | null;
