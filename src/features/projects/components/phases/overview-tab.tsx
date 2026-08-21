@@ -89,7 +89,8 @@ export function OverviewTab({ projectId }: OverviewTabProps) {
                         <TableHeader>
                             <TableRow>
                                 <TableHead className="w-[30%]">Item Name</TableHead>
-                                <TableHead className="w-[60%]">Persentase Kerja</TableHead>
+                                <TableHead className="w-[45%]">Progres Produksi</TableHead>
+                                <TableHead className="w-[15%] text-center">Terkirim</TableHead>
                                 <TableHead className="text-right">Status</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -102,22 +103,25 @@ export function OverviewTab({ projectId }: OverviewTabProps) {
                                 
                                 // Simple logic: if design is finished or not needed, show production. 
                                 // Otherwise show design.
-                                const workProgress = (!item.design.needed || designProgress === 100) 
+                                const workProgress = (!item.design?.needed || designProgress === 100) 
                                     ? Math.max(designProgress, productionProgress) 
                                     : designProgress;
                                 
+                                const shippedQty = item.shipped_qty ?? item.delivery?.shipped_qty ?? 0;
+                                const totalQty = item.qty ?? item.delivery?.qty ?? 1;
+
                                 return (
                                     <TableRow key={item.id}>
                                         <TableCell className="font-medium text-neutral-900">
                                             {item.name}
-                                            {item.design.needed && <Badge variant="outline" className="ml-2 text-[10px]">Customize</Badge>}
+                                            {item.design?.needed && <Badge variant="outline" className="ml-2 text-[10px]">Customize</Badge>}
                                         </TableCell>
 
                                         <TableCell>
                                             <div className="space-y-1">
                                                 <div className="flex justify-between text-xs">
                                                     <span className="text-neutral-700">
-                                                        {workProgress === 100 ? "Selesai" : (designProgress < 100 && item.design.needed ? "Design Phase" : "Production")}
+                                                        {workProgress === 100 ? "Selesai" : (designProgress < 100 && item.design?.needed ? "Design Phase" : "Production")}
                                                     </span>
                                                     <span className="text-neutral-500">{workProgress}%</span>
                                                 </div>
@@ -125,8 +129,14 @@ export function OverviewTab({ projectId }: OverviewTabProps) {
                                             </div>
                                         </TableCell>
 
+                                        <TableCell className="text-center whitespace-nowrap">
+                                            <span className="text-xs font-semibold text-neutral-800">
+                                                {shippedQty} / {totalQty}
+                                            </span>
+                                        </TableCell>
+
                                         <TableCell className="text-right">
-                                            {item.design.progress === 100 ? (
+                                            {item.design?.progress === 100 ? (
                                                 <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-none">Ready</Badge>
                                             ) : (
                                                 <Badge variant="outline" className="text-neutral-500">In Progress</Badge>
