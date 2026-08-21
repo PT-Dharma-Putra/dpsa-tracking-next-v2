@@ -53,6 +53,9 @@ type FormValues = z.infer<typeof formSchema>
 interface SelectedItem {
   project_item_id: number;
   item_name: string;
+  lantai?: string | null;
+  ruang?: string | null;
+  deskripsi?: string | null;
   panjang?: number | null;
   lebar?: number | null;
   tinggi?: number | null;
@@ -185,6 +188,9 @@ export function PengirimanPerSpkFormDialog({
       return {
         project_item_id: item.id,
         item_name: item.item,
+        lantai: item.lantai ?? detail?.project_item?.lantai ?? null,
+        ruang: item.ruang ?? detail?.project_item?.ruang ?? null,
+        deskripsi: item.keterangan ?? item.deskripsi ?? detail?.project_item?.keterangan ?? detail?.project_item?.deskripsi ?? null,
         panjang: item.panjang ?? detail?.project_item?.panjang ?? null,
         lebar: item.lebar ?? detail?.project_item?.lebar ?? null,
         tinggi: item.tinggi ?? detail?.project_item?.tinggi ?? null,
@@ -468,11 +474,21 @@ export function PengirimanPerSpkFormDialog({
 
             {/* Item Selection Section */}
             <div className="flex-1 min-h-0 flex flex-col space-y-2 overflow-hidden">
-              <div className="shrink-0">
-                <Label className="text-sm font-semibold">Pilih Item Proyek yang Dikirim</Label>
-                <p className="text-xs text-muted-foreground">
-                  Menampilkan item dari SPK proyek ini saja. Masukkan kuantitas pada kolom Kirim Sekarang.
-                </p>
+              <div className="shrink-0 flex items-end justify-between">
+                <div>
+                  <Label className="text-sm font-semibold">Pilih Item Proyek yang Dikirim</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Menampilkan item dari SPK proyek ini saja. Masukkan kuantitas pada kolom Kirim Sekarang.
+                  </p>
+                </div>
+                {selectedItems.length > 0 && (
+                  <div className="flex items-center gap-1.5 bg-neutral-100 px-3 py-1.5 rounded-md border text-xs shrink-0">
+                    <span className="text-muted-foreground font-medium">No. SPK:</span>
+                    <span className="font-bold text-neutral-900">
+                      {selectedItems.find(i => i.spk_number && i.spk_number !== "-")?.spk_number || "—"}
+                    </span>
+                  </div>
+                )}
               </div>
 
               <div className="flex-1 min-h-0 overflow-y-auto border rounded-md">
@@ -500,16 +516,18 @@ export function PengirimanPerSpkFormDialog({
                             className="h-4 w-4 rounded border-neutral-300 text-primary focus:ring-primary cursor-pointer"
                           />
                         </th>
-                        <th className="p-3">No. SPK</th>
+                        <th className="p-3">Lantai</th>
+                        <th className="p-3">Ruang</th>
                         <th className="p-3">Item Proyek</th>
+                        <th className="p-3">Deskripsi</th>
                         <th className="p-3 text-center">Panjang</th>
                         <th className="p-3 text-center">Lebar</th>
                         <th className="p-3 text-center">Tinggi</th>
                         <th className="p-3 text-center">Satuan</th>
-                        <th className="p-3 text-center">Jumlah Order</th>
-                        <th className="p-3 text-center">Terkirim (Sebelumnya)</th>
-                        <th className="p-3 text-center">Kirim Sekarang</th>
-                        <th className="p-3 text-center">Tersetting Sekarang</th>
+                        <th className="p-3 text-center leading-tight">Jumlah<br />Order</th>
+                        <th className="p-3 text-center leading-tight">Terkirim<br />(Sebelumnya)</th>
+                        <th className="p-3 text-center leading-tight">Kirim<br />Sekarang</th>
+                        <th className="p-3 text-center leading-tight">Tersetting<br />Sekarang</th>
                         <th className="p-3">Keterangan</th>
                       </tr>
                     </thead>
@@ -525,10 +543,12 @@ export function PengirimanPerSpkFormDialog({
                                 className="h-4 w-4 rounded border-neutral-300 text-primary focus:ring-primary cursor-pointer"
                               />
                             </td>
-                            <td className="p-3 font-medium max-w-50 truncate">{item.spk_number}</td>
+                            <td className="p-3 text-xs">{item.lantai || "-"}</td>
+                            <td className="p-3 text-xs">{item.ruang || "-"}</td>
                             <td className="p-3 max-w-87.5 truncate">
                               <span className="font-semibold">{item.item_name}</span>
                             </td>
+                            <td className="p-3 text-xs max-w-50 truncate text-muted-foreground">{item.deskripsi || "-"}</td>
                             <td className="p-3 text-center text-xs">{item.panjang ?? "-"}</td>
                             <td className="p-3 text-center text-xs">{item.lebar ?? "-"}</td>
                             <td className="p-3 text-center text-xs">{item.tinggi ?? "-"}</td>
