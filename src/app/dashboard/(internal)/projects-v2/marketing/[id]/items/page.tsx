@@ -502,7 +502,7 @@ export default function ProjectItemsPage() {
       grand_total,
       penerbit_id,
     }: {
-      file: File;
+      file?: File | null;
       number: string;
       tanggal_masuk?: string;
       nominal_dpp?: string;
@@ -541,8 +541,8 @@ export default function ProjectItemsPage() {
   });
 
   const handleSpkUpload = () => {
-    if (!spkFile || !spkNumber || !spkPenerbitId) {
-      toast.error('Harap lengkapi file SPK, nomor SPK, dan diterbitkan oleh');
+    if (!spkNumber || !spkPenerbitId) {
+      toast.error('Harap lengkapi nomor SPK dan diterbitkan oleh');
       return;
     }
     uploadSpkMutation.mutate({
@@ -1801,7 +1801,7 @@ export default function ProjectItemsPage() {
           </CardHeader>
           {!isSpkCollapsed && (
             <CardContent>
-              {existingSpk?.file || existingSpk?.spk_signed_file ? (
+              {existingSpk ? (
                 <div className='space-y-3'>
                   <div className='p-3 rounded-xl bg-purple-50/80 border border-purple-100 flex items-center justify-between shadow-sm min-w-0 gap-2'>
                     <div className='flex items-center gap-3 min-w-0 flex-1 mr-2'>
@@ -1816,7 +1816,7 @@ export default function ProjectItemsPage() {
                           {existingSpk.nomor_spk}
                         </p>
                         <p className='text-[10px] text-purple-600/80 truncate'>
-                          {format(
+                          {existingSpk.created_at && format(
                             new Date(existingSpk.created_at),
                             'MMM d, yyyy'
                           )}
@@ -1828,27 +1828,29 @@ export default function ProjectItemsPage() {
                         </p>
                       </div>
                     </div>
-                    <div className='flex gap-2 shrink-0'>
-                      <Button
-                        variant='ghost'
-                        size='icon'
-                        className='h-8 w-8 text-purple-600 hover:bg-purple-200 bg-white shadow-sm border border-purple-100'
-                        asChild
-                      >
-                        <a
-                          href={`${(
-                            process.env.NEXT_PUBLIC_API_URL ||
-                            'http://localhost:8000'
-                          ).replace('/api', '')}/storage/${
-                            existingSpk.spk_signed_file || existingSpk.file
-                          }`}
-                          target='_blank'
-                          rel='noopener noreferrer'
+                    {(existingSpk.file || existingSpk.spk_signed_file) && (
+                      <div className='flex gap-2 shrink-0'>
+                        <Button
+                          variant='ghost'
+                          size='icon'
+                          className='h-8 w-8 text-purple-600 hover:bg-purple-200 bg-white shadow-sm border border-purple-100'
+                          asChild
                         >
-                          <FileDown className='h-4 w-4' />
-                        </a>
-                      </Button>
-                    </div>
+                          <a
+                            href={`${(
+                              process.env.NEXT_PUBLIC_API_URL ||
+                              'http://localhost:8000'
+                            ).replace('/api', '')}/storage/${
+                              existingSpk.spk_signed_file || existingSpk.file
+                            }`}
+                            target='_blank'
+                            rel='noopener noreferrer'
+                          >
+                            <FileDown className='h-4 w-4' />
+                          </a>
+                        </Button>
+                      </div>
+                    )}
                   </div>
 
                   {/* Signed SPK Section */}
@@ -3227,7 +3229,7 @@ export default function ProjectItemsPage() {
             </div>
             <div className='space-y-1.5'>
               <Label className='text-xs font-medium'>
-                File (PDF/JPG/PNG/DOC)
+                File (PDF/JPG/PNG/DOC - Opsional)
               </Label>
               <Input
                 type='file'
@@ -3252,7 +3254,7 @@ export default function ProjectItemsPage() {
                 handleSpkUpload();
                 setIsSpkModalOpen(false);
               }}
-              disabled={!spkFile || !spkNumber || !spkPenerbitId || uploadSpkMutation.isPending}
+              disabled={!spkNumber || !spkPenerbitId || uploadSpkMutation.isPending}
             >
               {uploadSpkMutation.isPending ? (
                 <Loader2 className='h-4 w-4 animate-spin' />

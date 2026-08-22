@@ -68,7 +68,6 @@ export function MdlCatalogModal({
   // Filter state
   const [search, setSearch] = React.useState('');
   const [debouncedSearch, setDebouncedSearch] = React.useState('');
-  const [selectedLantai, setSelectedLantai] = React.useState<string>('all');
   const [selectedKategoriId, setSelectedKategoriId] =
     React.useState<string>('all');
   const [selectedSubKategoriId, setSelectedSubKategoriId] =
@@ -96,7 +95,6 @@ export function MdlCatalogModal({
     if (!isOpen) {
       setSearch('');
       setDebouncedSearch('');
-      setSelectedLantai('all');
       setSelectedKategoriId('all');
       setSelectedSubKategoriId('all');
       setSelectedLokasiId('all');
@@ -128,7 +126,6 @@ export function MdlCatalogModal({
       'mdl-lokasi-filter',
       selectedKategoriId,
       selectedSubKategoriId,
-      selectedLantai,
     ],
     queryFn: () =>
       MdlService.getMdl({
@@ -139,7 +136,6 @@ export function MdlCatalogModal({
           selectedSubKategoriId !== 'all'
             ? parseInt(selectedSubKategoriId)
             : undefined,
-        lantai: selectedLantai !== 'all' ? selectedLantai : undefined,
       }),
     enabled: isOpen && lokasiOpen,
   });
@@ -164,7 +160,6 @@ export function MdlCatalogModal({
       'mdl-catalog-v2',
       page,
       debouncedSearch,
-      selectedLantai,
       selectedKategoriId,
       selectedSubKategoriId,
       selectedLokasiId,
@@ -174,7 +169,6 @@ export function MdlCatalogModal({
         page,
         per_page: 15,
         search: debouncedSearch || undefined,
-        lantai: selectedLantai !== 'all' ? selectedLantai : undefined,
         kategori_mdl_id:
           selectedKategoriId !== 'all'
             ? parseInt(selectedKategoriId)
@@ -240,7 +234,6 @@ export function MdlCatalogModal({
   const handleClearFilters = () => {
     setSearch('');
     setDebouncedSearch('');
-    setSelectedLantai('all');
     setSelectedKategoriId('all');
     setSelectedSubKategoriId('all');
     setSelectedLokasiId('all');
@@ -275,20 +268,6 @@ export function MdlCatalogModal({
     saveMutation.mutate(items);
   };
 
-  // Lantai options from loaded MDL data (unique values)
-  const lantaiOptions = React.useMemo(() => {
-    const values = new Set<string>();
-    mdlList.forEach((m) => {
-      if (m.lantai) {
-        m.lantai.split(',').forEach((l) => {
-          const trimmed = l.trim();
-          if (trimmed) values.add(trimmed);
-        });
-      }
-    });
-    return Array.from(values).sort();
-  }, [mdlList]);
-
   const formatRupiah = (value?: number | null) => {
     if (!value) return '-';
     return new Intl.NumberFormat('id-ID', {
@@ -299,7 +278,6 @@ export function MdlCatalogModal({
   };
 
   const hasActiveFilters =
-    selectedLantai !== 'all' ||
     selectedKategoriId !== 'all' ||
     selectedSubKategoriId !== 'all' ||
     selectedLokasiId !== 'all' ||
@@ -376,27 +354,6 @@ export function MdlCatalogModal({
                 </button>
               )}
             </div>
-
-            {/* Lantai */}
-            <Select
-              value={selectedLantai}
-              onValueChange={(v) => {
-                setSelectedLantai(v);
-                setPage(1);
-              }}
-            >
-              <SelectTrigger className='h-9 w-[130px] bg-white border-neutral-200 text-sm'>
-                <SelectValue placeholder='Lantai' />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value='all'>Semua Lantai</SelectItem>
-                {Array.from({ length: 10 }, (_, i) => `${i + 1}`).map((l) => (
-                  <SelectItem key={l} value={`${l}`}>
-                    Lantai {l}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
 
             {/* Kategori */}
             <Select

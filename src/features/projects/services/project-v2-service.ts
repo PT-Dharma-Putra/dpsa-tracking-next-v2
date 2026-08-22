@@ -588,8 +588,8 @@ export const projectV2Service = {
 
   uploadSPK: async (
     projectId: number,
-    file: File,
-    nomor_spk: string,
+    file?: File | null,
+    nomor_spk?: string,
     prioritas?: string,
     tanggal_masuk?: string,
     nominal_dpp?: string,
@@ -599,8 +599,8 @@ export const projectV2Service = {
     penerbit_id?: string
   ) => {
     const formData = new FormData();
-    formData.append('file', file);
-    formData.append('nomor_spk', nomor_spk);
+    if (file) formData.append('file', file);
+    if (nomor_spk) formData.append('nomor_spk', nomor_spk);
     if (prioritas) formData.append('prioritas', prioritas);
     if (tanggal_masuk) formData.append('tanggal_masuk', tanggal_masuk);
     if (nominal_dpp) formData.append('nominal_dpp', nominal_dpp);
