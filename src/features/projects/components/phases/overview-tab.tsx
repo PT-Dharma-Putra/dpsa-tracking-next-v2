@@ -88,9 +88,12 @@ export function OverviewTab({ projectId }: OverviewTabProps) {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead className="w-[30%]">Item Name</TableHead>
-                                <TableHead className="w-[45%]">Progres Produksi</TableHead>
-                                <TableHead className="w-[15%] text-center">Terkirim</TableHead>
+                                <TableHead className="w-[15%]">Ruang</TableHead>
+                                <TableHead className="w-[25%]">Nama Item</TableHead>
+                                <TableHead className="w-[8%] text-center">QTY</TableHead>
+                                <TableHead className="w-[27%]">Progres Produksi</TableHead>
+                                <TableHead className="w-[12%] text-center">Terkirim</TableHead>
+                                <TableHead className="w-[13%] text-center">Tersetting</TableHead>
                                 <TableHead className="text-right">Status</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -108,13 +111,22 @@ export function OverviewTab({ projectId }: OverviewTabProps) {
                                     : designProgress;
                                 
                                 const shippedQty = item.shipped_qty ?? item.delivery?.shipped_qty ?? 0;
+                                const tersettingQty = item.tersetting_qty ?? item.install?.tersetting_qty ?? 0;
                                 const totalQty = item.qty ?? item.delivery?.qty ?? 1;
 
                                 return (
                                     <TableRow key={item.id}>
+                                        <TableCell className="font-medium text-neutral-600">
+                                            {item.ruang || item.room || "-"}
+                                        </TableCell>
+
                                         <TableCell className="font-medium text-neutral-900">
                                             {item.name}
                                             {item.design?.needed && <Badge variant="outline" className="ml-2 text-[10px]">Customize</Badge>}
+                                        </TableCell>
+
+                                        <TableCell className="text-center font-medium text-neutral-800">
+                                            {totalQty}
                                         </TableCell>
 
                                         <TableCell>
@@ -132,6 +144,12 @@ export function OverviewTab({ projectId }: OverviewTabProps) {
                                         <TableCell className="text-center whitespace-nowrap">
                                             <span className="text-xs font-semibold text-neutral-800">
                                                 {shippedQty} / {totalQty}
+                                            </span>
+                                        </TableCell>
+
+                                        <TableCell className="text-center whitespace-nowrap">
+                                            <span className="text-xs font-semibold text-neutral-800">
+                                                {tersettingQty} / {totalQty}
                                             </span>
                                         </TableCell>
 
