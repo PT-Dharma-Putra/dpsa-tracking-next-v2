@@ -66,7 +66,7 @@ const itemSchema = z.object({
     lebar: z.preprocess((val) => (val === "" || val === null ? null : Number(val)), z.number().nullable()),
     tinggi: z.preprocess((val) => (val === "" || val === null ? null : Number(val)), z.number().nullable()),
     satuan: z.string().default("UNIT"),
-    jumlah: z.preprocess((val) => (val === "" || val === null ? 1 : Number(val)), z.number().min(1, "Quantity must be at least 1")),
+    jumlah: z.preprocess((val) => (val === "" || val === null ? 0 : Number(val)), z.number().min(0, "Quantity must be at least 0")),
     custom: z.preprocess((val) => val === true || val === 1 || val === "1" || val === "true", z.boolean().default(false)),
 })
 
@@ -550,7 +550,7 @@ export function ProjectItemFormDialog({ open, onOpenChange, projectId, item }: P
                                                 render={({ field }) => (
                                                     <FormItem>
                                                         <FormControl>
-                                                            <Input type="number" placeholder="Qty" className="h-8 text-xs text-center px-1" {...field} value={field.value ?? ''} />
+                                                            <Input type="number" min={0} placeholder="Qty" className="h-8 text-xs text-center px-1" {...field} value={field.value ?? ''} />
                                                         </FormControl>
                                                         <FormMessage />
                                                     </FormItem>
