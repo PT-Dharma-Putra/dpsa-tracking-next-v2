@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/input-otp"
 import { authService } from "@/features/auth/api/auth-service"
 import { useAuthStore } from "@/lib/auth-store"
+import { isClientUser } from "@/lib/get-user-role"
 import { cn } from "@/lib/utils"
 
 // Schema for Login
@@ -87,9 +88,9 @@ export function UserAuthForm({ className, onSuccessRedirect = "/dashboard/all", 
             else if ('access_token' in response.data) {
                 setAuth(response.data.user, response.data.access_token)
                 toast.success("Login successful")
-                const redirectPath = onSuccessRedirect === "/dashboard"
-                    ? (response.data.user.role === 'Client' ? "/dashboard/external" : "/dashboard/all")
-                    : onSuccessRedirect;
+                const redirectPath = isClientUser(response.data.user)
+                    ? "/dashboard/external"
+                    : (onSuccessRedirect === "/dashboard/external" ? "/dashboard/all" : onSuccessRedirect);
                 router.push(redirectPath)
             }
         } catch (error: any) {
@@ -116,9 +117,9 @@ export function UserAuthForm({ className, onSuccessRedirect = "/dashboard/all", 
             if (response.status === 'success') {
                 setAuth(response.data.user, response.data.access_token)
                 toast.success("Authentication successful")
-                const redirectPath = onSuccessRedirect === "/dashboard"
-                    ? (response.data.user.role === 'Client' ? "/dashboard/external" : "/dashboard/all")
-                    : onSuccessRedirect;
+                const redirectPath = isClientUser(response.data.user)
+                    ? "/dashboard/external"
+                    : (onSuccessRedirect === "/dashboard/external" ? "/dashboard/all" : onSuccessRedirect);
                 router.push(redirectPath)
             }
         } catch (error: any) {

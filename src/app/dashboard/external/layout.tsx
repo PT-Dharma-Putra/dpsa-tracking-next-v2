@@ -18,6 +18,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 // import { ClientNotifications } from "@/features/dashboard/components/client/client-notifications";
 import { useAuthStore } from "@/lib/auth-store";
 import { useCartStore } from "@/features/shop/stores/cart-store";
+import { isClientUser } from "@/lib/get-user-role";
 
 export default function CustomerLayout({ children }: { children: ReactNode }) {
     const router = useRouter()
@@ -39,7 +40,7 @@ export default function CustomerLayout({ children }: { children: ReactNode }) {
         }
 
         // Check Role: Only Clients allowed
-        if (user?.role !== 'Client') {
+        if (!isClientUser(user)) {
             // Staff should not be here
             router.replace("/dashboard/all")
             return

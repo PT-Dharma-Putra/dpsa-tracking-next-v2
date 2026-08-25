@@ -113,7 +113,7 @@ export function OverviewTab({ projectId }: OverviewTabProps) {
             <Card>
                 <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
-                        <CardTitle className="text-lg">Item Progress Matrix</CardTitle>
+                        <CardTitle className="text-lg">Item Progres Matrix</CardTitle>
                         <CardDescription>Detailed breakdown of each item's status across all phases.</CardDescription>
                     </div>
                     <div className="relative w-full sm:w-64">

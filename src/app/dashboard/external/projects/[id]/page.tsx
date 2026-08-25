@@ -150,7 +150,7 @@ function DesignTabContent({ projectId }: { projectId: string }) {
             {/* ACC Design Card */}
             <AccDesignCard projectV2={projectV2} approvedClientDesign={approvedClientDesign} />
 
-            {designs.length === 0 ? (
+            {/* {designs.length === 0 ? (
                 <div className="text-center p-12 border-2 border-dashed border-neutral-200 rounded-xl bg-neutral-50/50">
                     <p className="text-neutral-400 mb-4">No designs uploaded yet.</p>
                     <Button onClick={() => seedMutation.mutate()} variant="outline" className="text-orange-600 border-orange-200">
@@ -170,7 +170,7 @@ function DesignTabContent({ projectId }: { projectId: string }) {
                         />
                     ))}
                 </div>
-            )}
+            )} */}
         </div>
     )
 }
@@ -768,7 +768,7 @@ function DocumentsTabContent({ projectId }: { projectId: string }) {
             </Card>
 
             {/* 3. Client SPK Upload Section — hidden after SPK is approved */}
-            {spk?.spk_status !== 'approved' && !spk?.spk_signed_file_url && (
+            {/* {spk?.spk_status !== 'approved' && !spk?.spk_signed_file_url && (
             <Card className={`relative transition-all duration-300 ${!isSPHApproved ? 'opacity-60 pointer-events-none' : 'border-blue-200 shadow-sm'}`}>
                 {!isSPHApproved && (
                     <div className="absolute inset-0 z-10 bg-white/50 backdrop-blur-[1px] rounded-lg flex flex-col items-center justify-center gap-2">
@@ -787,7 +787,6 @@ function DocumentsTabContent({ projectId }: { projectId: string }) {
                     <CardDescription>Upload your signed work order / contract document.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-5">
-                    {/* Nomor SPK */}
                     <div className="space-y-2">
                         <Label htmlFor="spk-number" className="text-sm font-medium text-neutral-700">
                             Nomor SPK <span className="text-red-500">*</span>
@@ -801,24 +800,6 @@ function DocumentsTabContent({ projectId }: { projectId: string }) {
                         />
                     </div>
 
-                    {/* Deadline (Optional) */}
-                    {/* <div className="space-y-2">
-                        <Label htmlFor="spk-deadline" className="text-sm font-medium text-neutral-700">
-                            Deadline
-                            <span className="text-xs text-neutral-400 ml-1 font-normal">(opsional)</span>
-                        </Label>
-                        <div className="relative">
-                            <Input
-                                id="spk-deadline"
-                                type="date"
-                                value={spkDeadline}
-                                onChange={(e) => setSpkDeadline(e.target.value)}
-                                className="h-10"
-                            />
-                        </div>
-                    </div> */}
-
-                    {/* File Upload */}
                     <div className="space-y-2">
                         <Label htmlFor="spk-file" className="text-sm font-medium text-neutral-700">
                             Upload File SPK <span className="text-red-500">*</span>
@@ -874,7 +855,6 @@ function DocumentsTabContent({ projectId }: { projectId: string }) {
                         </div>
                     </div>
 
-                    {/* Submit Button */}
                     <Button
                         onClick={handleClientSPKUpload}
                         disabled={!spkNumber.trim() || !spkFile || uploadClientSPKMutation.isPending}
@@ -897,7 +877,7 @@ function DocumentsTabContent({ projectId }: { projectId: string }) {
                     </Button>
                 </CardContent>
             </Card>
-            )}
+            )} */}
 
             {/* 4. Invoices */}
             {/* <Card>
