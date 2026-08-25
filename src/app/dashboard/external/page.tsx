@@ -27,7 +27,7 @@ export default function ClientDashboardPage() {
         ...(user?.roles?.map(r => typeof r === 'string' ? r : r.name) || [])
     ].filter(Boolean) as string[]
 
-    const isHerminaPusat = userRoles.some(r => r?.toLowerCase().includes('hermina pusat')) || user?.role_id === 15
+    const isHerminaPusat = userRoles.some(r => r?.toLowerCase().includes('hermina pusat')) || user?.role_id === 19
 
     // Fetch Hermina Clients if user role is Hermina Pusat
     const { data: herminaClients = [], isLoading: isLoadingHermina } = useQuery({

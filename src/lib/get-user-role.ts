@@ -4,12 +4,15 @@ export type BusinessRole = 'marketing' | 'studio' | 'supervisor' | 'finance' | '
 
 /**
  * Checks if the user is a Client / External user.
- * Returns true for role 'Client', role_id 15, or role name containing 'hermina pusat'.
+ * Returns true for role 'Client', role_id 19, or role name containing 'hermina pusat'.
  */
 export function isClientUser(user: User | null): boolean {
     if (!user) return false;
 
-    if (user.role_id === 15 || (Array.isArray(user.role_ids) && user.role_ids.includes(15))) {
+    if (
+        user.role_id === 19 ||
+        (Array.isArray(user.role_ids) && user.role_ids.includes(19))
+    ) {
         return true;
     }
 
