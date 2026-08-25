@@ -129,9 +129,9 @@ export default function ClientDashboardPage() {
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
             {/* 1. Ticker */}
-            <div className="-mt-8 -mx-4 sm:-mx-6 lg:-mx-8 mb-8 sticky top-20 z-40">
+            {/* <div className="-mt-8 -mx-4 sm:-mx-6 lg:-mx-8 mb-8 sticky top-20 z-40">
                 <ActivityTicker />
-            </div>
+            </div> */}
 
             {/* 2. Welcome & Stats */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-neutral-200">
