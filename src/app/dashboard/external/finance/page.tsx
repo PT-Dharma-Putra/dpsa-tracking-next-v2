@@ -91,22 +91,20 @@ export default function FinanceOverviewPage() {
         if (!user) return penagihanList;
 
         if (isHerminaPusat) {
-            // Hermina Pusat sees all invoices belonging to Hermina clients
+            // Hermina Pusat ONLY sees invoices where SPK penerbit is a Hermina client
             return penagihanList.filter((inv: any) => {
-                const projectClient = inv.project?.client;
-                const projectSpk = inv.project?.spk;
+                const projectSpk = inv.project?.spk || inv.project?.spks;
                 const penerbit = Array.isArray(projectSpk)
                     ? projectSpk[0]?.penerbit
                     : projectSpk?.penerbit;
 
-                const isProjectClientHermina = projectClient?.hermina === 1 || projectClient?.hermina === true || (projectClient?.name && String(projectClient.name).toLowerCase().includes('hermina'));
-                const isPenerbitHermina = penerbit?.hermina === 1 || penerbit?.hermina === true || (penerbit?.name && String(penerbit.name).toLowerCase().includes('hermina'));
+                if (!penerbit) return false;
 
-                if (projectClient || penerbit) {
-                    return Boolean(isProjectClientHermina || isPenerbitHermina);
-                }
-
-                return true;
+                return Boolean(
+                    penerbit.hermina === 1 ||
+                    penerbit.hermina === true ||
+                    (penerbit.name && String(penerbit.name).toLowerCase().includes('hermina'))
+                );
             });
         }
 
@@ -115,21 +113,16 @@ export default function FinanceOverviewPage() {
 
         return penagihanList.filter((inv: any) => {
             // Relation path: penagihans -> project -> spk -> penerbit_id
-            const projectSpk = inv.project?.spk;
+            const projectSpk = inv.project?.spk || inv.project?.spks;
             const penerbitId = Array.isArray(projectSpk)
                 ? projectSpk[0]?.penerbit_id
                 : projectSpk?.penerbit_id;
 
-            const projectClientId = inv.project?.client_id;
-
-            if (penerbitId === undefined && projectClientId === undefined) {
-                return true;
+            if (penerbitId === undefined || penerbitId === null) {
+                return false;
             }
 
-            return (
-                (penerbitId !== undefined && penerbitId !== null && String(penerbitId) === String(userClientId)) ||
-                (projectClientId !== undefined && projectClientId !== null && String(projectClientId) === String(userClientId))
-            );
+            return String(penerbitId) === String(userClientId);
         });
     }, [penagihanList, user, isHerminaPusat]);
 
