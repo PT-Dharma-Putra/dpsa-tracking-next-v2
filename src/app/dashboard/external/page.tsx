@@ -45,7 +45,9 @@ export default function ClientDashboardPage() {
     // Sort clients by project count (descending) & filter by search query
     const sortedAndFilteredHerminaClients = React.useMemo(() => {
         const withCounts = herminaClients.map(client => {
-            const count = projects.filter(p => p.client_id === client.id).length
+            const count = typeof client.projects_count === 'number' && client.projects_count > 0
+                ? client.projects_count
+                : projects.filter(p => p.client_id === client.id).length
             return { client, count }
         })
 
