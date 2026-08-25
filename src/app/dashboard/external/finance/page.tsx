@@ -7,10 +7,12 @@ import { format, differenceInDays, startOfDay } from "date-fns"
 import { ClientService } from "@/features/dashboard/services/client-service"
 import { penagihanService, Penagihan } from "@/features/projects/services/penagihan-service"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Download, FileText, TrendingUp, CreditCard, AlertCircle, Loader2 } from "lucide-react"
+import { Download, FileText, TrendingUp, CreditCard, AlertCircle, Loader2, Check, ChevronsUpDown } from "lucide-react"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
@@ -72,6 +74,8 @@ const getUmurTagihanInfo = (inv: Penagihan) => {
 export default function FinanceOverviewPage() {
     const user = useAuthStore((s) => s.user);
     const [agingFilter, setAgingFilter] = React.useState<string>("all");
+    const [selectedHerminaClientId, setSelectedHerminaClientId] = React.useState<number | "all">("all");
+    const [isHerminaSelectOpen, setIsHerminaSelectOpen] = React.useState(false);
 
     const isHerminaPusat = React.useMemo(() => {
         if (!user) return false;
@@ -87,6 +91,12 @@ export default function FinanceOverviewPage() {
             (Array.isArray(user.role_ids) && user.role_ids.includes(19))
         );
     }, [user]);
+
+    const { data: herminaClients = [] } = useQuery({
+        queryKey: ["hermina-clients"],
+        queryFn: ClientService.getHerminaClients,
+        enabled: isHerminaPusat,
+    });
 
     const { data, isLoading } = useQuery({
         queryKey: ["client-finance"],
@@ -111,11 +121,25 @@ export default function FinanceOverviewPage() {
 
                 if (!penerbit) return false;
 
-                return Boolean(
+                const isPenerbitHermina = Boolean(
                     penerbit.hermina === 1 ||
                     penerbit.hermina === true ||
                     (penerbit.name && String(penerbit.name).toLowerCase().includes('hermina'))
                 );
+
+                if (!isPenerbitHermina) return false;
+
+                if (selectedHerminaClientId !== "all") {
+                    const penerbitId = penerbit.id || (Array.isArray(projectSpk) ? projectSpk[0]?.penerbit_id : projectSpk?.penerbit_id);
+                    const projectClientId = inv.project?.client_id;
+
+                    return (
+                        (penerbitId !== undefined && penerbitId !== null && Number(penerbitId) === Number(selectedHerminaClientId)) ||
+                        (projectClientId !== undefined && projectClientId !== null && Number(projectClientId) === Number(selectedHerminaClientId))
+                    );
+                }
+
+                return true;
             });
         }
 
@@ -135,7 +159,7 @@ export default function FinanceOverviewPage() {
 
             return String(penerbitId) === String(userClientId);
         });
-    }, [penagihanList, user, isHerminaPusat]);
+    }, [penagihanList, user, isHerminaPusat, selectedHerminaClientId]);
 
     const finalPenagihanList = React.useMemo(() => {
         if (agingFilter === 'all') return filteredPenagihanList;
@@ -264,19 +288,78 @@ export default function FinanceOverviewPage() {
                         <CardTitle>Invoice History</CardTitle>
                         <CardDescription>A complete list of issued invoices.</CardDescription>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <span className="text-xs font-medium text-neutral-500 whitespace-nowrap">Filter Umur:</span>
-                        <Select value={agingFilter} onValueChange={setAgingFilter}>
-                            <SelectTrigger className="w-[160px] h-9 text-xs bg-white border-neutral-200">
-                                <SelectValue placeholder="Semua Umur" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">Semua Umur</SelectItem>
-                                <SelectItem value="under_30">&lt; 30 Hari</SelectItem>
-                                <SelectItem value="31_60">31 - 60 Hari</SelectItem>
-                                <SelectItem value="over_60">&gt; 60 Hari</SelectItem>
-                            </SelectContent>
-                        </Select>
+                    <div className="flex flex-wrap items-center gap-3">
+                        {isHerminaPusat && (
+                            <div className="flex items-center gap-2">
+                                <span className="text-xs font-medium text-neutral-500 whitespace-nowrap">Filter Cabang:</span>
+                                <Popover open={isHerminaSelectOpen} onOpenChange={setIsHerminaSelectOpen}>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            variant="outline"
+                                            role="combobox"
+                                            aria-expanded={isHerminaSelectOpen}
+                                            className="w-[200px] h-9 text-xs justify-between bg-white border-neutral-200 font-normal"
+                                        >
+                                            <span className="truncate">
+                                                {selectedHerminaClientId === "all"
+                                                    ? "Semua Cabang Hermina"
+                                                    : herminaClients.find((c) => c.id === selectedHerminaClientId)?.name || "Pilih Cabang..."}
+                                            </span>
+                                            <ChevronsUpDown className="ml-2 h-3.5 w-3.5 shrink-0 opacity-50" />
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-[220px] p-0" align="end">
+                                        <Command>
+                                            <CommandInput placeholder="Cari cabang Hermina..." className="text-xs h-9" />
+                                            <CommandList>
+                                                <CommandEmpty className="text-xs py-2 px-3 text-neutral-500">Cabang tidak ditemukan.</CommandEmpty>
+                                                <CommandGroup>
+                                                    <CommandItem
+                                                        value="all"
+                                                        onSelect={() => {
+                                                            setSelectedHerminaClientId("all");
+                                                            setIsHerminaSelectOpen(false);
+                                                        }}
+                                                        className="text-xs flex items-center justify-between cursor-pointer"
+                                                    >
+                                                        <span>Semua Cabang Hermina</span>
+                                                        {selectedHerminaClientId === "all" && <Check className="h-3.5 w-3.5 text-orange-600" />}
+                                                    </CommandItem>
+                                                    {herminaClients.map((client) => (
+                                                        <CommandItem
+                                                            key={client.id}
+                                                            value={client.name}
+                                                            onSelect={() => {
+                                                                setSelectedHerminaClientId(client.id);
+                                                                setIsHerminaSelectOpen(false);
+                                                            }}
+                                                            className="text-xs flex items-center justify-between cursor-pointer"
+                                                        >
+                                                            <span className="truncate">{client.name}</span>
+                                                            {selectedHerminaClientId === client.id && <Check className="h-3.5 w-3.5 text-orange-600" />}
+                                                        </CommandItem>
+                                                    ))}
+                                                </CommandGroup>
+                                            </CommandList>
+                                        </Command>
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
+                        )}
+                        <div className="flex items-center gap-2">
+                            <span className="text-xs font-medium text-neutral-500 whitespace-nowrap">Filter Umur:</span>
+                            <Select value={agingFilter} onValueChange={setAgingFilter}>
+                                <SelectTrigger className="w-[150px] h-9 text-xs bg-white border-neutral-200">
+                                    <SelectValue placeholder="Semua Umur" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">Semua Umur</SelectItem>
+                                    <SelectItem value="under_30">&lt; 30 Hari</SelectItem>
+                                    <SelectItem value="31_60">31 - 60 Hari</SelectItem>
+                                    <SelectItem value="over_60">&gt; 60 Hari</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
                     </div>
                 </CardHeader>
                 <CardContent>
