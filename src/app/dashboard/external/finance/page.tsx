@@ -62,38 +62,69 @@ const getUmurTagihanInfo = (inv: Penagihan) => {
 export default function FinanceOverviewPage() {
     const user = useAuthStore((s) => s.user);
 
+    const isHerminaPusat = React.useMemo(() => {
+        if (!user) return false;
+        const userRoles = [
+            user.role,
+            ...(user.roles_list || []),
+            ...(user.roles?.map((r: any) => typeof r === 'string' ? r : r.name) || [])
+        ].filter(Boolean) as string[];
+
+        return (
+            userRoles.some(r => r?.toLowerCase().includes('hermina pusat')) ||
+            user.role_id === 19 ||
+            (Array.isArray(user.role_ids) && user.role_ids.includes(19))
+        );
+    }, [user]);
+
     const { data, isLoading } = useQuery({
         queryKey: ["client-finance"],
         queryFn: ClientService.getFinanceSummary
     })
 
     const { data: penagihanList = [], isLoading: isLoadingPenagihan } = useQuery({
-        queryKey: ["penagihan-all", user?.client_id],
-        queryFn: () => penagihanService.getAllPenagihan(user?.client_id ?? undefined)
+        queryKey: ["penagihan-all", user?.client_id, isHerminaPusat],
+        queryFn: () => penagihanService.getAllPenagihan(isHerminaPusat ? undefined : (user?.client_id ?? undefined))
     })
 
     const filteredPenagihanList = React.useMemo(() => {
         if (!user) return penagihanList;
 
+        if (isHerminaPusat) {
+            // Hermina Pusat ONLY sees invoices where SPK penerbit is a Hermina client
+            return penagihanList.filter((inv: any) => {
+                const projectSpk = inv.project?.spk || inv.project?.spks;
+                const penerbit = Array.isArray(projectSpk)
+                    ? projectSpk[0]?.penerbit
+                    : projectSpk?.penerbit;
+
+                if (!penerbit) return false;
+
+                return Boolean(
+                    penerbit.hermina === 1 ||
+                    penerbit.hermina === true ||
+                    (penerbit.name && String(penerbit.name).toLowerCase().includes('hermina'))
+                );
+            });
+        }
+
         const userClientId = user.client_id;
+        if (!userClientId) return penagihanList;
 
         return penagihanList.filter((inv: any) => {
             // Relation path: penagihans -> project -> spk -> penerbit_id
-            const projectSpk = inv.project?.spk;
+            const projectSpk = inv.project?.spk || inv.project?.spks;
             const penerbitId = Array.isArray(projectSpk)
                 ? projectSpk[0]?.penerbit_id
                 : projectSpk?.penerbit_id;
 
-            // If relation data is not loaded or missing, fallback to include it
             if (penerbitId === undefined || penerbitId === null) {
-                return true;
+                return false;
             }
 
-            // Match penerbit_id from SPK table directly with user.client_id
-            if (!userClientId) return true;
             return String(penerbitId) === String(userClientId);
         });
-    }, [penagihanList, user]);
+    }, [penagihanList, user, isHerminaPusat]);
 
     const totalTagihan = React.useMemo(() => {
         return filteredPenagihanList.reduce((acc: number, inv: any) => {
