@@ -1,4 +1,5 @@
 import { useAuthStore } from '@/lib/auth-store';
+import { isClientUser } from '@/lib/get-user-role';
 
 export function usePermissions() {
     const user = useAuthStore((s) => s.user);
@@ -22,7 +23,7 @@ export function usePermissions() {
     const canUpdateDeadline = can('update deadline');
     const canUploadDokubah = can('upload dokubah');
     const canOrderInternational =
-        user?.role !== 'Client' || hasClientCategory('internasional');
+        !isClientUser(user) || hasClientCategory('internasional');
 
     return {
         can,
