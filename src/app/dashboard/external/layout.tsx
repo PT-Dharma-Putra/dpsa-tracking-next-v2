@@ -122,10 +122,10 @@ export default function CustomerLayout({ children }: { children: ReactNode }) {
                                     <User className="mr-2 h-4 w-4 text-orange-600" />
                                     <span>Profile & Keamanan</span>
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => router.push("/dashboard/external/settings")} className="cursor-pointer py-2.5">
+                                {/* <DropdownMenuItem onClick={() => router.push("/dashboard/external/settings")} className="cursor-pointer py-2.5">
                                     <Settings className="mr-2 h-4 w-4 text-neutral-400" />
                                     <span>Pengaturan Akun</span>
-                                </DropdownMenuItem>
+                                </DropdownMenuItem> */}
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem onClick={handleLogout} className="cursor-pointer py-2.5 text-red-600 focus:text-red-600 focus:bg-red-50">
                                     <LogOut className="mr-2 h-4 w-4" />

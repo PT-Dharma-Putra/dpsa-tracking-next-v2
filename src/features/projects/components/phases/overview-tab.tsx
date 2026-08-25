@@ -88,14 +88,19 @@ export function OverviewTab({ projectId }: OverviewTabProps) {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead className="w-[30%]">Item Name</TableHead>
-                                <TableHead className="w-[45%]">Progres Produksi</TableHead>
-                                <TableHead className="w-[15%] text-center">Terkirim</TableHead>
+                                <TableHead className="w-[40px] text-center">No.</TableHead>
+                                <TableHead className="w-[22%]">Nama Item</TableHead>
+                                <TableHead className="w-[12%]">Lantai</TableHead>
+                                <TableHead className="w-[13%]">Ruang</TableHead>
+                                <TableHead className="w-[7%] text-center">QTY</TableHead>
+                                <TableHead className="w-[22%]">Progres Produksi</TableHead>
+                                <TableHead className="w-[10%] text-center">Terkirim</TableHead>
+                                <TableHead className="w-[10%] text-center">Tersetting</TableHead>
                                 <TableHead className="text-right">Status</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {matrix?.map((item: any) => {
+                            {matrix?.map((item: any, index: number) => {
                                 // Calculate combined progress
                                 // If design is not needed or finished, show production progress
                                 const designProgress = item.design?.progress || 0;
@@ -108,13 +113,30 @@ export function OverviewTab({ projectId }: OverviewTabProps) {
                                     : designProgress;
                                 
                                 const shippedQty = item.shipped_qty ?? item.delivery?.shipped_qty ?? 0;
+                                const tersettingQty = item.tersetting_qty ?? item.install?.tersetting_qty ?? 0;
                                 const totalQty = item.qty ?? item.delivery?.qty ?? 1;
 
                                 return (
                                     <TableRow key={item.id}>
+                                        <TableCell className="text-center font-medium text-neutral-500">
+                                            {index + 1}
+                                        </TableCell>
+
                                         <TableCell className="font-medium text-neutral-900">
                                             {item.name}
                                             {item.design?.needed && <Badge variant="outline" className="ml-2 text-[10px]">Customize</Badge>}
+                                        </TableCell>
+
+                                        <TableCell className="font-medium text-neutral-600">
+                                            {item.lantai || item.floor || "-"}
+                                        </TableCell>
+
+                                        <TableCell className="font-medium text-neutral-600">
+                                            {item.ruang || item.room || "-"}
+                                        </TableCell>
+
+                                        <TableCell className="text-center font-medium text-neutral-800">
+                                            {totalQty}
                                         </TableCell>
 
                                         <TableCell>
@@ -132,6 +154,12 @@ export function OverviewTab({ projectId }: OverviewTabProps) {
                                         <TableCell className="text-center whitespace-nowrap">
                                             <span className="text-xs font-semibold text-neutral-800">
                                                 {shippedQty} / {totalQty}
+                                            </span>
+                                        </TableCell>
+
+                                        <TableCell className="text-center whitespace-nowrap">
+                                            <span className="text-xs font-semibold text-neutral-800">
+                                                {tersettingQty} / {totalQty}
                                             </span>
                                         </TableCell>
 

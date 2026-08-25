@@ -244,7 +244,7 @@ export default function ClientDashboardPage() {
                             </div>
                         )}
                     </div>
-                    <span className="text-sm text-neutral-400">Sorted by Priority</span>
+                    {/* <span className="text-sm text-neutral-400">Sorted by Priority</span> */}
                 </div>
 
                 {displayProjects.length === 0 ? (
