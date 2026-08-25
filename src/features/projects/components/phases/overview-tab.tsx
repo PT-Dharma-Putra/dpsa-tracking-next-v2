@@ -48,7 +48,7 @@ export function OverviewTab({ projectId }: OverviewTabProps) {
         <div className="space-y-6">
 
             {/* 1. Activity Ticker (Running Text) */}
-            <div className="bg-neutral-900 text-white rounded-md p-2 flex items-center overflow-hidden">
+            {/* <div className="bg-neutral-900 text-white rounded-md p-2 flex items-center overflow-hidden">
                 <div className="px-3 text-xs font-bold bg-orange-600 rounded mr-3 shrink-0 uppercase tracking-wider">Live Updates</div>
                 <div className="flex-1 overflow-hidden relative h-6">
                     <div className="animate-marquee whitespace-nowrap absolute top-0.5 flex gap-8">
@@ -62,10 +62,9 @@ export function OverviewTab({ projectId }: OverviewTabProps) {
                                 </span>
                             ))
                         )}
-                        {/* Duplicate for seamless loop if needed, simplified here */}
                     </div>
                 </div>
-            </div>
+            </div> */}
 
             {/* 2. Project Health Stats */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
