@@ -40,26 +40,26 @@ export default function ClientProjectDetailPage({ params }: { params: Promise<{ 
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className="space-y-1">
+                <div className="space-y-1 w-full">
                     <div className="flex items-center gap-3">
                         <Link href="/dashboard/external/projects" className="text-neutral-400 hover:text-orange-600 transition-colors">
                             <ArrowLeft className="h-5 w-5" />
                         </Link>
                         <h1 className="text-2xl font-bold text-neutral-900 tracking-tight">{project.name}</h1>
-                        <Badge variant="outline" className="bg-orange-50 text-orange-700 border-none uppercase tracking-wider text-[10px]">
+                        {/* <Badge variant="outline" className="bg-orange-50 text-orange-700 border-none uppercase tracking-wider text-[10px]">
                             {project.status?.replace(/_/g, " ")}
-                        </Badge>
+                        </Badge> */}
                     </div>
-                    <p className="text-neutral-500 text-sm ml-8">
-                        {project.description || "Project details and tracking information."}
-                    </p>
-                </div>
-
-                <div className="flex gap-2 ml-8 md:ml-0">
-                    <Button variant="outline" className="text-neutral-600">
-                        <MessageSquare className="h-4 w-4 mr-2" />
-                        Contact Team
-                    </Button>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 ml-8">
+                        <p className="text-neutral-500 text-sm">
+                            {project.description || "Project details and tracking information."}
+                        </p>
+                        <div className="text-sm font-medium text-neutral-700 bg-neutral-100 px-3 py-1 rounded-md border border-neutral-200 inline-flex items-center gap-1.5 shrink-0">
+                            <FileText className="h-3.5 w-3.5 text-neutral-500" />
+                            <span>Nomor SPK:</span>
+                            <span className="font-semibold text-neutral-900">{project.spk_number || (project as any).spk?.nomor_spk || "-"}</span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
