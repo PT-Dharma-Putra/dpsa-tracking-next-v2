@@ -3,8 +3,9 @@
 import { use, useState, useRef } from "react"
 import Link from "next/link"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { ArrowLeft, Download, CheckCircle, AlertCircle, MessageSquare, PlusCircle, FileText, Eye, Upload, CalendarIcon, Lock, X, History, Clock } from "lucide-react"
+import { ArrowLeft, Download, CheckCircle, CheckCircle2, AlertCircle, MessageSquare, PlusCircle, FileText, Eye, Upload, CalendarIcon, Lock, X, History, Clock } from "lucide-react"
 import { ProjectService } from "@/features/projects/services/project-service"
+import { projectV2Service } from "@/features/projects/services/project-v2-service"
 import { DesignService, Design } from "@/features/projects/services/design-service"
 import { DocumentService } from "@/features/projects/services/document-service"
 import { Button } from "@/components/ui/button"
@@ -22,6 +23,7 @@ import { Separator } from "@/components/ui/separator"
 import { toast } from "sonner"
 import { MessageService } from "@/features/projects/services/message-service"
 import { format } from "date-fns"
+import { id as idLocale } from "date-fns/locale"
 
 export default function ClientProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
@@ -103,7 +105,14 @@ function DesignTabContent({ projectId }: { projectId: string }) {
         queryFn: () => DesignService.getProjectDesigns(projectId),
     });
 
+    // Fetch Project V2 details (for ACC Design data from marketing/studio workflow)
+    const { data: projectV2 } = useQuery({
+        queryKey: ["project-v2", projectId],
+        queryFn: () => projectV2Service.getProject(Number(projectId)),
+    });
+
     const designs = Array.isArray(designData) ? designData : [];
+    const approvedClientDesign = designs.find((d: Design) => d.status === 'approved');
 
     // Mutations
     const approveMutation = useMutation({
@@ -111,6 +120,7 @@ function DesignTabContent({ projectId }: { projectId: string }) {
         onSuccess: () => {
             toast.success("Design Approved!");
             queryClient.invalidateQueries({ queryKey: ["designs", projectId] });
+            queryClient.invalidateQueries({ queryKey: ["project-v2", projectId] });
         }
     });
 
@@ -119,6 +129,7 @@ function DesignTabContent({ projectId }: { projectId: string }) {
         onSuccess: () => {
             toast.success("Revision Requested");
             queryClient.invalidateQueries({ queryKey: ["designs", projectId] });
+            queryClient.invalidateQueries({ queryKey: ["project-v2", projectId] });
         }
     });
 
@@ -134,31 +145,131 @@ function DesignTabContent({ projectId }: { projectId: string }) {
 
     if (isLoading) return <div>Loading designs...</div>;
 
-    if (designs.length === 0) {
-        return (
-            <div className="text-center p-12 border-2 border-dashed border-neutral-200 rounded-xl bg-neutral-50/50">
-                <p className="text-neutral-400 mb-4">No designs uploaded yet.</p>
-                <Button onClick={() => seedMutation.mutate()} variant="outline" className="text-orange-600 border-orange-200">
-                    <PlusCircle className="h-4 w-4 mr-2" />
-                    Simulate Studio Upload (Debug)
-                </Button>
-            </div>
-        );
-    }
-
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {designs.map((design: Design) => (
-                <DesignCard
-                    key={design.id}
-                    design={design}
-                    onApprove={() => approveMutation.mutate(design.id)}
-                    onReject={(comment) => rejectMutation.mutate({ id: design.id, comment })}
-                    isProcessing={approveMutation.isPending || rejectMutation.isPending}
-                />
-            ))}
+        <div className="space-y-6">
+            {/* ACC Design Card */}
+            <AccDesignCard projectV2={projectV2} approvedClientDesign={approvedClientDesign} />
+
+            {designs.length === 0 ? (
+                <div className="text-center p-12 border-2 border-dashed border-neutral-200 rounded-xl bg-neutral-50/50">
+                    <p className="text-neutral-400 mb-4">No designs uploaded yet.</p>
+                    <Button onClick={() => seedMutation.mutate()} variant="outline" className="text-orange-600 border-orange-200">
+                        <PlusCircle className="h-4 w-4 mr-2" />
+                        Simulate Studio Upload (Debug)
+                    </Button>
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {designs.map((design: Design) => (
+                        <DesignCard
+                            key={design.id}
+                            design={design}
+                            onApprove={() => approveMutation.mutate(design.id)}
+                            onReject={(comment) => rejectMutation.mutate({ id: design.id, comment })}
+                            isProcessing={approveMutation.isPending || rejectMutation.isPending}
+                        />
+                    ))}
+                </div>
+            )}
         </div>
     )
+}
+
+function AccDesignCard({ projectV2, approvedClientDesign }: { projectV2?: any; approvedClientDesign?: Design }) {
+    const existingSpd = projectV2?.designs?.[0];
+    const accDesign = existingSpd?.acc_design;
+
+    const status = accDesign?.status || (approvedClientDesign ? "Approved" : null);
+    const tanggalKirim = accDesign?.tanggal_kirim;
+    const tanggalAcc = accDesign?.tanggal_acc || approvedClientDesign?.uploaded_at;
+    const accFile = accDesign?.bukti_acc || existingSpd?.final_file_path || existingSpd?.spd_file || approvedClientDesign?.image_url;
+
+    const getFileUrl = (path?: string | null) => {
+        if (!path) return "";
+        if (path.startsWith('http')) return path.replace('localhost:8081', 'localhost:8000');
+        return `${STORAGE_BASE}/storage/${path.replace(/^\//, '')}`;
+    };
+
+    const isApproved = status?.toLowerCase() === 'approved';
+
+    return (
+        <Card className={`border shadow-sm transition-all duration-300 ${isApproved ? 'border-emerald-200 bg-white ring-1 ring-emerald-100' : 'border-neutral-200 bg-white'}`}>
+            <CardHeader className="pb-3 flex flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                    <div className={`h-9 w-9 rounded-full flex items-center justify-center font-bold shrink-0 ${isApproved ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'}`}>
+                        <CheckCircle2 className="h-5 w-5" />
+                    </div>
+                    <div>
+                        <CardTitle className="text-base font-bold text-neutral-800">
+                            ACC Design
+                        </CardTitle>
+                        <CardDescription className="text-xs text-neutral-500">
+                            Status persetujuan desain, tanggal pengiriman ke client, tanggal ACC, serta dokumen bukti/file desain yang disetujui.
+                        </CardDescription>
+                    </div>
+                </div>
+                {status && (
+                    <Badge className={isApproved ? "bg-emerald-100 text-emerald-800 border-emerald-200 hover:bg-emerald-100" : "bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-100"}>
+                        {status}
+                    </Badge>
+                )}
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-neutral-50/80 p-4 rounded-xl border border-neutral-100">
+                    <div>
+                        <p className="text-xs text-neutral-500 font-medium">Status ACC</p>
+                        <div className={`mt-1 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${isApproved ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}`}>
+                            <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                            <span>{status || "Belum ada status"}</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <p className="text-xs text-neutral-500 font-medium">Tanggal Dikirim ke Client</p>
+                        <p className="text-sm font-semibold text-neutral-800 mt-1">
+                            {tanggalKirim
+                                ? format(new Date(tanggalKirim), 'd MMMM yyyy', { locale: idLocale })
+                                : "-"}
+                        </p>
+                    </div>
+
+                    <div>
+                        <p className="text-xs text-neutral-500 font-medium">Tanggal ACC</p>
+                        <p className="text-sm font-semibold text-neutral-800 mt-1">
+                            {tanggalAcc
+                                ? format(new Date(tanggalAcc), 'd MMMM yyyy', { locale: idLocale })
+                                : "-"}
+                        </p>
+                    </div>
+                </div>
+
+                {accFile ? (
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-lg border border-emerald-100 bg-emerald-50/40">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                            <FileText className="h-4 w-4 text-emerald-600 shrink-0" />
+                            <div className="min-w-0">
+                                <p className="text-xs font-semibold text-neutral-800 truncate">File Desain yang Sudah ACC / Bukti ACC</p>
+                                <p className="text-[10px] text-neutral-500 truncate">{accFile.split('/').pop()}</p>
+                            </div>
+                        </div>
+                        <a
+                            href={getFileUrl(accFile)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center justify-center gap-1.5 text-xs font-semibold text-emerald-700 bg-white border border-emerald-300 hover:bg-emerald-50 px-3.5 py-1.5 rounded-lg transition-colors shadow-xs shrink-0"
+                        >
+                            <Download className="h-3.5 w-3.5" />
+                            <span>Lihat / Download File ACC</span>
+                        </a>
+                    </div>
+                ) : (
+                    <div className="p-3.5 text-xs text-neutral-400 italic bg-neutral-50 rounded-lg border border-neutral-100">
+                        Belum ada file bukti atau desain yang di-ACC.
+                    </div>
+                )}
+            </CardContent>
+        </Card>
+    );
 }
 
 const STORAGE_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api').replace('/api', '');
