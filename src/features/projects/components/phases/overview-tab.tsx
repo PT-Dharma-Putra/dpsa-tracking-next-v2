@@ -92,47 +92,52 @@ export function OverviewTab({ projectId }: OverviewTabProps) {
         <div className="space-y-6">
 
             {/* 1. Project Health Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <StatsCard
-                    title="Overall Progress"
-                    value={`${stats.overall_progress ?? 0}%`}
-                    icon={<LayoutDashboard className="h-4 w-4 text-blue-500" />}
-                    desc={`The last progres: ${stats.last_progress_label || 'Draft'}`}
-                />
-                <StatsCard
-                    title="SPK Value"
-                    value={new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(stats.total_spk_value ?? 0)}
-                    icon={<DollarSign className="h-4 w-4 text-green-500" />}
-                    desc="Total SPK Value"
-                />
-                {(() => {
-                    const days = stats.deadline_days;
-                    let deadlineValue = "Belum diatur";
-                    let deadlineColor = "text-neutral-900";
-
-                    if (days !== null && days !== undefined) {
-                        if (days < 0) {
-                            deadlineValue = `Lewat ${Math.abs(days)} Hari`;
-                            deadlineColor = "text-red-600";
-                        } else {
-                            deadlineValue = `Tersisa ${days} Hari`;
-                            deadlineColor = days < 8 ? "text-orange-600" : "text-neutral-900";
-                        }
-                    }
-
-                    return (
+            {(() => {
+                const isCompleted = Boolean((project as any)?.tanggal_selesai) || String(project?.status).toLowerCase() === 'completed' || stats.overall_progress === 100;
+                return (
+                    <div className={`grid grid-cols-1 ${isCompleted ? 'md:grid-cols-2' : 'md:grid-cols-3'} gap-4`}>
                         <StatsCard
-                            title="Deadline"
-                            value={deadlineValue}
-                            valueClassName={deadlineColor}
-                            icon={<Calendar className="h-4 w-4 text-orange-500" />}
-                            desc={days !== null && project.deadline 
-                                ? `Based on Schedule: ${format(new Date(project.deadline), 'd MMMM yyyy', { locale: idLocale })}` 
-                                : "No Deadline Set"}
+                            title="Overall Progress"
+                            value={`${stats.overall_progress ?? 0}%`}
+                            icon={<LayoutDashboard className="h-4 w-4 text-blue-500" />}
+                            desc={`The last progres: ${stats.last_progress_label || 'Draft'}`}
                         />
-                    );
-                })()}
-            </div>
+                        <StatsCard
+                            title="SPK Value"
+                            value={new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(stats.total_spk_value ?? 0)}
+                            icon={<DollarSign className="h-4 w-4 text-green-500" />}
+                            desc="Total SPK Value"
+                        />
+                        {!isCompleted && (() => {
+                            const days = stats.deadline_days;
+                            let deadlineValue = "Belum diatur";
+                            let deadlineColor = "text-neutral-900";
+
+                            if (days !== null && days !== undefined) {
+                                if (days < 0) {
+                                    deadlineValue = `Lewat ${Math.abs(days)} Hari`;
+                                    deadlineColor = "text-red-600";
+                                } else {
+                                    deadlineValue = `Tersisa ${days} Hari`;
+                                    deadlineColor = days < 8 ? "text-orange-600" : "text-neutral-900";
+                                }
+                            }
+
+                            return (
+                                <StatsCard
+                                    title="Deadline"
+                                    value={deadlineValue}
+                                    valueClassName={deadlineColor}
+                                    icon={<Calendar className="h-4 w-4 text-orange-500" />}
+                                    desc={days !== null && project?.deadline 
+                                        ? `Based on Schedule: ${format(new Date(project.deadline), 'd MMMM yyyy', { locale: idLocale })}` 
+                                        : "No Deadline Set"}
+                                />
+                            );
+                        })()}
+                    </div>
+                );
+            })()}
 
             {/* 2. Item Progress Matrix */}
             <Card>
