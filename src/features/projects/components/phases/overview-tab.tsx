@@ -80,14 +80,33 @@ export function OverviewTab({ projectId }: OverviewTabProps) {
                     icon={<DollarSign className="h-4 w-4 text-green-500" />}
                     desc="Total SPH Value"
                 />
-                <StatsCard
-                    title="Deadline"
-                    value={stats.deadline_days !== null ? `${stats.deadline_days} Days Left` : "Pending SPK"}
-                    icon={<Calendar className="h-4 w-4 text-orange-500" />}
-                    desc={stats.deadline_days !== null && project.deadline 
-                        ? `Based on Schedule: ${format(new Date(project.deadline), 'd MMMM yyyy', { locale: idLocale })}` 
-                        : "No Deadline Set"}
-                />
+                {(() => {
+                    const days = stats.deadline_days;
+                    let deadlineValue = "Pending SPK";
+                    let deadlineColor = "text-neutral-900";
+
+                    if (days !== null && days !== undefined) {
+                        if (days < 0) {
+                            deadlineValue = `Lewat ${Math.abs(days)} Hari`;
+                            deadlineColor = "text-red-600";
+                        } else {
+                            deadlineValue = `Tersisa ${days} Hari`;
+                            deadlineColor = days < 8 ? "text-orange-600" : "text-neutral-900";
+                        }
+                    }
+
+                    return (
+                        <StatsCard
+                            title="Deadline"
+                            value={deadlineValue}
+                            valueClassName={deadlineColor}
+                            icon={<Calendar className="h-4 w-4 text-orange-500" />}
+                            desc={days !== null && project.deadline 
+                                ? `Based on Schedule: ${format(new Date(project.deadline), 'd MMMM yyyy', { locale: idLocale })}` 
+                                : "No Deadline Set"}
+                        />
+                    );
+                })()}
             </div>
 
             {/* 3. Item Progress Matrix */}
@@ -213,7 +232,7 @@ export function OverviewTab({ projectId }: OverviewTabProps) {
     )
 }
 
-function StatsCard({ title, value, icon, desc }: any) {
+function StatsCard({ title, value, icon, desc, valueClassName }: any) {
     return (
         <Card>
             <CardContent className="p-6">
@@ -221,7 +240,7 @@ function StatsCard({ title, value, icon, desc }: any) {
                     <p className="text-sm font-medium text-neutral-500">{title}</p>
                     {icon}
                 </div>
-                <div className="text-2xl font-bold">{value}</div>
+                <div className={`text-2xl font-bold ${valueClassName || ''}`}>{value}</div>
                 <p className="text-xs text-neutral-400 mt-1">{desc}</p>
             </CardContent>
         </Card>
