@@ -6,6 +6,7 @@ import { useAuthStore } from "@/lib/auth-store"
 import { format, differenceInDays, startOfDay } from "date-fns"
 import { ClientService } from "@/features/dashboard/services/client-service"
 import { penagihanService, Penagihan } from "@/features/projects/services/penagihan-service"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -25,15 +26,15 @@ const formatRupiah = (val: string | number | null | undefined) => {
     return `Rp ${num.toLocaleString('id-ID')}`;
 };
 
-const getUmurTagihanInfo = (inv: Penagihan) => {
+const getUmurTagihanHari = (inv: Penagihan): number | null => {
     const statusStr = String(inv.status || '').toLowerCase();
     const isLunas = statusStr === 'lunas' || statusStr === 'paid';
 
     const baseDateStr = inv.tanggal_invoice || inv.created_at || inv.jatuh_tempo;
-    if (!baseDateStr) return { text: '-', colorClass: 'text-neutral-400' };
+    if (!baseDateStr) return null;
 
     const baseDate = startOfDay(new Date(baseDateStr));
-    if (isNaN(baseDate.getTime())) return { text: '-', colorClass: 'text-neutral-400' };
+    if (isNaN(baseDate.getTime())) return null;
 
     let targetDate = startOfDay(new Date());
     if (isLunas && inv.tanggal_dibayar) {
@@ -43,7 +44,16 @@ const getUmurTagihanInfo = (inv: Penagihan) => {
         }
     }
 
-    const diffDays = Math.max(0, differenceInDays(targetDate, baseDate));
+    return Math.max(0, differenceInDays(targetDate, baseDate));
+};
+
+const getUmurTagihanInfo = (inv: Penagihan) => {
+    const statusStr = String(inv.status || '').toLowerCase();
+    const isLunas = statusStr === 'lunas' || statusStr === 'paid';
+
+    const diffDays = getUmurTagihanHari(inv);
+    if (diffDays === null) return { text: '-', colorClass: 'text-neutral-400' };
+
     const text = `${diffDays} Hari`;
 
     if (isLunas) {
@@ -61,6 +71,7 @@ const getUmurTagihanInfo = (inv: Penagihan) => {
 
 export default function FinanceOverviewPage() {
     const user = useAuthStore((s) => s.user);
+    const [agingFilter, setAgingFilter] = React.useState<string>("all");
 
     const isHerminaPusat = React.useMemo(() => {
         if (!user) return false;
@@ -126,17 +137,32 @@ export default function FinanceOverviewPage() {
         });
     }, [penagihanList, user, isHerminaPusat]);
 
+    const finalPenagihanList = React.useMemo(() => {
+        if (agingFilter === 'all') return filteredPenagihanList;
+
+        return filteredPenagihanList.filter((inv: Penagihan) => {
+            const diffDays = getUmurTagihanHari(inv);
+            if (diffDays === null) return false;
+
+            if (agingFilter === 'under_30') return diffDays <= 30;
+            if (agingFilter === '31_60') return diffDays >= 31 && diffDays <= 60;
+            if (agingFilter === 'over_60') return diffDays > 60;
+
+            return true;
+        });
+    }, [filteredPenagihanList, agingFilter]);
+
     const totalTagihan = React.useMemo(() => {
-        return filteredPenagihanList.reduce((acc: number, inv: any) => {
+        return finalPenagihanList.reduce((acc: number, inv: any) => {
             const val = typeof inv.nominal_penagihan === 'number'
                 ? inv.nominal_penagihan
                 : parseFloat(inv.nominal_penagihan || '0');
             return acc + (isNaN(val) ? 0 : val);
         }, 0);
-    }, [filteredPenagihanList]);
+    }, [finalPenagihanList]);
 
     const totalTerbayar = React.useMemo(() => {
-        return filteredPenagihanList.reduce((acc: number, inv: any) => {
+        return finalPenagihanList.reduce((acc: number, inv: any) => {
             const status = String(inv.status || '').toLowerCase();
             const nominalPenagihan = typeof inv.nominal_penagihan === 'number'
                 ? inv.nominal_penagihan
@@ -153,14 +179,14 @@ export default function FinanceOverviewPage() {
             }
             return acc;
         }, 0);
-    }, [filteredPenagihanList]);
+    }, [finalPenagihanList]);
 
     const totalBelumTerbayar = React.useMemo(() => {
         return Math.max(0, totalTagihan - totalTerbayar);
     }, [totalTagihan, totalTerbayar]);
 
     const nextDueDate = React.useMemo(() => {
-        const upcoming = filteredPenagihanList
+        const upcoming = finalPenagihanList
             .filter((inv: any) => inv.jatuh_tempo && String(inv.status || '').toLowerCase() !== 'lunas')
             .map((inv: any) => inv.jatuh_tempo)
             .sort();
@@ -172,7 +198,7 @@ export default function FinanceOverviewPage() {
             }
         }
         return '-';
-    }, [filteredPenagihanList]);
+    }, [finalPenagihanList]);
 
     if (isLoading || isLoadingPenagihan) {
         return <div className="p-8"><Skeleton className="h-96 w-full rounded-xl" /></div>
@@ -187,9 +213,6 @@ export default function FinanceOverviewPage() {
                     <h1 className="text-2xl font-bold tracking-tight text-neutral-900">Finance Overview</h1>
                     <p className="text-muted-foreground">Track your project expenses, contracting values, and invoice history.</p>
                 </div>
-                {/* <Button variant="outline">
-                    <Download className="mr-2 h-4 w-4" /> Download Statement
-                </Button> */}
             </div>
 
             {/* Stats Cards */}
@@ -236,9 +259,25 @@ export default function FinanceOverviewPage() {
 
             {/* Invoice History */}
             <Card>
-                <CardHeader>
-                    <CardTitle>Invoice History</CardTitle>
-                    <CardDescription>A complete list of issued invoices.</CardDescription>
+                <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                        <CardTitle>Invoice History</CardTitle>
+                        <CardDescription>A complete list of issued invoices.</CardDescription>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <span className="text-xs font-medium text-neutral-500 whitespace-nowrap">Filter Umur:</span>
+                        <Select value={agingFilter} onValueChange={setAgingFilter}>
+                            <SelectTrigger className="w-[160px] h-9 text-xs bg-white border-neutral-200">
+                                <SelectValue placeholder="Semua Umur" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">Semua Umur</SelectItem>
+                                <SelectItem value="under_30">&lt; 30 Hari</SelectItem>
+                                <SelectItem value="31_60">31 - 60 Hari</SelectItem>
+                                <SelectItem value="over_60">&gt; 60 Hari</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
                 </CardHeader>
                 <CardContent>
                     <div className="rounded-md border border-neutral-200 overflow-hidden">
@@ -266,12 +305,12 @@ export default function FinanceOverviewPage() {
                                             </div>
                                         </td>
                                     </tr>
-                                ) : filteredPenagihanList.length === 0 ? (
+                                ) : finalPenagihanList.length === 0 ? (
                                     <tr>
                                         <td colSpan={9} className="text-center py-8 text-neutral-400">No invoices found.</td>
                                     </tr>
                                 ) : (
-                                    filteredPenagihanList.map((inv: Penagihan) => {
+                                    finalPenagihanList.map((inv: Penagihan) => {
                                         const fileUrl = inv.file
                                             ? inv.file.startsWith('http')
                                                 ? inv.file
