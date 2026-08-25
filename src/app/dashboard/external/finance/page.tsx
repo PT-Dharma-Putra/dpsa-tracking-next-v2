@@ -62,20 +62,56 @@ const getUmurTagihanInfo = (inv: Penagihan) => {
 export default function FinanceOverviewPage() {
     const user = useAuthStore((s) => s.user);
 
+    const isHerminaPusat = React.useMemo(() => {
+        if (!user) return false;
+        const userRoles = [
+            user.role,
+            ...(user.roles_list || []),
+            ...(user.roles?.map((r: any) => typeof r === 'string' ? r : r.name) || [])
+        ].filter(Boolean) as string[];
+
+        return (
+            userRoles.some(r => r?.toLowerCase().includes('hermina pusat')) ||
+            user.role_id === 19 ||
+            (Array.isArray(user.role_ids) && user.role_ids.includes(19))
+        );
+    }, [user]);
+
     const { data, isLoading } = useQuery({
         queryKey: ["client-finance"],
         queryFn: ClientService.getFinanceSummary
     })
 
     const { data: penagihanList = [], isLoading: isLoadingPenagihan } = useQuery({
-        queryKey: ["penagihan-all", user?.client_id],
-        queryFn: () => penagihanService.getAllPenagihan(user?.client_id ?? undefined)
+        queryKey: ["penagihan-all", user?.client_id, isHerminaPusat],
+        queryFn: () => penagihanService.getAllPenagihan(isHerminaPusat ? undefined : (user?.client_id ?? undefined))
     })
 
     const filteredPenagihanList = React.useMemo(() => {
         if (!user) return penagihanList;
 
+        if (isHerminaPusat) {
+            // Hermina Pusat sees all invoices belonging to Hermina clients
+            return penagihanList.filter((inv: any) => {
+                const projectClient = inv.project?.client;
+                const projectSpk = inv.project?.spk;
+                const penerbit = Array.isArray(projectSpk)
+                    ? projectSpk[0]?.penerbit
+                    : projectSpk?.penerbit;
+
+                const isProjectClientHermina = projectClient?.hermina === 1 || projectClient?.hermina === true || (projectClient?.name && String(projectClient.name).toLowerCase().includes('hermina'));
+                const isPenerbitHermina = penerbit?.hermina === 1 || penerbit?.hermina === true || (penerbit?.name && String(penerbit.name).toLowerCase().includes('hermina'));
+
+                if (projectClient || penerbit) {
+                    return Boolean(isProjectClientHermina || isPenerbitHermina);
+                }
+
+                return true;
+            });
+        }
+
         const userClientId = user.client_id;
+        if (!userClientId) return penagihanList;
 
         return penagihanList.filter((inv: any) => {
             // Relation path: penagihans -> project -> spk -> penerbit_id
@@ -84,16 +120,18 @@ export default function FinanceOverviewPage() {
                 ? projectSpk[0]?.penerbit_id
                 : projectSpk?.penerbit_id;
 
-            // If relation data is not loaded or missing, fallback to include it
-            if (penerbitId === undefined || penerbitId === null) {
+            const projectClientId = inv.project?.client_id;
+
+            if (penerbitId === undefined && projectClientId === undefined) {
                 return true;
             }
 
-            // Match penerbit_id from SPK table directly with user.client_id
-            if (!userClientId) return true;
-            return String(penerbitId) === String(userClientId);
+            return (
+                (penerbitId !== undefined && penerbitId !== null && String(penerbitId) === String(userClientId)) ||
+                (projectClientId !== undefined && projectClientId !== null && String(projectClientId) === String(userClientId))
+            );
         });
-    }, [penagihanList, user]);
+    }, [penagihanList, user, isHerminaPusat]);
 
     const totalTagihan = React.useMemo(() => {
         return filteredPenagihanList.reduce((acc: number, inv: any) => {
