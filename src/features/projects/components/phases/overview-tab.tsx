@@ -75,14 +75,14 @@ export function OverviewTab({ projectId }: OverviewTabProps) {
                     desc={`The last progres: ${stats.last_progress_label || 'Draft'}`}
                 />
                 <StatsCard
-                    title="Estimated Value"
-                    value={new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(stats.total_sph_value ?? 0)}
+                    title="SPK Value"
+                    value={new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(stats.total_spk_value ?? 0)}
                     icon={<DollarSign className="h-4 w-4 text-green-500" />}
-                    desc="Total SPH Value"
+                    desc="Total SPK Value"
                 />
                 {(() => {
                     const days = stats.deadline_days;
-                    let deadlineValue = "Pending SPK";
+                    let deadlineValue = "Belum diatur";
                     let deadlineColor = "text-neutral-900";
 
                     if (days !== null && days !== undefined) {
