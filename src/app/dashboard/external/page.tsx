@@ -27,7 +27,7 @@ export default function ClientDashboardPage() {
         ...(user?.roles?.map(r => typeof r === 'string' ? r : r.name) || [])
     ].filter(Boolean) as string[]
 
-    const isHerminaPusat = userRoles.some(r => r?.toLowerCase().includes('hermina pusat')) || user?.role_id === 15
+    const isHerminaPusat = userRoles.some(r => r?.toLowerCase().includes('hermina pusat')) || user?.role_id === 19
 
     // Fetch Hermina Clients if user role is Hermina Pusat
     const { data: herminaClients = [], isLoading: isLoadingHermina } = useQuery({
@@ -45,7 +45,9 @@ export default function ClientDashboardPage() {
     // Sort clients by project count (descending) & filter by search query
     const sortedAndFilteredHerminaClients = React.useMemo(() => {
         const withCounts = herminaClients.map(client => {
-            const count = projects.filter(p => p.client_id === client.id).length
+            const count = typeof client.projects_count === 'number' && client.projects_count > 0
+                ? client.projects_count
+                : projects.filter(p => p.client_id === client.id).length
             return { client, count }
         })
 
