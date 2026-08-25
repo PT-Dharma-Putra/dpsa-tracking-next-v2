@@ -6,10 +6,13 @@ import { useAuthStore } from "@/lib/auth-store"
 import { format, differenceInDays, startOfDay } from "date-fns"
 import { ClientService } from "@/features/dashboard/services/client-service"
 import { penagihanService, Penagihan } from "@/features/projects/services/penagihan-service"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Download, FileText, TrendingUp, CreditCard, AlertCircle, Loader2 } from "lucide-react"
+import { Download, FileText, TrendingUp, CreditCard, AlertCircle, Loader2, Check, ChevronsUpDown } from "lucide-react"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
@@ -25,15 +28,15 @@ const formatRupiah = (val: string | number | null | undefined) => {
     return `Rp ${num.toLocaleString('id-ID')}`;
 };
 
-const getUmurTagihanInfo = (inv: Penagihan) => {
+const getUmurTagihanHari = (inv: Penagihan): number | null => {
     const statusStr = String(inv.status || '').toLowerCase();
     const isLunas = statusStr === 'lunas' || statusStr === 'paid';
 
     const baseDateStr = inv.tanggal_invoice || inv.created_at || inv.jatuh_tempo;
-    if (!baseDateStr) return { text: '-', colorClass: 'text-neutral-400' };
+    if (!baseDateStr) return null;
 
     const baseDate = startOfDay(new Date(baseDateStr));
-    if (isNaN(baseDate.getTime())) return { text: '-', colorClass: 'text-neutral-400' };
+    if (isNaN(baseDate.getTime())) return null;
 
     let targetDate = startOfDay(new Date());
     if (isLunas && inv.tanggal_dibayar) {
@@ -43,7 +46,16 @@ const getUmurTagihanInfo = (inv: Penagihan) => {
         }
     }
 
-    const diffDays = Math.max(0, differenceInDays(targetDate, baseDate));
+    return Math.max(0, differenceInDays(targetDate, baseDate));
+};
+
+const getUmurTagihanInfo = (inv: Penagihan) => {
+    const statusStr = String(inv.status || '').toLowerCase();
+    const isLunas = statusStr === 'lunas' || statusStr === 'paid';
+
+    const diffDays = getUmurTagihanHari(inv);
+    if (diffDays === null) return { text: '-', colorClass: 'text-neutral-400' };
+
     const text = `${diffDays} Hari`;
 
     if (isLunas) {
@@ -61,6 +73,9 @@ const getUmurTagihanInfo = (inv: Penagihan) => {
 
 export default function FinanceOverviewPage() {
     const user = useAuthStore((s) => s.user);
+    const [agingFilter, setAgingFilter] = React.useState<string>("all");
+    const [selectedHerminaClientId, setSelectedHerminaClientId] = React.useState<number | "all">("all");
+    const [isHerminaSelectOpen, setIsHerminaSelectOpen] = React.useState(false);
 
     const isHerminaPusat = React.useMemo(() => {
         if (!user) return false;
@@ -76,6 +91,12 @@ export default function FinanceOverviewPage() {
             (Array.isArray(user.role_ids) && user.role_ids.includes(19))
         );
     }, [user]);
+
+    const { data: herminaClients = [] } = useQuery({
+        queryKey: ["hermina-clients"],
+        queryFn: ClientService.getHerminaClients,
+        enabled: isHerminaPusat,
+    });
 
     const { data, isLoading } = useQuery({
         queryKey: ["client-finance"],
@@ -100,11 +121,25 @@ export default function FinanceOverviewPage() {
 
                 if (!penerbit) return false;
 
-                return Boolean(
+                const isPenerbitHermina = Boolean(
                     penerbit.hermina === 1 ||
                     penerbit.hermina === true ||
                     (penerbit.name && String(penerbit.name).toLowerCase().includes('hermina'))
                 );
+
+                if (!isPenerbitHermina) return false;
+
+                if (selectedHerminaClientId !== "all") {
+                    const penerbitId = penerbit.id || (Array.isArray(projectSpk) ? projectSpk[0]?.penerbit_id : projectSpk?.penerbit_id);
+                    const projectClientId = inv.project?.client_id;
+
+                    return (
+                        (penerbitId !== undefined && penerbitId !== null && Number(penerbitId) === Number(selectedHerminaClientId)) ||
+                        (projectClientId !== undefined && projectClientId !== null && Number(projectClientId) === Number(selectedHerminaClientId))
+                    );
+                }
+
+                return true;
             });
         }
 
@@ -124,19 +159,34 @@ export default function FinanceOverviewPage() {
 
             return String(penerbitId) === String(userClientId);
         });
-    }, [penagihanList, user, isHerminaPusat]);
+    }, [penagihanList, user, isHerminaPusat, selectedHerminaClientId]);
+
+    const finalPenagihanList = React.useMemo(() => {
+        if (agingFilter === 'all') return filteredPenagihanList;
+
+        return filteredPenagihanList.filter((inv: Penagihan) => {
+            const diffDays = getUmurTagihanHari(inv);
+            if (diffDays === null) return false;
+
+            if (agingFilter === 'under_30') return diffDays <= 30;
+            if (agingFilter === '31_60') return diffDays >= 31 && diffDays <= 60;
+            if (agingFilter === 'over_60') return diffDays > 60;
+
+            return true;
+        });
+    }, [filteredPenagihanList, agingFilter]);
 
     const totalTagihan = React.useMemo(() => {
-        return filteredPenagihanList.reduce((acc: number, inv: any) => {
+        return finalPenagihanList.reduce((acc: number, inv: any) => {
             const val = typeof inv.nominal_penagihan === 'number'
                 ? inv.nominal_penagihan
                 : parseFloat(inv.nominal_penagihan || '0');
             return acc + (isNaN(val) ? 0 : val);
         }, 0);
-    }, [filteredPenagihanList]);
+    }, [finalPenagihanList]);
 
     const totalTerbayar = React.useMemo(() => {
-        return filteredPenagihanList.reduce((acc: number, inv: any) => {
+        return finalPenagihanList.reduce((acc: number, inv: any) => {
             const status = String(inv.status || '').toLowerCase();
             const nominalPenagihan = typeof inv.nominal_penagihan === 'number'
                 ? inv.nominal_penagihan
@@ -153,14 +203,14 @@ export default function FinanceOverviewPage() {
             }
             return acc;
         }, 0);
-    }, [filteredPenagihanList]);
+    }, [finalPenagihanList]);
 
     const totalBelumTerbayar = React.useMemo(() => {
         return Math.max(0, totalTagihan - totalTerbayar);
     }, [totalTagihan, totalTerbayar]);
 
     const nextDueDate = React.useMemo(() => {
-        const upcoming = filteredPenagihanList
+        const upcoming = finalPenagihanList
             .filter((inv: any) => inv.jatuh_tempo && String(inv.status || '').toLowerCase() !== 'lunas')
             .map((inv: any) => inv.jatuh_tempo)
             .sort();
@@ -172,7 +222,7 @@ export default function FinanceOverviewPage() {
             }
         }
         return '-';
-    }, [filteredPenagihanList]);
+    }, [finalPenagihanList]);
 
     if (isLoading || isLoadingPenagihan) {
         return <div className="p-8"><Skeleton className="h-96 w-full rounded-xl" /></div>
@@ -187,9 +237,6 @@ export default function FinanceOverviewPage() {
                     <h1 className="text-2xl font-bold tracking-tight text-neutral-900">Finance Overview</h1>
                     <p className="text-muted-foreground">Track your project expenses, contracting values, and invoice history.</p>
                 </div>
-                {/* <Button variant="outline">
-                    <Download className="mr-2 h-4 w-4" /> Download Statement
-                </Button> */}
             </div>
 
             {/* Stats Cards */}
@@ -236,9 +283,84 @@ export default function FinanceOverviewPage() {
 
             {/* Invoice History */}
             <Card>
-                <CardHeader>
-                    <CardTitle>Invoice History</CardTitle>
-                    <CardDescription>A complete list of issued invoices.</CardDescription>
+                <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                        <CardTitle>Invoice History</CardTitle>
+                        <CardDescription>A complete list of issued invoices.</CardDescription>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-3">
+                        {isHerminaPusat && (
+                            <div className="flex items-center gap-2">
+                                <span className="text-xs font-medium text-neutral-500 whitespace-nowrap">Filter Cabang:</span>
+                                <Popover open={isHerminaSelectOpen} onOpenChange={setIsHerminaSelectOpen}>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            variant="outline"
+                                            role="combobox"
+                                            aria-expanded={isHerminaSelectOpen}
+                                            className="w-[200px] h-9 text-xs justify-between bg-white border-neutral-200 font-normal"
+                                        >
+                                            <span className="truncate">
+                                                {selectedHerminaClientId === "all"
+                                                    ? "Semua Cabang Hermina"
+                                                    : herminaClients.find((c) => c.id === selectedHerminaClientId)?.name || "Pilih Cabang..."}
+                                            </span>
+                                            <ChevronsUpDown className="ml-2 h-3.5 w-3.5 shrink-0 opacity-50" />
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-[220px] p-0" align="end">
+                                        <Command>
+                                            <CommandInput placeholder="Cari cabang Hermina..." className="text-xs h-9" />
+                                            <CommandList>
+                                                <CommandEmpty className="text-xs py-2 px-3 text-neutral-500">Cabang tidak ditemukan.</CommandEmpty>
+                                                <CommandGroup>
+                                                    <CommandItem
+                                                        value="all"
+                                                        onSelect={() => {
+                                                            setSelectedHerminaClientId("all");
+                                                            setIsHerminaSelectOpen(false);
+                                                        }}
+                                                        className="text-xs flex items-center justify-between cursor-pointer"
+                                                    >
+                                                        <span>Semua Cabang Hermina</span>
+                                                        {selectedHerminaClientId === "all" && <Check className="h-3.5 w-3.5 text-orange-600" />}
+                                                    </CommandItem>
+                                                    {herminaClients.map((client) => (
+                                                        <CommandItem
+                                                            key={client.id}
+                                                            value={client.name}
+                                                            onSelect={() => {
+                                                                setSelectedHerminaClientId(client.id);
+                                                                setIsHerminaSelectOpen(false);
+                                                            }}
+                                                            className="text-xs flex items-center justify-between cursor-pointer"
+                                                        >
+                                                            <span className="truncate">{client.name}</span>
+                                                            {selectedHerminaClientId === client.id && <Check className="h-3.5 w-3.5 text-orange-600" />}
+                                                        </CommandItem>
+                                                    ))}
+                                                </CommandGroup>
+                                            </CommandList>
+                                        </Command>
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
+                        )}
+                        <div className="flex items-center gap-2">
+                            <span className="text-xs font-medium text-neutral-500 whitespace-nowrap">Filter Umur:</span>
+                            <Select value={agingFilter} onValueChange={setAgingFilter}>
+                                <SelectTrigger className="w-[150px] h-9 text-xs bg-white border-neutral-200">
+                                    <SelectValue placeholder="Semua Umur" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">Semua Umur</SelectItem>
+                                    <SelectItem value="under_30">&lt; 30 Hari</SelectItem>
+                                    <SelectItem value="31_60">31 - 60 Hari</SelectItem>
+                                    <SelectItem value="over_60">&gt; 60 Hari</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
                 </CardHeader>
                 <CardContent>
                     <div className="rounded-md border border-neutral-200 overflow-hidden">
@@ -266,12 +388,12 @@ export default function FinanceOverviewPage() {
                                             </div>
                                         </td>
                                     </tr>
-                                ) : filteredPenagihanList.length === 0 ? (
+                                ) : finalPenagihanList.length === 0 ? (
                                     <tr>
                                         <td colSpan={9} className="text-center py-8 text-neutral-400">No invoices found.</td>
                                     </tr>
                                 ) : (
-                                    filteredPenagihanList.map((inv: Penagihan) => {
+                                    finalPenagihanList.map((inv: Penagihan) => {
                                         const fileUrl = inv.file
                                             ? inv.file.startsWith('http')
                                                 ? inv.file
