@@ -88,17 +88,19 @@ export function OverviewTab({ projectId }: OverviewTabProps) {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead className="w-[15%]">Ruang</TableHead>
-                                <TableHead className="w-[25%]">Nama Item</TableHead>
-                                <TableHead className="w-[8%] text-center">QTY</TableHead>
-                                <TableHead className="w-[27%]">Progres Produksi</TableHead>
-                                <TableHead className="w-[12%] text-center">Terkirim</TableHead>
-                                <TableHead className="w-[13%] text-center">Tersetting</TableHead>
+                                <TableHead className="w-[40px] text-center">No.</TableHead>
+                                <TableHead className="w-[22%]">Nama Item</TableHead>
+                                <TableHead className="w-[12%]">Lantai</TableHead>
+                                <TableHead className="w-[13%]">Ruang</TableHead>
+                                <TableHead className="w-[7%] text-center">QTY</TableHead>
+                                <TableHead className="w-[22%]">Progres Produksi</TableHead>
+                                <TableHead className="w-[10%] text-center">Terkirim</TableHead>
+                                <TableHead className="w-[10%] text-center">Tersetting</TableHead>
                                 <TableHead className="text-right">Status</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {matrix?.map((item: any) => {
+                            {matrix?.map((item: any, index: number) => {
                                 // Calculate combined progress
                                 // If design is not needed or finished, show production progress
                                 const designProgress = item.design?.progress || 0;
@@ -116,13 +118,21 @@ export function OverviewTab({ projectId }: OverviewTabProps) {
 
                                 return (
                                     <TableRow key={item.id}>
-                                        <TableCell className="font-medium text-neutral-600">
-                                            {item.ruang || item.room || "-"}
+                                        <TableCell className="text-center font-medium text-neutral-500">
+                                            {index + 1}
                                         </TableCell>
 
                                         <TableCell className="font-medium text-neutral-900">
                                             {item.name}
                                             {item.design?.needed && <Badge variant="outline" className="ml-2 text-[10px]">Customize</Badge>}
+                                        </TableCell>
+
+                                        <TableCell className="font-medium text-neutral-600">
+                                            {item.lantai || item.floor || "-"}
+                                        </TableCell>
+
+                                        <TableCell className="font-medium text-neutral-600">
+                                            {item.ruang || item.room || "-"}
                                         </TableCell>
 
                                         <TableCell className="text-center font-medium text-neutral-800">
