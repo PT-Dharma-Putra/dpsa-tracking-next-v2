@@ -363,19 +363,19 @@ export default function FinanceOverviewPage() {
                     </div>
                 </CardHeader>
                 <CardContent>
-                    <div className="rounded-md border border-neutral-200 overflow-hidden">
+                    <div className="rounded-md border border-neutral-200 overflow-auto max-h-[600px] relative">
                         <table className="w-full text-sm text-left">
-                            <thead className="bg-neutral-50 text-neutral-500 font-medium">
+                            <thead className="bg-neutral-50 text-neutral-500 font-medium sticky top-0 z-10 shadow-xs">
                                 <tr>
-                                    <th className="px-4 py-3">Invoice #</th>
-                                    <th className="px-4 py-3">Nomor SPK</th>
-                                    <th className="px-4 py-3">Project</th>
-                                    <th className="px-4 py-3">Due Date</th>
-                                    <th className="px-4 py-3 text-center">Umur Tagihan</th>
-                                    <th className="px-4 py-3 text-right">Nominal Tagihan</th>
-                                    <th className="px-4 py-3 text-right">Nominal Terbayar</th>
-                                    <th className="px-4 py-3 text-center">Status</th>
-                                    <th className="px-4 py-3 text-right">File</th>
+                                    <th className="px-4 py-3 sticky top-0 bg-neutral-50 z-10 text-center max-w-[130px] break-words whitespace-normal">Invoice #</th>
+                                    <th className="px-4 py-3 sticky top-0 bg-neutral-50 z-10 text-center max-w-[130px] break-words whitespace-normal">Nomor SPK</th>
+                                    <th className="px-4 py-3 sticky top-0 bg-neutral-50 z-10 text-center">Project</th>
+                                    <th className="px-4 py-3 sticky top-0 bg-neutral-50 z-10 text-center whitespace-nowrap">Due Date</th>
+                                    <th className="px-4 py-3 sticky top-0 bg-neutral-50 z-10 text-center whitespace-nowrap">Umur Tagihan</th>
+                                    <th className="px-4 py-3 sticky top-0 bg-neutral-50 z-10 text-center whitespace-nowrap">Nominal Tagihan</th>
+                                    <th className="px-4 py-3 sticky top-0 bg-neutral-50 z-10 text-center whitespace-nowrap">Nominal Terbayar</th>
+                                    <th className="px-4 py-3 sticky top-0 bg-neutral-50 z-10 text-center whitespace-nowrap">Status</th>
+                                    <th className="px-4 py-3 sticky top-0 bg-neutral-50 z-10 text-center whitespace-nowrap">File</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-neutral-100 bg-white">
@@ -421,16 +421,16 @@ export default function FinanceOverviewPage() {
 
                                         return (
                                             <tr key={inv.id} className="hover:bg-neutral-50 transition-colors">
-                                                <td className="px-4 py-4 font-medium text-neutral-900">
+                                                <td className="px-4 py-4 font-medium text-neutral-900 max-w-[130px] break-words whitespace-normal leading-tight">
                                                     {inv.nomor_invoice || '-'}
                                                 </td>
-                                                <td className="px-4 py-4 text-neutral-700">
+                                                <td className="px-4 py-4 text-neutral-700 max-w-[130px] break-words whitespace-normal leading-tight">
                                                     {noSpkStr}
                                                 </td>
                                                 <td className="px-4 py-4 max-w-[200px] truncate text-neutral-700" title={inv.project?.name || (inv as any).project_name || '-'}>
                                                     {inv.project?.name || (inv as any).project_name || '-'}
                                                 </td>
-                                                <td className="px-4 py-4 text-neutral-500">
+                                                <td className="px-4 py-4 text-neutral-500 whitespace-nowrap">
                                                     {dueDateStr}
                                                 </td>
                                                 <td className="px-4 py-4 text-center whitespace-nowrap">
@@ -438,13 +438,13 @@ export default function FinanceOverviewPage() {
                                                         {agingInfo.text}
                                                     </span>
                                                 </td>
-                                                <td className="px-4 py-4 text-right text-neutral-900 font-medium">
+                                                <td className="px-4 py-4 text-right text-neutral-900 font-medium whitespace-nowrap">
                                                     {formatRupiah(inv.nominal_penagihan)}
                                                 </td>
-                                                <td className="px-4 py-4 text-right text-emerald-600 font-medium">
+                                                <td className="px-4 py-4 text-right text-emerald-600 font-medium whitespace-nowrap">
                                                     {formatRupiah(nominalTerbayarVal)}
                                                 </td>
-                                                <td className="px-4 py-4 text-center">
+                                                <td className="px-4 py-4 text-center whitespace-nowrap">
                                                     <Badge
                                                         variant="secondary"
                                                         className={cn(
@@ -457,7 +457,7 @@ export default function FinanceOverviewPage() {
                                                         {inv.status || '-'}
                                                     </Badge>
                                                 </td>
-                                                <td className="px-4 py-4 text-right">
+                                                <td className="px-4 py-4 text-right whitespace-nowrap">
                                                     {fileUrl ? (
                                                         <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5 text-blue-600 border-blue-200 hover:bg-blue-50" asChild>
                                                             <a href={fileUrl} target="_blank" rel="noopener noreferrer">
