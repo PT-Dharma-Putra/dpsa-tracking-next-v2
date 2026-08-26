@@ -31,6 +31,7 @@ import {
   AlertCircle,
   CheckCircle,
   ExternalLink,
+  ShieldCheck,
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -82,6 +83,9 @@ import { toast } from 'sonner';
 import {
   projectV2Service,
   ProjectItemV2,
+  getBasts,
+  uploadBast,
+  Bast,
 } from '@/features/projects/services/project-v2-service';
 import { ProjectItemFormDialog } from '../../../_components/project-item-form-dialog';
 import { CatalogModal } from '../../../_components/catalog-modal';
@@ -498,7 +502,7 @@ export default function ProjectItemsPage() {
       grand_total,
       penerbit_id,
     }: {
-      file: File;
+      file?: File | null;
       number: string;
       tanggal_masuk?: string;
       nominal_dpp?: string;
@@ -537,8 +541,8 @@ export default function ProjectItemsPage() {
   });
 
   const handleSpkUpload = () => {
-    if (!spkFile || !spkNumber || !spkPenerbitId) {
-      toast.error('Harap lengkapi file SPK, nomor SPK, dan diterbitkan oleh');
+    if (!spkNumber || !spkPenerbitId) {
+      toast.error('Harap lengkapi nomor SPK dan diterbitkan oleh');
       return;
     }
     uploadSpkMutation.mutate({
@@ -551,6 +555,30 @@ export default function ProjectItemsPage() {
       grand_total: spkGrandTotal,
       penerbit_id: spkPenerbitId || undefined,
     });
+  };
+
+  const uploadBastMutation = useMutation({
+    mutationFn: (payload: { no_surat: string; date: string; file?: File | null }) =>
+      uploadBast(projectId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects-v2', projectId] });
+      toast.success('BAST berhasil disimpan');
+      setIsBastModalOpen(false);
+      setBastNoSurat('');
+      setBastDate('');
+      setBastFile(null);
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || 'Gagal menyimpan BAST');
+    },
+  });
+
+  const handleOpenEditBast = () => {
+    if (project?.basts && project.basts.length > 0) {
+      setBastNoSurat(project.basts[0].no_surat || '');
+      setBastDate(project.basts[0].date || '');
+    }
+    setIsBastModalOpen(true);
   };
 
   const [isEditSphModalOpen, setIsEditSphModalOpen] = React.useState(false);
@@ -719,11 +747,17 @@ export default function ProjectItemsPage() {
   const [isAccModalOpen, setIsAccModalOpen] = React.useState(false);
   const [isSphModalOpen, setIsSphModalOpen] = React.useState(false);
   const [isSpkModalOpen, setIsSpkModalOpen] = React.useState(false);
+  const [isBastModalOpen, setIsBastModalOpen] = React.useState(false);
+
+  const [bastNoSurat, setBastNoSurat] = React.useState('');
+  const [bastDate, setBastDate] = React.useState('');
+  const [bastFile, setBastFile] = React.useState<File | null>(null);
 
   const [isSpdCollapsed, setIsSpdCollapsed] = React.useState(true);
   const [isAccCollapsed, setIsAccCollapsed] = React.useState(true);
   const [isSphCollapsed, setIsSphCollapsed] = React.useState(true);
   const [isSpkCollapsed, setIsSpkCollapsed] = React.useState(true);
+  const [isBastCollapsed, setIsBastCollapsed] = React.useState(true);
   const [isNeedDesignModalOpen, setIsNeedDesignModalOpen] =
     React.useState(false);
   const [needDesignValue, setNeedDesignValue] = React.useState<number>(
@@ -734,6 +768,13 @@ export default function ProjectItemsPage() {
   const existingSph = project?.sphs?.[0];
   const existingAcc = existingSpd?.acc_design;
   const existingSpk = project?.spk;
+
+  const spkNominalVal =
+    existingSpk?.nominal !== undefined && existingSpk?.nominal !== null
+      ? Number(existingSpk.nominal)
+      : null;
+  const isSpkBelow50Juta =
+    spkNominalVal !== null && spkNominalVal > 0 && spkNominalVal < 50000000;
 
   // Sync state when project data loads
   React.useEffect(() => {
@@ -857,6 +898,20 @@ export default function ProjectItemsPage() {
       bgColor: 'bg-blue-500',
       lightBg: 'bg-blue-50',
       borderColor: 'border-blue-200',
+    },
+    {
+      id: 6,
+      title: 'Upload BAST',
+      description: isSpkBelow50Juta
+        ? 'Tanpa BAST'
+        : 'Berita Acara Serah Terima',
+      isCompleted: isSpkBelow50Juta || !!project?.basts?.[0]?.file_path,
+      isActive: !!existingSpk?.file || !!existingSpk?.spk_signed_file,
+      icon: ShieldCheck,
+      color: 'text-teal-600',
+      bgColor: 'bg-teal-500',
+      lightBg: 'bg-teal-50',
+      borderColor: 'border-teal-200',
     },
   ];
 
@@ -1002,7 +1057,7 @@ export default function ProjectItemsPage() {
       </div>
 
       {/* Document Section at Top */}
-      <div className='grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 w-full'>
+      <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 w-full'>
         {/* 1. SPD SECTION */}
         <Card
           className={`border shadow-sm transition-all duration-300 ${
@@ -1746,7 +1801,7 @@ export default function ProjectItemsPage() {
           </CardHeader>
           {!isSpkCollapsed && (
             <CardContent>
-              {existingSpk?.file || existingSpk?.spk_signed_file ? (
+              {existingSpk ? (
                 <div className='space-y-3'>
                   <div className='p-3 rounded-xl bg-purple-50/80 border border-purple-100 flex items-center justify-between shadow-sm min-w-0 gap-2'>
                     <div className='flex items-center gap-3 min-w-0 flex-1 mr-2'>
@@ -1761,7 +1816,7 @@ export default function ProjectItemsPage() {
                           {existingSpk.nomor_spk}
                         </p>
                         <p className='text-[10px] text-purple-600/80 truncate'>
-                          {format(
+                          {existingSpk.created_at && format(
                             new Date(existingSpk.created_at),
                             'MMM d, yyyy'
                           )}
@@ -1773,27 +1828,29 @@ export default function ProjectItemsPage() {
                         </p>
                       </div>
                     </div>
-                    <div className='flex gap-2 shrink-0'>
-                      <Button
-                        variant='ghost'
-                        size='icon'
-                        className='h-8 w-8 text-purple-600 hover:bg-purple-200 bg-white shadow-sm border border-purple-100'
-                        asChild
-                      >
-                        <a
-                          href={`${(
-                            process.env.NEXT_PUBLIC_API_URL ||
-                            'http://localhost:8000'
-                          ).replace('/api', '')}/storage/${
-                            existingSpk.spk_signed_file || existingSpk.file
-                          }`}
-                          target='_blank'
-                          rel='noopener noreferrer'
+                    {(existingSpk.file || existingSpk.spk_signed_file) && (
+                      <div className='flex gap-2 shrink-0'>
+                        <Button
+                          variant='ghost'
+                          size='icon'
+                          className='h-8 w-8 text-purple-600 hover:bg-purple-200 bg-white shadow-sm border border-purple-100'
+                          asChild
                         >
-                          <FileDown className='h-4 w-4' />
-                        </a>
-                      </Button>
-                    </div>
+                          <a
+                            href={`${(
+                              process.env.NEXT_PUBLIC_API_URL ||
+                              'http://localhost:8000'
+                            ).replace('/api', '')}/storage/${
+                              existingSpk.spk_signed_file || existingSpk.file
+                            }`}
+                            target='_blank'
+                            rel='noopener noreferrer'
+                          >
+                            <FileDown className='h-4 w-4' />
+                          </a>
+                        </Button>
+                      </div>
+                    )}
                   </div>
 
                   {/* Signed SPK Section */}
@@ -1905,6 +1962,125 @@ export default function ProjectItemsPage() {
                     <Upload className='h-3 w-3 mr-1' />
                     Upload SPK
                   </Button>
+                </div>
+              )}
+            </CardContent>
+          )}
+        </Card>
+
+        {/* 6. BAST SECTION */}
+        <Card
+          className={`border shadow-sm transition-all duration-300 ${
+            flowSteps[5].isActive
+              ? flowSteps[5].isCompleted
+                ? 'border-teal-200 bg-white ring-1 ring-teal-100'
+                : 'border-teal-300 bg-white ring-2 ring-teal-500 ring-offset-2'
+              : 'border-neutral-200 bg-neutral-50/80 opacity-60 grayscale-[0.5]'
+          }`}
+        >
+          <CardHeader className='pb-3 flex flex-row items-center justify-between gap-2 min-w-0'>
+            <button
+              className='flex items-center gap-2 flex-1 text-left min-w-0'
+              onClick={() => setIsBastCollapsed((v) => !v)}
+            >
+              <div
+                className={`h-8 w-8 rounded-full flex items-center justify-center font-bold shrink-0 ${
+                  flowSteps[5].isActive
+                    ? 'bg-teal-100 text-teal-600'
+                    : 'bg-neutral-200 text-neutral-500'
+                }`}
+              >
+                6
+              </div>
+              <div className='flex-1 min-w-0'>
+                <CardTitle
+                  className='text-sm sm:text-base text-neutral-800 truncate'
+                  title='Upload BAST'
+                >
+                  Upload BAST
+                </CardTitle>
+                <p
+                  className='text-[9px] sm:text-[10px] text-muted-foreground uppercase tracking-wider truncate'
+                  title='Berita Acara Serah Terima'
+                >
+                  Berita Acara Serah Terima
+                </p>
+              </div>
+              <ChevronDown
+                className={`h-4 w-4 text-neutral-400 transition-transform duration-200 mr-1 shrink-0 ${
+                  isBastCollapsed ? '-rotate-90' : ''
+                }`}
+              />
+            </button>
+          </CardHeader>
+          {!isBastCollapsed && (
+            <CardContent>
+              {project?.basts && project.basts.length > 0 ? (
+                <div className='space-y-3'>
+                  <div className='p-3 rounded-xl bg-teal-50/80 border border-teal-100 flex items-center justify-between shadow-sm min-w-0 gap-2'>
+                    <div className='flex items-center gap-3 min-w-0 flex-1 mr-2'>
+                      <div className='h-8 w-8 rounded-lg bg-white shadow-sm border border-teal-100 flex items-center justify-center text-teal-600 shrink-0'>
+                        <ShieldCheck className='h-4 w-4' />
+                      </div>
+                      <div className='min-w-0 flex-1'>
+                        <p
+                          className='text-xs font-bold text-teal-900 truncate'
+                          title={project.basts[0].no_surat}
+                        >
+                          {project.basts[0].no_surat}
+                        </p>
+                        <p className='text-[10px] text-teal-600/80 truncate'>
+                          {project.basts[0].date
+                            ? format(new Date(project.basts[0].date), 'MMM d, yyyy')
+                            : '-'}
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      variant='ghost'
+                      size='icon'
+                      className='h-8 w-8 text-teal-600 hover:bg-teal-200 bg-white shadow-sm border border-teal-100 shrink-0'
+                      asChild
+                    >
+                      <a
+                        href={project.basts[0].file_url || `${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '')}/storage/${project.basts[0].file_path}`}
+                        target='_blank'
+                        rel='noopener noreferrer'
+                      >
+                        <FileDown className='h-4 w-4' />
+                      </a>
+                    </Button>
+                  </div>
+                  <Button
+                    size='sm'
+                    variant='outline'
+                    className='w-full h-8 text-[10px] border-teal-200 text-teal-700 hover:bg-teal-50 shrink-0'
+                    disabled={!flowSteps[5].isActive}
+                    onClick={handleOpenEditBast}
+                  >
+                    <Pencil className='h-3 w-3 mr-1' />
+                    Edit BAST
+                  </Button>
+                </div>
+              ) : (
+                <div className='space-y-3'>
+                  <p className='text-xs text-muted-foreground italic'>
+                    {isSpkBelow50Juta
+                      ? 'Nominal SPK kurang dari 50 juta, Tanpa BAST'
+                      : 'Belum ada file BAST.'}
+                  </p>
+                  {!isSpkBelow50Juta && (
+                    <Button
+                      size='sm'
+                      variant='outline'
+                      className='w-full h-8 text-[10px] border-teal-200 text-teal-600 hover:bg-teal-50 shrink-0'
+                      disabled={!flowSteps[5].isActive}
+                      onClick={() => setIsBastModalOpen(true)}
+                    >
+                      <Upload className='h-3 w-3 mr-1' />
+                      Upload BAST
+                    </Button>
+                  )}
                 </div>
               )}
             </CardContent>
@@ -3053,7 +3229,7 @@ export default function ProjectItemsPage() {
             </div>
             <div className='space-y-1.5'>
               <Label className='text-xs font-medium'>
-                File (PDF/JPG/PNG/DOC)
+                File (PDF/JPG/PNG/DOC - Opsional)
               </Label>
               <Input
                 type='file'
@@ -3078,7 +3254,7 @@ export default function ProjectItemsPage() {
                 handleSpkUpload();
                 setIsSpkModalOpen(false);
               }}
-              disabled={!spkFile || !spkNumber || !spkPenerbitId || uploadSpkMutation.isPending}
+              disabled={!spkNumber || !spkPenerbitId || uploadSpkMutation.isPending}
             >
               {uploadSpkMutation.isPending ? (
                 <Loader2 className='h-4 w-4 animate-spin' />
@@ -3088,6 +3264,101 @@ export default function ProjectItemsPage() {
               Upload
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal BAST */}
+      <Dialog open={isBastModalOpen} onOpenChange={setIsBastModalOpen}>
+        <DialogContent className='max-w-sm'>
+          <DialogHeader>
+            <DialogTitle className='flex items-center gap-2 text-teal-700'>
+              <ShieldCheck className='h-5 w-5' />
+              Upload BAST
+            </DialogTitle>
+          </DialogHeader>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              const hasExistingBast = project?.basts && project.basts.length > 0;
+              if (!bastNoSurat || !bastDate || (!hasExistingBast && !bastFile)) {
+                toast.error('Harap lengkapi Nomor Surat, Tanggal, dan File BAST');
+                return;
+              }
+              uploadBastMutation.mutate({
+                no_surat: bastNoSurat,
+                date: bastDate,
+                file: bastFile,
+              });
+            }}
+            className='flex flex-col gap-3 py-2'
+          >
+            <div className='space-y-1.5'>
+              <Label className='text-xs font-medium text-teal-700'>
+                Nomor Surat
+              </Label>
+              <Input
+                placeholder='Nomor BAST (contoh: 001/BAST/2026)'
+                value={bastNoSurat}
+                onChange={(e) => setBastNoSurat(e.target.value)}
+                className='h-9 text-xs border-teal-200'
+                required
+              />
+            </div>
+            <div className='space-y-1.5'>
+              <Label className='text-xs font-medium text-teal-700'>
+                Tanggal
+              </Label>
+              <Input
+                type='date'
+                value={bastDate}
+                onChange={(e) => setBastDate(e.target.value)}
+                className='h-9 text-xs border-teal-200 w-full'
+                required
+              />
+            </div>
+            <div className='space-y-1.5'>
+              <Label className='text-xs font-medium text-teal-700'>
+                File BAST {project?.basts && project.basts.length > 0 && '(Opsional)'}
+              </Label>
+              <Input
+                type='file'
+                accept='.pdf,.jpg,.jpeg,.png,.doc,.docx'
+                onChange={(e) => {
+                  if (e.target.files && e.target.files[0]) {
+                    setBastFile(e.target.files[0]);
+                  }
+                }}
+                className='h-9 text-xs border-teal-200 w-full'
+                required={!project?.basts || project.basts.length === 0}
+              />
+            </div>
+            <DialogFooter className='mt-2 gap-2'>
+              <Button
+                type='button'
+                variant='outline'
+                size='sm'
+                onClick={() => setIsBastModalOpen(false)}
+                className='text-xs'
+              >
+                Batal
+              </Button>
+              <Button
+                type='submit'
+                size='sm'
+                className='bg-teal-600 hover:bg-teal-700 text-white text-xs'
+                disabled={uploadBastMutation.isPending}
+              >
+                {uploadBastMutation.isPending ? (
+                  <>
+                    <Loader2 className='h-3 w-3 animate-spin mr-1' />
+                    Mengunggah...
+                  </>
+                ) : (
+                  'Simpan BAST'
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
 

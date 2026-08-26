@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 
 import { useRouter } from "next/navigation"
 import { useAuthStore } from "@/lib/auth-store"
+import { isClientUser } from "@/lib/get-user-role"
 import { useEffect } from "react"
 import { Loader2 } from "lucide-react"
 
@@ -17,7 +18,7 @@ export default function SPHBuilderPage({ params }: { params: { id: string } }) {
     useEffect(() => {
         if (hydrated && user) {
             // If user is Client, they should NOT access this page
-            if (user.role === 'Client') {
+            if (isClientUser(user)) {
                 router.replace('/dashboard/external')
             }
         }
@@ -25,7 +26,7 @@ export default function SPHBuilderPage({ params }: { params: { id: string } }) {
 
     if (!hydrated) return <div className="h-screen flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-neutral-300" /></div>
 
-    if (!user || user.role === 'Client') return null; // Prevent flash
+    if (!user || isClientUser(user)) return null; // Prevent flash
 
     return (
         <div className="min-h-screen bg-neutral-50/50 flex flex-col font-sans">

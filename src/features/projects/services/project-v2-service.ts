@@ -97,6 +97,7 @@ export interface ProjectV2 {
     tanggal_selesai: string | null;
     updated_at: string;
   };
+  basts?: Bast[];
   jadwal_pengiriman?: JadwalPengiriman;
   order_gambar_kerja?: Array<{
     id: number;
@@ -587,8 +588,8 @@ export const projectV2Service = {
 
   uploadSPK: async (
     projectId: number,
-    file: File,
-    nomor_spk: string,
+    file?: File | null,
+    nomor_spk?: string,
     prioritas?: string,
     tanggal_masuk?: string,
     nominal_dpp?: string,
@@ -598,8 +599,8 @@ export const projectV2Service = {
     penerbit_id?: string
   ) => {
     const formData = new FormData();
-    formData.append('file', file);
-    formData.append('nomor_spk', nomor_spk);
+    if (file) formData.append('file', file);
+    if (nomor_spk) formData.append('nomor_spk', nomor_spk);
     if (prioritas) formData.append('prioritas', prioritas);
     if (tanggal_masuk) formData.append('tanggal_masuk', tanggal_masuk);
     if (nominal_dpp) formData.append('nominal_dpp', nominal_dpp);
@@ -1302,4 +1303,47 @@ export interface JadwalPengiriman {
   tanggal_pengiriman?: TanggalPengiriman;
   created_at: string;
   updated_at: string;
+}
+
+export interface Bast {
+  id: number;
+  project_id: number;
+  no_surat: string;
+  date: string;
+  file_path: string;
+  file_url: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function getBasts(projectId: number): Promise<Bast[]> {
+  const { data } = await apiClient.get<{ data: Bast[] }>(`/projects/${projectId}/basts`);
+  return data.data;
+}
+
+export async function uploadBast(
+  projectId: number,
+  payload: {
+    no_surat: string;
+    date: string;
+    file?: File | null;
+  }
+): Promise<{ message: string }> {
+  const formData = new FormData();
+  formData.append('no_surat', payload.no_surat);
+  formData.append('date', payload.date);
+  if (payload.file) {
+    formData.append('file', payload.file);
+  }
+
+  const { data } = await apiClient.post<{ message: string }>(
+    `/projects/${projectId}/basts`,
+    formData,
+    {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    }
+  );
+  return data;
 }

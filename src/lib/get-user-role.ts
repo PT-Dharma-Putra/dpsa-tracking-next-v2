@@ -3,6 +3,29 @@ import { User } from '@/features/auth/types';
 export type BusinessRole = 'marketing' | 'studio' | 'supervisor' | 'finance' | 'other';
 
 /**
+ * Checks if the user is a Client / External user.
+ * Returns true for role 'Client', role_id 19, or role name containing 'hermina pusat'.
+ */
+export function isClientUser(user: User | null): boolean {
+    if (!user) return false;
+
+    if (
+        user.role_id === 19 ||
+        (Array.isArray(user.role_ids) && user.role_ids.includes(19))
+    ) {
+        return true;
+    }
+
+    const roleNames = [
+        user.role?.toLowerCase(),
+        ...(user.roles?.map(r => typeof r === 'string' ? r.toLowerCase() : r.name?.toLowerCase()) || []),
+        ...(user.roles_list?.map(r => r.toLowerCase()) || []),
+    ].filter(Boolean) as string[];
+
+    return roleNames.some(r => r === 'client' || r.includes('hermina pusat'));
+}
+
+/**
  * Derives the user's business role from their auth profile.
  * Used to render role-appropriate views in the tracking system.
  */
@@ -31,3 +54,4 @@ export const canApproveDesign = (role: BusinessRole) => role === 'supervisor';
 export const canManageSPH = (role: BusinessRole) => role === 'marketing';
 export const canApproveSPH = (role: BusinessRole) => role === 'supervisor';
 export const canReviseDocs = (role: BusinessRole) => role === 'marketing' || role === 'supervisor';
+

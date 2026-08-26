@@ -15,9 +15,10 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ClientNotifications } from "@/features/dashboard/components/client/client-notifications";
+// import { ClientNotifications } from "@/features/dashboard/components/client/client-notifications";
 import { useAuthStore } from "@/lib/auth-store";
 import { useCartStore } from "@/features/shop/stores/cart-store";
+import { isClientUser } from "@/lib/get-user-role";
 
 export default function CustomerLayout({ children }: { children: ReactNode }) {
     const router = useRouter()
@@ -39,7 +40,7 @@ export default function CustomerLayout({ children }: { children: ReactNode }) {
         }
 
         // Check Role: Only Clients allowed
-        if (user?.role !== 'Client') {
+        if (!isClientUser(user)) {
             // Staff should not be here
             router.replace("/dashboard/all")
             return
@@ -89,11 +90,11 @@ export default function CustomerLayout({ children }: { children: ReactNode }) {
                     </nav>
 
                     {/* Cart Button */}
-                    <CartButton />
+                    {/* <CartButton /> */}
 
                     {/* User Profile */}
                     <div className="flex items-center gap-2">
-                        <ClientNotifications />
+                        {/* <ClientNotifications /> */}
                         <div className="h-8 w-px bg-neutral-200 mx-2 hidden sm:block" />
 
                         <div className="text-right hidden sm:block">
@@ -122,10 +123,10 @@ export default function CustomerLayout({ children }: { children: ReactNode }) {
                                     <User className="mr-2 h-4 w-4 text-orange-600" />
                                     <span>Profile & Keamanan</span>
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => router.push("/dashboard/external/settings")} className="cursor-pointer py-2.5">
+                                {/* <DropdownMenuItem onClick={() => router.push("/dashboard/external/settings")} className="cursor-pointer py-2.5">
                                     <Settings className="mr-2 h-4 w-4 text-neutral-400" />
                                     <span>Pengaturan Akun</span>
-                                </DropdownMenuItem>
+                                </DropdownMenuItem> */}
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem onClick={handleLogout} className="cursor-pointer py-2.5 text-red-600 focus:text-red-600 focus:bg-red-50">
                                     <LogOut className="mr-2 h-4 w-4" />
@@ -165,26 +166,26 @@ function NavLink({ href, children, active }: { href: string, children: ReactNode
     )
 }
 
-function CartButton() {
-    // Prevent hydration mismatch
-    const [mounted, setMounted] = useState(false);
-    const totalItems = useCartStore((state) => state.getTotalItems());
+// function CartButton() {
+//     // Prevent hydration mismatch
+//     const [mounted, setMounted] = useState(false);
+//     const totalItems = useCartStore((state) => state.getTotalItems());
 
-    useEffect(() => setMounted(true), []);
+//     useEffect(() => setMounted(true), []);
 
-    if (!mounted) return null;
+//     if (!mounted) return null;
 
-    return (
-        <Link href="/dashboard/external/cart">
-            <Button variant="ghost" size="icon" className="relative text-neutral-500 hover:text-orange-600">
-                <ShoppingCart className="h-5 w-5" />
-                {totalItems > 0 && (
-                    <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-orange-600 text-[10px] font-bold text-white flex items-center justify-center border-2 border-white">
-                        {totalItems}
-                    </span>
-                )}
-            </Button>
-        </Link>
-    )
-}
+//     return (
+//         <Link href="/dashboard/external/cart">
+//             <Button variant="ghost" size="icon" className="relative text-neutral-500 hover:text-orange-600">
+//                 <ShoppingCart className="h-5 w-5" />
+//                 {totalItems > 0 && (
+//                     <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-orange-600 text-[10px] font-bold text-white flex items-center justify-center border-2 border-white">
+//                         {totalItems}
+//                     </span>
+//                 )}
+//             </Button>
+//         </Link>
+//     )
+// }
 

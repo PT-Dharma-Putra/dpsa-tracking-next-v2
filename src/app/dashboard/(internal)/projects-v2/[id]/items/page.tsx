@@ -285,7 +285,7 @@ export default function ProjectItemsPage() {
   const [spkTanggalMasuk, setSpkTanggalMasuk] = React.useState<string>('');
 
   const uploadSpkMutation = useMutation({
-    mutationFn: ({ file, number, prioritas, tanggal_masuk, tanggal_spk }: { file: File; number: string; prioritas?: string; tanggal_masuk?: string; tanggal_spk?: string }) =>
+    mutationFn: ({ file, number, prioritas, tanggal_masuk, tanggal_spk }: { file?: File | null; number: string; prioritas?: string; tanggal_masuk?: string; tanggal_spk?: string }) =>
       projectV2Service.uploadSPK(projectId, file, number, prioritas, tanggal_masuk, undefined, tanggal_spk),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects-v2', projectId] });
@@ -302,8 +302,8 @@ export default function ProjectItemsPage() {
   });
 
   const handleSpkUpload = () => {
-    if (!spkFile || !spkNumber) {
-      toast.error('Please provide both file and SPK number');
+    if (!spkNumber) {
+      toast.error('Please provide SPK number');
       return;
     }
     uploadSpkMutation.mutate({ 
@@ -1743,7 +1743,7 @@ export default function ProjectItemsPage() {
                 handleSpkUpload();
                 setIsSpkModalOpen(false);
               }}
-              disabled={!spkFile || !spkNumber || uploadSpkMutation.isPending}
+              disabled={!spkNumber || uploadSpkMutation.isPending}
             >
               {uploadSpkMutation.isPending ? (
                 <Loader2 className='h-4 w-4 animate-spin' />
