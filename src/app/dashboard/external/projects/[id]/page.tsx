@@ -25,8 +25,11 @@ import { MessageService } from "@/features/projects/services/message-service"
 import { format } from "date-fns"
 import { id as idLocale } from "date-fns/locale"
 
+import { useRouter } from "next/navigation"
+
 export default function ClientProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
+    const router = useRouter();
     const queryClient = useQueryClient();
 
     // Fetch Project Data
@@ -44,9 +47,14 @@ export default function ClientProjectDetailPage({ params }: { params: Promise<{ 
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="space-y-1 w-full">
                     <div className="flex items-center gap-3">
-                        <Link href="/dashboard/external/projects" className="text-neutral-400 hover:text-orange-600 transition-colors">
+                        <button
+                            type="button"
+                            onClick={() => router.back()}
+                            className="text-neutral-400 hover:text-orange-600 transition-colors cursor-pointer"
+                            title="Kembali"
+                        >
                             <ArrowLeft className="h-5 w-5" />
-                        </Link>
+                        </button>
                         <h1 className="text-2xl font-bold text-neutral-900 tracking-tight">{project.name}</h1>
                         {/* <Badge variant="outline" className="bg-orange-50 text-orange-700 border-none uppercase tracking-wider text-[10px]">
                             {project.status?.replace(/_/g, " ")}

@@ -371,7 +371,13 @@ export default function FinanceOverviewPage() {
                                     <th className="px-4 py-3 sticky top-0 bg-neutral-50 z-10 text-center max-w-[130px] break-words whitespace-normal">Nomor SPK</th>
                                     <th className="px-4 py-3 sticky top-0 bg-neutral-50 z-10 text-center">Project</th>
                                     <th className="px-4 py-3 sticky top-0 bg-neutral-50 z-10 text-center whitespace-nowrap">Due Date</th>
-                                    <th className="px-4 py-3 sticky top-0 bg-neutral-50 z-10 text-center whitespace-nowrap">Umur Tagihan</th>
+                                    <th className="px-4 py-3 sticky top-0 bg-neutral-50 z-10 text-center whitespace-nowrap">
+                                        <div className="text-center">
+                                            Umur
+                                            <br />
+                                            Tagihan
+                                        </div>
+                                    </th>
                                     <th className="px-4 py-3 sticky top-0 bg-neutral-50 z-10 text-center whitespace-nowrap">Nominal Tagihan</th>
                                     <th className="px-4 py-3 sticky top-0 bg-neutral-50 z-10 text-center whitespace-nowrap">Nominal Terbayar</th>
                                     <th className="px-4 py-3 sticky top-0 bg-neutral-50 z-10 text-center whitespace-nowrap">Status</th>
