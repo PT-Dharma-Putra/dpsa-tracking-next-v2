@@ -9,16 +9,57 @@ import { ClientService, HerminaClient } from "@/features/dashboard/services/clie
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { useSearchParams, useRouter } from "next/navigation"
 import { Loader2, Building2, Eye, MapPin, User, X, Hospital, Search, ChevronLeft, ChevronRight } from "lucide-react"
 
 const ITEMS_PER_PAGE = 4
 
 export default function ClientDashboardPage() {
     const { user } = useAuthStore()
+    const router = useRouter()
+    const searchParams = useSearchParams()
+
     const [selectedClientId, setSelectedClientId] = React.useState<number | null>(null)
     const [searchQuery, setSearchQuery] = React.useState("")
     const [currentPage, setCurrentPage] = React.useState(1)
     const activeProjectRef = React.useRef<HTMLDivElement>(null)
+    const isInitializedRef = React.useRef(false)
+
+    // Restore saved filter from URL query param or sessionStorage on mount
+    React.useEffect(() => {
+        if (typeof window === "undefined") return
+
+        const paramClientId = searchParams.get("client_id")
+        const storedClientId = sessionStorage.getItem("external_selected_client_id")
+        const storedSearch = sessionStorage.getItem("external_hermina_search")
+        const storedPage = sessionStorage.getItem("external_hermina_page")
+
+        if (paramClientId) {
+            const parsed = Number(paramClientId)
+            if (!isNaN(parsed)) {
+                setSelectedClientId(parsed)
+                sessionStorage.setItem("external_selected_client_id", parsed.toString())
+            }
+        } else if (storedClientId) {
+            const parsed = Number(storedClientId)
+            if (!isNaN(parsed)) {
+                setSelectedClientId(parsed)
+                router.replace(`/dashboard/external?client_id=${parsed}`, { scroll: false })
+            }
+        }
+
+        if (storedSearch) {
+            setSearchQuery(storedSearch)
+        }
+        if (storedPage) {
+            const parsedPage = Number(storedPage)
+            if (!isNaN(parsedPage) && parsedPage > 0) {
+                setCurrentPage(parsedPage)
+            }
+        }
+
+        isInitializedRef.current = true
+    }, [searchParams, router])
 
     // Check if user has "Hermina Pusat" role
     const userRoles = [
@@ -69,9 +110,25 @@ export default function ClientDashboardPage() {
         )
     }, [herminaClients, projects, searchQuery])
 
-    // Reset pagination to page 1 when search changes
+    // Save search & reset pagination to page 1 when search changes
+    const handleSearchChange = (val: string) => {
+        setSearchQuery(val)
+        if (typeof window !== "undefined") {
+            if (val) {
+                sessionStorage.setItem("external_hermina_search", val)
+            } else {
+                sessionStorage.removeItem("external_hermina_search")
+            }
+        }
+    }
+
     React.useEffect(() => {
-        setCurrentPage(1)
+        if (isInitializedRef.current) {
+            setCurrentPage(1)
+            if (typeof window !== "undefined") {
+                sessionStorage.setItem("external_hermina_page", "1")
+            }
+        }
     }, [searchQuery])
 
     const totalItems = sortedAndFilteredHerminaClients.length
@@ -109,8 +166,19 @@ export default function ClientDashboardPage() {
     // Calculate Stats
     const activeProjects = displayProjects.filter(p => !['done', 'cancelled', 'deleted'].includes(p.status.toLowerCase())).length
 
+    const handlePageChange = (page: number) => {
+        setCurrentPage(page)
+        if (typeof window !== "undefined") {
+            sessionStorage.setItem("external_hermina_page", page.toString())
+        }
+    }
+
     const handleSelectClient = (clientId: number) => {
         setSelectedClientId(clientId)
+        if (typeof window !== "undefined") {
+            sessionStorage.setItem("external_selected_client_id", clientId.toString())
+        }
+        router.replace(`/dashboard/external?client_id=${clientId}`, { scroll: false })
         setTimeout(() => {
             activeProjectRef.current?.scrollIntoView({ behavior: 'smooth' })
         }, 100)
@@ -118,6 +186,10 @@ export default function ClientDashboardPage() {
 
     const handleResetFilter = () => {
         setSelectedClientId(null)
+        if (typeof window !== "undefined") {
+            sessionStorage.removeItem("external_selected_client_id")
+        }
+        router.replace('/dashboard/external', { scroll: false })
     }
 
     if (isLoading || (isHerminaPusat && isLoadingHermina)) {
@@ -188,12 +260,12 @@ export default function ClientDashboardPage() {
                                     type="text"
                                     placeholder="Cari cabang Hermina..."
                                     value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    onChange={(e) => handleSearchChange(e.target.value)}
                                     className="pl-9 pr-8 h-9 text-xs border-neutral-200 focus-visible:ring-emerald-500 rounded-lg"
                                 />
                                 {searchQuery && (
                                     <button
-                                        onClick={() => setSearchQuery("")}
+                                        onClick={() => handleSearchChange("")}
                                         className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
                                     >
                                         <X className="w-3.5 h-3.5" />
@@ -305,7 +377,7 @@ export default function ClientDashboardPage() {
                                         <Button
                                             variant="outline"
                                             size="sm"
-                                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                            onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
                                             disabled={currentPage === 1}
                                             className="h-8 px-2.5 text-xs border-neutral-200"
                                         >
@@ -317,7 +389,7 @@ export default function ClientDashboardPage() {
                                             {visiblePageNumbers.map(page => (
                                                 <button
                                                     key={page}
-                                                    onClick={() => setCurrentPage(page)}
+                                                    onClick={() => handlePageChange(page)}
                                                     className={`w-7 h-7 rounded-lg text-xs font-medium transition-colors ${
                                                         currentPage === page
                                                             ? "bg-emerald-600 text-white font-bold"
@@ -332,7 +404,7 @@ export default function ClientDashboardPage() {
                                         <Button
                                             variant="outline"
                                             size="sm"
-                                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                            onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
                                             disabled={currentPage === totalPages}
                                             className="h-8 px-2.5 text-xs border-neutral-200"
                                         >
