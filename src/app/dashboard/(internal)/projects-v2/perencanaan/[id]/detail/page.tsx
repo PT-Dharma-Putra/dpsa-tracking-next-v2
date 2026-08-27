@@ -1954,7 +1954,6 @@ export default function PerencanaanDetailPage() {
                       )}
                     </TableCell>
 
-
                     <TableCell>
                       <div
                         className='cursor-pointer p-1 rounded transition-colors flex flex-col gap-0.5'

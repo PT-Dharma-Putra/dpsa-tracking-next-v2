@@ -792,7 +792,17 @@ export default function QCDetailPage() {
                             asChild
                           >
                             <a
-                              href={`${item.gambar_kerja.file}`}
+                              href={
+                                item.gambar_kerja.file.startsWith('http') ||
+                                item.gambar_kerja.file.startsWith('www')
+                                  ? item.gambar_kerja.file
+                                  : `${(
+                                      process.env.NEXT_PUBLIC_API_URL ||
+                                      'http://localhost:8000'
+                                    ).replace('/api', '')}/storage/${
+                                      item.gambar_kerja.file
+                                    }`
+                              }
                               target='_blank'
                               rel='noopener noreferrer'
                             >
