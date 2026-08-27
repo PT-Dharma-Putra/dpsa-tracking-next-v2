@@ -56,11 +56,11 @@ export default function CustomerLayout({ children }: { children: ReactNode }) {
     return (
         <div className="min-h-screen bg-neutral-50 flex flex-col font-sans text-neutral-900">
             {/* === PREMIUM HEADER === */}
-            <header className="bg-white border-b border-neutral-200 sticky top-0 z-50 shadow-sm">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+            <header className="bg-white border-b border-neutral-200 sticky top-0 z-50 shadow-sm w-full">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 min-h-[5rem] flex flex-wrap sm:flex-nowrap items-center justify-between gap-4">
                     {/* Logo Section */}
                     <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 bg-gradient-to-br from-orange-500 to-amber-600 rounded-xl flex items-center justify-center shadow-lg shadow-orange-500/20 text-white">
+                        <div className="h-10 w-10 bg-gradient-to-br from-orange-500 to-amber-600 rounded-xl flex items-center justify-center shadow-lg shadow-orange-500/20 text-white shrink-0">
                             <Building2 className="h-6 w-6" />
                         </div>
                         <div>
@@ -69,20 +69,12 @@ export default function CustomerLayout({ children }: { children: ReactNode }) {
                         </div>
                     </div>
 
-                    {/* Navigation (Desktop) */}
-                    <nav className="hidden md:flex items-center gap-1 rounded-full bg-neutral-100/50 p-1 border border-neutral-200/50">
+                    {/* Navigation */}
+                    <nav className="flex items-center gap-1 rounded-full bg-neutral-100/50 p-1 border border-neutral-200/50">
                         <NavLink href="/dashboard/external" active={pathname === "/dashboard/external"}>
                             <LayoutDashboard className="h-4 w-4 mr-2" />
                             Dashboard
                         </NavLink>
-                        {/* <NavLink href="/dashboard/external/projects" active={pathname.startsWith("/dashboard/external/projects")}>
-                            <FileText className="h-4 w-4 mr-2" />
-                            My Projects
-                        </NavLink> */}
-                        {/* <NavLink href="/dashboard/external/mdl" active={pathname.startsWith("/dashboard/external/mdl")}>
-                            <ShoppingBag className="h-4 w-4 mr-2" />
-                            Catalog
-                        </NavLink> */}
                         <NavLink href="/dashboard/external/finance" active={pathname.startsWith("/dashboard/external/finance")}>
                             <CreditCard className="h-4 w-4 mr-2" />
                             Finance
