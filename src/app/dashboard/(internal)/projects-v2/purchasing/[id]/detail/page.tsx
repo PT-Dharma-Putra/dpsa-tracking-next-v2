@@ -1193,6 +1193,7 @@ export default function PurchasingDetailPage() {
                 <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>Volume</TableHead>
                 <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>Qty</TableHead>
                 <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>Satuan</TableHead>
+                <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>GK Custom</TableHead>
                 <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>PO Divisi</TableHead>
                 <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>Persentase Produksi</TableHead>
                 <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>Barang Jadi</TableHead>
@@ -1202,7 +1203,7 @@ export default function PurchasingDetailPage() {
               {isLoadingItems ? (
                 <TableRow>
                   <TableCell
-                    colSpan={13}
+                    colSpan={14}
                     className='h-32 text-center text-muted-foreground'
                   >
                     <Loader2 className='h-6 w-6 animate-spin mx-auto' />
@@ -1211,7 +1212,7 @@ export default function PurchasingDetailPage() {
               ) : displayItems.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={13}
+                    colSpan={14}
                     className='h-32 text-center text-muted-foreground'
                   >
                     No items found.
@@ -1287,6 +1288,41 @@ export default function PurchasingDetailPage() {
                     <TableCell className='font-bold'>{item.jumlah}</TableCell>
                     <TableCell className='text-[10px] text-muted-foreground'>
                       {item.satuan}
+                    </TableCell>
+
+                    <TableCell>
+                      {item.gambar_kerja?.file ? (
+                        <div className='flex items-center gap-2'>
+                          <Button
+                            variant='ghost'
+                            size='icon'
+                            className='h-6 w-6 text-blue-600 hover:bg-blue-50'
+                            asChild
+                          >
+                            <a
+                              href={
+                                item.gambar_kerja.file.startsWith('http') ||
+                                item.gambar_kerja.file.startsWith('www')
+                                  ? item.gambar_kerja.file
+                                  : `${(
+                                      process.env.NEXT_PUBLIC_API_URL ||
+                                      'http://localhost:8000'
+                                    ).replace('/api', '')}/storage/${
+                                      item.gambar_kerja.file
+                                    }`
+                              }
+                              target='_blank'
+                              rel='noopener noreferrer'
+                            >
+                              <Eye className='h-3.5 w-3.5' />
+                            </a>
+                          </Button>
+                        </div>
+                      ) : (
+                        <span className='text-[10px] text-muted-foreground italic'>
+                          -
+                        </span>
+                      )}
                     </TableCell>
 
                     <TableCell>
