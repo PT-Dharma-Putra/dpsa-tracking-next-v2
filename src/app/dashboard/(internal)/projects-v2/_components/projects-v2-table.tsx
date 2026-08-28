@@ -3351,6 +3351,29 @@ export function ProjectsV2Table({
                       </div>
                     </TableHead>
                   )}
+                  {showPurchasing && (
+                    <TableHead
+                      className='cursor-pointer hover:bg-neutral-100 transition-colors group'
+                      onClick={() => handleSortChange('progres_pengiriman')}
+                    >
+                      <div className="flex items-center">
+                        <div className="flex flex-col items-center">
+                          <span>PROGRES</span>
+                          <span>PENGIRIMAN</span>
+                        </div>
+
+                        {sortBy === 'progres_pengiriman' ? (
+                          sortOrder === 'asc' ? (
+                            <ArrowUp className='h-3 w-3' />
+                          ) : (
+                            <ArrowDown className='h-3 w-3' />
+                          )
+                        ) : (
+                          <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
+                        )}
+                      </div>
+                    </TableHead>
+                  )}
                   {showProduksi && (
                     <TableHead
                       className='cursor-pointer hover:bg-neutral-100 transition-colors group text-center'
@@ -3419,7 +3442,7 @@ export function ProjectsV2Table({
                           : showEngineer
                           ? 18
                           : showPurchasing
-                          ? 11
+                          ? 12
                           : showProduksi
                           ? 12
                           : showPiutang
@@ -3444,7 +3467,7 @@ export function ProjectsV2Table({
                           : showEngineer
                           ? 18
                           : showPurchasing
-                          ? 11
+                          ? 12
                           : showProduksi
                           ? 12
                           : showPiutang
@@ -5018,6 +5041,13 @@ export function ProjectsV2Table({
                         <TableCell className="text-center">
                           <span className='text-xs font-bold text-neutral-700'>
                             {Math.round(project.progres_produksi || 0)}%
+                          </span>
+                        </TableCell>
+                      )}
+                      {showPurchasing && (
+                        <TableCell className="text-center">
+                          <span className='text-xs font-bold text-neutral-700'>
+                            {Math.round(project.progres_kerja?.pengiriman || 0)}%
                           </span>
                         </TableCell>
                       )}
