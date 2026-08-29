@@ -1197,13 +1197,14 @@ export default function PurchasingDetailPage() {
                 <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>PO Divisi</TableHead>
                 <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>Persentase Produksi</TableHead>
                 <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>Barang Jadi</TableHead>
+                <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>B Keluar</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoadingItems ? (
                 <TableRow>
                   <TableCell
-                    colSpan={14}
+                    colSpan={15}
                     className='h-32 text-center text-muted-foreground'
                   >
                     <Loader2 className='h-6 w-6 animate-spin mx-auto' />
@@ -1212,7 +1213,7 @@ export default function PurchasingDetailPage() {
               ) : displayItems.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={14}
+                    colSpan={15}
                     className='h-32 text-center text-muted-foreground'
                   >
                     No items found.
@@ -1384,6 +1385,30 @@ export default function PurchasingDetailPage() {
                             </span>
                           )}
                         </div>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {isGrouped ? (
+                        <span className='text-[10px] text-muted-foreground italic text-center block w-full'>
+                          -
+                        </span>
+                      ) : (
+                        (() => {
+                          const total =
+                            item.detail_pengiriman?.reduce(
+                              (sum, d) => sum + Number(d.jumlah_keluar),
+                              0
+                            ) ?? 0;
+                          return total > 0 ? (
+                            <Badge className='bg-teal-600 text-white border-none font-bold text-[10px] h-5 px-1.5 shadow-sm'>
+                              {total} / {item.jumlah}
+                            </Badge>
+                          ) : (
+                            <span className='text-[9px] text-muted-foreground italic'>
+                              -
+                            </span>
+                          );
+                        })()
                       )}
                     </TableCell>
                   </TableRow>
