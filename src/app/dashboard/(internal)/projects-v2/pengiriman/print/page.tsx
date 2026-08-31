@@ -659,7 +659,7 @@ export default function PrintSuratJalanPage() {
         @page {
           size: A4;
           margin-top: 25mm;
-          margin-bottom: 15mm;
+          margin-bottom: 20mm;
           margin-left: 15mm;
           margin-right: 15mm;
         }
@@ -711,9 +711,9 @@ export default function PrintSuratJalanPage() {
         {activeTab === 'surat-jalan' ? (
           <div className='p-4 bg-white pt-10 pb-8 min-h-screen print:min-h-0 print:p-0 print:pt-0'>
             {/* Header (SURAT JALAN Title & No only) */}
-            <div className='flex justify-center mb-6 pt-4 print:pt-0 print:mb-4'>
+            <div className='flex justify-center mb-6 pt-4 print:pt-0 print:mt-0 print:mb-4'>
               <div className='text-center'>
-                <h2 className='text-lg font-bold pb-1 mb-1 print:mb-0 print:mt-0 uppercase'>
+                <h2 className='text-lg font-bold pb-1 mb-1 uppercase print:mt-0 print:pt-0'>
                   SURAT JALAN
                 </h2>
               </div>
@@ -845,7 +845,7 @@ export default function PrintSuratJalanPage() {
             </table>
 
             {/* Date and Signature Blocks */}
-            <div className='mt-8'>
+            <div className='mt-8 print:mt-6 print:break-inside-avoid'>
               <div className='text-xs font-semibold mb-4 text-left'>
                 Yogyakarta,{' '}
                 {format(new Date(), 'dd MMMM yyyy', { locale: idLocale })}
@@ -894,9 +894,9 @@ export default function PrintSuratJalanPage() {
         ) : (
           <div className='p-4 bg-white pt-10 relative font-sans text-black pb-8 min-h-screen print:min-h-0 print:p-0 print:pt-0'>
             {/* SETRIM Header */}
-            <div className='flex justify-between items-start mb-4 pt-4 print:pt-0 print:mb-4 relative'>
+            <div className='flex justify-between items-start mb-4 pt-4 relative print:pt-0 print:mt-0 print:mb-4'>
               <div className='flex-1 text-center'>
-                <h2 className='text-sm font-bold inline-block border-b border-black pb-0.5 mt-4 print:mt-0'>
+                <h2 className='text-sm font-bold inline-block border-b border-black pb-0.5 mt-4 print:mt-0 print:pt-0'>
                   SURAT SERAH TERIMA BARANG
                 </h2>
               </div>
@@ -1048,7 +1048,7 @@ export default function PrintSuratJalanPage() {
             </div>
 
             {/* SETRIM Note */}
-            <div className='flex flex-row gap-1 text-[11px] text-left mb-8 px-4'>
+            <div className='flex flex-row gap-1 text-[11px] text-left mb-8 px-4 print:px-0 print:break-inside-avoid'>
               <div className='flex flex-col items-center'>
                 <div>
                   <p>
@@ -1076,7 +1076,7 @@ export default function PrintSuratJalanPage() {
             </div>
 
             {/* SETRIM Footer */}
-            <div className='grid grid-cols-3 gap-4 text-[11px] text-center mt-12 mb-8 px-12'>
+            <div className='grid grid-cols-3 gap-4 text-[11px] text-center mt-12 mb-8 px-12 print:mt-6 print:mb-0 print:px-4 print:break-inside-avoid'>
               <div className='flex flex-col items-center'>
                 <span className='font-semibold mb-12'>Disiapkan oleh,</span>
                 <div className='w-32 border-b border-black mb-1 relative group focus-within:ring-1 focus-within:ring-black'>
