@@ -3222,7 +3222,6 @@ export function ProjectsV2Table({
                     !showProduksi &&
                     !showPurchasing &&
                     !showPiutang &&
-                    !showPengirimanV2 &&
                     !showQC && (
                       <TableHead className='text-center'>
                         <div className="flex flex-col items-center">
@@ -4382,7 +4381,6 @@ export function ProjectsV2Table({
                         !showProduksi &&
                         !showPurchasing &&
                         !showPiutang &&
-                        !showPengirimanV2 &&
                         !showQC && (
                           <TableCell className='text-center'>
                             {project.file_pendukung_spd &&

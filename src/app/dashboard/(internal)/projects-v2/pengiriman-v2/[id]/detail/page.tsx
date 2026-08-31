@@ -2321,6 +2321,9 @@ export default function PerencanaanDetailPage() {
                   PO Divisi
                 </TableHead>
                 <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>
+                  GK Custom
+                </TableHead>
+                <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>
                   Produksi
                 </TableHead>
                 <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>
@@ -2573,6 +2576,42 @@ export default function PerencanaanDetailPage() {
                             <History className='h-3 w-3' />
                           </Button>
                         </div>
+                      </TableCell>
+                      <TableCell>
+                        {item.gambar_kerja?.file ? (
+                          <div className='flex items-center gap-1'>
+                            <Button
+                              variant='ghost'
+                              size='icon'
+                              className='h-6 w-6 text-blue-600 hover:bg-blue-50'
+                              asChild
+                            >
+                              <a
+                                href={
+                                  item.gambar_kerja.file.startsWith('http') ||
+                                  item.gambar_kerja.file.startsWith('www')
+                                    ? item.gambar_kerja.file
+                                    : `${(
+                                        process.env.NEXT_PUBLIC_API_URL ||
+                                        'http://localhost:8000'
+                                      ).replace('/api', '')}/storage/${
+                                        item.gambar_kerja.file
+                                      }`
+                                }
+                                target='_blank'
+                                rel='noopener noreferrer'
+                              >
+                                <Eye className='h-3.5 w-3.5' />
+                              </a>
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className='flex items-center gap-2'>
+                            <span className='text-[10px] text-muted-foreground italic'>
+                              -
+                            </span>
+                          </div>
+                        )}
                       </TableCell>
                       <TableCell>
                         <div
