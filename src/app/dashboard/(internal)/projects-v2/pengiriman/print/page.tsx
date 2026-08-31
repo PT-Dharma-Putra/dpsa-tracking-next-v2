@@ -938,7 +938,7 @@ export default function PrintSuratJalanPage() {
                   {combinedMeta.clientName}
                 </div>
               </div>
-              <div className='flex items-center justify-between'>
+              <div className='flex items-center justify-between gap-4'>
                 <div className='flex items-center shrink-0'>
                   <span className='w-36 font-semibold shrink-0'>
                     Tanggal Terima Barang*)
@@ -946,12 +946,12 @@ export default function PrintSuratJalanPage() {
                   <span className='mr-2 shrink-0'>:</span>
                   <div className='border border-black px-2 py-0.5 w-48 min-h-[22px] shrink-0'></div>
                 </div>
-                <div className='flex items-center ml-4'>
+                <div className='flex items-center flex-1 justify-end min-w-0'>
                   <span className='font-semibold mr-2 text-[10px] whitespace-nowrap shrink-0'>
                     No. SPK/SPH
                   </span>
-                  <span className='mr-2 font-semibold text-[10px]'>:</span>
-                  <div className='border border-black px-2 py-0.5 min-w-[200px] max-w-[260px] min-h-[22px] flex items-center font-bold text-[10px] leading-tight break-all'>
+                  <span className='mr-2 font-semibold text-[10px] shrink-0'>:</span>
+                  <div className='border border-black px-2 py-0.5 flex-1 min-h-[22px] flex items-center font-bold text-[10px] leading-tight break-all'>
                     {combinedMeta.spkNumberStr}
                   </div>
                 </div>
