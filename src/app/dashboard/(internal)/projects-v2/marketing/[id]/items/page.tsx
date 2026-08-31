@@ -315,21 +315,7 @@ export default function ProjectItemsPage() {
     setIsSpdModalOpen(true);
   };
 
-  const [isLinkPendukungModalOpen, setIsLinkPendukungModalOpen] = React.useState(false);
-  const [linkPendukungInput, setLinkPendukungInput] = React.useState('');
 
-  const saveLinkPendukungMutation = useMutation({
-    mutationFn: (url: string) =>
-      projectV2Service.uploadSPD(projectId, null, '', url),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['projects-v2', projectId] });
-      toast.success('Link pendukung berhasil disimpan');
-      setIsLinkPendukungModalOpen(false);
-    },
-    onError: () => {
-      toast.error('Gagal menyimpan link pendukung');
-    },
-  });
 
   const [sphFile, setSphFile] = React.useState<File | null>(null);
   const [sphNumber, setSphNumber] = React.useState<string>('');
@@ -971,26 +957,7 @@ export default function ProjectItemsPage() {
                   </span>
                 )}
               </button>
-              {project.need_design === 0 && (
-                <div className='flex items-center gap-1 border-l border-neutral-200 pl-2 ml-1'>
-                  <Button
-                    variant='outline'
-                    size='sm'
-                    className='h-6 text-[10px] px-2 bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100 font-medium'
-                    onClick={() => {
-                      setLinkPendukungInput(
-                        project?.file_pendukung_spd?.[0]?.file || ''
-                      );
-                      setIsLinkPendukungModalOpen(true);
-                    }}
-                  >
-                    <FileText className='h-3 w-3 mr-1' />
-                    {project.file_pendukung_spd?.[0]?.file
-                      ? 'Edit Link Pendukung'
-                      : 'Input Link Pendukung'}
-                  </Button>
-                </div>
-              )}
+
             </div>
           </div>
         </div>
@@ -2414,57 +2381,7 @@ export default function ProjectItemsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Modal Link Pendukung (Tanpa Desain) */}
-      <Dialog
-        open={isLinkPendukungModalOpen}
-        onOpenChange={setIsLinkPendukungModalOpen}
-      >
-        <DialogContent className='max-w-sm'>
-          <DialogHeader>
-            <DialogTitle className='flex items-center gap-2 text-orange-700'>
-              <FileText className='h-5 w-5' />
-              Input Link Pendukung
-            </DialogTitle>
-          </DialogHeader>
-          <div className='flex flex-col gap-3 py-2'>
-            <div className='space-y-1.5'>
-              <Label className='text-xs font-medium'>
-                Link Pendukung (URL)
-              </Label>
-              <Input
-                type='url'
-                placeholder='Masukkan link URL'
-                value={linkPendukungInput}
-                onChange={(e) => setLinkPendukungInput(e.target.value)}
-                className='h-9 text-xs'
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant='outline'
-              size='sm'
-              onClick={() => setIsLinkPendukungModalOpen(false)}
-            >
-              Batal
-            </Button>
-            <Button
-              size='sm'
-              className='bg-orange-600 hover:bg-orange-700'
-              onClick={() =>
-                saveLinkPendukungMutation.mutate(linkPendukungInput)
-              }
-              disabled={saveLinkPendukungMutation.isPending}
-            >
-              {saveLinkPendukungMutation.isPending ? (
-                <Loader2 className='h-4 w-4 animate-spin' />
-              ) : (
-                'Simpan'
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+
 
       {/* Modal ACC Design */}
       <Dialog open={isAccModalOpen} onOpenChange={setIsAccModalOpen}>
