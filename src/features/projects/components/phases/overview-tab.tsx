@@ -94,8 +94,17 @@ export function OverviewTab({ projectId }: OverviewTabProps) {
             {/* 1. Project Health Stats */}
             {(() => {
                 const isCompleted = Boolean((project as any)?.tanggal_selesai) || String(project?.status).toLowerCase() === 'completed' || stats.overall_progress === 100;
+                const jadwalKirimFormatted = (() => {
+                    if (!project?.deadline) return "Belum diatur";
+                    try {
+                        return format(new Date(project.deadline), 'd MMMM yyyy', { locale: idLocale });
+                    } catch {
+                        return project.deadline;
+                    }
+                })();
+
                 return (
-                    <div className={`grid grid-cols-1 ${isCompleted ? 'md:grid-cols-2' : 'md:grid-cols-3'} gap-4`}>
+                    <div className={`grid grid-cols-1 ${isCompleted ? 'md:grid-cols-3' : 'sm:grid-cols-2 lg:grid-cols-4'} gap-4`}>
                         <StatsCard
                             title="Overall Progress"
                             value={`${stats.overall_progress ?? 0}%`}
@@ -135,6 +144,12 @@ export function OverviewTab({ projectId }: OverviewTabProps) {
                                 />
                             );
                         })()}
+                        <StatsCard
+                            title="Pengiriman"
+                            value={jadwalKirimFormatted}
+                            icon={<Truck className="h-4 w-4 text-sky-500" />}
+                            desc="Jadwal Kirim"
+                        />
                     </div>
                 );
             })()}
