@@ -930,11 +930,11 @@ export default function PrintSuratJalanPage() {
               </div>
 
               <div className='flex items-center'>
-                <span className='w-36 font-semibold'>
+                <span className='w-36 font-semibold shrink-0'>
                   Tujuan Pengiriman/Penerima
                 </span>
-                <span className='mr-2'>:</span>
-                <div className='border border-black px-2 py-0.5 w-48 min-h-[22px] font-bold uppercase flex items-center'>
+                <span className='mr-2 shrink-0'>:</span>
+                <div className='border border-black px-2 py-0.5 min-w-[192px] max-w-md w-auto min-h-[22px] font-bold uppercase flex items-center text-[11px] leading-tight break-words'>
                   {combinedMeta.clientName}
                 </div>
               </div>
@@ -946,11 +946,12 @@ export default function PrintSuratJalanPage() {
                   <span className='mr-2 shrink-0'>:</span>
                   <div className='border border-black px-2 py-0.5 w-48 min-h-[22px] shrink-0'></div>
                 </div>
-                <div className='flex items-center shrink-0 ml-4'>
-                  <span className='font-semibold mr-4 text-[10px] whitespace-nowrap shrink-0'>
+                <div className='flex items-center ml-4'>
+                  <span className='font-semibold mr-2 text-[10px] whitespace-nowrap shrink-0'>
                     No. SPK/SPH
                   </span>
-                  <div className='border border-black px-2 py-0.5 w-54 min-h-[22px] flex items-center font-bold shrink-0'>
+                  <span className='mr-2 font-semibold text-[10px]'>:</span>
+                  <div className='border border-black px-2 py-0.5 min-w-[200px] max-w-[260px] min-h-[22px] flex items-center font-bold text-[10px] leading-tight break-all'>
                     {combinedMeta.spkNumberStr}
                   </div>
                 </div>
