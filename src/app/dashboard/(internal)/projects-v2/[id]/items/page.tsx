@@ -302,8 +302,8 @@ export default function ProjectItemsPage() {
   });
 
   const handleSpkUpload = () => {
-    if (!spkNumber) {
-      toast.error('Please provide SPK number');
+    if (!spkFile || !spkNumber) {
+      toast.error('Harap pilih file SPK dan isi nomor SPK');
       return;
     }
     uploadSpkMutation.mutate({ 
@@ -364,7 +364,7 @@ export default function ProjectItemsPage() {
   const [needDesignValue, setNeedDesignValue] = React.useState<number>(project?.need_design ?? 1);
 
   const existingSpd = project?.designs?.[0];
-  const existingSph = project?.sphs?.[0];
+  const existingSph = project?.sphs?.[0] || project?.sph;
   const existingAcc = existingSpd?.acc_design;
   const existingSpk = project?.spk;
 
@@ -478,7 +478,7 @@ export default function ProjectItemsPage() {
       title: 'Project Items',
       description: 'Add items',
       isCompleted: items && items.length > 0,
-      isActive: !!existingSpk?.file,
+      isActive: !!existingSpk?.file || !!existingSpk?.spk_signed_file,
       icon: Package,
       color: 'text-blue-600',
       bgColor: 'bg-blue-500',
@@ -1237,6 +1237,7 @@ export default function ProjectItemsPage() {
                       <Button
                         variant='outline'
                         className='w-full text-xs h-9 border-dashed border-emerald-300 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-400'
+                        disabled={!flowSteps[3].isActive}
                         onClick={() => setIsSignedSpkModalOpen(true)}
                       >
                         <Upload className='h-3.5 w-3.5 mr-1.5' />
@@ -1276,8 +1277,15 @@ export default function ProjectItemsPage() {
             </div>
           </div>
           <Button
-            onClick={handleAddItem}
+            onClick={() => {
+              if (!flowSteps[4].isActive) {
+                toast.error('Upload SPK terlebih dahulu sebelum mengisi Project Items');
+                return;
+              }
+              handleAddItem();
+            }}
             className='bg-blue-600 hover:bg-blue-700 shadow-sm transition-all hover:scale-105 active:scale-95'
+            disabled={!flowSteps[4].isActive}
           >
             <Plus className='mr-2 h-4 w-4' />
             Add Item
@@ -1743,7 +1751,7 @@ export default function ProjectItemsPage() {
                 handleSpkUpload();
                 setIsSpkModalOpen(false);
               }}
-              disabled={!spkNumber || uploadSpkMutation.isPending}
+              disabled={!spkFile || !spkNumber || uploadSpkMutation.isPending}
             >
               {uploadSpkMutation.isPending ? (
                 <Loader2 className='h-4 w-4 animate-spin' />

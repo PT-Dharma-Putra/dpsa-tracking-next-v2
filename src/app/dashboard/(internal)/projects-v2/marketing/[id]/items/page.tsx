@@ -541,8 +541,8 @@ export default function ProjectItemsPage() {
   });
 
   const handleSpkUpload = () => {
-    if (!spkNumber || !spkPenerbitId) {
-      toast.error('Harap lengkapi nomor SPK dan diterbitkan oleh');
+    if (!spkFile || !spkNumber || !spkPenerbitId) {
+      toast.error('Harap lengkapi file SPK, nomor SPK, dan diterbitkan oleh');
       return;
     }
     uploadSpkMutation.mutate({
@@ -765,7 +765,7 @@ export default function ProjectItemsPage() {
   );
 
   const existingSpd = project?.designs?.[0];
-  const existingSph = project?.sphs?.[0];
+  const existingSph = project?.sphs?.[0] || project?.sph;
   const existingAcc = existingSpd?.acc_design;
   const existingSpk = project?.spk;
 
@@ -892,7 +892,7 @@ export default function ProjectItemsPage() {
       title: 'Project Items',
       description: 'Add items',
       isCompleted: items && items.length > 0,
-      isActive: !!existingSpk?.file,
+      isActive: !!existingSpk?.file || !!existingSpk?.spk_signed_file,
       icon: Package,
       color: 'text-blue-600',
       bgColor: 'bg-blue-500',
@@ -1908,6 +1908,7 @@ export default function ProjectItemsPage() {
                             variant='ghost'
                             size='icon'
                             className='h-8 w-8 text-neutral-400 hover:bg-neutral-100 bg-white shadow-sm border border-neutral-100'
+                            disabled={!flowSteps[3].isActive}
                             onClick={() => setIsSignedSpkModalOpen(true)}
                           >
                             <Upload className='h-3 w-3' />
@@ -2121,17 +2122,31 @@ export default function ProjectItemsPage() {
               </Button>
             )}
             <Button
-              onClick={() => setIsImportOpen(true)}
+              onClick={() => {
+                if (!flowSteps[4].isActive) {
+                  toast.error('Upload SPK terlebih dahulu sebelum mengisi Project Items');
+                  return;
+                }
+                setIsImportOpen(true);
+              }}
               variant='outline'
               className='border-blue-200 text-blue-700 hover:bg-blue-50 hover:text-blue-800 shadow-sm'
+              disabled={!flowSteps[4].isActive}
             >
               <Upload className='mr-2 h-4 w-4' />
               Import Excel
             </Button>
 
             <Button
-              onClick={handleAddItem}
+              onClick={() => {
+                if (!flowSteps[4].isActive) {
+                  toast.error('Upload SPK terlebih dahulu sebelum mengisi Project Items');
+                  return;
+                }
+                handleAddItem();
+              }}
               className='bg-blue-600 hover:bg-blue-700 shadow-sm transition-all hover:scale-105 active:scale-95'
+              disabled={!flowSteps[4].isActive}
             >
               <Plus className='mr-2 h-4 w-4' />
               Add Item
@@ -3228,14 +3243,15 @@ export default function ProjectItemsPage() {
               </Popover>
             </div>
             <div className='space-y-1.5'>
-              <Label className='text-xs font-medium'>
-                File (PDF/JPG/PNG/DOC - Opsional)
+              <Label className='text-xs font-medium text-purple-700 flex items-center gap-1'>
+                <span>File SPK (PDF/JPG/PNG/DOC)</span>
+                <span className='text-red-500'>*</span>
               </Label>
               <Input
                 type='file'
                 accept='.pdf,.jpg,.jpeg,.png,.doc,.docx'
                 onChange={(e) => setSpkFile(e.target.files?.[0] || null)}
-                className='h-9 text-xs'
+                className='h-9 text-xs border-purple-200'
               />
             </div>
           </div>
@@ -3254,7 +3270,7 @@ export default function ProjectItemsPage() {
                 handleSpkUpload();
                 setIsSpkModalOpen(false);
               }}
-              disabled={!spkNumber || !spkPenerbitId || uploadSpkMutation.isPending}
+              disabled={!spkFile || !spkNumber || !spkPenerbitId || uploadSpkMutation.isPending}
             >
               {uploadSpkMutation.isPending ? (
                 <Loader2 className='h-4 w-4 animate-spin' />
