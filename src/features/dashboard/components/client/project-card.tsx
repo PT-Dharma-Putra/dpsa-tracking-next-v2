@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Clock, FileText, CheckCircle2 } from "lucide-react";
+import { ArrowRight, Clock, FileText, CheckCircle2, Building2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -18,6 +18,7 @@ interface Project {
     nomor_spk?: string | null;
     tanggal_spk?: string | null;
     tanggal_masuk?: string | null;
+    client_name?: string | null;
 }
 
 export function ClientProjectCard({ project }: { project: Project }) {
@@ -38,7 +39,14 @@ export function ClientProjectCard({ project }: { project: Project }) {
 
             <CardContent className="p-6 space-y-4">
                 <div className="flex justify-between items-start">
-                    <div className="space-y-1">
+                    <div className="space-y-1.5 flex-1 pr-2">
+                        {project.client_name && (
+                            <div className="flex items-center gap-1.5 text-xs font-semibold text-orange-700 bg-orange-50 px-2.5 py-1 rounded-md border border-orange-100 w-fit">
+                                <Building2 className="w-3.5 h-3.5 text-orange-600 shrink-0" />
+                                <span className="truncate max-w-[200px] sm:max-w-[240px]">{project.client_name}</span>
+                            </div>
+                        )}
+
                         <div className="flex flex-col gap-0.5">
                             {/* <Badge variant="outline" className={`border-none px-0 w-fit ${getStatusColor(project.status)} bg-transparent font-bold uppercase tracking-wider`}>
                                 {project.status.replace(/_/g, " ")}
@@ -78,7 +86,7 @@ export function ClientProjectCard({ project }: { project: Project }) {
                             {project.name}
                         </h3>
                     </div>
-                    <div className="h-10 w-10 bg-neutral-100 rounded-full flex items-center justify-center text-neutral-500">
+                    <div className="h-10 w-10 bg-neutral-100 rounded-full flex items-center justify-center text-neutral-500 shrink-0">
                         <FileText className="h-5 w-5" />
                     </div>
                 </div>
