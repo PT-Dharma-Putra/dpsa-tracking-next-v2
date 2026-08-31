@@ -466,7 +466,7 @@ export default function ProjectItemsPage() {
       title: 'Upload SPK',
       description: 'Surat Perintah Kerja',
       isCompleted: !!existingSpk?.file || !!existingSpk?.spk_signed_file,
-      isActive: !!existingSph?.file,
+      isActive: project.need_design === 0 || existingAcc?.status === 'Approved',
       icon: ClipboardCheck,
       color: 'text-purple-600',
       bgColor: 'bg-purple-500',
