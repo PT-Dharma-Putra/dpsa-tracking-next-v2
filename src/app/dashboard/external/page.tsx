@@ -21,6 +21,7 @@ export default function ClientDashboardPage() {
 
     const [selectedClientId, setSelectedClientId] = React.useState<number | null>(null)
     const [searchQuery, setSearchQuery] = React.useState("")
+    const [spkSearchQuery, setSpkSearchQuery] = React.useState("")
     const [currentPage, setCurrentPage] = React.useState(1)
     const activeProjectRef = React.useRef<HTMLDivElement>(null)
     const isInitializedRef = React.useRef(false)
@@ -40,18 +41,21 @@ export default function ClientDashboardPage() {
                 setSelectedClientId(parsed)
                 sessionStorage.setItem("external_selected_client_id", parsed.toString())
             }
-        } else if (storedClientId) {
+        } else if (!isInitializedRef.current && storedClientId) {
             const parsed = Number(storedClientId)
             if (!isNaN(parsed)) {
                 setSelectedClientId(parsed)
                 router.replace(`/dashboard/external?client_id=${parsed}`, { scroll: false })
             }
+        } else if (isInitializedRef.current && !paramClientId) {
+            setSelectedClientId(null)
+            sessionStorage.removeItem("external_selected_client_id")
         }
 
-        if (storedSearch) {
+        if (storedSearch && !isInitializedRef.current) {
             setSearchQuery(storedSearch)
         }
-        if (storedPage) {
+        if (storedPage && !isInitializedRef.current) {
             const parsedPage = Number(storedPage)
             if (!isNaN(parsedPage) && parsedPage > 0) {
                 setCurrentPage(parsedPage)
@@ -153,10 +157,17 @@ export default function ClientDashboardPage() {
     }, [sortedAndFilteredHerminaClients, currentPage])
 
     // Filter projects based on selected client (if selected by Hermina Pusat user)
-    const displayProjects = React.useMemo(() => {
+    const clientProjects = React.useMemo(() => {
         if (selectedClientId === null) return projects
         return projects.filter(p => p.client_id === selectedClientId)
     }, [projects, selectedClientId])
+
+    // Filter projects based on SPK number search query
+    const displayProjects = React.useMemo(() => {
+        if (!spkSearchQuery.trim()) return clientProjects
+        const query = spkSearchQuery.trim().toLowerCase()
+        return clientProjects.filter(p => p.nomor_spk?.toLowerCase().includes(query))
+    }, [clientProjects, spkSearchQuery])
 
     const selectedClientObj = React.useMemo(() => {
         if (!selectedClientId) return null
@@ -164,7 +175,7 @@ export default function ClientDashboardPage() {
     }, [herminaClients, selectedClientId])
 
     // Calculate Stats
-    const activeProjects = displayProjects.filter(p => !['done', 'cancelled', 'deleted'].includes(p.status.toLowerCase())).length
+    const activeProjects = clientProjects.filter(p => !['done', 'cancelled', 'deleted'].includes(p.status.toLowerCase())).length
 
     const handlePageChange = (page: number) => {
         setCurrentPage(page)
@@ -421,7 +432,7 @@ export default function ClientDashboardPage() {
 
             {/* SECTION: Active Project */}
             <div ref={activeProjectRef} className="pt-2 scroll-mt-24">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-2">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
                     <div>
                         <h3 className="text-xl font-bold text-neutral-900 flex items-center gap-2">
                             Active Project
@@ -445,16 +456,47 @@ export default function ClientDashboardPage() {
                             </div>
                         )}
                     </div>
+
+                    {/* Search Input by SPK Number placed on the right */}
+                    <div className="relative w-full sm:w-64">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+                        <Input
+                            type="text"
+                            placeholder="Cari nomor SPK..."
+                            value={spkSearchQuery}
+                            onChange={(e) => setSpkSearchQuery(e.target.value)}
+                            className="pl-9 pr-8 h-9 text-xs border-neutral-200 focus-visible:ring-orange-500 rounded-lg"
+                        />
+                        {spkSearchQuery && (
+                            <button
+                                onClick={() => setSpkSearchQuery("")}
+                                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
+                                aria-label="Clear SPK search"
+                            >
+                                <X className="w-3.5 h-3.5" />
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 {displayProjects.length === 0 ? (
                     <div className="text-center py-12 bg-neutral-50 rounded-xl border-dashed border-2 border-neutral-200">
-                        <p className="text-neutral-400">
-                            {selectedClientObj
+                        <p className="text-neutral-400 text-sm">
+                            {spkSearchQuery
+                                ? `Tidak ada projek dengan nomor SPK "${spkSearchQuery}".`
+                                : selectedClientObj
                                 ? `Tidak ada projek aktif ditemukan untuk ${selectedClientObj.name}.`
                                 : "No active projects found."}
                         </p>
-                        {selectedClientObj && (
+                        {spkSearchQuery ? (
+                            <Button
+                                variant="link"
+                                onClick={() => setSpkSearchQuery("")}
+                                className="mt-2 text-xs text-orange-600"
+                            >
+                                Hapus pencarian SPK
+                            </Button>
+                        ) : selectedClientObj ? (
                             <Button
                                 variant="link"
                                 onClick={handleResetFilter}
@@ -462,7 +504,7 @@ export default function ClientDashboardPage() {
                             >
                                 Lihat semua projek cabang Hermina
                             </Button>
-                        )}
+                        ) : null}
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">

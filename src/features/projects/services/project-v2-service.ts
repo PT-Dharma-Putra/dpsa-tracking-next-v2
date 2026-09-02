@@ -15,6 +15,7 @@ export interface ProjectV2 {
   drawing_progress?: number;
   latest_drawing_submit?: string | null;
   progres_produksi?: number;
+  readiness_percentage?: number;
   client?: {
     id: number;
     name: string;
@@ -1081,7 +1082,89 @@ export const projectV2Service = {
     const { data } = await apiClient.delete(`/jadwal-pengiriman/${id}`);
     return data;
   },
+  getSiteReadiness: async (projectId: number | string): Promise<SiteReadinessResponse> => {
+    const { data } = await apiClient.get<SiteReadinessResponse>(
+      `/projects-v2/${projectId}/site-readiness`
+    );
+    return data;
+  },
+  createSiteReadiness: async (
+    projectId: number | string,
+    payload: {
+      persentase: number;
+      ruang: string;
+      keterangan: string;
+      photos?: File[];
+      videos?: File[];
+    }
+  ) => {
+    const formData = new FormData();
+    formData.append('persentase', payload.persentase.toString());
+    formData.append('ruang', payload.ruang);
+    formData.append('keterangan', payload.keterangan);
+
+    if (payload.photos && payload.photos.length > 0) {
+      payload.photos.forEach((photo) => {
+        formData.append('photos[]', photo);
+      });
+    }
+
+    if (payload.videos && payload.videos.length > 0) {
+      payload.videos.forEach((video) => {
+        formData.append('videos[]', video);
+      });
+    }
+
+    const { data } = await apiClient.post(
+      `/projects-v2/${projectId}/site-readiness`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+    return data;
+  },
+  deleteSiteReadiness: async (id: number | string) => {
+    const { data } = await apiClient.delete(`/site-readiness/${id}`);
+    return data;
+  },
 };
+
+export interface SiteReadinessMedia {
+  id: number;
+  site_readiness_id: number;
+  file_path: string;
+  file_type: 'image' | 'video';
+  file_name: string | null;
+  file_size: number | null;
+  url: string;
+  created_at: string;
+}
+
+export interface SiteReadiness {
+  id: number;
+  project_id: number;
+  user_id: number;
+  persentase: number;
+  ruang: string | null;
+  keterangan: string | null;
+  user?: {
+    id: number;
+    name: string;
+  };
+  media: SiteReadinessMedia[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SiteReadinessResponse {
+  status: string;
+  project_id: number;
+  readiness_percentage: number;
+  data: SiteReadiness[];
+}
 
 export interface MDLItem {
   id: number;

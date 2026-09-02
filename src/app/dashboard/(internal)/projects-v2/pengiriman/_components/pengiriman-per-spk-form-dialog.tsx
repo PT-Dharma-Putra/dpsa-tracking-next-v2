@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { CalendarIcon, Loader2 } from "lucide-react"
+import { CalendarIcon, Loader2, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
 import { format } from "date-fns"
 import { Label } from "@/components/ui/label"
 
@@ -33,6 +33,7 @@ import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 
 import { PengirimanService, Pengiriman } from "@/features/pengiriman/services/pengiriman-service"
+import { projectV2Service } from "@/features/projects/services/project-v2-service"
 
 const formSchema = z.object({
   tanggal: z.date({
@@ -106,6 +107,7 @@ export function PengirimanPerSpkFormDialog({
   const effectivePengiriman = isEdit ? (fullPengirimanData ?? pengiriman) : pengiriman
 
   const [selectedItems, setSelectedItems] = React.useState<SelectedItem[]>([])
+  const [poDivisiSortOrder, setPoDivisiSortOrder] = React.useState<'asc' | 'desc' | null>(null)
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -140,6 +142,7 @@ export function PengirimanPerSpkFormDialog({
   // Reset and auto-fill when dialog opens
   React.useEffect(() => {
     if (open) {
+      setPoDivisiSortOrder(null)
       if (effectivePengiriman) {
         form.reset({
           tanggal: new Date(effectivePengiriman.tanggal),
@@ -169,6 +172,12 @@ export function PengirimanPerSpkFormDialog({
     }
   }, [open, effectivePengiriman, form, clientId])
 
+  // Fetch divisions for name fallback
+  const { data: divisions } = useQuery({
+    queryKey: ["divisions"],
+    queryFn: () => projectV2Service.getDivisions(),
+  })
+
   // Sync selected items when projectItems load or dialog reopens
   React.useEffect(() => {
     if (!open) return
@@ -187,11 +196,18 @@ export function PengirimanPerSpkFormDialog({
       const pastTersetting = detail ? item.jumlah_tersetting_total - detail.jumlah_tersetting : item.jumlah_tersetting_total
 
       const rawDivisi = item.divisi ?? detail?.project_item?.divisi ?? item.po_divisi
-      const poDivisiStr = typeof rawDivisi === "object" && rawDivisi !== null
-        ? (rawDivisi.nama || rawDivisi.name || "-")
-        : typeof rawDivisi === "string"
-        ? rawDivisi
-        : "-"
+      let poDivisiStr = "-"
+      if (typeof rawDivisi === "object" && rawDivisi !== null) {
+        poDivisiStr = rawDivisi.nama || rawDivisi.name || "-"
+      } else if (typeof rawDivisi === "string" && rawDivisi.trim() !== "" && rawDivisi !== "-") {
+        poDivisiStr = rawDivisi
+      } else {
+        const divId = item.divisi_id ?? detail?.project_item?.divisi_id
+        if (divId && divisions) {
+          const matched = divisions.find(d => d.id === divId)
+          if (matched) poDivisiStr = matched.nama
+        }
+      }
 
       return {
         project_item_id: item.id,
@@ -217,7 +233,7 @@ export function PengirimanPerSpkFormDialog({
     })
 
     setSelectedItems(items)
-  }, [projectItems, isEdit, effectivePengiriman, fullPengirimanData, open])
+  }, [projectItems, isEdit, effectivePengiriman, fullPengirimanData, open, divisions])
 
   const toggleSelect = (itemId: number) => {
     setSelectedItems(prev => prev.map(item => {
@@ -262,6 +278,24 @@ export function PengirimanPerSpkFormDialog({
       jumlah_tersetting: nextSelected ? item.jumlah_tersetting : 0,
     })))
   }
+
+  const handleTogglePoDivisiSort = () => {
+    setPoDivisiSortOrder((prev) => {
+      if (prev === null) return "asc"
+      if (prev === "asc") return "desc"
+      return null
+    })
+  }
+
+  const displayedItems = React.useMemo(() => {
+    if (!poDivisiSortOrder) return selectedItems
+    return [...selectedItems].sort((a, b) => {
+      const valA = (a.po_divisi || "").toString().trim()
+      const valB = (b.po_divisi || "").toString().trim()
+      const comp = valA.localeCompare(valB, "id", { numeric: true, sensitivity: "base" })
+      return poDivisiSortOrder === "asc" ? comp : -comp
+    })
+  }, [selectedItems, poDivisiSortOrder])
 
   const saveMutation = useMutation({
     mutationFn: async (values: FormValues) => {
@@ -525,7 +559,28 @@ export function PengirimanPerSpkFormDialog({
                             className="h-4 w-4 rounded border-neutral-300 text-primary focus:ring-primary cursor-pointer"
                           />
                         </th>
-                        <th className="p-3">PO Divisi</th>
+                        <th
+                          className="p-3 cursor-pointer select-none hover:bg-neutral-100/80 transition-colors"
+                          onClick={handleTogglePoDivisiSort}
+                          title={
+                            poDivisiSortOrder === "asc"
+                              ? "Urutan: Ascending (klik untuk Descending)"
+                              : poDivisiSortOrder === "desc"
+                              ? "Urutan: Descending (klik untuk reset)"
+                              : "Klik untuk mengurutkan PO Divisi (Ascending)"
+                          }
+                        >
+                          <div className="flex items-center gap-1.5">
+                            <span>PO Divisi</span>
+                            {poDivisiSortOrder === "asc" ? (
+                              <ArrowUp className="h-3.5 w-3.5 text-primary" />
+                            ) : poDivisiSortOrder === "desc" ? (
+                              <ArrowDown className="h-3.5 w-3.5 text-primary" />
+                            ) : (
+                              <ArrowUpDown className="h-3.5 w-3.5 text-neutral-400 opacity-60" />
+                            )}
+                          </div>
+                        </th>
                         <th className="p-3">Lantai</th>
                         <th className="p-3">Ruang</th>
                         <th className="p-3">Item Proyek</th>
@@ -542,7 +597,7 @@ export function PengirimanPerSpkFormDialog({
                       </tr>
                     </thead>
                     <tbody className="divide-y">
-                      {selectedItems.map((item) => {
+                      {displayedItems.map((item) => {
                         return (
                           <tr key={item.project_item_id} className={cn("hover:bg-muted/10 transition-colors", !item.selected && "opacity-75")}>
                             <td className="p-3 text-center">
