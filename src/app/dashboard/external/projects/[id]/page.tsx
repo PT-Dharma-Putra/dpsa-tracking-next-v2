@@ -27,11 +27,13 @@ import { id as idLocale } from "date-fns/locale"
 import { cn } from "@/lib/utils"
 
 import { useRouter } from "next/navigation"
+import { ClientTaskDialog } from "@/features/dashboard/components/client/client-task-dialog"
 
 export default function ClientProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
     const router = useRouter();
     const queryClient = useQueryClient();
+    const [ticketDialogOpen, setTicketDialogOpen] = useState(false);
 
     // Fetch Project Data
     const { data: project, isLoading } = useQuery({
@@ -80,6 +82,16 @@ export default function ClientProjectDetailPage({ params }: { params: Promise<{ 
                                     </span>
                                 </div>
                             )}
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setTicketDialogOpen(true)}
+                                className="h-7 text-xs font-semibold rounded-md border-neutral-200 text-neutral-700 hover:text-red-600 hover:bg-red-50 hover:border-red-200 transition-colors inline-flex items-center gap-1.5"
+                            >
+                                <AlertCircle className="h-3.5 w-3.5 text-red-500" />
+                                <span>Lapor Kendala / Request</span>
+                            </Button>
                         </div>
                     </div>
                 </div>
@@ -117,6 +129,14 @@ export default function ClientProjectDetailPage({ params }: { params: Promise<{ 
                     <ChatTabContent projectId={id} />
                 </TabsContent>
             </Tabs>
+
+            <ClientTaskDialog
+                open={ticketDialogOpen}
+                onOpenChange={setTicketDialogOpen}
+                defaultProjectId={Number(id)}
+                defaultProjectName={project.name}
+                defaultTipe="Lapor Kendala"
+            />
         </div>
     )
 }

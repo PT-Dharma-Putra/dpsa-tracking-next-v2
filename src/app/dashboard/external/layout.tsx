@@ -3,7 +3,7 @@
 import { ReactNode, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Building2, LogOut, LayoutDashboard, Settings, FileText, ShoppingBag, ShoppingCart, CreditCard, User } from "lucide-react";
+import { Building2, LogOut, LayoutDashboard, Settings, FileText, ShoppingBag, ShoppingCart, CreditCard, User, LifeBuoy } from "lucide-react";
 import { usePathname } from "next/navigation";
 import {
     DropdownMenu,
@@ -19,6 +19,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuthStore } from "@/lib/auth-store";
 import { useCartStore } from "@/features/shop/stores/cart-store";
 import { isClientUser } from "@/lib/get-user-role";
+import { ClientHelpButton } from "@/features/dashboard/components/client/client-help-button";
 
 export default function CustomerLayout({ children }: { children: ReactNode }) {
     const router = useRouter()
@@ -79,6 +80,10 @@ export default function CustomerLayout({ children }: { children: ReactNode }) {
                             <CreditCard className="h-4 w-4 mr-2" />
                             Finance
                         </NavLink>
+                        <NavLink href="/dashboard/external/requests" active={pathname.startsWith("/dashboard/external/requests")}>
+                            <LifeBuoy className="h-4 w-4 mr-2" />
+                            Request & Kendala
+                        </NavLink>
                     </nav>
 
                     {/* Cart Button */}
@@ -111,8 +116,12 @@ export default function CustomerLayout({ children }: { children: ReactNode }) {
                                     </div>
                                 </DropdownMenuLabel>
                                 <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => router.push("/dashboard/external/requests")} className="cursor-pointer py-2.5">
+                                    <LifeBuoy className="mr-2 h-4 w-4 text-orange-600" />
+                                    <span>Request & Kendala IT</span>
+                                </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => router.push("/dashboard/external/profile")} className="cursor-pointer py-2.5">
-                                    <User className="mr-2 h-4 w-4 text-orange-600" />
+                                    <User className="mr-2 h-4 w-4 text-neutral-500" />
                                     <span>Profile & Keamanan</span>
                                 </DropdownMenuItem>
                                 {/* <DropdownMenuItem onClick={() => router.push("/dashboard/external/settings")} className="cursor-pointer py-2.5">
@@ -141,6 +150,9 @@ export default function CustomerLayout({ children }: { children: ReactNode }) {
                     <p>&copy; {new Date().getFullYear()} PT. Dharma Putra Interior. All rights reserved.</p>
                 </div>
             </footer>
+
+            {/* === FLOATING HELP & REQUEST WIDGET === */}
+            <ClientHelpButton />
         </div>
     );
 }
