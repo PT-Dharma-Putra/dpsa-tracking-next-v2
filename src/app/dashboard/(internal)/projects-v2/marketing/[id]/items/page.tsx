@@ -32,6 +32,8 @@ import {
   CheckCircle,
   ExternalLink,
   ShieldCheck,
+  MapPin,
+  Layers,
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -960,6 +962,27 @@ export default function ProjectItemsPage() {
 
             </div>
           </div>
+        </div>
+
+        {/* Quick Tabs Navigation */}
+        <div className='flex items-center gap-1 bg-neutral-100 p-1 rounded-xl border border-neutral-200 shrink-0'>
+          <Button
+            variant='default'
+            size='sm'
+            className='text-xs font-semibold bg-white text-neutral-900 shadow-sm rounded-lg h-8 hover:bg-white hover:text-neutral-900'
+          >
+            <Layers className='h-3.5 w-3.5 mr-1.5 text-neutral-500' />
+            Workflow & Items
+          </Button>
+          <Button
+            variant='ghost'
+            size='sm'
+            onClick={() => router.push(`/dashboard/projects-v2/marketing/${projectId}/kesiapan-lokasi`)}
+            className='text-xs font-medium text-neutral-600 hover:text-neutral-900 hover:bg-white rounded-lg h-8'
+          >
+            <MapPin className='h-3.5 w-3.5 mr-1.5 text-orange-600' />
+            Kesiapan Lokasi
+          </Button>
         </div>
 
         {/* Stepper Progress */}

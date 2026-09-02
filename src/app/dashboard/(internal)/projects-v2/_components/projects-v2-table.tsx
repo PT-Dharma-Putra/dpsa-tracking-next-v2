@@ -38,6 +38,7 @@ import {
   ExternalLink,
   Users,
   FileSpreadsheet,
+  MapPin,
 } from 'lucide-react';
 import { format, differenceInDays, startOfDay } from 'date-fns';
 import * as XLSX from 'xlsx-js-style';
@@ -105,6 +106,7 @@ import { ProjectFormDialog } from './project-form-dialog';
 import { ScheduleDeliveryDialog } from './schedule-delivery-dialog';
 import { DeadlineDialog } from './deadline-dialog';
 import { SetTeamDialog } from './set-team-dialog';
+import { SiteReadinessViewDialog } from './site-readiness-view-dialog';
 const formatRupiah = (value: string | number) => {
   if (value === null || value === undefined || value === '') return '';
 
@@ -484,6 +486,10 @@ export function ProjectsV2Table({
 
   const [isSetTeamOpen, setIsSetTeamOpen] = React.useState(false);
   const [projectToSetTeam, setProjectToSetTeam] =
+    React.useState<ProjectV2 | null>(null);
+
+  const [isReadinessViewOpen, setIsReadinessViewOpen] = React.useState(false);
+  const [projectForReadinessView, setProjectForReadinessView] =
     React.useState<ProjectV2 | null>(null);
 
   const { canUpdateDeadline } = usePermissions();
@@ -3015,6 +3021,26 @@ export function ProjectsV2Table({
                           )}
                         </div>
                       </TableHead>
+                      <TableHead
+                        className='cursor-pointer hover:bg-neutral-100 transition-colors group text-center'
+                        onClick={() => handleSortChange('readiness_percentage')}
+                      >
+                        <div className='flex items-center justify-center gap-1'>
+                          <div className='flex flex-col items-center'>
+                            <span>KESIAPAN</span>
+                            <span>LOKASI</span>
+                          </div>
+                          {sortBy === 'readiness_percentage' ? (
+                            sortOrder === 'asc' ? (
+                              <ArrowUp className='h-3 w-3' />
+                            ) : (
+                              <ArrowDown className='h-3 w-3' />
+                            )
+                          ) : (
+                            <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
+                          )}
+                        </div>
+                      </TableHead>
                     </>
                   ) : (
                     <>
@@ -3178,6 +3204,28 @@ export function ProjectsV2Table({
                           <div className='flex items-center gap-1'>
                             SISA HARI
                             {sortBy === 'sisa_hari' ? (
+                              sortOrder === 'asc' ? (
+                                <ArrowUp className='h-3 w-3' />
+                              ) : (
+                                <ArrowDown className='h-3 w-3' />
+                              )
+                            ) : (
+                              <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
+                            )}
+                          </div>
+                        </TableHead>
+                      )}
+                      {(showMarketingFilter || showPerencanaan || showPengirimanV2) && (
+                        <TableHead
+                          className='cursor-pointer hover:bg-neutral-100 transition-colors group text-center'
+                          onClick={() => handleSortChange('readiness_percentage')}
+                        >
+                          <div className='flex items-center justify-center gap-1'>
+                            <div className='flex flex-col items-center'>
+                              <span>KESIAPAN</span>
+                              <span>LOKASI</span>
+                            </div>
+                            {sortBy === 'readiness_percentage' ? (
                               sortOrder === 'asc' ? (
                                 <ArrowUp className='h-3 w-3' />
                               ) : (
@@ -3727,16 +3775,28 @@ export function ProjectsV2Table({
                                   </DropdownMenuItem>
                                 )}
                                 {showMarketingFilter && (
-                                  <DropdownMenuItem
-                                    onClick={() =>
-                                      router.push(
-                                        `/dashboard/projects-v2/perencanaan/${project.id}/rekap`
-                                      )
-                                    }
-                                  >
-                                    <FileText className='mr-2 h-4 w-4' />
-                                    Telusuri
-                                  </DropdownMenuItem>
+                                  <>
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        router.push(
+                                          `/dashboard/projects-v2/marketing/${project.id}/kesiapan-lokasi`
+                                        )
+                                      }
+                                    >
+                                      <MapPin className='mr-2 h-4 w-4 text-orange-600' />
+                                      Kesiapan Lokasi
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        router.push(
+                                          `/dashboard/projects-v2/perencanaan/${project.id}/rekap`
+                                        )
+                                      }
+                                    >
+                                      <FileText className='mr-2 h-4 w-4' />
+                                      Telusuri
+                                    </DropdownMenuItem>
+                                  </>
                                 )}
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
@@ -3924,6 +3984,45 @@ export function ProjectsV2Table({
                                 -
                               </span>
                             )}
+                          </TableCell>
+                          <TableCell className='text-center'>
+                            <button
+                              onClick={() => {
+                                setProjectForReadinessView(project);
+                                setIsReadinessViewOpen(true);
+                              }}
+                              className='inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-bold transition-all hover:scale-105 shadow-xs cursor-pointer'
+                              style={{
+                                backgroundColor:
+                                  (project.readiness_percentage ?? 0) === 100
+                                    ? '#ecfdf5'
+                                    : (project.readiness_percentage ?? 0) >= 75
+                                    ? '#eff6ff'
+                                    : (project.readiness_percentage ?? 0) >= 40
+                                    ? '#fffbeb'
+                                    : '#fff1f2',
+                                borderColor:
+                                  (project.readiness_percentage ?? 0) === 100
+                                    ? '#a7f3d0'
+                                    : (project.readiness_percentage ?? 0) >= 75
+                                    ? '#bfdbfe'
+                                    : (project.readiness_percentage ?? 0) >= 40
+                                    ? '#fde68a'
+                                    : '#fecdd3',
+                                color:
+                                  (project.readiness_percentage ?? 0) === 100
+                                    ? '#047857'
+                                    : (project.readiness_percentage ?? 0) >= 75
+                                    ? '#1d4ed8'
+                                    : (project.readiness_percentage ?? 0) >= 40
+                                    ? '#b45309'
+                                    : '#be123c',
+                              }}
+                              title='Klik untuk melihat status Kesiapan Lokasi (Popup)'
+                            >
+                              <MapPin className='h-3 w-3 shrink-0' />
+                              <span>{project.readiness_percentage ?? 0}%</span>
+                            </button>
                           </TableCell>
                           <TableCell>
                             {project.jadwal_pengiriman ? (
@@ -4340,6 +4439,57 @@ export function ProjectsV2Table({
                                   -
                                 </span>
                               )}
+                            </TableCell>
+                          )}
+                          {(showMarketingFilter || showPerencanaan || showPengirimanV2) && (
+                            <TableCell className='text-center'>
+                              <button
+                                onClick={() => {
+                                  if (showPerencanaan || showPengirimanV2) {
+                                    setProjectForReadinessView(project);
+                                    setIsReadinessViewOpen(true);
+                                  } else {
+                                    router.push(
+                                      `/dashboard/projects-v2/marketing/${project.id}/kesiapan-lokasi`
+                                    );
+                                  }
+                                }}
+                                className='inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-bold transition-all hover:scale-105 shadow-xs cursor-pointer'
+                                style={{
+                                  backgroundColor:
+                                    (project.readiness_percentage ?? 0) === 100
+                                      ? '#ecfdf5'
+                                      : (project.readiness_percentage ?? 0) >= 75
+                                      ? '#eff6ff'
+                                      : (project.readiness_percentage ?? 0) >= 40
+                                      ? '#fffbeb'
+                                      : '#fff1f2',
+                                  borderColor:
+                                    (project.readiness_percentage ?? 0) === 100
+                                      ? '#a7f3d0'
+                                      : (project.readiness_percentage ?? 0) >= 75
+                                      ? '#bfdbfe'
+                                      : (project.readiness_percentage ?? 0) >= 40
+                                      ? '#fde68a'
+                                      : '#fecdd3',
+                                  color:
+                                    (project.readiness_percentage ?? 0) === 100
+                                      ? '#047857'
+                                      : (project.readiness_percentage ?? 0) >= 75
+                                      ? '#1d4ed8'
+                                      : (project.readiness_percentage ?? 0) >= 40
+                                      ? '#b45309'
+                                      : '#be123c',
+                                }}
+                                title={
+                                  showPerencanaan || showPengirimanV2
+                                    ? 'Klik untuk melihat status Kesiapan Lokasi (Popup)'
+                                    : 'Klik untuk buka halaman Kesiapan Lokasi'
+                                }
+                              >
+                                <MapPin className='h-3 w-3 shrink-0' />
+                                <span>{project.readiness_percentage ?? 0}%</span>
+                              </button>
                             </TableCell>
                           )}
                         </>
@@ -5127,6 +5277,23 @@ export function ProjectsV2Table({
             open={isSetTeamOpen}
             onOpenChange={setIsSetTeamOpen}
             project={projectToSetTeam}
+          />
+
+          <SiteReadinessViewDialog
+            projectId={projectForReadinessView?.id ?? null}
+            isOpen={isReadinessViewOpen}
+            onClose={() => {
+              setIsReadinessViewOpen(false);
+              setProjectForReadinessView(null);
+            }}
+            projectName={projectForReadinessView?.name}
+            clientName={projectForReadinessView?.client?.name}
+            spkNumber={
+              projectForReadinessView?.spk_number ||
+              projectForReadinessView?.spk?.nomor_spk ||
+              undefined
+            }
+            deadline={projectForReadinessView?.deadline}
           />
 
           <AlertDialog

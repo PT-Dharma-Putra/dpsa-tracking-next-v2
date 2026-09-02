@@ -60,8 +60,13 @@ export const ProjectService = {
 
   // Get Detail
   getProject: async (id: string | number) => {
-    const response = await apiClient.get(`/projects/${id}`);
-    return response.data.data;
+    try {
+      const response = await apiClient.get(`/projects/${id}`);
+      return response.data.data || response.data;
+    } catch (err) {
+      const response = await apiClient.get(`/projects-v2/${id}`);
+      return response.data.data || response.data;
+    }
   },
 
   // Create
