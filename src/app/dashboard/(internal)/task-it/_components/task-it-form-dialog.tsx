@@ -37,6 +37,7 @@ import {
 
 import { taskItService, TaskIt } from "@/features/projects/services/task-it-service"
 import { adminService } from "@/features/admin/api/admin-service"
+import { ProjectService } from "@/features/projects/services/project-service"
 
 interface TaskItFormDialogProps {
     open: boolean
@@ -46,6 +47,9 @@ interface TaskItFormDialogProps {
 
 export function TaskItFormDialog({ open, onOpenChange, task }: TaskItFormDialogProps) {
     const queryClient = useQueryClient()
+    const [tipe, setTipe] = React.useState("Internal")
+    const [judul, setJudul] = React.useState("")
+    const [projectId, setProjectId] = React.useState("none")
     const [deskripsi, setDeskripsi] = React.useState("")
     const [userId, setUserId] = React.useState("")
     const [picId, setPicId] = React.useState("")
@@ -68,8 +72,19 @@ export function TaskItFormDialog({ open, onOpenChange, task }: TaskItFormDialogP
 
     const users = usersResponse?.data || []
 
+    const { data: projectsResponse } = useQuery({
+        queryKey: ["projects-list-task-dropdown"],
+        queryFn: () => ProjectService.getProjects(),
+        enabled: open,
+    })
+
+    const projects = Array.isArray(projectsResponse) ? projectsResponse : (projectsResponse as any)?.data || []
+
     React.useEffect(() => {
         if (task) {
+            setTipe(task.tipe || "Internal")
+            setJudul(task.judul || "")
+            setProjectId(task.project_id ? task.project_id.toString() : "none")
             setDeskripsi(task.deskripsi)
             setUserId(task.user_id.toString())
             setPicId(task.pic_id ? task.pic_id.toString() : "")
@@ -87,6 +102,9 @@ export function TaskItFormDialog({ open, onOpenChange, task }: TaskItFormDialogP
                 fileInputRef.current.value = ""
             }
         } else {
+            setTipe("Internal")
+            setJudul("")
+            setProjectId("none")
             setDeskripsi("")
             setUserId("")
             setPicId("")
@@ -133,6 +151,13 @@ export function TaskItFormDialog({ open, onOpenChange, task }: TaskItFormDialogP
             formData.append("pic_id", picId)
         } else {
             formData.append("pic_id", "")
+        }
+        formData.append("tipe", tipe)
+        if (judul.trim()) {
+            formData.append("judul", judul.trim())
+        }
+        if (projectId && projectId !== "none") {
+            formData.append("project_id", projectId)
         }
         formData.append("deskripsi", deskripsi)
         formData.append("status", status)
@@ -281,6 +306,49 @@ export function TaskItFormDialog({ open, onOpenChange, task }: TaskItFormDialogP
                             </div>
                         </div>
                         
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="grid gap-2">
+                                <Label htmlFor="tipe">Tipe Task</Label>
+                                <Select value={tipe} onValueChange={setTipe}>
+                                    <SelectTrigger id="tipe" className="bg-neutral-50 border-neutral-200">
+                                        <SelectValue placeholder="Pilih Tipe" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="Internal">Internal IT</SelectItem>
+                                        <SelectItem value="Request Fitur">Request Fitur</SelectItem>
+                                        <SelectItem value="Lapor Kendala">Lapor Kendala</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="project_id">Terkait Proyek (Opsional)</Label>
+                                <Select value={projectId} onValueChange={setProjectId}>
+                                    <SelectTrigger id="project_id" className="bg-neutral-50 border-neutral-200">
+                                        <SelectValue placeholder="Pilih Proyek" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="none">Umum (Tanpa Proyek)</SelectItem>
+                                        {projects.map((p: any) => (
+                                            <SelectItem key={p.id} value={p.id.toString()}>
+                                                {p.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+
+                        <div className="grid gap-2">
+                            <Label htmlFor="judul">Subjek / Judul Task</Label>
+                            <Input
+                                id="judul"
+                                value={judul}
+                                onChange={(e) => setJudul(e.target.value)}
+                                placeholder="Contoh: Perbaikan Dashboard atau Permintaan Fitur Export"
+                                className="bg-neutral-50 border-neutral-200 focus:bg-white"
+                            />
+                        </div>
+
                         <div className="grid gap-2">
                             <Label htmlFor="deskripsi">Deskripsi Pekerjaan</Label>
                             <Textarea
