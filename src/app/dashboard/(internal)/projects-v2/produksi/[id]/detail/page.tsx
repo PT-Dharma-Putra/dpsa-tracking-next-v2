@@ -312,6 +312,8 @@ export default function ProduksiDetailPage() {
         { v: 'Produksi', t: 's', s: tableHeaderStyle },
         { v: 'QC Cek', t: 's', s: tableHeaderStyle },
         { v: 'B. Jadi', t: 's', s: tableHeaderStyle },
+        { v: 'Terkirim', t: 's', s: tableHeaderStyle },
+        { v: 'Tersetting', t: 's', s: tableHeaderStyle },
       ],
     ];
 
@@ -333,6 +335,26 @@ export default function ProduksiDetailPage() {
             0
           )} / ${item.jumlah}`
         : `0 / ${item.jumlah}`;
+      const terkirimStr = isGrouped
+        ? '-'
+        : (() => {
+            const total =
+              item.detail_pengiriman?.reduce(
+                (sum, d) => sum + Number(d.jumlah_keluar),
+                0
+              ) ?? 0;
+            return `${total} / ${item.jumlah}`;
+          })();
+      const tersettingStr = isGrouped
+        ? '-'
+        : (() => {
+            const total =
+              item.detail_pengiriman?.reduce(
+                (sum, d) => sum + Number(d.jumlah_tersetting),
+                0
+              ) ?? 0;
+            return `${total} / ${item.jumlah}`;
+          })();
 
       wsData.push([
         { v: index + 1, t: 'n', s: cellStyleCenter },
@@ -347,6 +369,8 @@ export default function ProduksiDetailPage() {
         { v: produksiStr, t: 's', s: cellStyleCenter },
         { v: qcCekStr, t: 's', s: cellStyleCenter },
         { v: bJadiStr, t: 's', s: cellStyleCenter },
+        { v: terkirimStr, t: 's', s: cellStyleCenter },
+        { v: tersettingStr, t: 's', s: cellStyleCenter },
       ]);
     });
 
@@ -365,6 +389,8 @@ export default function ProduksiDetailPage() {
       { wch: 12 }, // Produksi
       { wch: 12 }, // QC Cek
       { wch: 14 }, // B. Jadi
+      { wch: 14 }, // Terkirim
+      { wch: 14 }, // Tersetting
     ];
 
     const wb = XLSX.utils.book_new();
@@ -1486,7 +1512,7 @@ export default function ProduksiDetailPage() {
                 <TableHead>Vol | Dimensi</TableHead>
                 <TableHead>Qty</TableHead>
                 <TableHead>Satuan</TableHead>
-                <TableHead>GK MDL</TableHead>
+                {/* <TableHead>GK MDL</TableHead> */}
                 <TableHead>GK Custom</TableHead>
                 <TableHead>PO Divisi</TableHead>
                 <TableHead>
@@ -1497,7 +1523,14 @@ export default function ProduksiDetailPage() {
                 </TableHead>
                 <TableHead>Produksi</TableHead>
                 <TableHead>QC Cek</TableHead>
-                <TableHead>B. Jadi</TableHead>
+                <TableHead>
+                    <div className='flex flex-col gap-0.5 align-center'>
+                      <span className='text-[12px] font-bold text-neutral-800'>Gudang</span>
+                      <span className='text-[12px] font-bold text-neutral-800'>B Jadi</span>
+                  </div>
+                </TableHead>
+                <TableHead>Terkirim</TableHead>
+                <TableHead>Tersetting</TableHead>
                 <TableHead className='text-center'>
                   {isGrouped ? (
                     <div className='text-center font-medium'>Aksi</div>
@@ -1593,7 +1626,7 @@ export default function ProduksiDetailPage() {
                     <TableCell className='text-[10px] text-muted-foreground'>
                       {item.satuan}
                     </TableCell>
-                    <TableCell>
+                    {/* <TableCell>
                       {item.mdl_item?.link_gambar_kerja ? (
                         <Button
                           variant='ghost'
@@ -1614,7 +1647,7 @@ export default function ProduksiDetailPage() {
                           -
                         </span>
                       )}
-                    </TableCell>
+                    </TableCell> */}
                     <TableCell>
                       {item.gambar_kerja?.file ? (
                         <div className='flex items-center gap-2'>
@@ -1784,6 +1817,54 @@ export default function ProduksiDetailPage() {
                             </span>
                           )}
                         </div>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {isGrouped ? (
+                        <span className='text-[10px] text-muted-foreground italic text-center block w-full'>
+                          -
+                        </span>
+                      ) : (
+                        (() => {
+                          const total =
+                            item.detail_pengiriman?.reduce(
+                              (sum, d) => sum + Number(d.jumlah_keluar),
+                              0
+                            ) ?? 0;
+                          return total > 0 ? (
+                            <Badge className='bg-teal-600 text-white border-none font-bold text-[10px] h-5 px-1.5 shadow-sm'>
+                              {total} / {item.jumlah}
+                            </Badge>
+                          ) : (
+                            <span className='text-[9px] text-muted-foreground italic'>
+                              -
+                            </span>
+                          );
+                        })()
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {isGrouped ? (
+                        <span className='text-[10px] text-muted-foreground italic text-center block w-full'>
+                          -
+                        </span>
+                      ) : (
+                        (() => {
+                          const total =
+                            item.detail_pengiriman?.reduce(
+                              (sum, d) => sum + Number(d.jumlah_tersetting),
+                              0
+                            ) ?? 0;
+                          return total > 0 ? (
+                            <Badge className='bg-violet-600 text-white border-none font-bold text-[10px] h-5 px-1.5 shadow-sm'>
+                              {total} / {item.jumlah}
+                            </Badge>
+                          ) : (
+                            <span className='text-[9px] text-muted-foreground italic'>
+                              -
+                            </span>
+                          );
+                        })()
                       )}
                     </TableCell>
                     <TableCell className='text-center'>
