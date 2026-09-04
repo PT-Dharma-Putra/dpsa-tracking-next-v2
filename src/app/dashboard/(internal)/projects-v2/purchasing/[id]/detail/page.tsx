@@ -16,11 +16,17 @@ import {
   ChevronDown,
   Package,
   FileDown,
+  Check,
+  Plus,
+  Pencil,
   X,
   Truck,
   Search,
 } from 'lucide-react';
 import { format } from 'date-fns';
+
+import { PengirimanService } from '@/features/pengiriman/services/pengiriman-service';
+import { PengirimanPerSpkFormDialog } from '@/app/dashboard/(internal)/projects-v2/pengiriman/_components/pengiriman-per-spk-form-dialog';
 
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -77,6 +83,37 @@ export default function PurchasingDetailPage() {
     queryKey: ['project-v2-items', projectId],
     queryFn: () => projectV2Service.getProjectItems(projectId),
   });
+
+  const spkId = project?.spk?.id;
+  const { data: pengirimanPerSpkData } = useQuery({
+    queryKey: ['pengiriman-per-spk', spkId],
+    queryFn: () =>
+      PengirimanService.getPengiriman({ spk_id: spkId, per_page: 100 }),
+    enabled: !!spkId,
+  });
+
+  const totalQtyOrder = items?.reduce((sum, i) => sum + i.jumlah, 0) || 0;
+  const totalQtyMasuk =
+    items?.reduce(
+      (sum, i) =>
+        sum + (i.barang_jadi_masuk?.reduce((s, bj) => s + bj.jumlah, 0) || 0),
+      0
+    ) || 0;
+  const totalQtyKeluar =
+    pengirimanPerSpkData?.data.reduce(
+      (sum, p) =>
+        sum +
+        (p.details?.reduce((s, d) => s + Number(d.jumlah_keluar), 0) ?? 0),
+      0
+    ) ?? 0;
+  const totalQtySetting =
+    pengirimanPerSpkData?.data.reduce(
+      (sum, p) =>
+        sum +
+        (p.details?.reduce((s, d) => s + Number(d.jumlah_tersetting), 0) ?? 0),
+      0
+    ) ?? 0;
+  const totalQtyBelumSetting = totalQtyKeluar - totalQtySetting;
 
   // Search State
   const [searchQuery, setSearchQuery] = React.useState('');
@@ -303,8 +340,69 @@ export default function PurchasingDetailPage() {
   );
   const [produksiData, setProduksiData] = React.useState<Partial<Produksi>>({});
   const [skippedFields, setSkippedFields] = React.useState<Record<string, boolean>>({});
-  const [isOrderCollapsed, setIsOrderCollapsed] = React.useState(false);
   const [isProgressCollapsed, setIsProgressCollapsed] = React.useState(false);
+  const [isSphCollapsed, setIsSphCollapsed] = React.useState(false);
+  const [isBjCollapsed, setIsBjCollapsed] = React.useState(false);
+  const [isShipCollapsed, setIsShipCollapsed] = React.useState(false);
+  const [isKeluarCollapsed, setIsKeluarCollapsed] = React.useState(false);
+  const [isBelumSettingCollapsed, setIsBelumSettingCollapsed] = React.useState(false);
+  const [isSettingCollapsed, setIsSettingCollapsed] = React.useState(false);
+
+  // Pengiriman State
+  const [isPengirimanPerSpkDialogOpen, setIsPengirimanPerSpkDialogOpen] = React.useState(false);
+  const [editingPengirimanPerSpk, setEditingPengirimanPerSpk] = React.useState<any>(null);
+  const [suratJalanDialogOpen, setSuratJalanDialogOpen] = React.useState(false);
+  const [suratJalanPengirimanId, setSuratJalanPengirimanId] = React.useState<number | null>(null);
+  const [suratJalanFile, setSuratJalanFile] = React.useState<File | null>(null);
+  const [setrimDialogOpen, setSetrimDialogOpen] = React.useState(false);
+  const [setrimPengirimanId, setSetrimPengirimanId] = React.useState<number | null>(null);
+  const [setrimFile, setSetrimFile] = React.useState<File | null>(null);
+
+  // Preview Dialogs for SJ & Setrim
+  const [previewSjDialogOpen, setPreviewSjDialogOpen] = React.useState(false);
+  const [previewSjUrl, setPreviewSjUrl] = React.useState<string | null>(null);
+  const [previewSjPengirimanId, setPreviewSjPengirimanId] = React.useState<number | null>(null);
+  const [previewSetrimDialogOpen, setPreviewSetrimDialogOpen] = React.useState(false);
+  const [previewSetrimUrl, setPreviewSetrimUrl] = React.useState<string | null>(null);
+  const [previewSetrimPengirimanId, setPreviewSetrimPengirimanId] = React.useState<number | null>(null);
+
+  const updateSuratJalanMutation = useMutation({
+    mutationFn: ({ id, file }: { id: number; file: File }) =>
+      PengirimanService.updateSuratJalan(id, file),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['pengiriman-per-spk', spkId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['project-v2-items', projectId],
+      });
+      toast.success('Surat jalan berhasil disimpan');
+      setSuratJalanDialogOpen(false);
+      setSuratJalanFile(null);
+    },
+    onError: () => {
+      toast.error('Gagal mengupload surat jalan');
+    },
+  });
+
+  const updateSetrimMutation = useMutation({
+    mutationFn: ({ id, file }: { id: number; file: File }) =>
+      PengirimanService.updateSetrim(id, file),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['pengiriman-per-spk', spkId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['project-v2-items', projectId],
+      });
+      toast.success('Setrim berhasil disimpan');
+      setSetrimDialogOpen(false);
+      setSetrimFile(null);
+    },
+    onError: () => {
+      toast.error('Gagal mengupload setrim');
+    },
+  });
   
   // QC View State
   const [isQcViewOpen, setIsQcViewOpen] = React.useState(false);
@@ -928,181 +1026,715 @@ export default function PurchasingDetailPage() {
         </div>
       </div>
 
-      {/* Document Section at Top */}
-      <div className='grid grid-cols-1 md:grid-cols-2 gap-4 w-full'>
-        {/* 1. ORDER PRODUKSI SECTION */}
+      {/* Summary Cards Grid */}
+      <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7 gap-4 w-full'>
+        {/* 1. SPH & SPK */}
         <Card
-          className={`relative border shadow-sm transition-all duration-300 ${
-            flowSteps[0].isActive
-              ? flowSteps[0].isCompleted
-                ? 'border-orange-200 bg-white ring-1 ring-orange-100'
-                : 'border-orange-300 bg-white ring-2 ring-orange-500 ring-offset-2'
-              : 'border-neutral-200 bg-neutral-50/80 opacity-60 grayscale-[0.5]'
+          className={`relative border shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md ${
+            !!project.spk?.file || !!project.spk?.spk_signed_file
+              ? 'border-purple-200 bg-white ring-1 ring-purple-100'
+              : 'border-neutral-200 bg-white'
           }`}
         >
-          {latestOrderProduksi && (
-            <div className="absolute -top-1.5 -right-1.5 h-5 w-5 bg-emerald-500 rounded-full flex items-center justify-center shadow-sm z-10 animate-in zoom-in duration-300">
-              <CheckCircle2 className="h-3 w-3 text-white" />
-            </div>
-          )}
-          <CardHeader className='pb-3 flex flex-row items-center justify-between gap-3'>
+          {project.sph?.file &&
+            (project.spk?.file || project.spk?.spk_signed_file) && (
+              <div className='absolute -top-1.5 -right-1.5 h-5 w-5 bg-emerald-500 rounded-full flex items-center justify-center shadow-sm z-10 animate-in zoom-in duration-300'>
+                <Check className='h-3 w-3 text-white' strokeWidth={3} />
+              </div>
+            )}
+          <CardHeader className='pb-2 flex flex-row items-center justify-between gap-3 min-w-0'>
             <button
-              className='flex items-center gap-3 flex-1 text-left'
-              onClick={() => setIsOrderCollapsed((v) => !v)}
+              className='flex items-center gap-3 flex-1 text-left min-w-0'
+              onClick={() => setIsSphCollapsed(!isSphCollapsed)}
             >
               <div
-                className={`h-8 w-8 rounded-full flex items-center justify-center font-bold ${
-                  flowSteps[0].isActive
-                    ? 'bg-orange-100 text-orange-600'
-                    : 'bg-neutral-200 text-neutral-500'
+                className={`h-8 w-8 rounded-full flex items-center justify-center font-bold shrink-0 ${
+                  !!project.spk?.file || !!project.spk?.spk_signed_file
+                    ? 'bg-purple-100 text-purple-600'
+                    : 'bg-neutral-100 text-neutral-500'
                 }`}
               >
                 1
               </div>
-              <div className='flex-1'>
-                <CardTitle className='text-base text-neutral-800'>
-                  Order Produksi
+              <div className='flex-1 min-w-0'>
+                <CardTitle className='text-sm text-neutral-800 font-bold leading-snug break-words whitespace-normal'>
+                  SPH & SPK
                 </CardTitle>
-                <p className='text-[10px] text-muted-foreground uppercase tracking-wider'>
-                  Production Order
+                <p className='text-[10px] text-muted-foreground uppercase tracking-wider font-semibold leading-tight break-words whitespace-normal mt-0.5'>
+                  Documents
                 </p>
               </div>
               <ChevronDown
-                className={`h-4 w-4 text-neutral-400 transition-transform duration-200 mr-1 ${
-                  isOrderCollapsed ? '-rotate-90' : ''
+                className={`h-4 w-4 text-neutral-400 shrink-0 transition-transform duration-200 ${
+                  isSphCollapsed ? '-rotate-90' : ''
                 }`}
               />
             </button>
           </CardHeader>
-          {!isOrderCollapsed && (
-            <CardContent className="space-y-2">
-              {latestOrderProduksi ? (
-                <div className='p-3 rounded-xl bg-orange-50/80 border border-orange-100 flex items-center justify-between shadow-sm'>
-                  <div className='flex items-center gap-3'>
-                    <div className='h-8 w-8 rounded-lg bg-white shadow-sm border border-orange-100 flex items-center justify-center text-orange-600'>
-                      <FileText className='h-4 w-4' />
-                    </div>
-                    <div>
-                      <p className='text-xs font-bold text-orange-900'>
-                        Order Produksi
-                      </p>
-                      <p className='text-[10px] text-orange-600/80'>
-                        Target:{" "}
-                        {latestOrderProduksi.target_selesai
-                          ? format(new Date(latestOrderProduksi.target_selesai), 'MMM d, yyyy')
-                          : '-'}
-                      </p>
-                    </div>
-                  </div>
-                  <div className='flex items-center gap-2'>
-                    <Button
-                      variant='ghost'
-                      size='icon'
-                      className='h-8 w-8 text-orange-600 hover:bg-orange-200 bg-white shadow-sm border border-orange-100'
-                      asChild
+          {!isSphCollapsed && (
+            <CardContent className='pt-0 space-y-2.5'>
+              <div className='grid grid-cols-2 gap-2 border-t border-neutral-100 pt-2.5'>
+                {/* SPH Block */}
+                <div className='flex items-center justify-between bg-neutral-50/50 p-1.5 rounded border border-neutral-100 min-w-0'>
+                  <div className='flex flex-col gap-0.5 min-w-0 flex-1 mr-1'>
+                    <span className='text-[9px] text-neutral-400 font-bold uppercase tracking-wider leading-none'>
+                      Nomor SPH
+                    </span>
+                    <span
+                      className={`text-[10px] font-extrabold truncate ${
+                        project.sph?.nomor_sph
+                          ? 'text-emerald-600'
+                          : 'text-red-500'
+                      }`}
+                      title={project.sph?.nomor_sph || undefined}
                     >
-                      <a
-                        href={`${(
-                          process.env.NEXT_PUBLIC_API_URL ||
-                          'http://localhost:8000'
-                        ).replace('/api', '')}/storage/${latestOrderProduksi.file}`}
-                        target='_blank'
-                        rel='noopener noreferrer'
-                      >
-                        <FileDown className='h-4 w-4' />
-                      </a>
-                    </Button>
+                      {project.sph?.nomor_sph || '-'}
+                    </span>
                   </div>
+                  {(() => {
+                    const sphFile = project.sph?.file;
+                    if (!sphFile) return null;
+                    return (
+                      <Button
+                        variant='ghost'
+                        size='icon'
+                        className='h-6 w-6 text-blue-600 hover:bg-blue-100 shrink-0'
+                        asChild
+                        title='Lihat SPH'
+                      >
+                        <a
+                          href={
+                            sphFile.startsWith('http')
+                              ? sphFile
+                              : `${(
+                                  process.env.NEXT_PUBLIC_API_URL ||
+                                  'http://localhost:8000'
+                                ).replace('/api', '')}/storage/${sphFile}`
+                          }
+                          target='_blank'
+                          rel='noopener noreferrer'
+                        >
+                          <Eye className='h-3.5 w-3.5' />
+                        </a>
+                      </Button>
+                    );
+                  })()}
                 </div>
-              ) : !project.dokubah?.file_rekap_dokubah && (
-                <p className='text-xs text-muted-foreground italic'>
-                  Belum ada Order Produksi.
-                </p>
-              )}
 
-              {project.dokubah?.file_rekap_dokubah && (
-                <div className='p-3 rounded-xl bg-indigo-50/80 border border-indigo-100 flex items-center justify-between shadow-sm'>
-                  <div className='flex items-center gap-3'>
-                    <div className='h-8 w-8 rounded-lg bg-white shadow-sm border border-indigo-100 flex items-center justify-center text-indigo-600'>
-                      <FileText className='h-4 w-4' />
-                    </div>
-                    <div>
-                      <p className='text-xs font-bold text-indigo-900'>
-                        Rekap Dokubah
-                      </p>
-                      <p className='text-[10px] text-indigo-600/80 truncate max-w-[200px]' title={project.dokubah.file_rekap_dokubah.split('/').pop()}>
-                        {project.dokubah.file_rekap_dokubah.split('/').pop()}
-                      </p>
-                    </div>
-                  </div>
-                  <div className='flex items-center gap-2'>
-                    <Button
-                      variant='ghost'
-                      size='icon'
-                      className='h-8 w-8 text-indigo-600 hover:bg-indigo-100 bg-white shadow-sm border border-indigo-100'
-                      asChild
+                {/* SPK Block */}
+                <div className='flex items-center justify-between bg-neutral-50/50 p-1.5 rounded border border-neutral-100 min-w-0'>
+                  <div className='flex flex-col gap-0.5 min-w-0 flex-1 mr-1'>
+                    <span className='text-[9px] text-neutral-400 font-bold uppercase tracking-wider leading-none'>
+                      Nomor SPK
+                    </span>
+                    <span
+                      className={`text-[10px] font-extrabold truncate ${
+                        project.spk?.nomor_spk
+                          ? 'text-emerald-600'
+                          : 'text-red-500'
+                      }`}
+                      title={project.spk?.nomor_spk || undefined}
                     >
-                      <a
-                        href={project.dokubah.file_rekap_dokubah.startsWith('http') ? project.dokubah.file_rekap_dokubah : `${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '')}/storage/${project.dokubah.file_rekap_dokubah}`}
-                        target='_blank'
-                        rel='noopener noreferrer'
-                      >
-                        <Eye className='h-4 w-4' />
-                      </a>
-                    </Button>
+                      {project.spk?.nomor_spk || '-'}
+                    </span>
                   </div>
+                  {(() => {
+                    const spkFile =
+                      project.spk?.spk_signed_file || project.spk?.file;
+                    if (!spkFile) return null;
+                    return (
+                      <Button
+                        variant='ghost'
+                        size='icon'
+                        className='h-6 w-6 text-blue-600 hover:bg-blue-100 shrink-0'
+                        asChild
+                        title='Lihat SPK'
+                      >
+                        <a
+                          href={
+                            spkFile.startsWith('http')
+                              ? spkFile
+                              : `${(
+                                  process.env.NEXT_PUBLIC_API_URL ||
+                                  'http://localhost:8000'
+                                ).replace('/api', '')}/storage/${spkFile}`
+                          }
+                          target='_blank'
+                          rel='noopener noreferrer'
+                        >
+                          <Eye className='h-3.5 w-3.5' />
+                        </a>
+                      </Button>
+                    );
+                  })()}
                 </div>
-              )}
+              </div>
             </CardContent>
           )}
         </Card>
 
-        {/* 2. PROGRESS PRODUKSI SECTION */}
+        {/* 2. Progress Produksi */}
         <Card
-          className={`relative border shadow-sm transition-all duration-300 ${
+          className={`relative border shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md ${
             (project.progres_produksi || 0) >= 100
               ? 'border-emerald-200 bg-white ring-1 ring-emerald-100'
               : 'border-blue-200 bg-white ring-1 ring-blue-100'
           }`}
         >
           {(project.progres_produksi || 0) >= 100 && (
-            <div className="absolute -top-1.5 -right-1.5 h-5 w-5 bg-emerald-500 rounded-full flex items-center justify-center shadow-sm z-10 animate-in zoom-in duration-300">
-              <CheckCircle2 className="h-3 w-3 text-white" />
+            <div className='absolute -top-1.5 -right-1.5 h-5 w-5 bg-emerald-500 rounded-full flex items-center justify-center shadow-sm z-10 animate-in zoom-in duration-300'>
+              <Check className='h-3 w-3 text-white' strokeWidth={3} />
             </div>
           )}
-          <CardHeader className='pb-3 flex flex-row items-center justify-between gap-3'>
+          <CardHeader className='pb-2 flex flex-row items-center justify-between gap-3 min-w-0'>
             <button
-              className='flex items-center gap-3 flex-1 text-left'
+              className='flex items-center gap-3 flex-1 text-left min-w-0'
               onClick={() => setIsProgressCollapsed((v) => !v)}
             >
               <div
-                className={`h-8 w-8 rounded-full flex items-center justify-center font-bold bg-blue-100 text-blue-600`}
+                className={`h-8 w-8 rounded-full flex items-center justify-center font-bold shrink-0 ${
+                  (project.progres_produksi || 0) >= 100
+                    ? 'bg-emerald-100 text-emerald-600'
+                    : 'bg-blue-100 text-blue-600'
+                }`}
               >
                 2
               </div>
-              <div className='flex-1'>
-                <CardTitle className='text-base text-neutral-800'>
+              <div className='flex-1 min-w-0'>
+                <CardTitle className='text-sm text-neutral-800 font-bold leading-snug break-words whitespace-normal'>
                   Progress Produksi
                 </CardTitle>
-                <p className='text-[10px] text-muted-foreground uppercase tracking-wider'>
+                <p className='text-[10px] text-muted-foreground uppercase tracking-wider font-semibold leading-tight break-words whitespace-normal mt-0.5'>
                   Production Progress
                 </p>
               </div>
               <ChevronDown
-                className={`h-4 w-4 text-neutral-400 transition-transform duration-200 mr-1 ${
+                className={`h-4 w-4 text-neutral-400 shrink-0 transition-transform duration-200 ${
                   isProgressCollapsed ? '-rotate-90' : ''
                 }`}
               />
             </button>
           </CardHeader>
           {!isProgressCollapsed && (
-            <CardContent className='pt-0'>
-              <div className='h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden mt-4'>
-                <div className='h-full bg-blue-600 transition-all duration-500' style={{ width: `${project.progres_produksi || 0}%` }} />
+            <CardContent className='pt-0 space-y-4'>
+              <div className='space-y-1.5 border-t border-neutral-100 pt-2.5'>
+                <div className='flex justify-between items-center'>
+                  <p className='text-[10px] font-bold text-neutral-500 uppercase tracking-wider'>
+                    Persentase per SPK
+                  </p>
+                  <p className='text-[10px] font-bold text-blue-600'>
+                    {Number(project.progres_produksi || 0).toFixed(2)}%
+                  </p>
+                </div>
+                <div className='h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden'>
+                  <div
+                    className='h-full bg-blue-600 transition-all duration-500'
+                    style={{ width: `${project.progres_produksi || 0}%` }}
+                  />
+                </div>
               </div>
-              <div className='flex justify-between items-center mt-1'>
-                <p className='text-[10px] font-bold text-neutral-700'>Persentase per SPK</p>
-                <p className='text-[10px] font-bold text-blue-600'>{Number(project.progres_produksi || 0).toFixed(2)}%</p>
+            </CardContent>
+          )}
+        </Card>
+
+        {/* 3. Gudang Barang Jadi */}
+        <Card
+          className={`relative border shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md ${
+            totalQtyMasuk >= totalQtyOrder && totalQtyOrder > 0
+              ? 'border-emerald-200 bg-white ring-1 ring-emerald-100'
+              : 'border-neutral-200 bg-white'
+          }`}
+        >
+          {totalQtyMasuk >= totalQtyOrder && totalQtyOrder > 0 && (
+            <div className='absolute -top-1.5 -right-1.5 h-5 w-5 bg-emerald-500 rounded-full flex items-center justify-center shadow-sm z-10 animate-in zoom-in duration-300'>
+              <Check className='h-3 w-3 text-white' strokeWidth={3} />
+            </div>
+          )}
+          <CardHeader className='pb-2 flex flex-row items-center justify-between gap-3 min-w-0'>
+            <button
+              className='flex items-center gap-3 flex-1 text-left min-w-0'
+              onClick={() => setIsBjCollapsed(!isBjCollapsed)}
+            >
+              <div
+                className={`h-8 w-8 rounded-full flex items-center justify-center font-bold shrink-0 ${
+                  totalQtyMasuk > 0
+                    ? totalQtyMasuk >= totalQtyOrder
+                      ? 'bg-emerald-100 text-emerald-600'
+                      : 'bg-blue-100 text-blue-600'
+                    : 'bg-neutral-100 text-neutral-500'
+                }`}
+              >
+                3
+              </div>
+              <div className='flex-1 min-w-0'>
+                <CardTitle className='text-sm text-neutral-800 font-bold leading-snug break-words whitespace-normal'>
+                  Gudang Barang Jadi
+                </CardTitle>
+                <p className='text-[10px] text-muted-foreground uppercase tracking-wider font-semibold leading-tight break-words whitespace-normal mt-0.5'>
+                  Finished Goods
+                </p>
+              </div>
+              <ChevronDown
+                className={`h-4 w-4 text-neutral-400 shrink-0 transition-transform duration-200 ${
+                  isBjCollapsed ? '-rotate-90' : ''
+                }`}
+              />
+            </button>
+          </CardHeader>
+          {!isBjCollapsed && (
+            <CardContent className='pt-0 space-y-4'>
+              <div className='space-y-1.5 border-t border-neutral-100 pt-2.5'>
+                <div className='flex justify-between items-center'>
+                  <p className='text-[10px] font-bold text-neutral-500 uppercase tracking-wider'>
+                    Barang Masuk
+                  </p>
+                  <p
+                    className={`text-[10px] font-bold ${
+                      totalQtyMasuk >= totalQtyOrder
+                        ? 'text-emerald-600'
+                        : 'text-blue-600'
+                    }`}
+                  >
+                    {Math.round(
+                      totalQtyOrder ? (totalQtyMasuk / totalQtyOrder) * 100 : 0
+                    )}
+                    %
+                  </p>
+                </div>
+                <div className='h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden'>
+                  <div
+                    className={`h-full transition-all duration-500 ${
+                      totalQtyMasuk >= totalQtyOrder
+                        ? 'bg-emerald-600'
+                        : 'bg-blue-600'
+                    }`}
+                    style={{
+                      width: `${
+                        totalQtyOrder
+                          ? (totalQtyMasuk / totalQtyOrder) * 100
+                          : 0
+                      }%`,
+                    }}
+                  />
+                </div>
+                <p className='text-[10px] font-bold text-neutral-600'>
+                  {totalQtyMasuk} / {totalQtyOrder} Items
+                </p>
+              </div>
+            </CardContent>
+          )}
+        </Card>
+
+        {/* 4. Pengiriman */}
+        <Card className='border border-neutral-200/60 shadow-sm bg-white transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md'>
+          <CardHeader className='pb-2 flex flex-row items-center justify-between gap-3 min-w-0'>
+            <button
+              className='flex items-center gap-3 flex-1 text-left min-w-0'
+              onClick={() => setIsShipCollapsed(!isShipCollapsed)}
+            >
+              <div className='h-8 w-8 rounded-full flex items-center justify-center font-bold bg-neutral-100 text-neutral-500 shrink-0'>
+                4
+              </div>
+              <div className='flex-1 min-w-0'>
+                <CardTitle className='text-sm text-neutral-800 font-bold leading-snug break-words whitespace-normal'>
+                  Pengiriman
+                </CardTitle>
+                <p className='text-[10px] text-muted-foreground uppercase tracking-wider font-semibold leading-tight break-words whitespace-normal mt-0.5'>
+                  Logistics
+                </p>
+              </div>
+              <ChevronDown
+                className={`h-4 w-4 text-neutral-400 shrink-0 transition-transform duration-200 ${
+                  isShipCollapsed ? '-rotate-90' : ''
+                }`}
+              />
+            </button>
+          </CardHeader>
+          {!isShipCollapsed && (
+            <CardContent className='pt-0'>
+              <div className='border-t border-neutral-100 pt-2.5 space-y-2'>
+                <Button
+                  variant='outline'
+                  size='sm'
+                  className='h-7 w-full text-[10px] border-violet-200 text-violet-600 hover:bg-violet-50 gap-1.5 bg-violet-50/30 font-bold'
+                  onClick={() => {
+                    setEditingPengirimanPerSpk(null);
+                    setIsPengirimanPerSpkDialogOpen(true);
+                  }}
+                >
+                  <Plus className='h-3 w-3' />
+                  Tambah Pengiriman per SPK
+                </Button>
+
+                {/* List pengiriman per SPK */}
+                {pengirimanPerSpkData &&
+                  pengirimanPerSpkData.data.length > 0 && (
+                    <div className='space-y-1.5 pt-1 border-t border-neutral-100 max-h-[180px] overflow-y-auto pr-1'>
+                      {[...pengirimanPerSpkData.data]
+                        .sort(
+                          (a, b) =>
+                            new Date(a.tanggal).getTime() -
+                            new Date(b.tanggal).getTime()
+                        )
+                        .map((p) => {
+                          const totalKeluar =
+                            p.details?.reduce(
+                              (s, d) => s + Number(d.jumlah_keluar),
+                              0
+                            ) ?? 0;
+                          const totalTersetting =
+                            p.details?.reduce(
+                              (s, d) => s + Number(d.jumlah_tersetting),
+                              0
+                            ) ?? 0;
+                          return (
+                            <div
+                              key={p.id}
+                              className='p-2 rounded-md bg-violet-50/60 border border-violet-100 space-y-1'
+                            >
+                              <div className='flex items-center justify-between gap-1'>
+                                <span className='text-[10px] font-bold text-violet-800 truncate'>
+                                  {format(new Date(p.tanggal), 'dd MMM yyyy')}
+                                </span>
+                              </div>
+                              <div className='flex items-center gap-2 text-[9px] text-neutral-600 font-medium'>
+                                {p.supir && (
+                                  <span className='truncate'>
+                                    Supir: {p.supir}
+                                  </span>
+                                )}
+                              </div>
+                              <div className='flex items-center gap-2 flex-wrap'>
+                                {totalKeluar > 0 && (
+                                  <span className='text-[9px] font-bold bg-teal-100 text-teal-700 px-1.5 py-0.5 rounded'>
+                                    Keluar: {totalKeluar}
+                                  </span>
+                                )}
+                                {p.surat_jalan ? (
+                                  <button
+                                    onClick={() => {
+                                      setPreviewSjUrl(
+                                        `${(
+                                          process.env.NEXT_PUBLIC_API_URL ||
+                                          'http://localhost:8000'
+                                        ).replace('/api', '')}/storage/${
+                                          p.surat_jalan
+                                        }`
+                                      );
+                                      setPreviewSjPengirimanId(p.id);
+                                      setPreviewSjDialogOpen(true);
+                                    }}
+                                    className='text-[9px] font-semibold text-neutral-600 bg-neutral-100 px-1.5 py-0.5 rounded hover:bg-neutral-200 flex items-center gap-0.5'
+                                  >
+                                    <Eye className='h-2.5 w-2.5' /> Lihat SJ
+                                  </button>
+                                ) : (
+                                  <button
+                                    className='text-[9px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded hover:bg-amber-100 transition-colors'
+                                    onClick={() => {
+                                      setSuratJalanPengirimanId(p.id);
+                                      setSuratJalanFile(null);
+                                      setSuratJalanDialogOpen(true);
+                                    }}
+                                  >
+                                    + Surat Jalan
+                                  </button>
+                                )}
+                                {p.setrim ? (
+                                  <button
+                                    onClick={() => {
+                                      setPreviewSetrimUrl(
+                                        `${(
+                                          process.env.NEXT_PUBLIC_API_URL ||
+                                          'http://localhost:8000'
+                                        ).replace('/api', '')}/storage/${
+                                          p.setrim
+                                        }`
+                                      );
+                                      setPreviewSetrimPengirimanId(p.id);
+                                      setPreviewSetrimDialogOpen(true);
+                                    }}
+                                    className='text-[9px] font-semibold text-neutral-600 bg-neutral-100 px-1.5 py-0.5 rounded hover:bg-neutral-200 flex items-center gap-0.5'
+                                  >
+                                    <Eye className='h-2.5 w-2.5' /> Lihat Setrim
+                                  </button>
+                                ) : (
+                                  <button
+                                    className='text-[9px] font-bold text-blue-600 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded hover:bg-blue-100 transition-colors'
+                                    onClick={() => {
+                                      setSetrimPengirimanId(p.id);
+                                      setSetrimFile(null);
+                                      setSetrimDialogOpen(true);
+                                    }}
+                                  >
+                                    + Setrim
+                                  </button>
+                                )}
+                                {totalTersetting > 0 && (
+                                  <span className='text-[9px] font-bold bg-violet-100 text-violet-700 px-1.5 py-0.5 rounded'>
+                                    Setting: {totalTersetting}
+                                  </span>
+                                )}
+                                <button
+                                  className='text-[9px] font-bold text-neutral-500 bg-neutral-50 border border-neutral-200 px-1.5 py-0.5 rounded hover:bg-neutral-100 transition-colors flex items-center gap-0.5 ml-auto'
+                                  onClick={() => {
+                                    setEditingPengirimanPerSpk(p);
+                                    setIsPengirimanPerSpkDialogOpen(true);
+                                  }}
+                                >
+                                  <Pencil className='h-2.5 w-2.5' /> Edit
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  )}
+              </div>
+            </CardContent>
+          )}
+        </Card>
+
+        {/* 5. Barang Terkirim */}
+        <Card
+          className={`relative border shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md ${
+            totalQtyKeluar >= totalQtyOrder && totalQtyOrder > 0
+              ? 'border-emerald-200 bg-white ring-1 ring-emerald-100'
+              : 'border-neutral-200 bg-white'
+          }`}
+        >
+          {totalQtyKeluar >= totalQtyOrder && totalQtyOrder > 0 && (
+            <div className='absolute -top-1.5 -right-1.5 h-5 w-5 bg-emerald-500 rounded-full flex items-center justify-center shadow-sm z-10 animate-in zoom-in duration-300'>
+              <Check className='h-3 w-3 text-white' strokeWidth={3} />
+            </div>
+          )}
+          <CardHeader className='pb-2 flex flex-row items-center justify-between gap-3 min-w-0'>
+            <button
+              className='flex items-center gap-3 flex-1 text-left min-w-0'
+              onClick={() => setIsKeluarCollapsed(!isKeluarCollapsed)}
+            >
+              <div
+                className={`h-8 w-8 rounded-full flex items-center justify-center font-bold shrink-0 ${
+                  totalQtyKeluar > 0
+                    ? totalQtyKeluar >= totalQtyOrder
+                      ? 'bg-emerald-100 text-emerald-600'
+                      : 'bg-blue-100 text-blue-600'
+                    : 'bg-neutral-100 text-neutral-500'
+                }`}
+              >
+                5
+              </div>
+              <div className='flex-1 min-w-0'>
+                <CardTitle className='text-sm text-neutral-800 font-bold leading-snug break-words whitespace-normal'>
+                  Barang Terkirim
+                </CardTitle>
+                <p className='text-[10px] text-muted-foreground uppercase tracking-wider font-semibold leading-tight break-words whitespace-normal mt-0.5'>
+                  Delivered Items
+                </p>
+              </div>
+              <ChevronDown
+                className={`h-4 w-4 text-neutral-400 shrink-0 transition-transform duration-200 ${
+                  isKeluarCollapsed ? '-rotate-90' : ''
+                }`}
+              />
+            </button>
+          </CardHeader>
+          {!isKeluarCollapsed && (
+            <CardContent className='pt-0'>
+              <div className='space-y-2 border-t border-neutral-100 pt-2.5'>
+                <div className='flex justify-between items-center'>
+                  <p className='text-[10px] font-bold text-neutral-500 uppercase tracking-wider'>
+                    Terkirim
+                  </p>
+                  <p
+                    className={`text-[10px] font-bold ${
+                      totalQtyKeluar >= totalQtyOrder
+                        ? 'text-emerald-600'
+                        : 'text-blue-600'
+                    }`}
+                  >
+                    {Math.round(
+                      totalQtyOrder ? (totalQtyKeluar / totalQtyOrder) * 100 : 0
+                    )}
+                    %
+                  </p>
+                </div>
+                <div className='h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden'>
+                  <div
+                    className={`h-full transition-all duration-500 ${
+                      totalQtyKeluar >= totalQtyOrder
+                        ? 'bg-emerald-600'
+                        : 'bg-blue-600'
+                    }`}
+                    style={{
+                      width: `${
+                        totalQtyOrder
+                          ? (totalQtyKeluar / totalQtyOrder) * 100
+                          : 0
+                      }%`,
+                    }}
+                  />
+                </div>
+                <p className='text-[10px] font-bold text-neutral-600'>
+                  {totalQtyKeluar} / {totalQtyOrder} Items
+                </p>
+              </div>
+            </CardContent>
+          )}
+        </Card>
+
+        {/* 6. Barang Terkirim Belum Tersetting */}
+        <Card
+          className={`relative border shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md ${
+            totalQtyBelumSetting > 0
+              ? 'border-amber-200 bg-white ring-1 ring-amber-100'
+              : 'border-neutral-200 bg-white'
+          }`}
+        >
+          <CardHeader className='pb-2 flex flex-row items-center justify-between gap-3 min-w-0'>
+            <button
+              className='flex items-center gap-3 flex-1 text-left min-w-0'
+              onClick={() =>
+                setIsBelumSettingCollapsed(!isBelumSettingCollapsed)
+              }
+            >
+              <div
+                className={`h-8 w-8 rounded-full flex items-center justify-center font-bold shrink-0 ${
+                  totalQtyBelumSetting > 0
+                    ? 'bg-amber-100 text-amber-600'
+                    : 'bg-neutral-100 text-neutral-500'
+                }`}
+              >
+                6
+              </div>
+              <div className='flex-1 min-w-0'>
+                <CardTitle className='text-sm text-neutral-800 font-bold leading-snug break-words whitespace-normal'>
+                  Belum Tersetting
+                </CardTitle>
+                <p className='text-[10px] text-muted-foreground uppercase tracking-wider font-semibold leading-tight break-words whitespace-normal mt-0.5'>
+                  Pending Installation
+                </p>
+              </div>
+              <ChevronDown
+                className={`h-4 w-4 text-neutral-400 shrink-0 transition-transform duration-200 ${
+                  isBelumSettingCollapsed ? '-rotate-90' : ''
+                }`}
+              />
+            </button>
+          </CardHeader>
+          {!isBelumSettingCollapsed && (
+            <CardContent className='pt-0'>
+              <div className='space-y-2 border-t border-neutral-100 pt-2.5'>
+                <div className='flex justify-between items-center'>
+                  <p className='text-[10px] font-bold text-neutral-500 uppercase tracking-wider'>
+                    Outstanding
+                  </p>
+                  <p className='text-[10px] font-bold text-amber-600'>
+                    {totalQtyBelumSetting} Items
+                  </p>
+                </div>
+                <div className='h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden'>
+                  <div
+                    className='h-full bg-amber-500 transition-all duration-500'
+                    style={{
+                      width: `${
+                        totalQtyKeluar
+                          ? (totalQtyBelumSetting / totalQtyKeluar) * 100
+                          : 0
+                      }%`,
+                    }}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          )}
+        </Card>
+
+        {/* 7. Barang Sudah Tersetting */}
+        <Card
+          className={`relative border shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md ${
+            totalQtySetting >= totalQtyOrder && totalQtyOrder > 0
+              ? 'border-emerald-200 bg-white ring-1 ring-emerald-100'
+              : 'border-neutral-200 bg-white'
+          }`}
+        >
+          {totalQtySetting >= totalQtyOrder && totalQtyOrder > 0 && (
+            <div className='absolute -top-1.5 -right-1.5 h-5 w-5 bg-emerald-500 rounded-full flex items-center justify-center shadow-sm z-10 animate-in zoom-in duration-300'>
+              <Check className='h-3 w-3 text-white' strokeWidth={3} />
+            </div>
+          )}
+          <CardHeader className='pb-2 flex flex-row items-center justify-between gap-3 min-w-0'>
+            <button
+              className='flex items-center gap-3 flex-1 text-left min-w-0'
+              onClick={() => setIsSettingCollapsed(!isSettingCollapsed)}
+            >
+              <div
+                className={`h-8 w-8 rounded-full flex items-center justify-center font-bold shrink-0 ${
+                  totalQtySetting > 0
+                    ? totalQtySetting >= totalQtyOrder
+                      ? 'bg-emerald-100 text-emerald-600'
+                      : 'bg-blue-100 text-blue-600'
+                    : 'bg-neutral-100 text-neutral-500'
+                }`}
+              >
+                7
+              </div>
+              <div className='flex-1 min-w-0'>
+                <CardTitle className='text-sm text-neutral-800 font-bold leading-snug break-words whitespace-normal'>
+                  Barang Tersetting
+                </CardTitle>
+                <p className='text-[10px] text-muted-foreground uppercase tracking-wider font-semibold leading-tight break-words whitespace-normal mt-0.5'>
+                  Installed Items
+                </p>
+              </div>
+              <ChevronDown
+                className={`h-4 w-4 text-neutral-400 shrink-0 transition-transform duration-200 ${
+                  isSettingCollapsed ? '-rotate-90' : ''
+                }`}
+              />
+            </button>
+          </CardHeader>
+          {!isSettingCollapsed && (
+            <CardContent className='pt-0'>
+              <div className='space-y-2 border-t border-neutral-100 pt-2.5'>
+                <div className='flex justify-between items-center'>
+                  <p className='text-[10px] font-bold text-neutral-500 uppercase tracking-wider'>
+                    Tersetting
+                  </p>
+                  <p
+                    className={`text-[10px] font-bold ${
+                      totalQtySetting >= totalQtyOrder
+                        ? 'text-emerald-600'
+                        : 'text-blue-600'
+                    }`}
+                  >
+                    {Math.round(
+                      totalQtyOrder
+                        ? (totalQtySetting / totalQtyOrder) * 100
+                        : 0
+                    )}
+                    %
+                  </p>
+                </div>
+                <div className='h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden'>
+                  <div
+                    className={`h-full transition-all duration-500 ${
+                      totalQtySetting >= totalQtyOrder
+                        ? 'bg-emerald-600'
+                        : 'bg-blue-600'
+                    }`}
+                    style={{
+                      width: `${
+                        totalQtyOrder
+                          ? (totalQtySetting / totalQtyOrder) * 100
+                          : 0
+                      }%`,
+                    }}
+                  />
+                </div>
+                <p className='text-[10px] font-bold text-neutral-600'>
+                  {totalQtySetting} / {totalQtyOrder} Items
+                </p>
               </div>
             </CardContent>
           )}
@@ -2608,6 +3240,246 @@ export default function PurchasingDetailPage() {
               </Button>
             </div>
           </div>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Tambah / Edit Pengiriman per SPK Dialog */}
+      <PengirimanPerSpkFormDialog
+        open={isPengirimanPerSpkDialogOpen}
+        onOpenChange={setIsPengirimanPerSpkDialogOpen}
+        pengiriman={editingPengirimanPerSpk}
+        projectId={projectId}
+        clientId={project?.client_id}
+        clientName={project?.client?.name}
+        spkId={project?.spk?.id}
+        onSaved={() => {
+          queryClient.invalidateQueries({
+            queryKey: ['pengiriman-per-spk', spkId],
+          });
+          queryClient.invalidateQueries({
+            queryKey: ['project-v2-items', projectId],
+          });
+        }}
+      />
+
+      {/* Preview Surat Jalan Dialog */}
+      <AlertDialog
+        open={previewSjDialogOpen}
+        onOpenChange={setPreviewSjDialogOpen}
+      >
+        <AlertDialogContent className='max-w-4xl'>
+          <AlertDialogHeader>
+            <AlertDialogTitle className='flex items-center justify-between gap-2 w-full pr-4'>
+              <div className='flex items-center gap-2'>
+                <FileText className='h-5 w-5 text-amber-500' />
+                Preview Surat Jalan
+              </div>
+              <Button
+                variant='outline'
+                size='sm'
+                className='gap-2 h-8'
+                onClick={() => {
+                  setPreviewSjDialogOpen(false);
+                  setSuratJalanPengirimanId(previewSjPengirimanId);
+                  setSuratJalanFile(null);
+                  setSuratJalanDialogOpen(true);
+                }}
+              >
+                <Pencil className='h-3.5 w-3.5' /> Edit Dokumen
+              </Button>
+            </AlertDialogTitle>
+          </AlertDialogHeader>
+          <div className='py-4 min-h-[60vh]'>
+            {previewSjUrl && (
+              <iframe
+                src={previewSjUrl}
+                className='w-full h-[60vh] border rounded-md'
+                title='Preview Surat Jalan'
+              />
+            )}
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => {
+                setPreviewSjDialogOpen(false);
+                setPreviewSjUrl(null);
+                setPreviewSjPengirimanId(null);
+              }}
+            >
+              Tutup
+            </AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Upload Surat Jalan Dialog */}
+      <AlertDialog
+        open={suratJalanDialogOpen}
+        onOpenChange={setSuratJalanDialogOpen}
+      >
+        <AlertDialogContent className='max-w-sm'>
+          <AlertDialogHeader>
+            <AlertDialogTitle className='flex items-center gap-2'>
+              <FileText className='h-5 w-5 text-amber-500' />
+              Upload Surat Jalan
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Masukkan nomor surat jalan untuk pengiriman ini.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className='py-4'>
+            <div className='space-y-2'>
+              <Label htmlFor='surat-jalan-input'>File Surat Jalan</Label>
+              <Input
+                id='surat-jalan-input'
+                type='file'
+                accept='.pdf,.jpg,.jpeg,.png,.doc,.docx'
+                onChange={(e) => setSuratJalanFile(e.target.files?.[0] || null)}
+                className='text-xs'
+              />
+              <p className='text-[10px] text-muted-foreground'>
+                Format: PDF, JPG, PNG, DOC (Max 10MB)
+              </p>
+            </div>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => {
+                setSuratJalanDialogOpen(false);
+                setSuratJalanFile(null);
+              }}
+            >
+              Batal
+            </AlertDialogCancel>
+            <Button
+              className='bg-amber-500 hover:bg-amber-600 text-white'
+              disabled={!suratJalanFile || updateSuratJalanMutation.isPending}
+              onClick={() => {
+                if (suratJalanPengirimanId && suratJalanFile) {
+                  updateSuratJalanMutation.mutate({
+                    id: suratJalanPengirimanId,
+                    file: suratJalanFile,
+                  });
+                }
+              }}
+            >
+              {updateSuratJalanMutation.isPending ? (
+                <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+              ) : (
+                <CheckCircle2 className='mr-2 h-4 w-4' />
+              )}
+              Simpan
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Preview Setrim Dialog */}
+      <AlertDialog
+        open={previewSetrimDialogOpen}
+        onOpenChange={setPreviewSetrimDialogOpen}
+      >
+        <AlertDialogContent className='max-w-4xl'>
+          <AlertDialogHeader>
+            <AlertDialogTitle className='flex items-center justify-between gap-2 w-full pr-4'>
+              <div className='flex items-center gap-2'>
+                <FileText className='h-5 w-5 text-blue-500' />
+                Preview Setrim
+              </div>
+              <Button
+                variant='outline'
+                size='sm'
+                className='gap-2 h-8'
+                onClick={() => {
+                  setPreviewSetrimDialogOpen(false);
+                  setSetrimPengirimanId(previewSetrimPengirimanId);
+                  setSetrimFile(null);
+                  setSetrimDialogOpen(true);
+                }}
+              >
+                <Pencil className='h-3.5 w-3.5' /> Edit Dokumen
+              </Button>
+            </AlertDialogTitle>
+          </AlertDialogHeader>
+          <div className='py-4 min-h-[60vh]'>
+            {previewSetrimUrl && (
+              <iframe
+                src={previewSetrimUrl}
+                className='w-full h-[60vh] border rounded-md'
+                title='Preview Setrim'
+              />
+            )}
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => {
+                setPreviewSetrimDialogOpen(false);
+                setPreviewSetrimUrl(null);
+                setPreviewSetrimPengirimanId(null);
+              }}
+            >
+              Tutup
+            </AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Upload Setrim Dialog */}
+      <AlertDialog open={setrimDialogOpen} onOpenChange={setSetrimDialogOpen}>
+        <AlertDialogContent className='max-w-sm'>
+          <AlertDialogHeader>
+            <AlertDialogTitle className='flex items-center gap-2'>
+              <FileText className='h-5 w-5 text-blue-500' />
+              Upload Setrim
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Upload file setrim untuk pengiriman ini.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className='py-4'>
+            <div className='space-y-2'>
+              <Label htmlFor='setrim-input'>File Setrim</Label>
+              <Input
+                id='setrim-input'
+                type='file'
+                accept='.pdf,.jpg,.jpeg,.png,.doc,.docx'
+                onChange={(e) => setSetrimFile(e.target.files?.[0] || null)}
+                className='text-xs'
+              />
+              <p className='text-[10px] text-muted-foreground'>
+                Format: PDF, JPG, PNG, DOC (Max 10MB)
+              </p>
+            </div>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => {
+                setSetrimDialogOpen(false);
+                setSetrimFile(null);
+              }}
+            >
+              Batal
+            </AlertDialogCancel>
+            <Button
+              className='bg-blue-500 hover:bg-blue-600 text-white'
+              disabled={!setrimFile || updateSetrimMutation.isPending}
+              onClick={() => {
+                if (setrimPengirimanId && setrimFile) {
+                  updateSetrimMutation.mutate({
+                    id: setrimPengirimanId,
+                    file: setrimFile,
+                  });
+                }
+              }}
+            >
+              {updateSetrimMutation.isPending ? (
+                <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+              ) : (
+                <CheckCircle2 className='mr-2 h-4 w-4' />
+              )}
+              Simpan
+            </Button>
+          </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </div>
