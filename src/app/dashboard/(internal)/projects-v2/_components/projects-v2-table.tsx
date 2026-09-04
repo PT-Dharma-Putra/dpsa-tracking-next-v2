@@ -789,8 +789,10 @@ export function ProjectsV2Table({
     );
   };
 
-  const handleExportExcelSelected = async () => {
-    if (selectedProjectIds.length === 0) return;
+  const handleExportExcelSelected = async (targetIds?: number[]) => {
+    const idsToExport =
+      targetIds && targetIds.length > 0 ? targetIds : selectedProjectIds;
+    if (idsToExport.length === 0) return;
     setIsExporting(true);
 
     try {
@@ -798,7 +800,7 @@ export function ProjectsV2Table({
       const currentMap = new Map<number, ProjectV2>();
       projects.forEach((p) => currentMap.set(p.id, p));
 
-      const missingIds = selectedProjectIds.filter(
+      const missingIds = idsToExport.filter(
         (id) => !currentMap.has(id)
       );
       if (missingIds.length > 0) {
@@ -812,7 +814,7 @@ export function ProjectsV2Table({
         });
       }
 
-      const selectedProjects = selectedProjectIds
+      const selectedProjects = idsToExport
         .map((id) => currentMap.get(id))
         .filter((p): p is ProjectV2 => Boolean(p));
 
@@ -903,12 +905,12 @@ export function ProjectsV2Table({
         // Spesifikasi (Cols 14..19)
         { v: 'SPESIFIKASI', t: 's', s: groupHeaderStyle },
         '', '', '', '', '',
-        // Procurement / Material (Cols 20..23)
+        // Procurement / Material (Cols 20..21)
         { v: 'PROCUREMENT / MATERIAL', t: 's', s: groupHeaderStyle },
-        '', '', '',
-        // Progress (Cols 24..26)
+        '',
+        // Progress (Cols 22..26)
         { v: 'PROGRESS', t: 's', s: groupHeaderStyle },
-        '', '',
+        '', '', '', '',
       ];
 
       // Header Row 2: Sub Column Headers
@@ -936,14 +938,14 @@ export function ProjectsV2Table({
         { v: 'Qty', t: 's', s: subHeaderStyle },
         { v: 'Satuan', t: 's', s: subHeaderStyle },
 
-        { v: 'GK MDL', t: 's', s: subHeaderStyle },
-        { v: 'GK Custom', t: 's', s: subHeaderStyle },
         { v: 'PO Divisi', t: 's', s: subHeaderStyle },
         { v: 'Stok Material', t: 's', s: subHeaderStyle },
 
         { v: 'Produksi', t: 's', s: subHeaderStyle },
         { v: 'QC Cek', t: 's', s: subHeaderStyle },
         { v: 'B. Jadi', t: 's', s: subHeaderStyle },
+        { v: 'Barang Terkirim', t: 's', s: subHeaderStyle },
+        { v: 'Barang Tersetting', t: 's', s: subHeaderStyle },
       ];
 
       const wsData: any[][] = [groupHeaderRow, colHeaderRow];
@@ -1056,8 +1058,6 @@ export function ProjectsV2Table({
                 : 0;
             const satuanStr = item.satuan || '-';
 
-            const gkMdlStr = item.mdl_item?.link_gambar_kerja ? 'Ada' : '-';
-            const gkCustomStr = item.gambar_kerja?.file ? 'Ada' : '-';
             const poDivisiStr = item.divisi?.nama || '-';
             const stokMaterialStr = item.bahan_baku?.ketersediaan_stok || '-';
 
@@ -1070,6 +1070,24 @@ export function ProjectsV2Table({
                     0
                   )} / ${item.jumlah}`
                 : `0 / ${item.jumlah}`;
+
+            const terkirimStr = (() => {
+              const total =
+                item.detail_pengiriman?.reduce(
+                  (sum, d) => sum + Number(d.jumlah_keluar),
+                  0
+                ) ?? 0;
+              return `${total} / ${item.jumlah}`;
+            })();
+
+            const tersettingStr = (() => {
+              const total =
+                item.detail_pengiriman?.reduce(
+                  (sum, d) => sum + Number(d.jumlah_tersetting),
+                  0
+                ) ?? 0;
+              return `${total} / ${item.jumlah}`;
+            })();
 
             wsData.push([
               { v: rowCounter++, t: 'n', s: cellStyleCenter },
@@ -1111,14 +1129,14 @@ export function ProjectsV2Table({
               { v: qtyVal, t: 'n', s: cellStyleCenter },
               { v: satuanStr, t: 's', s: cellStyleCenter },
 
-              { v: gkMdlStr, t: 's', s: cellStyleCenter },
-              { v: gkCustomStr, t: 's', s: cellStyleCenter },
               { v: poDivisiStr, t: 's', s: cellStyleLeft },
               { v: stokMaterialStr, t: 's', s: cellStyleCenter },
 
               { v: produksiStr, t: 's', s: cellStyleCenter },
               { v: qcCekStr, t: 's', s: cellStyleCenter },
               { v: bJadiStr, t: 's', s: cellStyleCenter },
+              { v: terkirimStr, t: 's', s: cellStyleCenter },
+              { v: tersettingStr, t: 's', s: cellStyleCenter },
             ]);
           });
         }
@@ -1131,8 +1149,8 @@ export function ProjectsV2Table({
         { s: { r: 0, c: 0 }, e: { r: 0, c: 8 } },   // PROJECT
         { s: { r: 0, c: 9 }, e: { r: 0, c: 13 } },  // ITEM
         { s: { r: 0, c: 14 }, e: { r: 0, c: 19 } }, // SPESIFIKASI
-        { s: { r: 0, c: 20 }, e: { r: 0, c: 23 } }, // PROCUREMENT / MATERIAL
-        { s: { r: 0, c: 24 }, e: { r: 0, c: 26 } }, // PROGRESS
+        { s: { r: 0, c: 20 }, e: { r: 0, c: 21 } }, // PROCUREMENT / MATERIAL
+        { s: { r: 0, c: 22 }, e: { r: 0, c: 26 } }, // PROGRESS
       ];
 
       // Auto Filter on Header Row 2
@@ -1171,14 +1189,14 @@ export function ProjectsV2Table({
         { wch: 10 }, // Qty
         { wch: 12 }, // Satuan
 
-        { wch: 15 }, // GK MDL
-        { wch: 15 }, // GK Custom
         { wch: 15 }, // PO Divisi
         { wch: 18 }, // Stok Material
 
         { wch: 15 }, // Produksi
         { wch: 15 }, // QC Cek
         { wch: 15 }, // B. Jadi
+        { wch: 16 }, // Barang Terkirim
+        { wch: 16 }, // Barang Tersetting
       ];
 
       const wb = XLSX.utils.book_new();
@@ -2885,7 +2903,7 @@ export function ProjectsV2Table({
             )}
           </div>
 
-          {showProduksi && selectedProjectIds.length > 0 && (
+          {(showProduksi || showPerencanaan) && selectedProjectIds.length > 0 && (
             <div className='flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl border border-emerald-200 bg-emerald-50/70 text-emerald-900 shadow-sm animate-in fade-in slide-in-from-top-1 duration-200'>
               <div className='flex items-center gap-2 text-xs font-semibold'>
                 <CheckCircle2 className='h-4 w-4 text-emerald-600' />
@@ -2895,7 +2913,7 @@ export function ProjectsV2Table({
                 <Button
                   size='sm'
                   disabled={isExporting}
-                  onClick={handleExportExcelSelected}
+                  onClick={() => handleExportExcelSelected()}
                   className='h-8 text-xs gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-xs'
                 >
                   {isExporting ? (
@@ -2927,7 +2945,7 @@ export function ProjectsV2Table({
             <Table>
               <TableHeader className='bg-neutral-50'>
                 <TableRow>
-                  {showProduksi && (
+                  {(showProduksi || showPerencanaan) && (
                     <TableHead className='w-[40px] px-3 text-center'>
                       <Checkbox
                         checked={
@@ -3495,7 +3513,7 @@ export function ProjectsV2Table({
                           : showPiutang
                           ? 14
                           : isMainProjectsV2Page || showPerencanaan
-                          ? 20
+                          ? 21
                           : 18
                       }
                       className='h-32 text-center text-muted-foreground'
@@ -3520,7 +3538,7 @@ export function ProjectsV2Table({
                           : showPiutang
                           ? 14
                           : isMainProjectsV2Page || showPerencanaan
-                          ? 20
+                          ? 21
                           : 18
                       }
                       className='h-32 text-center text-muted-foreground'
@@ -3531,7 +3549,7 @@ export function ProjectsV2Table({
                 ) : (
                   projects.map((project, index) => (
                     <TableRow key={project.id}>
-                      {showProduksi && (
+                      {(showProduksi || showPerencanaan) && (
                         <TableCell className='w-[40px] px-3 text-center'>
                           <Checkbox
                             checked={selectedProjectIds.includes(project.id)}
@@ -3608,7 +3626,14 @@ export function ProjectsV2Table({
                                     >
                                       Rekap
                                     </DropdownMenuItem>
-
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        handleExportExcelSelected([project.id])
+                                      }
+                                    >
+                                      <FileSpreadsheet className='mr-2 h-4 w-4 text-emerald-600' />
+                                      Export Excel
+                                    </DropdownMenuItem>
                                   </DropdownMenuContent>
                                 </DropdownMenu>
                               )}
@@ -3735,6 +3760,14 @@ export function ProjectsV2Table({
                                     >
                                       <FileText className='mr-2 h-4 w-4' />
                                       Rekap
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        handleExportExcelSelected([project.id])
+                                      }
+                                    >
+                                      <FileSpreadsheet className='mr-2 h-4 w-4 text-emerald-600' />
+                                      Export Excel
                                     </DropdownMenuItem>
                                   </>
                                 )}
