@@ -1195,9 +1195,20 @@ export default function PurchasingDetailPage() {
                 <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>Satuan</TableHead>
                 <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>GK Custom</TableHead>
                 <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>PO Divisi</TableHead>
-                <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>Persentase Produksi</TableHead>
-                <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>Barang Jadi</TableHead>
-                <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>B Keluar</TableHead>
+                <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>
+                    <div className='flex flex-col gap-0.5 align-center'>
+                      <span className='text-[12px] font-bold text-neutral-800'>PROGRESS</span>
+                      <span className='text-[12px] font-bold text-neutral-800'>SUPPLIER</span>
+                    </div>
+                </TableHead>
+                <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>
+                    <div className='flex flex-col gap-0.5 align-center'>
+                      <span className='text-[12px] font-bold text-neutral-800'>GUDANG</span>
+                      <span className='text-[12px] font-bold text-neutral-800'>B. JADI</span>
+                    </div>
+                </TableHead>
+                <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>TERKIRIM</TableHead>
+                <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>B TERSETTING</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -1401,6 +1412,30 @@ export default function PurchasingDetailPage() {
                             ) ?? 0;
                           return total > 0 ? (
                             <Badge className='bg-teal-600 text-white border-none font-bold text-[10px] h-5 px-1.5 shadow-sm'>
+                              {total} / {item.jumlah}
+                            </Badge>
+                          ) : (
+                            <span className='text-[9px] text-muted-foreground italic'>
+                              -
+                            </span>
+                          );
+                        })()
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {isGrouped ? (
+                        <span className='text-[10px] text-muted-foreground italic text-center block w-full'>
+                          -
+                        </span>
+                      ) : (
+                        (() => {
+                          const total =
+                            item.detail_pengiriman?.reduce(
+                              (sum, d) => sum + Number(d.jumlah_tersetting),
+                              0
+                            ) ?? 0;
+                          return total > 0 ? (
+                            <Badge className='bg-violet-600 text-white border-none font-bold text-[10px] h-5 px-1.5 shadow-sm'>
                               {total} / {item.jumlah}
                             </Badge>
                           ) : (
