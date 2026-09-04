@@ -1239,10 +1239,14 @@ export interface BarangSupplier {
   project_item_id: number;
   jumlah_order: number;
   barang_dipesan: number;
+  tanggal_barang_dipesan?: string | null;
   barang_tersedia: number;
+  tanggal_barang_tersedia?: string | null;
   rakit: number;
+  tanggal_rakit?: string | null;
   packing: number;
-  terkirim: number;
+  tanggal_packing?: string | null;
+  terkirim?: number;
   persen: number;
   skipped_fields?: string[];
   created_at: string;

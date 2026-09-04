@@ -200,7 +200,14 @@ export default function PurchasingDetailPage() {
     barang_tersedia: 0,
     rakit: 0,
     packing: 0,
-    terkirim: 0,
+  });
+
+  // Bulk Supplier Dates
+  const [bulkSupplierDates, setBulkSupplierDates] = React.useState<Record<string, string | null>>({
+    tanggal_barang_dipesan: null,
+    tanggal_barang_tersedia: null,
+    tanggal_rakit: null,
+    tanggal_packing: null,
   });
 
   // Bulk Skipped Fields
@@ -224,7 +231,7 @@ export default function PurchasingDetailPage() {
   const bulkEstimatedPersen = React.useMemo(() => {
     if (totalQtySelected === 0) return 0;
     if (allSelectedAreSupplier) {
-      const allFields = ['barang_dipesan', 'barang_tersedia', 'rakit', 'packing', 'terkirim'];
+      const allFields = ['barang_dipesan', 'barang_tersedia', 'rakit', 'packing'];
       const skipped = Object.keys(bulkSkippedFields).filter((k) => bulkSkippedFields[k]);
       const activeFields = allFields.filter((f) => !skipped.includes(f));
       const activeCount = activeFields.length;
@@ -290,7 +297,13 @@ export default function PurchasingDetailPage() {
       barang_tersedia: 0,
       rakit: 0,
       packing: 0,
-      terkirim: 0,
+    };
+
+    const initialSupplierDates: Record<string, string | null> = {
+      tanggal_barang_dipesan: null,
+      tanggal_barang_tersedia: null,
+      tanggal_rakit: null,
+      tanggal_packing: null,
     };
 
     selectedItems.forEach((item) => {
@@ -299,9 +312,33 @@ export default function PurchasingDetailPage() {
         initialSupplierData.barang_tersedia += parseInt(item.barang_supplier.barang_tersedia as any, 10) || 0;
         initialSupplierData.rakit += parseInt(item.barang_supplier.rakit as any, 10) || 0;
         initialSupplierData.packing += parseInt(item.barang_supplier.packing as any, 10) || 0;
-        initialSupplierData.terkirim += parseInt(item.barang_supplier.terkirim as any, 10) || 0;
       }
     });
+
+    const supplierItems = selectedItems.filter((i) => i.barang_supplier);
+    if (supplierItems.length > 0) {
+      const dateKeys = [
+        'tanggal_barang_dipesan',
+        'tanggal_barang_tersedia',
+        'tanggal_rakit',
+        'tanggal_packing',
+      ] as const;
+
+      dateKeys.forEach((dKey) => {
+        const firstVal = supplierItems[0].barang_supplier?.[dKey]
+          ? String(supplierItems[0].barang_supplier[dKey]).slice(0, 10)
+          : null;
+        const allSame = supplierItems.every((i) => {
+          const val = i.barang_supplier?.[dKey]
+            ? String(i.barang_supplier[dKey]).slice(0, 10)
+            : null;
+          return val === firstVal;
+        });
+        if (allSame && firstVal) {
+          initialSupplierDates[dKey] = firstVal;
+        }
+      });
+    }
 
     // 3. Initialize skipped fields (if a field is skipped in all selected items, mark it as skipped in bulk)
     const initialSkippedFields: Record<string, boolean> = {};
@@ -325,6 +362,7 @@ export default function PurchasingDetailPage() {
 
     setBulkProduksiData(initialProduksiData);
     setBulkSupplierData(initialSupplierData);
+    setBulkSupplierDates(initialSupplierDates);
     setBulkSkippedFields(initialSkippedFields);
     setIsBulkProduksiOpen(true);
   };
@@ -507,7 +545,7 @@ export default function PurchasingDetailPage() {
 
       if (allSelectedAreSupplier) {
         // It's a supplier item, update barang_supplier
-        const fields = ['barang_dipesan', 'barang_tersedia', 'rakit', 'packing', 'terkirim'] as const;
+        const fields = ['barang_dipesan', 'barang_tersedia', 'rakit', 'packing'] as const;
         
         const updates = selectedItems.map((item) => {
           return {
@@ -529,6 +567,28 @@ export default function PurchasingDetailPage() {
               const allocate = Math.min(remaining, update.capacity);
               update.data[f] = allocate;
               remaining -= allocate;
+            }
+          });
+        });
+
+        const dateFieldMapping = [
+          { field: 'barang_dipesan', dateKey: 'tanggal_barang_dipesan' },
+          { field: 'barang_tersedia', dateKey: 'tanggal_barang_tersedia' },
+          { field: 'rakit', dateKey: 'tanggal_rakit' },
+          { field: 'packing', dateKey: 'tanggal_packing' },
+        ] as const;
+
+        updates.forEach((update) => {
+          const item = selectedItems.find((i) => i.id === update.id);
+          dateFieldMapping.forEach(({ field, dateKey }) => {
+            if (skippedList.includes(field)) {
+              update.data[dateKey] = null;
+            } else if (bulkSupplierDates[dateKey]) {
+              update.data[dateKey] = bulkSupplierDates[dateKey];
+            } else if (item?.barang_supplier && (item.barang_supplier as any)[dateKey]) {
+              update.data[dateKey] = (item.barang_supplier as any)[dateKey];
+            } else {
+              update.data[dateKey] = null;
             }
           });
         });
@@ -735,10 +795,13 @@ export default function PurchasingDetailPage() {
       item.barang_supplier || {
         jumlah_order: item.jumlah,
         barang_dipesan: 0,
+        tanggal_barang_dipesan: null,
         barang_tersedia: 0,
+        tanggal_barang_tersedia: null,
         rakit: 0,
+        tanggal_rakit: null,
         packing: 0,
-        terkirim: 0,
+        tanggal_packing: null,
         persen: 0,
       }
     );
@@ -853,7 +916,7 @@ export default function PurchasingDetailPage() {
   React.useEffect(() => {
     if (!isBarangSupplierDialogOpen) return;
 
-    const allFields = ['barang_dipesan', 'barang_tersedia', 'rakit', 'packing', 'terkirim'] as const;
+    const allFields = ['barang_dipesan', 'barang_tersedia', 'rakit', 'packing'] as const;
     const activeFields = allFields.filter((f) => !bsSkippedFields[f]);
     const order = Number(barangSupplierData.jumlah_order) || 1;
     const totalSum = activeFields.reduce((sum, f) => sum + Number(barangSupplierData[f] || 0), 0);
@@ -871,7 +934,6 @@ export default function PurchasingDetailPage() {
     barangSupplierData.barang_tersedia,
     barangSupplierData.rakit,
     barangSupplierData.packing,
-    barangSupplierData.terkirim,
     barangSupplierData.jumlah_order,
     bsSkippedFields,
   ]);
@@ -2503,16 +2565,31 @@ export default function PurchasingDetailPage() {
 
           {/* Body */}
           <div className='flex-1 overflow-y-auto p-6 md:p-8 space-y-6'>
-            {/* Jumlah Order */}
+            {/* Jumlah Order & Persen (%) */}
             <div className='flex justify-center'>
-              <div className='w-1/2 sm:w-1/3 space-y-2 text-center'>
-                <Label className='text-sm font-bold'>Jumlah Order</Label>
-                <Input
-                  type='number'
-                  value={barangSupplierData.jumlah_order || 0}
-                  disabled
-                  className='bg-neutral-50 font-bold text-center text-lg h-12'
-                />
+              <div className='grid grid-cols-2 gap-4 w-full sm:max-w-md'>
+                <div className='space-y-2 text-center'>
+                  <Label className='text-sm font-bold'>Jumlah Order</Label>
+                  <Input
+                    type='number'
+                    value={barangSupplierData.jumlah_order || 0}
+                    disabled
+                    className='bg-neutral-50 font-bold text-center text-lg h-12'
+                  />
+                </div>
+                <div className='space-y-2 text-center'>
+                  <Label className='text-sm font-bold'>Persen (%)</Label>
+                  <Input
+                    type='text'
+                    value={
+                      typeof barangSupplierData.persen === 'number'
+                        ? `${barangSupplierData.persen.toFixed(2)}%`
+                        : `${(Number(barangSupplierData.persen) || 0).toFixed(2)}%`
+                    }
+                    disabled
+                    className='bg-blue-50 font-bold text-blue-700 text-center text-lg h-12 disabled:opacity-100'
+                  />
+                </div>
               </div>
             </div>
 
@@ -2521,19 +2598,18 @@ export default function PurchasingDetailPage() {
               <h4 className='font-semibold text-sm text-neutral-500 uppercase tracking-wider border-b pb-2'>
                 Progress Supplier
               </h4>
-              <div className='grid grid-cols-2 sm:grid-cols-3 gap-3'>
+              <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
                 {(
                   [
-                    { key: 'barang_dipesan', label: 'Barang Dipesan' },
-                    { key: 'barang_tersedia', label: 'Barang Tersedia' },
-                    { key: 'rakit', label: 'Rakit' },
-                    { key: 'packing', label: 'Packing' },
-                    { key: 'terkirim', label: 'Terkirim' },
+                    { key: 'barang_dipesan', dateKey: 'tanggal_barang_dipesan', label: 'Barang Dipesan' },
+                    { key: 'barang_tersedia', dateKey: 'tanggal_barang_tersedia', label: 'Barang Tersedia' },
+                    { key: 'rakit', dateKey: 'tanggal_rakit', label: 'Rakit' },
+                    { key: 'packing', dateKey: 'tanggal_packing', label: 'Packing' },
                   ] as const
-                ).map(({ key, label }) => (
-                  <div key={key} className='space-y-2'>
-                    <div className='flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between'>
-                      <Label>{label}</Label>
+                ).map(({ key, dateKey, label }) => (
+                  <div key={key} className='p-4 rounded-xl border border-neutral-200 bg-neutral-50/50 space-y-3 shadow-sm'>
+                    <div className='flex items-center justify-between pb-2 border-b border-neutral-200'>
+                      <Label className='font-bold text-sm text-neutral-800'>{label}</Label>
                       <Button
                         type='button'
                         variant={bsSkippedFields[key] ? 'default' : 'outline'}
@@ -2544,39 +2620,45 @@ export default function PurchasingDetailPage() {
                         {bsSkippedFields[key] ? 'Batalkan' : 'Lewati Proses'}
                       </Button>
                     </div>
-                    <Input
-                      type='number'
-                      min={0}
-                      max={barangSupplierData.jumlah_order}
-                      disabled={bsSkippedFields[key]}
-                      value={bsSkippedFields[key] ? '-' : barangSupplierData[key] === 0 ? '' : barangSupplierData[key] || ''}
-                      onChange={(e) =>
-                        setBarangSupplierData((p) => ({
-                          ...p,
-                          [key]: Math.min(Math.max(parseInt(e.target.value) || 0, 0), p.jumlah_order ?? 0),
-                        }))
-                      }
-                      className={bsSkippedFields[key] ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100' : ''}
-                    />
+
+                    <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
+                      <div className='space-y-1.5'>
+                        <Label className='text-xs font-semibold text-neutral-600'>Jumlah</Label>
+                        <Input
+                          type='number'
+                          min={0}
+                          max={barangSupplierData.jumlah_order}
+                          disabled={bsSkippedFields[key]}
+                          placeholder='0'
+                          value={bsSkippedFields[key] ? '-' : barangSupplierData[key] === 0 ? '' : barangSupplierData[key] || ''}
+                          onChange={(e) =>
+                            setBarangSupplierData((p) => ({
+                              ...p,
+                              [key]: Math.min(Math.max(parseInt(e.target.value) || 0, 0), p.jumlah_order ?? 0),
+                            }))
+                          }
+                          className={`bg-white ${bsSkippedFields[key] ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100' : ''}`}
+                        />
+                      </div>
+
+                      <div className='space-y-1.5'>
+                        <Label className='text-xs font-semibold text-neutral-600'>Tanggal</Label>
+                        <Input
+                          type='date'
+                          disabled={bsSkippedFields[key]}
+                          value={bsSkippedFields[key] ? '' : (barangSupplierData[dateKey] ? String(barangSupplierData[dateKey]).slice(0, 10) : '')}
+                          onChange={(e) =>
+                            setBarangSupplierData((p) => ({
+                              ...p,
+                              [dateKey]: e.target.value || null,
+                            }))
+                          }
+                          className={`bg-white text-xs ${bsSkippedFields[key] ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100' : ''}`}
+                        />
+                      </div>
+                    </div>
                   </div>
                 ))}
-              </div>
-            </div>
-
-            {/* Persen */}
-            <div className='pt-4 border-t flex justify-center'>
-              <div className='space-y-2 w-full sm:w-[200px] text-center'>
-                <Label className='text-sm font-bold'>Persen (%)</Label>
-                <Input
-                  type='text'
-                  value={
-                    typeof barangSupplierData.persen === 'number'
-                      ? barangSupplierData.persen.toFixed(2)
-                      : (Number(barangSupplierData.persen) || 0).toFixed(2)
-                  }
-                  disabled
-                  className='bg-blue-50 font-bold text-blue-700 text-center text-lg h-12 disabled:opacity-100'
-                />
               </div>
             </div>
           </div>
@@ -2955,48 +3037,63 @@ export default function PurchasingDetailPage() {
               </div>
             </div>
 
-            {/* Jumlah Order - Top Center */}
+            {/* Top Center: Jumlah Order & Estimasi Persen (%) */}
             <div className="flex justify-center">
-              <div className="w-1/2 sm:w-1/3 space-y-2 text-center">
-                <Label className="text-sm font-bold">Jumlah Order</Label>
-                <Input
-                  type="number"
-                  value={totalQtySelected}
-                  disabled
-                  className="bg-neutral-50 font-bold text-center text-lg h-12 disabled:opacity-100"
-                />
-              </div>
-            </div>
-
-            {/* Top Center Progress/Stok */}
-            <div className="pt-4 border-t flex flex-col sm:flex-row justify-center gap-4 sm:gap-8">
-              {!allSelectedAreSupplier && (
-                <div className="space-y-2 w-full sm:w-[200px] text-center">
-                  <Label className="text-sm font-bold">Menggunakan Stok (Qty)</Label>
+              <div
+                className={`grid ${
+                  allSelectedAreSupplier
+                    ? 'grid-cols-2 sm:max-w-md'
+                    : 'grid-cols-1 sm:grid-cols-3 sm:max-w-xl'
+                } gap-4 w-full`}
+              >
+                <div className="space-y-2 text-center">
+                  <Label className="text-sm font-bold">Jumlah Order</Label>
                   <Input
                     type="number"
-                    min={0}
-                    max={totalQtySelected}
-                    value={bulkProduksiData.menggunakan_stok === 0 ? '' : bulkProduksiData.menggunakan_stok || ''}
-                    onChange={(e) => {
-                      const val = Math.min(Math.max(parseInt(e.target.value) || 0, 0), totalQtySelected);
-                      setBulkProduksiData((prev) => ({
-                        ...prev,
-                        menggunakan_stok: val,
-                      }));
-                    }}
-                    className="font-bold text-center text-lg h-12"
+                    value={totalQtySelected}
+                    disabled
+                    className="bg-neutral-50 font-bold text-center text-lg h-12 disabled:opacity-100"
                   />
                 </div>
-              )}
-              <div className="space-y-2 w-full sm:w-[200px] text-center">
-                <Label className="text-sm font-bold">Estimasi Persen (%)</Label>
-                <Input
-                  type="text"
-                  value={`${bulkEstimatedPersen.toFixed(2)}%`}
-                  disabled
-                  className="bg-orange-50 font-bold text-orange-700 text-center text-lg h-12 disabled:opacity-100"
-                />
+                {!allSelectedAreSupplier && (
+                  <div className="space-y-2 text-center">
+                    <Label className="text-sm font-bold">Menggunakan Stok (Qty)</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      max={totalQtySelected}
+                      value={
+                        bulkProduksiData.menggunakan_stok === 0
+                          ? ''
+                          : bulkProduksiData.menggunakan_stok || ''
+                      }
+                      onChange={(e) => {
+                        const val = Math.min(
+                          Math.max(parseInt(e.target.value) || 0, 0),
+                          totalQtySelected
+                        );
+                        setBulkProduksiData((prev) => ({
+                          ...prev,
+                          menggunakan_stok: val,
+                        }));
+                      }}
+                      className="font-bold text-center text-lg h-12"
+                    />
+                  </div>
+                )}
+                <div className="space-y-2 text-center">
+                  <Label className="text-sm font-bold">Estimasi Persen (%)</Label>
+                  <Input
+                    type="text"
+                    value={`${bulkEstimatedPersen.toFixed(2)}%`}
+                    disabled
+                    className={`${
+                      allSelectedAreSupplier
+                        ? 'bg-blue-50 text-blue-700'
+                        : 'bg-orange-50 text-orange-700'
+                    } font-bold text-center text-lg h-12 disabled:opacity-100`}
+                  />
+                </div>
               </div>
             </div>
 
@@ -3129,59 +3226,86 @@ export default function PurchasingDetailPage() {
                 <h4 className="font-semibold text-sm text-neutral-500 uppercase tracking-wider border-b pb-2">
                   Tahapan Supplier
                 </h4>
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-                  {['barang_dipesan', 'barang_tersedia', 'rakit', 'packing', 'terkirim'].map((field) => {
-                    const labelMap: Record<string, string> = {
-                      barang_dipesan: 'Barang Dipesan',
-                      barang_tersedia: 'Barang Tersedia',
-                      rakit: 'Rakit',
-                      packing: 'Packing',
-                      terkirim: 'Terkirim',
-                    };
-                    return (
-                      <div key={field} className="space-y-2">
-                        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                          <Label className="text-xs font-semibold">{labelMap[field]}</Label>
-                          <Button
-                            type="button"
-                            variant={bulkSkippedFields[field] ? 'default' : 'outline'}
-                            size="sm"
-                            className={`h-5 px-1.5 text-[10px] ${
-                              bulkSkippedFields[field] ? 'bg-neutral-500 hover:bg-neutral-600' : 'text-neutral-500'
-                            }`}
-                            onClick={() => toggleBulkSkipField(field)}
-                          >
-                            {bulkSkippedFields[field] ? 'Batalkan' : 'Lewati'}
-                          </Button>
-                        </div>
-                        <div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {(
+                    [
+                      { key: 'barang_dipesan', dateKey: 'tanggal_barang_dipesan', label: 'Barang Dipesan' },
+                      { key: 'barang_tersedia', dateKey: 'tanggal_barang_tersedia', label: 'Barang Tersedia' },
+                      { key: 'rakit', dateKey: 'tanggal_rakit', label: 'Rakit' },
+                      { key: 'packing', dateKey: 'tanggal_packing', label: 'Packing' },
+                    ] as const
+                  ).map(({ key, dateKey, label }) => (
+                    <div key={key} className="p-4 rounded-xl border border-neutral-200 bg-neutral-50/50 space-y-3 shadow-sm">
+                      <div className="flex items-center justify-between pb-2 border-b border-neutral-200">
+                        <Label className="font-bold text-sm text-neutral-800">{label}</Label>
+                        <Button
+                          type="button"
+                          variant={bulkSkippedFields[key] ? 'default' : 'outline'}
+                          size="sm"
+                          className={`h-6 px-2 text-xs ${
+                            bulkSkippedFields[key] ? 'bg-neutral-500 hover:bg-neutral-600' : 'text-neutral-500'
+                          }`}
+                          onClick={() => toggleBulkSkipField(key)}
+                        >
+                          {bulkSkippedFields[key] ? 'Batalkan' : 'Lewati Proses'}
+                        </Button>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="space-y-1.5">
+                          <Label className="text-xs font-semibold text-neutral-600">Jumlah</Label>
                           <Input
                             type="number"
                             min={0}
                             max={totalQtySelected}
-                            disabled={bulkSkippedFields[field]}
+                            disabled={bulkSkippedFields[key]}
+                            placeholder="0"
                             value={
-                              bulkSkippedFields[field]
+                              bulkSkippedFields[key]
                                 ? '-'
-                                : bulkSupplierData[field] === 0
+                                : bulkSupplierData[key] === 0
                                 ? ''
-                                : bulkSupplierData[field] || ''
+                                : bulkSupplierData[key] || ''
                             }
                             onChange={(e) => {
                               const val = Math.min(Math.max(parseInt(e.target.value) || 0, 0), totalQtySelected);
                               setBulkSupplierData((prev) => ({
                                 ...prev,
-                                [field]: val,
+                                [key]: val,
                               }));
                             }}
-                            className={`${
-                              bulkSkippedFields[field] ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100' : ''
-                            } text-sm`}
+                            className={`bg-white ${
+                              bulkSkippedFields[key] ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100' : ''
+                            }`}
+                          />
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <Label className="text-xs font-semibold text-neutral-600">Tanggal</Label>
+                          <Input
+                            type="date"
+                            disabled={bulkSkippedFields[key]}
+                            value={
+                              bulkSkippedFields[key]
+                                ? ''
+                                : bulkSupplierDates[dateKey]
+                                ? String(bulkSupplierDates[dateKey]).slice(0, 10)
+                                : ''
+                            }
+                            onChange={(e) => {
+                              setBulkSupplierDates((prev) => ({
+                                ...prev,
+                                [dateKey]: e.target.value || null,
+                              }));
+                            }}
+                            className={`bg-white text-xs ${
+                              bulkSkippedFields[key] ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100' : ''
+                            }`}
                           />
                         </div>
                       </div>
-                    );
-                  })}
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
