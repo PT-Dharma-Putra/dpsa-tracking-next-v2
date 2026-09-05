@@ -182,6 +182,7 @@ export default function PiutangDetailPage() {
   const [editingId, setEditingId] = React.useState<number | null>(null);
   const [form, setForm] = React.useState(emptyForm);
   const [fileInput, setFileInput] = React.useState<File | null>(null);
+  const [fileError, setFileError] = React.useState<string | null>(null);
   const fileRef = React.useRef<HTMLInputElement>(null);
 
   // Delete state
@@ -312,6 +313,7 @@ export default function PiutangDetailPage() {
       termin_id: nextAvailableTermin ? nextAvailableTermin.id : (terminList[0]?.id || 0),
     });
     setFileInput(null);
+    setFileError(null);
     setIsFormOpen(true);
   };
 
@@ -335,6 +337,7 @@ export default function PiutangDetailPage() {
       file: undefined,
     });
     setFileInput(null);
+    setFileError(null);
     setIsFormOpen(true);
   };
 
@@ -343,6 +346,7 @@ export default function PiutangDetailPage() {
     setEditingId(null);
     setForm(emptyForm);
     setFileInput(null);
+    setFileError(null);
     setIsEditingSpkNominal(false);
     setSpkNominalInput('');
   };
@@ -1110,21 +1114,28 @@ export default function PiutangDetailPage() {
           if (!open) closeForm();
         }}
       >
-        <DialogContent className='max-w-lg'>
-          <DialogHeader>
-            <DialogTitle>
-              {editingId !== null ? 'Edit Penagihan' : 'Tambah Penagihan'}
-            </DialogTitle>
-            <DialogDescription>
-              Isi detail penagihan untuk proyek ini.
-            </DialogDescription>
-          </DialogHeader>
+        <DialogContent className='max-w-lg w-[95vw] sm:w-full max-h-[92vh] overflow-y-auto p-0 gap-0 border border-neutral-100 rounded-xl shadow-lg'>
+          {/* Header */}
+          <div className='flex items-center gap-3 p-5 border-b border-neutral-100 bg-neutral-50/60 sticky top-0 z-10 backdrop-blur-sm'>
+            <div className='h-9 w-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 shadow-sm'>
+              <Receipt className='h-4.5 w-4.5' />
+            </div>
+            <div>
+              <DialogTitle className='text-base font-bold text-neutral-900'>
+                {editingId !== null ? 'Edit Detail Penagihan' : 'Tambah Penagihan Baru'}
+              </DialogTitle>
+              <DialogDescription className='text-xs text-neutral-500 mt-0.5'>
+                Kelola informasi termin, invoice, dan berkas pembayaran.
+              </DialogDescription>
+            </div>
+          </div>
 
-          <div className='space-y-4 py-2'>
-            {/* Termin */}
-            <div className='space-y-2'>
-              <Label>
-                Termin <span className='text-red-500'>*</span>
+          <div className='p-5 space-y-4 py-4 pr-5'>
+            {/* 1. Termin Selection */}
+            <div className='space-y-2.5 p-3.5 rounded-xl border border-neutral-200/80 bg-white shadow-sm'>
+              <Label className='text-xs font-bold uppercase tracking-wider text-neutral-600 flex items-center gap-1.5'>
+                <CheckCircle2 className='h-3.5 w-3.5 text-blue-500' />
+                Pilih Termin Penagihan <span className='text-red-500'>*</span>
               </Label>
               {isLoadingTermin ? (
                 <div className='h-9 w-full bg-neutral-100 animate-pulse rounded-md' />
@@ -1136,13 +1147,13 @@ export default function PiutangDetailPage() {
                   }
                   className='w-full'
                 >
-                  <TabsList className='w-full flex-wrap h-auto p-1 bg-neutral-100/50'>
+                  <TabsList className='w-full flex-wrap h-auto p-1 bg-neutral-100/60 border border-neutral-200/50 rounded-lg gap-0.5'>
                     {terminList.map((t) => (
                       <TabsTrigger
                         key={t.id}
                         value={t.id.toString()}
                         disabled={usedTerminIds.includes(t.id)}
-                        className='flex-1 data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-sm disabled:opacity-50 disabled:cursor-not-allowed'
+                        className='flex-1 py-1.5 text-xs font-medium data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all'
                       >
                         {t.nama}
                       </TabsTrigger>
@@ -1152,390 +1163,488 @@ export default function PiutangDetailPage() {
               )}
             </div>
 
-            {/* No Invoice */}
-            <div className='space-y-2'>
-              <Label htmlFor='nomor_invoice'>No Invoice</Label>
-              <Input
-                id='nomor_invoice'
-                type='text'
-                placeholder='Masukkan nomor invoice...'
-                value={form.nomor_invoice || ''}
-                onChange={(e) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    nomor_invoice: e.target.value,
-                  }))
-                }
-              />
+            {/* 2. Informasi Invoice */}
+            <div className='space-y-3.5 p-3.5 rounded-xl border border-neutral-200/80 bg-white shadow-sm'>
+              <h4 className='text-xs font-bold uppercase tracking-wider text-neutral-600 flex items-center gap-1.5'>
+                <FileText className='h-3.5 w-3.5 text-neutral-500' />
+                Informasi Invoice
+              </h4>
+              <div className='grid grid-cols-1 sm:grid-cols-2 gap-3.5'>
+                {/* No Invoice */}
+                <div className='space-y-1.5'>
+                  <Label htmlFor='nomor_invoice' className='text-xs font-semibold text-neutral-700'>No Invoice</Label>
+                  <Input
+                    id='nomor_invoice'
+                    type='text'
+                    placeholder='Masukkan nomor invoice...'
+                    value={form.nomor_invoice || ''}
+                    className='h-9 text-xs border-neutral-200 focus-visible:ring-blue-500'
+                    onChange={(e) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        nomor_invoice: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+
+                {/* Deskripsi */}
+                <div className='space-y-1.5'>
+                  <Label htmlFor='deskripsi' className='text-xs font-semibold text-neutral-700'>Deskripsi</Label>
+                  <Input
+                    id='deskripsi'
+                    type='text'
+                    placeholder='Masukkan deskripsi...'
+                    value={form.deskripsi || ''}
+                    className='h-9 text-xs border-neutral-200 focus-visible:ring-blue-500'
+                    onChange={(e) =>
+                      setForm((prev) => ({ ...prev, deskripsi: e.target.value }))
+                    }
+                  />
+                </div>
+              </div>
             </div>
 
-            {/* Deskripsi */}
-            <div className='space-y-2'>
-              <Label htmlFor='deskripsi'>Deskripsi</Label>
-              <Input
-                id='deskripsi'
-                type='text'
-                placeholder='Masukkan deskripsi penagihan...'
-                value={form.deskripsi || ''}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, deskripsi: e.target.value }))
-                }
-              />
-            </div>
+            {/* 3. Kalkulasi Nilai SPK */}
+            <div className='space-y-3.5 p-3.5 rounded-xl border border-neutral-200/80 bg-neutral-50/50 shadow-sm'>
+              <h4 className='text-xs font-bold uppercase tracking-wider text-neutral-600 flex items-center gap-1.5'>
+                <Receipt className='h-3.5 w-3.5 text-emerald-600' />
+                Kalkulasi Tagihan
+              </h4>
 
-            {/* Nominal SPK */}
-            <div className='space-y-2'>
-              <Label htmlFor='nominal_spk'>Nominal SPK</Label>
-              {project?.spk?.nominal ? (
-                <Input
-                  id='nominal_spk'
-                  type='text'
-                  readOnly
-                  disabled
-                  value={formatRupiah(project.spk.nominal)}
-                  className='bg-neutral-50 text-neutral-500 cursor-not-allowed'
-                />
-              ) : !project?.spk ? (
-                <Input
-                  id='nominal_spk'
-                  type='text'
-                  readOnly
-                  disabled
-                  value=''
-                  placeholder='Belum ada data SPK'
-                  className='bg-neutral-50 text-neutral-500 cursor-not-allowed'
-                />
-              ) : isEditingSpkNominal ? (
-                <div className='flex gap-2'>
+              {/* SPK Info bar */}
+              <div className='space-y-1.5'>
+                <Label htmlFor='nominal_spk' className='text-xs font-semibold text-neutral-700'>Nominal Utama SPK</Label>
+                {project?.spk?.nominal ? (
                   <Input
                     id='nominal_spk'
                     type='text'
-                    autoFocus
-                    placeholder='Masukkan nominal SPK...'
-                    value={spkNominalInput}
-                    onChange={(e) =>
-                      setSpkNominalInput(formatRupiah(e.target.value))
-                    }
-                    onKeyDown={(e) => {
-                      if (e.key === 'Escape') {
-                        setIsEditingSpkNominal(false);
-                        setSpkNominalInput('');
-                      }
-                    }}
+                    readOnly
+                    disabled
+                    value={formatRupiah(project.spk.nominal)}
+                    className='h-9 text-xs bg-neutral-100/80 text-neutral-600 border-neutral-200 cursor-not-allowed font-semibold'
                   />
-                  <Button
-                    type='button'
-                    variant='outline'
-                    size='icon'
-                    disabled={updateSpkNominalMutation.isPending}
-                    onClick={() => {
-                      const raw = parseRawNumber(spkNominalInput);
-                      if (!raw) {
-                        toast.error('Masukkan nominal yang valid');
-                        return;
-                      }
-                      updateSpkNominalMutation.mutate({
-                        nominal: raw,
-                        nomor_spk: project?.spk?.nomor_spk || '',
-                      });
-                    }}
-                  >
-                    {updateSpkNominalMutation.isPending ? (
-                      <Loader2 className='h-4 w-4 animate-spin' />
-                    ) : (
-                      <CheckCircle2 className='h-4 w-4 text-emerald-600' />
-                    )}
-                  </Button>
-                  <Button
-                    type='button'
-                    variant='ghost'
-                    size='icon'
-                    onClick={() => {
-                      setIsEditingSpkNominal(false);
-                      setSpkNominalInput('');
-                    }}
-                  >
-                    <X className='h-4 w-4' />
-                  </Button>
-                </div>
-              ) : (
-                <div className='flex gap-2'>
+                ) : !project?.spk ? (
                   <Input
                     id='nominal_spk'
                     type='text'
                     readOnly
                     disabled
                     value=''
-                    placeholder='Belum ada nominal SPK'
-                    className='bg-neutral-50 text-neutral-500 cursor-not-allowed'
+                    placeholder='Belum ada data SPK'
+                    className='h-9 text-xs bg-neutral-100/80 text-neutral-400 border-neutral-200 cursor-not-allowed'
                   />
-                  <Button
-                    type='button'
-                    variant='outline'
-                    size='icon'
-                    onClick={() => {
-                      setSpkNominalInput('');
-                      setIsEditingSpkNominal(true);
-                    }}
-                  >
-                    <Pencil className='h-4 w-4' />
-                  </Button>
-                </div>
-              )}
-            </div>
-
-            <div className='grid grid-cols-3 gap-4'>
-              {/* Persentase */}
-              <div className='space-y-2'>
-                <Label>Persentase (%)</Label>
-                <Input
-                  type='number'
-                  min={0}
-                  max={100}
-                  value={form.persentase || ''}
-                  onFocus={(e) => e.target.select()}
-                  onChange={(e) => {
-                    const pct = Math.min(parseFloat(e.target.value) || 0, 100);
-                    const spkNominal = project?.spk?.nominal
-                      ? parseDatabaseNominal(project.spk.nominal)
-                      : 0;
-                    const calculated = (pct / 100) * spkNominal;
-                    const rawTakeOut = parseRawNumber(form.take_out || '');
-                    const takeOutVal = parseFloat(rawTakeOut) || 0;
-                    const finalNominal = Math.max(calculated - takeOutVal, 0);
-                    setForm((prev) => ({
-                      ...prev,
-                      persentase: pct,
-                      nominal_penagihan:
-                        finalNominal > 0 ? formatRupiah(finalNominal) : '',
-                    }));
-                  }}
-                />
-              </div>
-
-              {/* Nominal */}
-              <div className='space-y-2'>
-                <Label>Nominal Tagihan</Label>
-                <Input
-                  type='text'
-                  placeholder='Rp 0'
-                  value={form.nominal_penagihan || ''}
-                  onChange={(e) => {
-                    const formatted = formatRupiah(e.target.value);
-                    const rawNominal = parseRawNumber(e.target.value);
-                    const nominalVal = parseFloat(rawNominal) || 0;
-
-                    const rawTakeOut = parseRawNumber(form.take_out || '');
-                    const takeOutVal = parseFloat(rawTakeOut) || 0;
-
-                    const spkNominal = project?.spk?.nominal
-                      ? parseDatabaseNominal(project.spk.nominal)
-                      : 0;
-                    const pct =
-                      spkNominal > 0
-                        ? Math.round(
-                            ((nominalVal + takeOutVal) / spkNominal) * 100 * 100
-                          ) / 100
-                        : 0;
-                    setForm((prev) => ({
-                      ...prev,
-                      nominal_penagihan: formatted,
-                      persentase: pct,
-                    }));
-                  }}
-                />
-              </div>
-
-              {/* Take Out */}
-              <div className='space-y-2'>
-                <Label>Take Out</Label>
-                <Input
-                  type='text'
-                  placeholder='Rp 0'
-                  value={form.take_out || ''}
-                  onChange={(e) => {
-                    const formatted = formatRupiah(e.target.value);
-                    const rawTakeOut = parseRawNumber(e.target.value);
-                    const takeOutVal = parseFloat(rawTakeOut) || 0;
-
-                    const spkNominal = project?.spk?.nominal
-                      ? parseDatabaseNominal(project.spk.nominal)
-                      : 0;
-                    const baseNominal = (form.persentase / 100) * spkNominal;
-                    const finalNominal = Math.max(baseNominal - takeOutVal, 0);
-                    setForm((prev) => ({
-                      ...prev,
-                      take_out: formatted,
-                      nominal_penagihan:
-                        finalNominal > 0 ? formatRupiah(finalNominal) : '',
-                    }));
-                  }}
-                />
-              </div>
-            </div>
-
-            <div className='grid grid-cols-2 gap-4'>
-              {/* Tanggal Invoice */}
-              <div className='space-y-2'>
-                <Label>Tanggal Invoice</Label>
-                <Input
-                  type='date'
-                  value={form.tanggal_invoice || ''}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    const due = val
-                      ? new Date(
-                          new Date(val).getTime() + 30 * 24 * 60 * 60 * 1000
-                        )
-                          .toISOString()
-                          .slice(0, 10)
-                      : '';
-                    setForm((prev) => ({
-                      ...prev,
-                      tanggal_invoice: val,
-                      jatuh_tempo: due,
-                    }));
-                  }}
-                />
-              </div>
-
-              {/* Jatuh Tempo */}
-              <div className='space-y-2'>
-                <Label>Jatuh Tempo</Label>
-                <Input
-                  type='date'
-                  value={form.jatuh_tempo || ''}
-                  onChange={(e) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      jatuh_tempo: e.target.value,
-                    }))
-                  }
-                />
-              </div>
-            </div>
-
-            {/* Status */}
-            <div className='space-y-2'>
-              <Label>
-                Status <span className='text-red-500'>*</span>
-              </Label>
-              <Tabs
-                value={form.status}
-                onValueChange={(v) =>
-                  setForm((prev) => ({ ...prev, status: v as any }))
-                }
-                className='w-full'
-              >
-                <TabsList className='grid w-full grid-cols-3 p-1 bg-neutral-100/50'>
-                  {STATUS_OPTIONS.map((status) => (
-                    <TabsTrigger
-                      key={status}
-                      value={status}
-                      className='data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-600'
+                ) : isEditingSpkNominal ? (
+                  <div className='flex gap-1.5'>
+                    <Input
+                      id='nominal_spk'
+                      type='text'
+                      autoFocus
+                      placeholder='Masukkan nominal SPK...'
+                      value={spkNominalInput}
+                      className='h-9 text-xs border-neutral-200 focus-visible:ring-blue-500 flex-1'
+                      onChange={(e) =>
+                        setSpkNominalInput(formatRupiah(e.target.value))
+                      }
+                      onKeyDown={(e) => {
+                        if (e.key === 'Escape') {
+                          setIsEditingSpkNominal(false);
+                          setSpkNominalInput('');
+                        }
+                      }}
+                    />
+                    <Button
+                      type='button'
+                      variant='outline'
+                      size='icon'
+                      className='h-9 w-9 shrink-0 border-neutral-200'
+                      disabled={updateSpkNominalMutation.isPending}
+                      onClick={() => {
+                        const raw = parseRawNumber(spkNominalInput);
+                        if (!raw) {
+                          toast.error('Masukkan nominal yang valid');
+                          return;
+                        }
+                        updateSpkNominalMutation.mutate({
+                          nominal: raw,
+                          nomor_spk: project?.spk?.nomor_spk || '',
+                        });
+                      }}
                     >
-                      {status}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-              </Tabs>
-            </div>
-
-            {/* Nominal Dibayar (Conditional) */}
-            {form.status === 'Sebagian Dibayar' && (
-              <div className='space-y-2 animate-in fade-in slide-in-from-top-1 duration-200'>
-                <Label>
-                  Nominal Dibayar (Rp) <span className='text-red-500'>*</span>
-                </Label>
-                <Input
-                  type='number'
-                  placeholder='Masukkan nominal yang sudah dibayar'
-                  value={form.nominal_dibayar || 0}
-                  onChange={(e) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      nominal_dibayar: parseFloat(e.target.value) || 0,
-                    }))
-                  }
-                />
-              </div>
-            )}
-
-            {/* Tanggal Dibayar */}
-            <div className='space-y-2'>
-              <Label>Tanggal Dibayar</Label>
-              <Input
-                type='date'
-                value={form.tanggal_dibayar || ''}
-                onChange={(e) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    tanggal_dibayar: e.target.value,
-                  }))
-                }
-              />
-            </div>
-
-            {/* File */}
-            <div className='space-y-2'>
-              <Label>File Dokumen</Label>
-              <div className='flex items-center gap-2'>
-                <Input
-                  type='file'
-                  ref={fileRef}
-                  className='hidden'
-                  onChange={(e) => setFileInput(e.target.files?.[0] || null)}
-                  accept='.pdf,.jpg,.jpeg,.png,.doc,.docx,.xlsx'
-                />
-                <Button
-                  type='button'
-                  variant='outline'
-                  size='sm'
-                  onClick={() => fileRef.current?.click()}
-                >
-                  Pilih File
-                </Button>
-                {fileInput && (
-                  <div className='flex items-center gap-1 text-sm text-neutral-600'>
-                    <span className='truncate max-w-[200px]'>
-                      {fileInput.name}
-                    </span>
+                      {updateSpkNominalMutation.isPending ? (
+                        <Loader2 className='h-3.5 w-3.5 animate-spin' />
+                      ) : (
+                        <CheckCircle2 className='h-3.5 w-3.5 text-emerald-600' />
+                      )}
+                    </Button>
                     <Button
                       type='button'
                       variant='ghost'
                       size='icon'
-                      className='h-5 w-5 text-neutral-400 hover:text-red-500'
+                      className='h-9 w-9 shrink-0'
                       onClick={() => {
-                        setFileInput(null);
-                        if (fileRef.current) fileRef.current.value = '';
+                        setIsEditingSpkNominal(false);
+                        setSpkNominalInput('');
                       }}
                     >
-                      <X className='h-3 w-3' />
+                      <X className='h-3.5 w-3.5 text-neutral-500' />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className='flex gap-1.5'>
+                    <Input
+                      id='nominal_spk'
+                      type='text'
+                      readOnly
+                      disabled
+                      value=''
+                      placeholder='Belum ada nominal SPK'
+                      className='h-9 text-xs bg-neutral-100/80 text-neutral-400 border-neutral-200 cursor-not-allowed flex-1'
+                    />
+                    <Button
+                      type='button'
+                      variant='outline'
+                      size='icon'
+                      className='h-9 w-9 border-neutral-200 bg-white hover:bg-neutral-50 shadow-sm shrink-0'
+                      onClick={() => {
+                        setSpkNominalInput('');
+                        setIsEditingSpkNominal(true);
+                      }}
+                    >
+                      <Pencil className='h-3.5 w-3.5 text-neutral-600' />
                     </Button>
                   </div>
                 )}
-                {!fileInput && editingId !== null && (
-                  <span className='text-xs text-muted-foreground italic'>
-                    Kosongkan jika tidak ingin mengganti file
+              </div>
+
+              {/* Tagihan breakdown grid */}
+              <div className='grid grid-cols-3 gap-3 pt-1'>
+                {/* Persentase */}
+                <div className='space-y-1.5'>
+                  <Label className='text-xs font-semibold text-neutral-700'>Persentase (%)</Label>
+                  <Input
+                    type='number'
+                    min={0}
+                    max={100}
+                    value={form.persentase || ''}
+                    className='h-9 text-xs border-neutral-200 focus-visible:ring-blue-500 font-medium'
+                    onFocus={(e) => e.target.select()}
+                    onChange={(e) => {
+                      const pct = Math.min(parseFloat(e.target.value) || 0, 100);
+                      const spkNominal = project?.spk?.nominal
+                        ? parseDatabaseNominal(project.spk.nominal)
+                        : 0;
+                      const calculated = (pct / 100) * spkNominal;
+                      const rawTakeOut = parseRawNumber(form.take_out || '');
+                      const takeOutVal = parseFloat(rawTakeOut) || 0;
+                      const finalNominal = Math.max(calculated - takeOutVal, 0);
+                      setForm((prev) => ({
+                        ...prev,
+                        persentase: pct,
+                        nominal_penagihan:
+                          finalNominal > 0 ? formatRupiah(finalNominal) : '',
+                      }));
+                    }}
+                  />
+                </div>
+
+                {/* Nominal */}
+                <div className='space-y-1.5'>
+                  <Label className='text-xs font-semibold text-neutral-700'>Nominal Tagihan</Label>
+                  <Input
+                    type='text'
+                    placeholder='Rp 0'
+                    value={form.nominal_penagihan || ''}
+                    className='h-9 text-xs border-neutral-200 focus-visible:ring-blue-500 font-semibold text-emerald-700'
+                    onChange={(e) => {
+                      const formatted = formatRupiah(e.target.value);
+                      const rawNominal = parseRawNumber(e.target.value);
+                      const nominalVal = parseFloat(rawNominal) || 0;
+
+                      const rawTakeOut = parseRawNumber(form.take_out || '');
+                      const takeOutVal = parseFloat(rawTakeOut) || 0;
+
+                      const spkNominal = project?.spk?.nominal
+                        ? parseDatabaseNominal(project.spk.nominal)
+                        : 0;
+                      const pct =
+                        spkNominal > 0
+                          ? Math.round(
+                              ((nominalVal + takeOutVal) / spkNominal) * 100 * 100
+                            ) / 100
+                          : 0;
+                      setForm((prev) => ({
+                        ...prev,
+                        nominal_penagihan: formatted,
+                        persentase: pct,
+                      }));
+                    }}
+                  />
+                </div>
+
+                {/* Take Out */}
+                <div className='space-y-1.5'>
+                  <Label className='text-xs font-semibold text-neutral-700'>Take Out</Label>
+                  <Input
+                    type='text'
+                    placeholder='Rp 0'
+                    value={form.take_out || ''}
+                    className='h-9 text-xs border-neutral-200 focus-visible:ring-blue-500 font-semibold text-amber-700'
+                    onChange={(e) => {
+                      const formatted = formatRupiah(e.target.value);
+                      const rawTakeOut = parseRawNumber(e.target.value);
+                      const takeOutVal = parseFloat(rawTakeOut) || 0;
+
+                      const spkNominal = project?.spk?.nominal
+                        ? parseDatabaseNominal(project.spk.nominal)
+                        : 0;
+                      const baseNominal = (form.persentase / 100) * spkNominal;
+                      const finalNominal = Math.max(baseNominal - takeOutVal, 0);
+                      setForm((prev) => ({
+                        ...prev,
+                        take_out: formatted,
+                        nominal_penagihan:
+                          finalNominal > 0 ? formatRupiah(finalNominal) : '',
+                      }));
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* 4. Penjadwalan & Status */}
+            <div className='space-y-3.5 p-3.5 rounded-xl border border-neutral-200/80 bg-white shadow-sm'>
+              <h4 className='text-xs font-bold uppercase tracking-wider text-neutral-600 flex items-center gap-1.5'>
+                <Info className='h-3.5 w-3.5 text-neutral-500' />
+                Jadwal & Status Pembayaran
+              </h4>
+
+              <div className='grid grid-cols-1 sm:grid-cols-2 gap-3.5'>
+                {/* Tanggal Invoice */}
+                <div className='space-y-1.5'>
+                  <Label className='text-xs font-semibold text-neutral-700'>Tanggal Invoice</Label>
+                  <Input
+                    type='date'
+                    value={form.tanggal_invoice || ''}
+                    className='h-9 text-xs border-neutral-200 focus-visible:ring-blue-500'
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      const due = val
+                        ? new Date(
+                            new Date(val).getTime() + 30 * 24 * 60 * 60 * 1000
+                          )
+                            .toISOString()
+                            .slice(0, 10)
+                        : '';
+                      setForm((prev) => ({
+                        ...prev,
+                        tanggal_invoice: val,
+                        jatuh_tempo: due,
+                      }));
+                    }}
+                  />
+                </div>
+
+                {/* Jatuh Tempo */}
+                <div className='space-y-1.5'>
+                  <Label className='text-xs font-semibold text-neutral-700'>Jatuh Tempo</Label>
+                  <Input
+                    type='date'
+                    value={form.jatuh_tempo || ''}
+                    className='h-9 text-xs border-neutral-200 focus-visible:ring-blue-500'
+                    onChange={(e) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        jatuh_tempo: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+              </div>
+
+              {/* Status */}
+              <div className='space-y-1.5 pt-1'>
+                <Label className='text-xs font-semibold text-neutral-700 flex items-center gap-1'>
+                  Status Pembayaran <span className='text-red-500'>*</span>
+                </Label>
+                <Tabs
+                  value={form.status}
+                  onValueChange={(v) =>
+                    setForm((prev) => ({ ...prev, status: v as any }))
+                  }
+                  className='w-full'
+                >
+                  <TabsList className='grid w-full grid-cols-3 p-1 bg-neutral-100/60 border border-neutral-200/50 rounded-lg gap-0.5'>
+                    {STATUS_OPTIONS.map((status) => {
+                      let activeStyle = 'data-[state=active]:text-blue-600 data-[state=active]:bg-white';
+                      if (status === 'Lunas') {
+                        activeStyle = 'data-[state=active]:text-emerald-700 data-[state=active]:bg-emerald-50 data-[state=active]:border-emerald-200';
+                      } else if (status === 'Sebagian Dibayar') {
+                        activeStyle = 'data-[state=active]:text-amber-700 data-[state=active]:bg-amber-50 data-[state=active]:border-amber-200';
+                      } else if (status === 'Belum Bayar') {
+                        activeStyle = 'data-[state=active]:text-red-700 data-[state=active]:bg-red-50 data-[state=active]:border-red-200';
+                      }
+                      return (
+                        <TabsTrigger
+                          key={status}
+                          value={status}
+                          className={`py-1.5 text-xs font-medium border border-transparent rounded-md transition-all ${activeStyle}`}
+                        >
+                          {status}
+                        </TabsTrigger>
+                      );
+                    })}
+                  </TabsList>
+                </Tabs>
+              </div>
+
+              <div className='grid grid-cols-1 sm:grid-cols-2 gap-3.5'>
+                {/* Nominal Dibayar (Conditional) */}
+                {form.status === 'Sebagian Dibayar' && (
+                  <div className='space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-200'>
+                    <Label className='text-xs font-semibold text-neutral-700'>
+                      Nominal Dibayar (Rp) <span className='text-red-500'>*</span>
+                    </Label>
+                    <Input
+                      type='number'
+                      placeholder='Masukkan nominal...'
+                      value={form.nominal_dibayar || 0}
+                      className='h-9 text-xs border-neutral-200 focus-visible:ring-blue-500 font-semibold'
+                      onChange={(e) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          nominal_dibayar: parseFloat(e.target.value) || 0,
+                        }))
+                      }
+                    />
+                  </div>
+                )}
+
+                {/* Tanggal Dibayar */}
+                <div className='space-y-1.5 flex-1'>
+                  <Label className='text-xs font-semibold text-neutral-700'>Tanggal Dibayar</Label>
+                  <Input
+                    type='date'
+                    value={form.tanggal_dibayar || ''}
+                    className='h-9 text-xs border-neutral-200 focus-visible:ring-blue-500'
+                    onChange={(e) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        tanggal_dibayar: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* 5. File Upload Area */}
+            <div className='space-y-3 p-3.5 rounded-xl border border-neutral-200/80 bg-white shadow-sm'>
+              <h4 className='text-xs font-bold uppercase tracking-wider text-neutral-600 flex items-center gap-1.5'>
+                <Download className='h-3.5 w-3.5 text-blue-500' />
+                Dokumen Pendukung
+              </h4>
+
+              <div className='flex flex-col gap-2'>
+                <div 
+                  onClick={() => fileRef.current?.click()}
+                  className='border-2 border-dashed border-neutral-200 hover:border-blue-500 hover:bg-blue-50/10 rounded-xl p-4 flex flex-col items-center justify-center gap-1.5 cursor-pointer transition-all group'
+                >
+                  <div className='h-8 w-8 rounded-full bg-neutral-50 group-hover:bg-blue-50 group-hover:text-blue-600 text-neutral-500 flex items-center justify-center transition-colors shadow-sm'>
+                    <Plus className='h-4 w-4' />
+                  </div>
+                  <span className='text-xs font-semibold text-neutral-700 group-hover:text-blue-600 transition-colors'>
+                    {fileInput ? 'Ganti File Dokumen' : 'Pilih File Dokumen'}
                   </span>
+                  <span className='text-[10px] text-neutral-400'>
+                    Maksimal 10 MB (Format: PDF, JPG, JPEG, PNG)
+                  </span>
+                </div>
+
+                <div className='flex items-center gap-2'>
+                  <Input
+                    type='file'
+                    ref={fileRef}
+                    className='hidden'
+                    onChange={(e) => {
+                      const file = e.target.files?.[0] || null;
+                      setFileError(null);
+                      if (file) {
+                        const extension = file.name.split('.').pop()?.toLowerCase();
+                        const allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png'];
+                        if (!extension || !allowedExtensions.includes(extension)) {
+                          setFileError('Format file tidak didukung. Pilih file PDF, JPG, JPEG, atau PNG.');
+                          if (fileRef.current) fileRef.current.value = '';
+                          setFileInput(null);
+                          return;
+                        }
+                        if (file.size > 10 * 1024 * 1024) {
+                          setFileError('Ukuran file melebihi batas maksimal 10 MB.');
+                          if (fileRef.current) fileRef.current.value = '';
+                          setFileInput(null);
+                          return;
+                        }
+                      }
+                      setFileInput(file);
+                    }}
+                    accept='.pdf,.jpg,.jpeg,.png'
+                  />
+                  {fileInput && (
+                    <div className='flex items-center gap-2.5 p-2 px-3 rounded-lg bg-neutral-50 border border-neutral-200/80 text-xs text-neutral-600 w-full animate-in fade-in slide-in-from-bottom-1 duration-200'>
+                      <FileText className='h-4 w-4 text-blue-500 shrink-0' />
+                      <span className='truncate flex-1 font-medium'>
+                        {fileInput.name}
+                      </span>
+                      <Button
+                        type='button'
+                        variant='ghost'
+                        size='icon'
+                        className='h-6 w-6 text-neutral-400 hover:text-red-500 hover:bg-neutral-100 rounded-md shrink-0'
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setFileInput(null);
+                          setFileError(null);
+                          if (fileRef.current) fileRef.current.value = '';
+                        }}
+                      >
+                        <X className='h-3.5 w-3.5' />
+                      </Button>
+                    </div>
+                  )}
+                  {!fileInput && editingId !== null && (
+                    <span className='text-[10px] text-muted-foreground italic pl-1'>
+                      Kosongkan jika tidak ingin mengganti file
+                    </span>
+                  )}
+                </div>
+                {fileError && (
+                  <p className='text-xs font-semibold text-red-500 animate-in fade-in duration-200 pl-1'>
+                    {fileError}
+                  </p>
                 )}
               </div>
             </div>
           </div>
 
-          <DialogFooter>
-            <Button variant='outline' onClick={closeForm} disabled={isSaving}>
+          {/* Footer */}
+          <div className='flex items-center justify-end gap-2.5 p-4 border-t border-neutral-100 bg-neutral-50/60 sticky bottom-0 z-10 backdrop-blur-sm'>
+            <Button 
+              variant='outline' 
+              onClick={closeForm} 
+              disabled={isSaving}
+              className='h-9 text-xs border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-700'
+            >
               Batal
             </Button>
             <Button
-              className='bg-blue-600 hover:bg-blue-700'
+              className='bg-blue-600 hover:bg-blue-700 text-white h-9 text-xs px-4 shadow-sm font-semibold'
               onClick={handleSubmit}
               disabled={isSaving}
             >
-              {isSaving && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
-              {editingId !== null ? 'Simpan Perubahan' : 'Tambah'}
+              {isSaving && <Loader2 className='mr-1.5 h-3.5 w-3.5 animate-spin' />}
+              {editingId !== null ? 'Simpan Perubahan' : 'Tambah Penagihan'}
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
 
