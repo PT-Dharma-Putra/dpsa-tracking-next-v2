@@ -37,8 +37,11 @@ import {
   Hammer,
   ExternalLink,
   Users,
+  FileSpreadsheet,
+  MapPin,
 } from 'lucide-react';
 import { format, differenceInDays, startOfDay } from 'date-fns';
+import * as XLSX from 'xlsx-js-style';
 
 import {
   Table,
@@ -93,6 +96,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   projectV2Service,
   ProjectV2,
@@ -102,6 +106,7 @@ import { ProjectFormDialog } from './project-form-dialog';
 import { ScheduleDeliveryDialog } from './schedule-delivery-dialog';
 import { DeadlineDialog } from './deadline-dialog';
 import { SetTeamDialog } from './set-team-dialog';
+import { SiteReadinessViewDialog } from './site-readiness-view-dialog';
 const formatRupiah = (value: string | number) => {
   if (value === null || value === undefined || value === '') return '';
 
@@ -281,8 +286,11 @@ export function ProjectsV2Table({
     | 'spk'
     | 'sph'
     | 'sph_only'
+    | 'belum_sph_spk'
     | 'selesai'
+    | 'produksi_selesai'
     | 'on_progress'
+    | 'produksi_on_progress'
     | 'belum_produksi'
     | 'deadline_dekat'
     | 'overdue'
@@ -298,8 +306,11 @@ export function ProjectsV2Table({
       | 'spk'
       | 'sph'
       | 'sph_only'
+      | 'belum_sph_spk'
       | 'selesai'
+      | 'produksi_selesai'
       | 'on_progress'
+      | 'produksi_on_progress'
       | 'belum_produksi'
       | 'deadline_dekat'
       | 'overdue'
@@ -475,6 +486,10 @@ export function ProjectsV2Table({
 
   const [isSetTeamOpen, setIsSetTeamOpen] = React.useState(false);
   const [projectToSetTeam, setProjectToSetTeam] =
+    React.useState<ProjectV2 | null>(null);
+
+  const [isReadinessViewOpen, setIsReadinessViewOpen] = React.useState(false);
+  const [projectForReadinessView, setProjectForReadinessView] =
     React.useState<ProjectV2 | null>(null);
 
   const { canUpdateDeadline } = usePermissions();
@@ -730,6 +745,484 @@ export function ProjectsV2Table({
   };
 
   const projects = data?.data || [];
+
+  // Multiple Selection & Export Excel State for Produksi
+  const [selectedProjectIds, setSelectedProjectIds] = React.useState<number[]>([]);
+  const [isExporting, setIsExporting] = React.useState(false);
+
+  const currentDisplayedIds = React.useMemo(
+    () => projects.map((p) => p.id),
+    [projects]
+  );
+
+  const isAllDisplayedSelected = React.useMemo(() => {
+    if (currentDisplayedIds.length === 0) return false;
+    return currentDisplayedIds.every((id) => selectedProjectIds.includes(id));
+  }, [currentDisplayedIds, selectedProjectIds]);
+
+  const isSomeDisplayedSelected = React.useMemo(() => {
+    if (currentDisplayedIds.length === 0) return false;
+    const selectedCount = currentDisplayedIds.filter((id) =>
+      selectedProjectIds.includes(id)
+    ).length;
+    return selectedCount > 0 && selectedCount < currentDisplayedIds.length;
+  }, [currentDisplayedIds, selectedProjectIds]);
+
+  const handleToggleSelectAllDisplayed = () => {
+    if (isAllDisplayedSelected) {
+      setSelectedProjectIds((prev) =>
+        prev.filter((id) => !currentDisplayedIds.includes(id))
+      );
+    } else {
+      setSelectedProjectIds((prev) => {
+        const set = new Set([...prev, ...currentDisplayedIds]);
+        return Array.from(set);
+      });
+    }
+  };
+
+  const handleToggleSelectProject = (projectId: number) => {
+    setSelectedProjectIds((prev) =>
+      prev.includes(projectId)
+        ? prev.filter((id) => id !== projectId)
+        : [...prev, projectId]
+    );
+  };
+
+  const handleExportExcelSelected = async (targetIds?: number[]) => {
+    const idsToExport =
+      targetIds && targetIds.length > 0 ? targetIds : selectedProjectIds;
+    if (idsToExport.length === 0) return;
+    setIsExporting(true);
+
+    try {
+      // 1. Get selected projects
+      const currentMap = new Map<number, ProjectV2>();
+      projects.forEach((p) => currentMap.set(p.id, p));
+
+      const missingIds = idsToExport.filter(
+        (id) => !currentMap.has(id)
+      );
+      if (missingIds.length > 0) {
+        const fetchedMissing = await Promise.all(
+          missingIds.map((id) =>
+            projectV2Service.getProject(id).catch(() => null)
+          )
+        );
+        fetchedMissing.forEach((p) => {
+          if (p) currentMap.set(p.id, p);
+        });
+      }
+
+      const selectedProjects = idsToExport
+        .map((id) => currentMap.get(id))
+        .filter((p): p is ProjectV2 => Boolean(p));
+
+      if (selectedProjects.length === 0) {
+        toast.error('Gagal menyiapkan data untuk export Excel');
+        setIsExporting(false);
+        return;
+      }
+
+      // 2. Fetch project items for each selected project
+      const projectsWithItems = await Promise.all(
+        selectedProjects.map(async (project) => {
+          try {
+            const items = await projectV2Service.getProjectItems(project.id);
+            return { project, items: items || [] };
+          } catch (err) {
+            console.error(`Failed to load items for project ${project.id}`, err);
+            return { project, items: [] };
+          }
+        })
+      );
+
+      // Styles
+      const groupHeaderStyle = {
+        font: { bold: true, sz: 11, color: { rgb: 'FFFFFF' } },
+        alignment: { horizontal: 'center', vertical: 'center' },
+        fill: { fgColor: { rgb: '1E3A8A' } }, // Dark blue
+        border: {
+          top: { style: 'thin' },
+          bottom: { style: 'thin' },
+          left: { style: 'thin' },
+          right: { style: 'thin' },
+        },
+      };
+
+      const subHeaderStyle = {
+        font: { bold: true, sz: 10 },
+        alignment: { horizontal: 'center', vertical: 'center' },
+        fill: { fgColor: { rgb: 'F1F5F9' } }, // Slate-100
+        border: {
+          top: { style: 'thin' },
+          bottom: { style: 'thin' },
+          left: { style: 'thin' },
+          right: { style: 'thin' },
+        },
+      };
+
+      const yellowSeparatorStyle = {
+        fill: { fgColor: { rgb: 'FEF08A' } }, // Yellow-200 separator
+        border: {
+          top: { style: 'thin' },
+          bottom: { style: 'thin' },
+          left: { style: 'thin' },
+          right: { style: 'thin' },
+        },
+      };
+
+      const cellStyleLeft = {
+        font: { sz: 10 },
+        alignment: { horizontal: 'left', vertical: 'center', wrapText: true },
+        border: {
+          top: { style: 'thin' },
+          bottom: { style: 'thin' },
+          left: { style: 'thin' },
+          right: { style: 'thin' },
+        },
+      };
+
+      const cellStyleCenter = {
+        font: { sz: 10 },
+        alignment: { horizontal: 'center', vertical: 'center' },
+        border: {
+          top: { style: 'thin' },
+          bottom: { style: 'thin' },
+          left: { style: 'thin' },
+          right: { style: 'thin' },
+        },
+      };
+
+      // Header Row 1: Group Headers
+      const groupHeaderRow: any[] = [
+        // Project Info (Cols 0..8)
+        { v: 'PROJECT', t: 's', s: groupHeaderStyle },
+        '', '', '', '', '', '', '', '',
+        // Item Info (Cols 9..13)
+        { v: 'ITEM', t: 's', s: groupHeaderStyle },
+        '', '', '', '',
+        // Spesifikasi (Cols 14..19)
+        { v: 'SPESIFIKASI', t: 's', s: groupHeaderStyle },
+        '', '', '', '', '',
+        // Procurement / Material (Cols 20..21)
+        { v: 'PROCUREMENT / MATERIAL', t: 's', s: groupHeaderStyle },
+        '',
+        // Progress (Cols 22..26)
+        { v: 'PROGRESS', t: 's', s: groupHeaderStyle },
+        '', '', '', '',
+      ];
+
+      // Header Row 2: Sub Column Headers
+      const colHeaderRow: any[] = [
+        { v: 'No', t: 's', s: subHeaderStyle },
+        { v: 'Client', t: 's', s: subHeaderStyle },
+        { v: 'No SPK', t: 's', s: subHeaderStyle },
+        { v: 'SPK Masuk', t: 's', s: subHeaderStyle },
+        { v: 'Nama Project', t: 's', s: subHeaderStyle },
+        { v: 'Prioritas', t: 's', s: subHeaderStyle },
+        { v: 'Team', t: 's', s: subHeaderStyle },
+        { v: 'Deadline', t: 's', s: subHeaderStyle },
+        { v: 'Jadwal Kirim', t: 's', s: subHeaderStyle },
+
+        { v: 'No Item', t: 's', s: subHeaderStyle },
+        { v: 'Lantai', t: 's', s: subHeaderStyle },
+        { v: 'Ruang', t: 's', s: subHeaderStyle },
+        { v: 'Nama Item', t: 's', s: subHeaderStyle },
+        { v: 'Deskripsi', t: 's', s: subHeaderStyle },
+
+        { v: 'Panjang', t: 's', s: subHeaderStyle },
+        { v: 'Lebar', t: 's', s: subHeaderStyle },
+        { v: 'Tinggi', t: 's', s: subHeaderStyle },
+        { v: 'Volume', t: 's', s: subHeaderStyle },
+        { v: 'Qty', t: 's', s: subHeaderStyle },
+        { v: 'Satuan', t: 's', s: subHeaderStyle },
+
+        { v: 'PO Divisi', t: 's', s: subHeaderStyle },
+        { v: 'Stok Material', t: 's', s: subHeaderStyle },
+
+        { v: 'Produksi', t: 's', s: subHeaderStyle },
+        { v: 'QC Cek', t: 's', s: subHeaderStyle },
+        { v: 'B. Jadi', t: 's', s: subHeaderStyle },
+        { v: 'Barang Terkirim', t: 's', s: subHeaderStyle },
+        { v: 'Barang Tersetting', t: 's', s: subHeaderStyle },
+      ];
+
+      const wsData: any[][] = [groupHeaderRow, colHeaderRow];
+      let rowCounter = 1;
+
+      projectsWithItems.forEach(({ project, items }, projIdx) => {
+        if (projIdx > 0) {
+          // Yellow blank separator row between projects
+          wsData.push(
+            Array.from({ length: 27 }, () => ({
+              v: '',
+              t: 's',
+              s: yellowSeparatorStyle,
+            }))
+          );
+        }
+        const clientStr = project.client?.name || '-';
+        const noSpkStr = project.spk?.nomor_spk || project.spk_number || '-';
+        const spkMasukStr = project.spk?.tanggal_masuk
+          ? format(new Date(project.spk.tanggal_masuk), 'dd MMM yyyy')
+          : '-';
+        const nameStr = project.name || '-';
+        const prioritasStr = project.prioritas || '-';
+
+        let teamStr = '-';
+        if (project.project_team?.divisi_id) {
+          const teamNames = project.project_team.divisi_id
+            .split(',')
+            .map((idStr) => {
+              const id = parseInt(idStr.trim(), 10);
+              return divisionsMap.get(id);
+            })
+            .filter(Boolean);
+          if (teamNames.length > 0) {
+            teamStr = teamNames.join(', ');
+          }
+        }
+
+        const deadlineStr = project.deadline
+          ? format(new Date(project.deadline), 'dd MMM yyyy')
+          : '-';
+
+        const jadwalKirimStr = project.jadwal_pengiriman?.tanggal_pengiriman
+          ?.tanggal
+          ? format(
+              new Date(project.jadwal_pengiriman.tanggal_pengiriman.tanggal),
+              'dd MMM yyyy'
+            )
+          : '-';
+
+        if (items.length === 0) {
+          // Push 1 row with project info and empty item fields if no items
+          wsData.push([
+            { v: rowCounter++, t: 'n', s: cellStyleCenter },
+            { v: clientStr, t: 's', s: cellStyleLeft },
+            { v: noSpkStr, t: 's', s: cellStyleCenter },
+            { v: spkMasukStr, t: 's', s: cellStyleCenter },
+            { v: nameStr, t: 's', s: cellStyleLeft },
+            { v: prioritasStr, t: 's', s: cellStyleCenter },
+            { v: teamStr, t: 's', s: cellStyleLeft },
+            { v: deadlineStr, t: 's', s: cellStyleCenter },
+            { v: jadwalKirimStr, t: 's', s: cellStyleCenter },
+            // Item fields
+            { v: '-', t: 's', s: cellStyleCenter },
+            { v: '-', t: 's', s: cellStyleCenter },
+            { v: '-', t: 's', s: cellStyleCenter },
+            { v: '-', t: 's', s: cellStyleLeft },
+            { v: '-', t: 's', s: cellStyleLeft },
+            { v: '-', t: 's', s: cellStyleCenter },
+            { v: '-', t: 's', s: cellStyleCenter },
+            { v: '-', t: 's', s: cellStyleCenter },
+            { v: '-', t: 's', s: cellStyleCenter },
+            { v: '-', t: 's', s: cellStyleCenter },
+            { v: '-', t: 's', s: cellStyleCenter },
+            { v: '-', t: 's', s: cellStyleCenter },
+            { v: '-', t: 's', s: cellStyleCenter },
+            { v: '-', t: 's', s: cellStyleCenter },
+            { v: '-', t: 's', s: cellStyleCenter },
+            { v: '-', t: 's', s: cellStyleCenter },
+            { v: '-', t: 's', s: cellStyleCenter },
+            { v: '-', t: 's', s: cellStyleCenter },
+          ]);
+        } else {
+          items.forEach((item, itemIdx) => {
+            const noItemVal = itemIdx + 1;
+            const lantaiStr = item.lantai || '-';
+            const ruangStr = item.ruang || '-';
+            const namaItemStr = item.item || '-';
+            const deskripsiStr = item.keterangan || '-';
+
+            const panjangVal =
+              item.panjang !== null && item.panjang !== undefined
+                ? Number(item.panjang)
+                : '-';
+            const lebarVal =
+              item.lebar !== null && item.lebar !== undefined
+                ? Number(item.lebar)
+                : '-';
+            const tinggiVal =
+              item.tinggi !== null && item.tinggi !== undefined
+                ? Number(item.tinggi)
+                : '-';
+            const volumeVal =
+              item.volume !== null && item.volume !== undefined
+                ? Number(item.volume)
+                : '-';
+            const qtyVal =
+              item.jumlah !== null && item.jumlah !== undefined
+                ? Number(item.jumlah)
+                : 0;
+            const satuanStr = item.satuan || '-';
+
+            const poDivisiStr = item.divisi?.nama || '-';
+            const stokMaterialStr = item.bahan_baku?.ketersediaan_stok || '-';
+
+            const produksiStr = `${Math.round(item.produksi?.persen || 0)}%`;
+            const qcCekStr = item.qc_cek ? `${item.qc_cek.qty} Unit` : '-';
+            const bJadiStr =
+              item.barang_jadi_masuk && item.barang_jadi_masuk.length > 0
+                ? `${item.barang_jadi_masuk.reduce(
+                    (sum, bj) => sum + Number(bj.jumlah),
+                    0
+                  )} / ${item.jumlah}`
+                : `0 / ${item.jumlah}`;
+
+            const terkirimStr = (() => {
+              const total =
+                item.detail_pengiriman?.reduce(
+                  (sum, d) => sum + Number(d.jumlah_keluar),
+                  0
+                ) ?? 0;
+              return `${total} / ${item.jumlah}`;
+            })();
+
+            const tersettingStr = (() => {
+              const total =
+                item.detail_pengiriman?.reduce(
+                  (sum, d) => sum + Number(d.jumlah_tersetting),
+                  0
+                ) ?? 0;
+              return `${total} / ${item.jumlah}`;
+            })();
+
+            wsData.push([
+              { v: rowCounter++, t: 'n', s: cellStyleCenter },
+              { v: clientStr, t: 's', s: cellStyleLeft },
+              { v: noSpkStr, t: 's', s: cellStyleCenter },
+              { v: spkMasukStr, t: 's', s: cellStyleCenter },
+              { v: nameStr, t: 's', s: cellStyleLeft },
+              { v: prioritasStr, t: 's', s: cellStyleCenter },
+              { v: teamStr, t: 's', s: cellStyleLeft },
+              { v: deadlineStr, t: 's', s: cellStyleCenter },
+              { v: jadwalKirimStr, t: 's', s: cellStyleCenter },
+
+              { v: noItemVal, t: 'n', s: cellStyleCenter },
+              { v: lantaiStr, t: 's', s: cellStyleCenter },
+              { v: ruangStr, t: 's', s: cellStyleLeft },
+              { v: namaItemStr, t: 's', s: cellStyleLeft },
+              { v: deskripsiStr, t: 's', s: cellStyleLeft },
+
+              {
+                v: panjangVal,
+                t: typeof panjangVal === 'number' ? 'n' : 's',
+                s: cellStyleCenter,
+              },
+              {
+                v: lebarVal,
+                t: typeof lebarVal === 'number' ? 'n' : 's',
+                s: cellStyleCenter,
+              },
+              {
+                v: tinggiVal,
+                t: typeof tinggiVal === 'number' ? 'n' : 's',
+                s: cellStyleCenter,
+              },
+              {
+                v: volumeVal,
+                t: typeof volumeVal === 'number' ? 'n' : 's',
+                s: cellStyleCenter,
+              },
+              { v: qtyVal, t: 'n', s: cellStyleCenter },
+              { v: satuanStr, t: 's', s: cellStyleCenter },
+
+              { v: poDivisiStr, t: 's', s: cellStyleLeft },
+              { v: stokMaterialStr, t: 's', s: cellStyleCenter },
+
+              { v: produksiStr, t: 's', s: cellStyleCenter },
+              { v: qcCekStr, t: 's', s: cellStyleCenter },
+              { v: bJadiStr, t: 's', s: cellStyleCenter },
+              { v: terkirimStr, t: 's', s: cellStyleCenter },
+              { v: tersettingStr, t: 's', s: cellStyleCenter },
+            ]);
+          });
+        }
+      });
+
+      const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+      // Header Merges for Group Header Row
+      ws['!merges'] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 8 } },   // PROJECT
+        { s: { r: 0, c: 9 }, e: { r: 0, c: 13 } },  // ITEM
+        { s: { r: 0, c: 14 }, e: { r: 0, c: 19 } }, // SPESIFIKASI
+        { s: { r: 0, c: 20 }, e: { r: 0, c: 21 } }, // PROCUREMENT / MATERIAL
+        { s: { r: 0, c: 22 }, e: { r: 0, c: 26 } }, // PROGRESS
+      ];
+
+      // Auto Filter on Header Row 2
+      ws['!autofilter'] = {
+        ref: XLSX.utils.encode_range({
+          s: { r: 1, c: 0 },
+          e: { r: wsData.length - 1, c: 26 },
+        }),
+      };
+
+      // Freeze Row 1 & 2
+      ws['!views'] = [{ state: 'frozen', xSplit: 0, ySplit: 2 }];
+
+      // Column Widths
+      ws['!cols'] = [
+        { wch: 8 },  // No
+        { wch: 25 }, // Client
+        { wch: 15 }, // No SPK
+        { wch: 15 }, // SPK Masuk
+        { wch: 30 }, // Nama Project
+        { wch: 15 }, // Prioritas
+        { wch: 20 }, // Team
+        { wch: 15 }, // Deadline
+        { wch: 15 }, // Jadwal Kirim
+
+        { wch: 10 }, // No Item
+        { wch: 15 }, // Lantai
+        { wch: 20 }, // Ruang
+        { wch: 30 }, // Nama Item
+        { wch: 40 }, // Deskripsi
+
+        { wch: 12 }, // Panjang
+        { wch: 12 }, // Lebar
+        { wch: 12 }, // Tinggi
+        { wch: 12 }, // Volume
+        { wch: 10 }, // Qty
+        { wch: 12 }, // Satuan
+
+        { wch: 15 }, // PO Divisi
+        { wch: 18 }, // Stok Material
+
+        { wch: 15 }, // Produksi
+        { wch: 15 }, // QC Cek
+        { wch: 15 }, // B. Jadi
+        { wch: 16 }, // Barang Terkirim
+        { wch: 16 }, // Barang Tersetting
+      ];
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Project Items');
+
+      const dateStr = format(new Date(), 'yyyy-MM-dd');
+      let fileName = `Export_Project_Items_${dateStr}.xlsx`;
+      if (selectedProjects.length === 1) {
+        const spkNo = (
+          selectedProjects[0].spk?.nomor_spk ||
+          selectedProjects[0].spk_number ||
+          'Project'
+        ).replace(/[^a-zA-Z0-9 _-]/g, '');
+        fileName = `Export_Project_${spkNo}_${dateStr}.xlsx`;
+      }
+
+      XLSX.writeFile(wb, fileName);
+
+      toast.success('Excel berhasil diexport');
+    } catch (error) {
+      console.error('Failed to export excel:', error);
+      toast.error('Gagal melakukan export Excel');
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   return (
     <div className='space-y-6 w-full max-w-full overflow-hidden'>
@@ -1390,7 +1883,7 @@ export function ProjectsV2Table({
       )}
 
       {showMarketingFilter && stats && (
-        <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 w-full'>
+        <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full'>
           {/* Total Projek */}
           <div className='flex flex-col gap-2 p-4 rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md'>
             <div className='flex items-center gap-2 border-b border-slate-100 pb-2'>
@@ -1405,33 +1898,47 @@ export function ProjectsV2Table({
               </span>
             </div>
 
-            <div className='flex flex-row gap-1.5 mt-auto'>
-              {/* Terbit SPH */}
-              <div
-                onClick={() => handleDashboardFilterClick('sph_only')}
-                className={cn(
-                  'flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
-                  dashboardFilter === 'sph_only'
-                    ? 'border-amber-500 bg-amber-50 text-amber-700 font-semibold'
-                    : 'border-amber-100 bg-amber-50/50 hover:border-amber-300 text-amber-700'
-                )}
-              >
-                <span className='truncate mr-1 font-medium'>Terbit SPH</span>
-                <span className='font-bold'>{stats.sph_only ?? 0}</span>
-              </div>
-
+            <div className='flex flex-wrap gap-1.5 mt-auto'>
               {/* Terbit SPK */}
               <div
                 onClick={() => handleDashboardFilterClick('spk')}
                 className={cn(
-                  'flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  'flex-1 min-w-[70px] flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
                   dashboardFilter === 'spk'
                     ? 'border-indigo-500 bg-indigo-50 text-indigo-700 font-semibold'
                     : 'border-indigo-100 bg-indigo-50/50 hover:border-indigo-300 text-indigo-700'
                 )}
               >
-                <span className='truncate mr-1 font-medium'>Terbit SPK</span>
-                <span className='font-bold'>{stats.total_spk}</span>
+                <span className='mr-1 font-medium leading-tight'>Terbit SPK</span>
+                <span className='font-bold shrink-0 ml-1'>{stats.total_spk}</span>
+              </div>
+
+              {/* Terbit SPH */}
+              <div
+                onClick={() => handleDashboardFilterClick('sph_only')}
+                className={cn(
+                  'flex-1 min-w-[70px] flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  dashboardFilter === 'sph_only'
+                    ? 'border-amber-500 bg-amber-50 text-amber-700 font-semibold'
+                    : 'border-amber-100 bg-amber-50/50 hover:border-amber-300 text-amber-700'
+                )}
+              >
+                <span className='mr-1 font-medium leading-tight'>Terbit SPH, Belum terbit SPK</span>
+                <span className='font-bold shrink-0 ml-1'>{stats.sph_only ?? 0}</span>
+              </div>
+
+              {/* Belum Terbit SPH & SPK */}
+              <div
+                onClick={() => handleDashboardFilterClick('belum_sph_spk')}
+                className={cn(
+                  'flex-1 min-w-[90px] flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  dashboardFilter === 'belum_sph_spk'
+                    ? 'border-rose-500 bg-rose-50 text-rose-700 font-semibold'
+                    : 'border-rose-100 bg-rose-50/50 hover:border-rose-300 text-rose-700'
+                )}
+              >
+                <span className='mr-1 font-medium leading-tight'>Belum Terbit SPH & SPK</span>
+                <span className='font-bold shrink-0 ml-1'>{stats.belum_sph_spk ?? 0}</span>
               </div>
             </div>
           </div>
@@ -1777,36 +2284,6 @@ export function ProjectsV2Table({
             </div>
           </div>
 
-          {/* Deadline Terdekat */}
-          <div
-            onClick={() => handleDashboardFilterClick('deadline_dekat')}
-            className={cn(
-              'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-amber-400 select-none',
-              dashboardFilter === 'deadline_dekat'
-                ? 'border-amber-500 bg-amber-50/50 ring-2 ring-amber-500/20'
-                : 'border-amber-200 bg-white'
-            )}
-          >
-            <div className='flex items-center gap-3'>
-              <div className='h-10 w-10 rounded-lg bg-amber-100 flex items-center justify-center text-amber-600 shrink-0'>
-                <Clock className='h-5 w-5' />
-              </div>
-              <div>
-                <p className='text-[10px] font-bold text-amber-600 uppercase tracking-wider'>
-                  Deadline Dekat
-                </p>
-                <p className='text-xl font-bold text-slate-800'>
-                  {stats.deadline_dekat}
-                </p>
-              </div>
-            </div>
-            {dashboardFilter === 'deadline_dekat' && (
-              <span className='text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
-                Active
-              </span>
-            )}
-          </div>
-
           {/* Overdue */}
           {!showProduksi && (
             <div
@@ -1841,10 +2318,14 @@ export function ProjectsV2Table({
 
           {/* Produksi Selesai */}
           <div
-            onClick={() => handleDashboardFilterClick('selesai')}
+            onClick={() =>
+              handleDashboardFilterClick(
+                showProduksi ? 'produksi_selesai' : 'selesai'
+              )
+            }
             className={cn(
               'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-emerald-400 select-none',
-              dashboardFilter === 'selesai'
+              dashboardFilter === (showProduksi ? 'produksi_selesai' : 'selesai')
                 ? 'border-emerald-500 bg-emerald-50/50 ring-2 ring-emerald-500/20'
                 : 'border-emerald-200 bg-white'
             )}
@@ -1858,23 +2339,29 @@ export function ProjectsV2Table({
                   Produksi Selesai
                 </p>
                 <p className='text-xl font-bold text-slate-800'>
-                  {stats.selesai}
+                  {showProduksi
+                    ? (stats.produksi_selesai ?? 0)
+                    : stats.selesai}
                 </p>
               </div>
             </div>
-            {dashboardFilter === 'selesai' && (
+            {dashboardFilter === (showProduksi ? 'produksi_selesai' : 'selesai') && (
               <span className='text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
                 Active
               </span>
             )}
           </div>
 
-          {/* In Progress */}
+          {/* Produksi In Progress */}
           <div
-            onClick={() => handleDashboardFilterClick('on_progress')}
+            onClick={() =>
+              handleDashboardFilterClick(
+                showProduksi ? 'produksi_on_progress' : 'on_progress'
+              )
+            }
             className={cn(
               'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-blue-400 select-none',
-              dashboardFilter === 'on_progress'
+              dashboardFilter === (showProduksi ? 'produksi_on_progress' : 'on_progress')
                 ? 'border-blue-500 bg-blue-50/50 ring-2 ring-blue-500/20'
                 : 'border-blue-200 bg-white'
             )}
@@ -1885,14 +2372,16 @@ export function ProjectsV2Table({
               </div>
               <div>
                 <p className='text-[10px] font-bold text-blue-600 uppercase tracking-wider'>
-                  In Progress
+                  Produksi In Progress
                 </p>
                 <p className='text-xl font-bold text-slate-800'>
-                  {stats.on_progress}
+                  {showProduksi
+                    ? (stats.produksi_on_progress ?? 0)
+                    : stats.on_progress}
                 </p>
               </div>
             </div>
-            {dashboardFilter === 'on_progress' && (
+            {dashboardFilter === (showProduksi ? 'produksi_on_progress' : 'on_progress') && (
               <span className='text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
                 Active
               </span>
@@ -1930,6 +2419,37 @@ export function ProjectsV2Table({
               )}
             </div>
           )}
+
+          
+          {/* Deadline Terdekat */}
+          <div
+            onClick={() => handleDashboardFilterClick('deadline_dekat')}
+            className={cn(
+              'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-amber-400 select-none',
+              dashboardFilter === 'deadline_dekat'
+                ? 'border-amber-500 bg-amber-50/50 ring-2 ring-amber-500/20'
+                : 'border-amber-200 bg-white'
+            )}
+          >
+            <div className='flex items-center gap-3'>
+              <div className='h-10 w-10 rounded-lg bg-amber-100 flex items-center justify-center text-amber-600 shrink-0'>
+                <Clock className='h-5 w-5' />
+              </div>
+              <div>
+                <p className='text-[10px] font-bold text-amber-600 uppercase tracking-wider'>
+                  Deadline Dekat
+                </p>
+                <p className='text-xl font-bold text-slate-800'>
+                  {stats.deadline_dekat}
+                </p>
+              </div>
+            </div>
+            {dashboardFilter === 'deadline_dekat' && (
+              <span className='text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
+                Active
+              </span>
+            )}
+          </div>
 
           {/* Overdue Produksi — hanya produksi */}
           {showProduksi && (
@@ -1998,275 +2518,179 @@ export function ProjectsV2Table({
       )}
 
       {showAllDashboard && stats && (
-        <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-9 gap-4 w-full'>
-          {/* Total Project */}
-          <div
-            onClick={() => handleDashboardFilterClick(null)}
-            className={cn(
-              'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-slate-400 select-none',
-              dashboardFilter === null
-                ? 'border-slate-500 bg-slate-50 ring-2 ring-slate-500/20'
-                : 'border-slate-200 bg-white'
-            )}
-          >
-            <div className='flex items-center gap-3'>
-              <div className='h-10 w-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 shrink-0'>
-                <Briefcase className='h-5 w-5' />
+        <div className='grid grid-cols-1 md:grid-cols-3 gap-4 w-full'>
+          {/* Total Projek */}
+          <div className='flex flex-col gap-2 p-4 rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md'>
+            <div className='flex items-center gap-2 border-b border-slate-100 pb-2'>
+              <div className='h-6 w-6 rounded bg-slate-100 flex items-center justify-center text-slate-600 shrink-0'>
+                <Briefcase className='h-3.5 w-3.5' />
               </div>
-              <div>
-                <p className='text-[10px] font-bold text-slate-500 uppercase tracking-wider'>
-                  Total Project
-                </p>
-                <p className='text-xl font-bold text-slate-800'>
-                  {stats.total_project}
-                </p>
+              <p className='text-[10px] font-bold text-slate-500 uppercase tracking-wider'>
+                Total Projek
+              </p>
+              <span className='ml-auto text-lg font-bold text-slate-800'>
+                {stats.total_project}
+              </span>
+            </div>
+
+                        <div className='flex flex-wrap gap-1.5 mt-auto'>
+              {/* Terbit SPK */}
+              <div
+                onClick={() => handleDashboardFilterClick('spk')}
+                className={cn(
+                  'flex-1 min-w-[70px] flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  dashboardFilter === 'spk'
+                    ? 'border-indigo-500 bg-indigo-50 text-indigo-700 font-semibold'
+                    : 'border-indigo-100 bg-indigo-50/50 hover:border-indigo-300 text-indigo-700'
+                )}
+              >
+                <span className='mr-1 font-medium leading-tight'>Terbit SPK</span>
+                <span className='font-bold shrink-0 ml-1'>{stats.total_spk}</span>
+              </div>
+
+              {/* Terbit SPH */}
+              <div
+                onClick={() => handleDashboardFilterClick('sph_only')}
+                className={cn(
+                  'flex-1 min-w-[70px] flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  dashboardFilter === 'sph_only'
+                    ? 'border-amber-500 bg-amber-50 text-amber-700 font-semibold'
+                    : 'border-amber-100 bg-amber-50/50 hover:border-amber-300 text-amber-700'
+                )}
+              >
+                <span className='mr-1 font-medium leading-tight'>Terbit SPH, Belum terbit SPK</span>
+                <span className='font-bold shrink-0 ml-1'>{stats.sph_only ?? 0}</span>
+              </div>
+
+              {/* Belum Terbit SPH & SPK */}
+              <div
+                onClick={() => handleDashboardFilterClick('belum_sph_spk')}
+                className={cn(
+                  'flex-1 min-w-[90px] flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  dashboardFilter === 'belum_sph_spk'
+                    ? 'border-rose-500 bg-rose-50 text-rose-700 font-semibold'
+                    : 'border-rose-100 bg-rose-50/50 hover:border-rose-300 text-rose-700'
+                )}
+              >
+                <span className='mr-1 font-medium leading-tight'>Belum Terbit SPH & SPK</span>
+                <span className='font-bold shrink-0 ml-1'>{stats.belum_sph_spk ?? 0}</span>
               </div>
             </div>
-            {dashboardFilter === null && (
-              <span className='text-[10px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
-                Active
-              </span>
-            )}
           </div>
 
-          {/* Total SPK */}
-          <div
-            onClick={() => handleDashboardFilterClick('spk')}
-            className={cn(
-              'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-indigo-400 select-none',
-              dashboardFilter === 'spk'
-                ? 'border-indigo-500 bg-indigo-50/50 ring-2 ring-indigo-500/20'
-                : 'border-indigo-200 bg-white'
-            )}
-          >
-            <div className='flex items-center gap-3'>
-              <div className='h-10 w-10 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600 shrink-0'>
-                <FileText className='h-5 w-5' />
+          {/* Pantau SPK */}
+          <div className='flex flex-col gap-2 p-4 rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md'>
+            <div className='flex items-center gap-2 border-b border-slate-100 pb-2'>
+              <div className='h-6 w-6 rounded bg-slate-100 flex items-center justify-center text-slate-600 shrink-0'>
+                <Briefcase className='h-3.5 w-3.5' />
               </div>
-              <div>
-                <p className='text-[10px] font-bold text-indigo-600 uppercase tracking-wider'>
-                  Total SPK
-                </p>
-                <p className='text-xl font-bold text-slate-800'>
-                  {stats.total_spk}
-                </p>
+              <p className='text-[10px] font-bold text-slate-500 uppercase tracking-wider'>
+                Pantau SPK
+              </p>
+              <span className='ml-auto text-lg font-bold text-slate-800'>
+                {stats.total_spk}
+              </span>
+            </div>
+
+            <div className='flex flex-wrap gap-1.5 mt-auto'>
+              {/* Selesai */}
+              <div
+                onClick={() => handleDashboardFilterClick('selesai')}
+                className={cn(
+                  'flex-1 min-w-[90px] flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  dashboardFilter === 'selesai'
+                    ? 'border-indigo-500 bg-indigo-50 text-indigo-700 font-semibold'
+                    : 'border-indigo-100 bg-indigo-50/50 hover:border-indigo-300 text-indigo-700'
+                )}
+              >
+                <span className='mr-1 font-medium leading-tight'>Selesai</span>
+                <span className='font-bold shrink-0 ml-1'>{stats.selesai ?? 0}</span>
+              </div>
+
+              {/* On Progress */}
+              <div
+                onClick={() => handleDashboardFilterClick('on_progress')}
+                className={cn(
+                  'flex-1 min-w-[70px] flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  dashboardFilter === 'on_progress'
+                    ? 'border-amber-500 bg-amber-50 text-amber-700 font-semibold'
+                    : 'border-amber-100 bg-amber-50/50 hover:border-amber-300 text-amber-700'
+                )}
+              >
+                <span className='mr-1 font-medium leading-tight'>On Progres</span>
+                <span className='font-bold shrink-0 ml-1'>{stats.on_progress ?? 0}</span>
+              </div>
+
+              {/* Belum Produksi */}
+              <div
+                onClick={() => handleDashboardFilterClick('belum_produksi')}
+                className={cn(
+                  'flex-1 min-w-[70px] flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  dashboardFilter === 'belum_produksi'
+                    ? 'border-rose-500 bg-rose-50 text-rose-700 font-semibold'
+                    : 'border-rose-100 bg-rose-50/50 hover:border-rose-300 text-rose-700'
+                )}
+              >
+                <span className='mr-1 font-medium leading-tight'>Belum Produksi</span>
+                <span className='font-bold shrink-0 ml-1'>{stats.belum_produksi ?? 0}</span>
               </div>
             </div>
-            {dashboardFilter === 'spk' && (
-              <span className='text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
-                Active
-              </span>
-            )}
           </div>
 
-          {/* Total SPH */}
-          <div
-            onClick={() => handleDashboardFilterClick('sph')}
-            className={cn(
-              'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-orange-400 select-none',
-              dashboardFilter === 'sph'
-                ? 'border-orange-500 bg-orange-50/50 ring-2 ring-orange-500/20'
-                : 'border-orange-200 bg-white'
-            )}
-          >
-            <div className='flex items-center gap-3'>
-              <div className='h-10 w-10 rounded-lg bg-orange-100 flex items-center justify-center text-orange-600 shrink-0'>
-                <FileText className='h-5 w-5' />
+          {/* Perhatian */}
+          <div className='flex flex-col gap-2 p-4 rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md'>
+            <div className='flex items-center gap-2 border-b border-slate-100 pb-2'>
+              <div className='h-6 w-6 rounded bg-slate-100 flex items-center justify-center text-slate-600 shrink-0'>
+                <Briefcase className='h-3.5 w-3.5' />
               </div>
-              <div>
-                <p className='text-[10px] font-bold text-orange-600 uppercase tracking-wider'>
-                  Total SPH
-                </p>
-                <p className='text-xl font-bold text-orange-800'>
-                  {stats.total_sph}
-                </p>
-              </div>
+              <p className='text-[10px] font-bold text-slate-500 uppercase tracking-wider'>
+                Perhatian
+              </p>
             </div>
-            {dashboardFilter === 'sph' && (
-              <span className='text-[10px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
-                Active
-              </span>
-            )}
-          </div>
 
-          {/* Selesai */}
-          <div
-            onClick={() => handleDashboardFilterClick('selesai')}
-            className={cn(
-              'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-emerald-400 select-none',
-              dashboardFilter === 'selesai'
-                ? 'border-emerald-500 bg-emerald-50/50 ring-2 ring-emerald-500/20'
-                : 'border-emerald-200 bg-white'
-            )}
-          >
-            <div className='flex items-center gap-3'>
-              <div className='h-10 w-10 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0'>
-                <CheckCircle2 className='h-5 w-5' />
+            <div className='flex flex-wrap gap-1.5 mt-auto'>
+              {/* Urgent */}
+              <div
+                onClick={() => handleDashboardFilterClick('urgent')}
+                className={cn(
+                  'flex-1 min-w-[90px] flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  dashboardFilter === 'urgent'
+                    ? 'border-indigo-500 bg-indigo-50 text-indigo-700 font-semibold'
+                    : 'border-indigo-100 bg-indigo-50/50 hover:border-indigo-300 text-indigo-700'
+                )}
+              >
+                <span className='mr-1 font-medium leading-tight'>Urgent</span>
+                <span className='font-bold shrink-0 ml-1'>{stats.urgent ?? 0}</span>
               </div>
-              <div>
-                <p className='text-[10px] font-bold text-emerald-600 uppercase tracking-wider'>
-                  Selesai
-                </p>
-                <p className='text-xl font-bold text-emerald-800'>
-                  {stats.selesai}
-                </p>
-              </div>
-            </div>
-            {dashboardFilter === 'selesai' && (
-              <span className='text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
-                Active
-              </span>
-            )}
-          </div>
 
-          {/* On Progress */}
-          <div
-            onClick={() => handleDashboardFilterClick('on_progress')}
-            className={cn(
-              'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-blue-400 select-none',
-              dashboardFilter === 'on_progress'
-                ? 'border-blue-500 bg-blue-50/50 ring-2 ring-blue-500/20'
-                : 'border-blue-200 bg-white'
-            )}
-          >
-            <div className='flex items-center gap-3'>
-              <div className='h-10 w-10 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 shrink-0'>
-                <Activity className='h-5 w-5' />
+              {/* Deadline Dekat*/}
+              <div
+                onClick={() => handleDashboardFilterClick('deadline_dekat')}
+                className={cn(
+                  'flex-1 min-w-[70px] flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  dashboardFilter === 'deadline_dekat'
+                    ? 'border-amber-500 bg-amber-50 text-amber-700 font-semibold'
+                    : 'border-amber-100 bg-amber-50/50 hover:border-amber-300 text-amber-700'
+                )}
+              >
+                <span className='mr-1 font-medium leading-tight'>Deadline Dekat</span>
+                <span className='font-bold shrink-0 ml-1'>{stats.deadline_dekat ?? 0}</span>
               </div>
-              <div>
-                <p className='text-[10px] font-bold text-blue-600 uppercase tracking-wider'>
-                  On Progress
-                </p>
-                <p className='text-xl font-bold text-blue-800'>
-                  {stats.on_progress}
-                </p>
-              </div>
-            </div>
-            {dashboardFilter === 'on_progress' && (
-              <span className='text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
-                Active
-              </span>
-            )}
-          </div>
 
-          {/* SPK Belum Produksi */}
-          <div
-            onClick={() => handleDashboardFilterClick('belum_produksi')}
-            className={cn(
-              'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-amber-400 select-none',
-              dashboardFilter === 'belum_produksi'
-                ? 'border-amber-500 bg-amber-50/50 ring-2 ring-amber-500/20'
-                : 'border-amber-200 bg-white'
-            )}
-          >
-            <div className='flex items-center gap-3'>
-              <div className='h-10 w-10 rounded-lg bg-amber-100 flex items-center justify-center text-amber-600 shrink-0'>
-                <Clock className='h-5 w-5' />
-              </div>
-              <div>
-                <p className='text-[10px] font-bold text-amber-600 uppercase tracking-wider'>
-                  SPK Belum Produksi
-                </p>
-                <p className='text-xl font-bold text-amber-800'>
-                  {stats.belum_produksi}
-                </p>
+              {/* Overdue */}
+              <div
+                onClick={() => handleDashboardFilterClick('overdue')}
+                className={cn(
+                  'flex-1 min-w-[70px] flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  dashboardFilter === 'overdue'
+                    ? 'border-rose-500 bg-rose-50 text-rose-700 font-semibold'
+                    : 'border-rose-100 bg-rose-50/50 hover:border-rose-300 text-rose-700'
+                )}
+              >
+                <span className='mr-1 font-medium leading-tight'>Overdue</span>
+                <span className='font-bold shrink-0 ml-1'>{stats.overdue ?? 0}</span>
               </div>
             </div>
-            {dashboardFilter === 'belum_produksi' && (
-              <span className='text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
-                Active
-              </span>
-            )}
-          </div>
-
-          {/* Deadline Dekat */}
-          <div
-            onClick={() => handleDashboardFilterClick('deadline_dekat')}
-            className={cn(
-              'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-orange-400 select-none',
-              dashboardFilter === 'deadline_dekat'
-                ? 'border-orange-500 bg-orange-50/50 ring-2 ring-orange-500/20'
-                : 'border-orange-200 bg-white'
-            )}
-          >
-            <div className='flex items-center gap-3'>
-              <div className='h-10 w-10 rounded-lg bg-orange-100 flex items-center justify-center text-orange-600 shrink-0'>
-                <AlertTriangle className='h-5 w-5' />
-              </div>
-              <div>
-                <p className='text-[10px] font-bold text-orange-600 uppercase tracking-wider'>
-                  Deadline Dekat
-                </p>
-                <p className='text-xl font-bold text-orange-800'>
-                  {stats.deadline_dekat}
-                </p>
-              </div>
-            </div>
-            {dashboardFilter === 'deadline_dekat' && (
-              <span className='text-[10px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
-                Active
-              </span>
-            )}
-          </div>
-
-          {/* Overdue */}
-          <div
-            onClick={() => handleDashboardFilterClick('overdue')}
-            className={cn(
-              'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-red-400 select-none',
-              dashboardFilter === 'overdue'
-                ? 'border-red-500 bg-red-50/50 ring-2 ring-red-500/20'
-                : 'border-red-200 bg-white'
-            )}
-          >
-            <div className='flex items-center gap-3'>
-              <div className='h-10 w-10 rounded-lg bg-red-100 flex items-center justify-center text-red-600 shrink-0'>
-                <AlertCircle className='h-5 w-5' />
-              </div>
-              <div>
-                <p className='text-[10px] font-bold text-red-600 uppercase tracking-wider'>
-                  Overdue
-                </p>
-                <p className='text-xl font-bold text-red-800'>
-                  {stats.overdue}
-                </p>
-              </div>
-            </div>
-            {dashboardFilter === 'overdue' && (
-              <span className='text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
-                Active
-              </span>
-            )}
-          </div>
-
-          {/* Urgent */}
-          <div
-            onClick={() => handleDashboardFilterClick('urgent')}
-            className={cn(
-              'flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md hover:border-rose-400 select-none',
-              dashboardFilter === 'urgent'
-                ? 'border-rose-500 bg-rose-50/50 ring-2 ring-rose-500/20'
-                : 'border-rose-200 bg-white'
-            )}
-          >
-            <div className='flex items-center gap-3'>
-              <div className='h-10 w-10 rounded-lg bg-rose-100 flex items-center justify-center text-rose-600 shrink-0'>
-                <Zap className='h-5 w-5' />
-              </div>
-              <div>
-                <p className='text-[10px] font-bold text-rose-600 uppercase tracking-wider'>
-                  Urgent
-                </p>
-                <p className='text-xl font-bold text-rose-800'>
-                  {stats.urgent}
-                </p>
-              </div>
-            </div>
-            {dashboardFilter === 'urgent' && (
-              <span className='text-[10px] bg-rose-100 text-rose-700 px-2 py-0.5 rounded-full font-semibold animate-pulse'>
-                Active
-              </span>
-            )}
           </div>
         </div>
       )}
@@ -2479,16 +2903,70 @@ export function ProjectsV2Table({
             )}
           </div>
 
+          {(showProduksi || showPerencanaan) && selectedProjectIds.length > 0 && (
+            <div className='flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl border border-emerald-200 bg-emerald-50/70 text-emerald-900 shadow-sm animate-in fade-in slide-in-from-top-1 duration-200'>
+              <div className='flex items-center gap-2 text-xs font-semibold'>
+                <CheckCircle2 className='h-4 w-4 text-emerald-600' />
+                <span>{selectedProjectIds.length} project dipilih</span>
+              </div>
+              <div className='flex items-center gap-2'>
+                <Button
+                  size='sm'
+                  disabled={isExporting}
+                  onClick={() => handleExportExcelSelected()}
+                  className='h-8 text-xs gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-xs'
+                >
+                  {isExporting ? (
+                    <>
+                      <Loader2 className='h-3.5 w-3.5 animate-spin' />
+                      Menyiapkan Excel...
+                    </>
+                  ) : (
+                    <>
+                      <FileSpreadsheet className='h-3.5 w-3.5' />
+                      Export Excel
+                    </>
+                  )}
+                </Button>
+                <Button
+                  size='sm'
+                  variant='outline'
+                  disabled={isExporting}
+                  onClick={() => setSelectedProjectIds([])}
+                  className='h-8 text-xs border-emerald-300 text-emerald-800 hover:bg-emerald-100 hover:text-emerald-900 bg-white'
+                >
+                  Batal
+                </Button>
+              </div>
+            </div>
+          )}
+
           <div className='rounded-md border overflow-x-auto w-full'>
             <Table>
               <TableHeader className='bg-neutral-50'>
                 <TableRow>
+                  {(showProduksi || showPerencanaan) && (
+                    <TableHead className='w-[40px] px-3 text-center'>
+                      <Checkbox
+                        checked={
+                          isAllDisplayedSelected
+                            ? true
+                            : isSomeDisplayedSelected
+                            ? 'indeterminate'
+                            : false
+                        }
+                        onCheckedChange={handleToggleSelectAllDisplayed}
+                        aria-label='Select all projects'
+                      />
+                    </TableHead>
+                  )}
                   <TableHead className='w-[50px]'>#</TableHead>
                   <TableHead className='w-[100px] text-left'>
                     ACTION
                   </TableHead>
                   {showAllDashboard ? (
                     <>
+                      <TableHead>MKT</TableHead>
                       <TableHead>CLIENT</TableHead>
                       <TableHead>NAMA PROJEK</TableHead>
                       <TableHead>NO SPK</TableHead>
@@ -2551,6 +3029,26 @@ export function ProjectsV2Table({
                         <div className='flex items-center gap-1'>
                           SISA HARI
                           {sortBy === 'sisa_hari' ? (
+                            sortOrder === 'asc' ? (
+                              <ArrowUp className='h-3 w-3' />
+                            ) : (
+                              <ArrowDown className='h-3 w-3' />
+                            )
+                          ) : (
+                            <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
+                          )}
+                        </div>
+                      </TableHead>
+                      <TableHead
+                        className='cursor-pointer hover:bg-neutral-100 transition-colors group text-center'
+                        onClick={() => handleSortChange('readiness_percentage')}
+                      >
+                        <div className='flex items-center justify-center gap-1'>
+                          <div className='flex flex-col items-center'>
+                            <span>KESIAPAN</span>
+                            <span>LOKASI</span>
+                          </div>
+                          {sortBy === 'readiness_percentage' ? (
                             sortOrder === 'asc' ? (
                               <ArrowUp className='h-3 w-3' />
                             ) : (
@@ -2735,6 +3233,28 @@ export function ProjectsV2Table({
                           </div>
                         </TableHead>
                       )}
+                      {(showMarketingFilter || showPerencanaan || showPengirimanV2) && (
+                        <TableHead
+                          className='cursor-pointer hover:bg-neutral-100 transition-colors group text-center'
+                          onClick={() => handleSortChange('readiness_percentage')}
+                        >
+                          <div className='flex items-center justify-center gap-1'>
+                            <div className='flex flex-col items-center'>
+                              <span>KESIAPAN</span>
+                              <span>LOKASI</span>
+                            </div>
+                            {sortBy === 'readiness_percentage' ? (
+                              sortOrder === 'asc' ? (
+                                <ArrowUp className='h-3 w-3' />
+                              ) : (
+                                <ArrowDown className='h-3 w-3' />
+                              )
+                            ) : (
+                              <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
+                            )}
+                          </div>
+                        </TableHead>
+                      )}
                     </>
                   )}
                   {!showAllDashboard &&
@@ -2768,7 +3288,6 @@ export function ProjectsV2Table({
                     !showProduksi &&
                     !showPurchasing &&
                     !showPiutang &&
-                    !showPengirimanV2 &&
                     !showQC && (
                       <TableHead className='text-center'>
                         <div className="flex flex-col items-center">
@@ -2897,6 +3416,29 @@ export function ProjectsV2Table({
                       </div>
                     </TableHead>
                   )}
+                  {showPurchasing && (
+                    <TableHead
+                      className='cursor-pointer hover:bg-neutral-100 transition-colors group'
+                      onClick={() => handleSortChange('progres_pengiriman')}
+                    >
+                      <div className="flex items-center">
+                        <div className="flex flex-col items-center">
+                          <span>PROGRES</span>
+                          <span>PENGIRIMAN</span>
+                        </div>
+
+                        {sortBy === 'progres_pengiriman' ? (
+                          sortOrder === 'asc' ? (
+                            <ArrowUp className='h-3 w-3' />
+                          ) : (
+                            <ArrowDown className='h-3 w-3' />
+                          )
+                        ) : (
+                          <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
+                        )}
+                      </div>
+                    </TableHead>
+                  )}
                   {showProduksi && (
                     <TableHead
                       className='cursor-pointer hover:bg-neutral-100 transition-colors group text-center'
@@ -2965,13 +3507,13 @@ export function ProjectsV2Table({
                           : showEngineer
                           ? 18
                           : showPurchasing
-                          ? 11
+                          ? 12
                           : showProduksi
-                          ? 11
+                          ? 12
                           : showPiutang
                           ? 14
                           : isMainProjectsV2Page || showPerencanaan
-                          ? 20
+                          ? 21
                           : 18
                       }
                       className='h-32 text-center text-muted-foreground'
@@ -2990,13 +3532,13 @@ export function ProjectsV2Table({
                           : showEngineer
                           ? 18
                           : showPurchasing
-                          ? 11
+                          ? 12
                           : showProduksi
-                          ? 11
+                          ? 12
                           : showPiutang
                           ? 14
                           : isMainProjectsV2Page || showPerencanaan
-                          ? 20
+                          ? 21
                           : 18
                       }
                       className='h-32 text-center text-muted-foreground'
@@ -3007,6 +3549,17 @@ export function ProjectsV2Table({
                 ) : (
                   projects.map((project, index) => (
                     <TableRow key={project.id}>
+                      {(showProduksi || showPerencanaan) && (
+                        <TableCell className='w-[40px] px-3 text-center'>
+                          <Checkbox
+                            checked={selectedProjectIds.includes(project.id)}
+                            onCheckedChange={() =>
+                              handleToggleSelectProject(project.id)
+                            }
+                            aria-label={`Select project ${project.name}`}
+                          />
+                        </TableCell>
+                      )}
 
                       <TableCell className='font-medium text-muted-foreground'>
                         {(page - 1) * 10 + index + 1}
@@ -3073,7 +3626,14 @@ export function ProjectsV2Table({
                                     >
                                       Rekap
                                     </DropdownMenuItem>
-
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        handleExportExcelSelected([project.id])
+                                      }
+                                    >
+                                      <FileSpreadsheet className='mr-2 h-4 w-4 text-emerald-600' />
+                                      Export Excel
+                                    </DropdownMenuItem>
                                   </DropdownMenuContent>
                                 </DropdownMenu>
                               )}
@@ -3201,6 +3761,14 @@ export function ProjectsV2Table({
                                       <FileText className='mr-2 h-4 w-4' />
                                       Rekap
                                     </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        handleExportExcelSelected([project.id])
+                                      }
+                                    >
+                                      <FileSpreadsheet className='mr-2 h-4 w-4 text-emerald-600' />
+                                      Export Excel
+                                    </DropdownMenuItem>
                                   </>
                                 )}
                                 {showQC && (
@@ -3240,16 +3808,28 @@ export function ProjectsV2Table({
                                   </DropdownMenuItem>
                                 )}
                                 {showMarketingFilter && (
-                                  <DropdownMenuItem
-                                    onClick={() =>
-                                      router.push(
-                                        `/dashboard/projects-v2/perencanaan/${project.id}/rekap`
-                                      )
-                                    }
-                                  >
-                                    <FileText className='mr-2 h-4 w-4' />
-                                    Telusuri
-                                  </DropdownMenuItem>
+                                  <>
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        router.push(
+                                          `/dashboard/projects-v2/marketing/${project.id}/kesiapan-lokasi`
+                                        )
+                                      }
+                                    >
+                                      <MapPin className='mr-2 h-4 w-4 text-orange-600' />
+                                      Kesiapan Lokasi
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        router.push(
+                                          `/dashboard/projects-v2/perencanaan/${project.id}/rekap`
+                                        )
+                                      }
+                                    >
+                                      <FileText className='mr-2 h-4 w-4' />
+                                      Telusuri
+                                    </DropdownMenuItem>
+                                  </>
                                 )}
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
@@ -3281,6 +3861,7 @@ export function ProjectsV2Table({
                       )}
                       {showAllDashboard ? (
                         <>
+                          <TableCell>{project.marketing?.name || '-'}</TableCell>
                           <TableCell>{project.client?.name || '-'}</TableCell>
                           <TableCell className='max-w-[200px] truncate'>
                             {project.name || (
@@ -3436,6 +4017,45 @@ export function ProjectsV2Table({
                                 -
                               </span>
                             )}
+                          </TableCell>
+                          <TableCell className='text-center'>
+                            <button
+                              onClick={() => {
+                                setProjectForReadinessView(project);
+                                setIsReadinessViewOpen(true);
+                              }}
+                              className='inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-bold transition-all hover:scale-105 shadow-xs cursor-pointer'
+                              style={{
+                                backgroundColor:
+                                  (project.readiness_percentage ?? 0) === 100
+                                    ? '#ecfdf5'
+                                    : (project.readiness_percentage ?? 0) >= 75
+                                    ? '#eff6ff'
+                                    : (project.readiness_percentage ?? 0) >= 40
+                                    ? '#fffbeb'
+                                    : '#fff1f2',
+                                borderColor:
+                                  (project.readiness_percentage ?? 0) === 100
+                                    ? '#a7f3d0'
+                                    : (project.readiness_percentage ?? 0) >= 75
+                                    ? '#bfdbfe'
+                                    : (project.readiness_percentage ?? 0) >= 40
+                                    ? '#fde68a'
+                                    : '#fecdd3',
+                                color:
+                                  (project.readiness_percentage ?? 0) === 100
+                                    ? '#047857'
+                                    : (project.readiness_percentage ?? 0) >= 75
+                                    ? '#1d4ed8'
+                                    : (project.readiness_percentage ?? 0) >= 40
+                                    ? '#b45309'
+                                    : '#be123c',
+                              }}
+                              title='Klik untuk melihat status Kesiapan Lokasi (Popup)'
+                            >
+                              <MapPin className='h-3 w-3 shrink-0' />
+                              <span>{project.readiness_percentage ?? 0}%</span>
+                            </button>
                           </TableCell>
                           <TableCell>
                             {project.jadwal_pengiriman ? (
@@ -3854,6 +4474,57 @@ export function ProjectsV2Table({
                               )}
                             </TableCell>
                           )}
+                          {(showMarketingFilter || showPerencanaan || showPengirimanV2) && (
+                            <TableCell className='text-center'>
+                              <button
+                                onClick={() => {
+                                  if (showPerencanaan || showPengirimanV2) {
+                                    setProjectForReadinessView(project);
+                                    setIsReadinessViewOpen(true);
+                                  } else {
+                                    router.push(
+                                      `/dashboard/projects-v2/marketing/${project.id}/kesiapan-lokasi`
+                                    );
+                                  }
+                                }}
+                                className='inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-bold transition-all hover:scale-105 shadow-xs cursor-pointer'
+                                style={{
+                                  backgroundColor:
+                                    (project.readiness_percentage ?? 0) === 100
+                                      ? '#ecfdf5'
+                                      : (project.readiness_percentage ?? 0) >= 75
+                                      ? '#eff6ff'
+                                      : (project.readiness_percentage ?? 0) >= 40
+                                      ? '#fffbeb'
+                                      : '#fff1f2',
+                                  borderColor:
+                                    (project.readiness_percentage ?? 0) === 100
+                                      ? '#a7f3d0'
+                                      : (project.readiness_percentage ?? 0) >= 75
+                                      ? '#bfdbfe'
+                                      : (project.readiness_percentage ?? 0) >= 40
+                                      ? '#fde68a'
+                                      : '#fecdd3',
+                                  color:
+                                    (project.readiness_percentage ?? 0) === 100
+                                      ? '#047857'
+                                      : (project.readiness_percentage ?? 0) >= 75
+                                      ? '#1d4ed8'
+                                      : (project.readiness_percentage ?? 0) >= 40
+                                      ? '#b45309'
+                                      : '#be123c',
+                                }}
+                                title={
+                                  showPerencanaan || showPengirimanV2
+                                    ? 'Klik untuk melihat status Kesiapan Lokasi (Popup)'
+                                    : 'Klik untuk buka halaman Kesiapan Lokasi'
+                                }
+                              >
+                                <MapPin className='h-3 w-3 shrink-0' />
+                                <span>{project.readiness_percentage ?? 0}%</span>
+                              </button>
+                            </TableCell>
+                          )}
                         </>
                       )}
                       {!showAllDashboard &&
@@ -3893,7 +4564,6 @@ export function ProjectsV2Table({
                         !showProduksi &&
                         !showPurchasing &&
                         !showPiutang &&
-                        !showPengirimanV2 &&
                         !showQC && (
                           <TableCell className='text-center'>
                             {project.file_pendukung_spd &&
@@ -4555,6 +5225,13 @@ export function ProjectsV2Table({
                           </span>
                         </TableCell>
                       )}
+                      {showPurchasing && (
+                        <TableCell className="text-center">
+                          <span className='text-xs font-bold text-neutral-700'>
+                            {Math.round(project.progres_kerja?.pengiriman || 0)}%
+                          </span>
+                        </TableCell>
+                      )}
                       {showProduksi && (
                         <TableCell className="text-center">
                           {project.progres_kerja ? (
@@ -4633,6 +5310,23 @@ export function ProjectsV2Table({
             open={isSetTeamOpen}
             onOpenChange={setIsSetTeamOpen}
             project={projectToSetTeam}
+          />
+
+          <SiteReadinessViewDialog
+            projectId={projectForReadinessView?.id ?? null}
+            isOpen={isReadinessViewOpen}
+            onClose={() => {
+              setIsReadinessViewOpen(false);
+              setProjectForReadinessView(null);
+            }}
+            projectName={projectForReadinessView?.name}
+            clientName={projectForReadinessView?.client?.name}
+            spkNumber={
+              projectForReadinessView?.spk_number ||
+              projectForReadinessView?.spk?.nomor_spk ||
+              undefined
+            }
+            deadline={projectForReadinessView?.deadline}
           />
 
           <AlertDialog

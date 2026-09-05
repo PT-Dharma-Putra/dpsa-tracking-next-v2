@@ -3,6 +3,8 @@ import { axiosInstance } from "@/lib/axios";
 export interface ClientProject {
     id: number;
     name: string;
+    client_id?: number;
+    client_name?: string | null;
     status: string;
     progress: number;
     description: string;
@@ -11,6 +13,22 @@ export interface ClientProject {
     last_updated_at?: string;
     created_at: string;
     nomor_spk?: string | null;
+    tanggal_spk?: string | null;
+    tanggal_masuk?: string | null;
+}
+
+export interface HerminaClient {
+    id: number;
+    name: string;
+    company_name?: string | null;
+    email?: string | null;
+    phone_number?: string | null;
+    address?: string | null;
+    director_name?: string | null;
+    general_affair_name?: string | null;
+    general_affair_hp?: string | null;
+    projects_count?: number;
+    hermina: number;
 }
 
 
@@ -44,9 +62,18 @@ export interface ClientInvoice {
 }
 
 export const ClientService = {
-    getMyProjects: async (): Promise<ClientProject[]> => {
-        const response = await axiosInstance.get('/orders/mdl/client');
+    getMyProjects: async (clientId?: number): Promise<ClientProject[]> => {
+        const response = await axiosInstance.get('/orders/mdl/client', {
+            params: clientId ? { client_id: clientId } : undefined
+        });
         return response.data.data;
+    },
+
+    getHerminaClients: async (): Promise<HerminaClient[]> => {
+        const response = await axiosInstance.get('/clients', {
+            params: { hermina: 1, per_page: -1 }
+        });
+        return response.data.data || response.data || [];
     },
 
     getActionItems: async (): Promise<ActionItem[]> => {

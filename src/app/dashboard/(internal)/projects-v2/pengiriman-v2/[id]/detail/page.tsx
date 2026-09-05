@@ -1611,10 +1611,10 @@ export default function PerencanaanDetailPage() {
                 1
               </div>
               <div className='flex-1 min-w-0'>
-                <CardTitle className='text-sm text-neutral-800 font-bold truncate'>
+                <CardTitle className='text-sm text-neutral-800 font-bold leading-snug break-words whitespace-normal'>
                   SPH & SPK
                 </CardTitle>
-                <p className='text-[10px] text-muted-foreground uppercase tracking-wider font-semibold truncate'>
+                <p className='text-[10px] text-muted-foreground uppercase tracking-wider font-semibold leading-tight break-words whitespace-normal mt-0.5'>
                   Documents
                 </p>
               </div>
@@ -1757,10 +1757,10 @@ export default function PerencanaanDetailPage() {
                 2
               </div>
               <div className='flex-1 min-w-0'>
-                <CardTitle className='text-sm text-neutral-800 font-bold truncate'>
+                <CardTitle className='text-sm text-neutral-800 font-bold leading-snug break-words whitespace-normal'>
                   Gudang Barang Jadi
                 </CardTitle>
-                <p className='text-[10px] text-muted-foreground uppercase tracking-wider font-semibold truncate'>
+                <p className='text-[10px] text-muted-foreground uppercase tracking-wider font-semibold leading-tight break-words whitespace-normal mt-0.5'>
                   Finished Goods
                 </p>
               </div>
@@ -1827,10 +1827,10 @@ export default function PerencanaanDetailPage() {
                 3
               </div>
               <div className='flex-1 min-w-0'>
-                <CardTitle className='text-sm text-neutral-800 font-bold truncate'>
+                <CardTitle className='text-sm text-neutral-800 font-bold leading-snug break-words whitespace-normal'>
                   Pengiriman
                 </CardTitle>
-                <p className='text-[10px] text-muted-foreground uppercase tracking-wider font-semibold truncate'>
+                <p className='text-[10px] text-muted-foreground uppercase tracking-wider font-semibold leading-tight break-words whitespace-normal mt-0.5'>
                   Logistics
                 </p>
               </div>
@@ -2016,10 +2016,10 @@ export default function PerencanaanDetailPage() {
                 4
               </div>
               <div className='flex-1 min-w-0'>
-                <CardTitle className='text-sm text-neutral-800 font-bold truncate'>
+                <CardTitle className='text-sm text-neutral-800 font-bold leading-snug break-words whitespace-normal'>
                   Barang Terkirim
                 </CardTitle>
-                <p className='text-[10px] text-muted-foreground uppercase tracking-wider font-semibold truncate'>
+                <p className='text-[10px] text-muted-foreground uppercase tracking-wider font-semibold leading-tight break-words whitespace-normal mt-0.5'>
                   Delivered Items
                 </p>
               </div>
@@ -2099,10 +2099,10 @@ export default function PerencanaanDetailPage() {
                 10
               </div>
               <div className='flex-1 min-w-0'>
-                <CardTitle className='text-sm text-neutral-800 font-bold truncate'>
+                <CardTitle className='text-sm text-neutral-800 font-bold leading-snug break-words whitespace-normal'>
                   Belum Tersetting
                 </CardTitle>
-                <p className='text-[10px] text-muted-foreground uppercase tracking-wider font-semibold truncate'>
+                <p className='text-[10px] text-muted-foreground uppercase tracking-wider font-semibold leading-tight break-words whitespace-normal mt-0.5'>
                   Pending Installation
                 </p>
               </div>
@@ -2171,10 +2171,10 @@ export default function PerencanaanDetailPage() {
                 11
               </div>
               <div className='flex-1 min-w-0'>
-                <CardTitle className='text-sm text-neutral-800 font-bold truncate'>
+                <CardTitle className='text-sm text-neutral-800 font-bold leading-snug break-words whitespace-normal'>
                   Barang Tersetting
                 </CardTitle>
-                <p className='text-[10px] text-muted-foreground uppercase tracking-wider font-semibold truncate'>
+                <p className='text-[10px] text-muted-foreground uppercase tracking-wider font-semibold leading-tight break-words whitespace-normal mt-0.5'>
                   Installed Items
                 </p>
               </div>
@@ -2319,6 +2319,9 @@ export default function PerencanaanDetailPage() {
                 </TableHead>
                 <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>
                   PO Divisi
+                </TableHead>
+                <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>
+                  GK Custom
                 </TableHead>
                 <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>
                   Produksi
@@ -2573,6 +2576,42 @@ export default function PerencanaanDetailPage() {
                             <History className='h-3 w-3' />
                           </Button>
                         </div>
+                      </TableCell>
+                      <TableCell>
+                        {item.gambar_kerja?.file ? (
+                          <div className='flex items-center gap-1'>
+                            <Button
+                              variant='ghost'
+                              size='icon'
+                              className='h-6 w-6 text-blue-600 hover:bg-blue-50'
+                              asChild
+                            >
+                              <a
+                                href={
+                                  item.gambar_kerja.file.startsWith('http') ||
+                                  item.gambar_kerja.file.startsWith('www')
+                                    ? item.gambar_kerja.file
+                                    : `${(
+                                        process.env.NEXT_PUBLIC_API_URL ||
+                                        'http://localhost:8000'
+                                      ).replace('/api', '')}/storage/${
+                                        item.gambar_kerja.file
+                                      }`
+                                }
+                                target='_blank'
+                                rel='noopener noreferrer'
+                              >
+                                <Eye className='h-3.5 w-3.5' />
+                              </a>
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className='flex items-center gap-2'>
+                            <span className='text-[10px] text-muted-foreground italic'>
+                              -
+                            </span>
+                          </div>
+                        )}
                       </TableCell>
                       <TableCell>
                         <div

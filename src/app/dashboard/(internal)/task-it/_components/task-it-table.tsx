@@ -2,9 +2,10 @@
 
 import * as React from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { Plus, Pencil, Trash2, Loader2, Search, ClipboardList, FileText, ChevronLeft, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
+import { Plus, Pencil, Trash2, Loader2, Search, ClipboardList, FileText, ChevronLeft, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown, Sparkles, AlertCircle, FolderGit2 } from "lucide-react"
 import { toast } from "sonner"
 import { format } from "date-fns"
+import { cn } from "@/lib/utils"
 
 import {
     Table,
@@ -46,6 +47,7 @@ interface TaskItTableProps {
 export function TaskItTable({ statusFilter, onClearFilter }: TaskItTableProps = {}) {
     const queryClient = useQueryClient()
     const [search, setSearch] = React.useState("")
+    const [scopeFilter, setScopeFilter] = React.useState<"all" | "client" | "internal">("all")
     const [isFormOpen, setIsFormOpen] = React.useState(false)
     const [selectedTask, setSelectedTask] = React.useState<TaskIt | null>(null)
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false)
@@ -74,11 +76,14 @@ export function TaskItTable({ statusFilter, onClearFilter }: TaskItTableProps = 
         setPage(1)
     }, [statusFilter])
 
+    React.useEffect(() => {
+        setPage(1)
+    }, [scopeFilter])
+
     const { data: tasks, isLoading } = useQuery({
         queryKey: ["task-its"],
         queryFn: () => taskItService.getTasks(),
     })
-
 
     const deleteMutation = useMutation({
         mutationFn: (id: number) => taskItService.deleteTask(id),
@@ -94,7 +99,7 @@ export function TaskItTable({ statusFilter, onClearFilter }: TaskItTableProps = 
     })
 
     const updateFieldMutation = useMutation({
-        mutationFn: ({ id, status, userId, picId, deskripsi, tanggalSelesai, prioritas }: { id: number, status: string, userId: number, picId?: number | null, deskripsi: string, tanggalSelesai: string | null, prioritas: string }) => {
+        mutationFn: ({ id, status, userId, picId, deskripsi, tanggalSelesai, prioritas, tipe, judul, projectId }: { id: number, status: string, userId: number, picId?: number | null, deskripsi: string, tanggalSelesai: string | null, prioritas: string, tipe?: string, judul?: string | null, projectId?: number | null }) => {
             const formData = new FormData()
             formData.append("user_id", userId.toString())
             if (picId) {
@@ -102,6 +107,9 @@ export function TaskItTable({ statusFilter, onClearFilter }: TaskItTableProps = 
             } else {
                 formData.append("pic_id", "")
             }
+            if (tipe) formData.append("tipe", tipe)
+            if (judul) formData.append("judul", judul)
+            if (projectId) formData.append("project_id", projectId.toString())
             formData.append("deskripsi", deskripsi)
             formData.append("status", status)
             formData.append("prioritas", prioritas)
@@ -134,6 +142,14 @@ export function TaskItTable({ statusFilter, onClearFilter }: TaskItTableProps = 
     }
 
     const filtered = (tasks ?? []).filter(t => {
+        if (scopeFilter === "client") {
+            const isClient = t.tipe === "Request Fitur" || t.tipe === "Lapor Kendala" || !!t.user?.client_id
+            if (!isClient) return false
+        } else if (scopeFilter === "internal") {
+            const isInternal = t.tipe === "Internal" || (!t.tipe && !t.user?.client_id)
+            if (!isInternal) return false
+        }
+
         if (statusFilter === "inprogress") {
             const s = t.status.toLowerCase()
             if (s !== "in progress" && s !== "progress" && s !== "sedang dikerjakan") return false
@@ -142,11 +158,15 @@ export function TaskItTable({ statusFilter, onClearFilter }: TaskItTableProps = 
             if (s !== "pending" && s !== "tunda") return false
         }
         if (!search) return true
+        const q = search.toLowerCase()
         return (
-            t.deskripsi.toLowerCase().includes(search.toLowerCase()) ||
-            (t.user?.name.toLowerCase().includes(search.toLowerCase()) ?? false) ||
-            (t.pic?.name.toLowerCase().includes(search.toLowerCase()) ?? false) ||
-            t.status.toLowerCase().includes(search.toLowerCase())
+            (t.judul || "").toLowerCase().includes(q) ||
+            t.deskripsi.toLowerCase().includes(q) ||
+            (t.tipe || "").toLowerCase().includes(q) ||
+            (t.project?.name || "").toLowerCase().includes(q) ||
+            (t.user?.name.toLowerCase().includes(q) ?? false) ||
+            (t.pic?.name.toLowerCase().includes(q) ?? false) ||
+            t.status.toLowerCase().includes(q)
         )
     })
 
@@ -261,7 +281,10 @@ export function TaskItTable({ statusFilter, onClearFilter }: TaskItTableProps = 
                             picId: task.pic_id,
                             deskripsi: task.deskripsi,
                             tanggalSelesai: finalTanggalSelesai,
-                            prioritas: task.prioritas
+                            prioritas: task.prioritas,
+                            tipe: task.tipe,
+                            judul: task.judul,
+                            projectId: task.project_id
                         }, {
                             onSuccess: () => {
                                 toast.success("Status task berhasil diperbarui")
@@ -311,7 +334,10 @@ export function TaskItTable({ statusFilter, onClearFilter }: TaskItTableProps = 
                             picId: task.pic_id,
                             deskripsi: task.deskripsi,
                             tanggalSelesai: task.tanggal_selesai,
-                            prioritas: newPrioritas
+                            prioritas: newPrioritas,
+                            tipe: task.tipe,
+                            judul: task.judul,
+                            projectId: task.project_id
                         }, {
                             onSuccess: () => {
                                 toast.success("Prioritas task berhasil diperbarui")
@@ -352,45 +378,90 @@ export function TaskItTable({ statusFilter, onClearFilter }: TaskItTableProps = 
                 </Button>
             </div>
 
-            {/* Search */}
-            <div className="flex items-center gap-3 flex-wrap">
-                <div className="relative max-w-sm">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                        placeholder="Cari deskripsi, user, pic, atau status..."
-                        value={search}
-                        onChange={e => setSearch(e.target.value)}
-                        className="pl-9 bg-neutral-50 border-neutral-200 focus:bg-white"
-                    />
+            {/* Scope Filter Tabs & Search */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                <div className="flex items-center gap-1 bg-neutral-100 p-1 rounded-xl w-fit border border-neutral-200/70">
+                    <button
+                        type="button"
+                        onClick={() => setScopeFilter("all")}
+                        className={cn(
+                            "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer",
+                            scopeFilter === "all"
+                                ? "bg-white text-neutral-900 shadow-sm"
+                                : "text-neutral-500 hover:text-neutral-900"
+                        )}
+                    >
+                        Semua Task ({tasks?.length ?? 0})
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setScopeFilter("client")}
+                        className={cn(
+                            "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer",
+                            scopeFilter === "client"
+                                ? "bg-white text-orange-600 shadow-sm"
+                                : "text-neutral-500 hover:text-neutral-900"
+                        )}
+                    >
+                        <Sparkles className="h-3.5 w-3.5 text-orange-500" />
+                        <span>Tiket Client</span>
+                        <span className="bg-orange-100 text-orange-700 text-[10px] px-1.5 py-0.2 rounded-full font-bold">
+                            {tasks?.filter(t => t.tipe === "Request Fitur" || t.tipe === "Lapor Kendala" || t.user?.client_id).length ?? 0}
+                        </span>
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setScopeFilter("internal")}
+                        className={cn(
+                            "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer",
+                            scopeFilter === "internal"
+                                ? "bg-white text-neutral-900 shadow-sm"
+                                : "text-neutral-500 hover:text-neutral-900"
+                        )}
+                    >
+                        Internal IT ({tasks?.filter(t => t.tipe === "Internal" || (!t.tipe && !t.user?.client_id)).length ?? 0})
+                    </button>
                 </div>
-                {statusFilter === "inprogress" && (
-                    <div className="flex items-center gap-1.5 bg-blue-50 border border-blue-200 text-blue-700 text-xs font-semibold px-3 py-1.5 rounded-full">
-                        <Loader2 className="h-3 w-3 animate-spin" style={{ animationDuration: '3s' }} />
-                        <span>Sedang Dikerjakan</span>
-                        <button
-                            type="button"
-                            onClick={onClearFilter}
-                            className="ml-1 hover:text-blue-900 transition-colors"
-                            aria-label="Hapus filter"
-                        >
-                            ✕
-                        </button>
+
+                <div className="flex items-center gap-3 flex-wrap">
+                    <div className="relative w-full sm:w-72">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            placeholder="Cari subjek, user, pic, status..."
+                            value={search}
+                            onChange={e => setSearch(e.target.value)}
+                            className="pl-9 h-9 text-xs bg-neutral-50 border-neutral-200 focus:bg-white"
+                        />
                     </div>
-                )}
-                {statusFilter === "pending" && (
-                    <div className="flex items-center gap-1.5 bg-yellow-50 border border-yellow-200 text-yellow-700 text-xs font-semibold px-3 py-1.5 rounded-full">
-                        <Loader2 className="h-3 w-3 animate-pulse" />
-                        <span>Pekerjaan Pending</span>
-                        <button
-                            type="button"
-                            onClick={onClearFilter}
-                            className="ml-1 hover:text-yellow-900 transition-colors"
-                            aria-label="Hapus filter"
-                        >
-                            ✕
-                        </button>
-                    </div>
-                )}
+                    {statusFilter === "inprogress" && (
+                        <div className="flex items-center gap-1.5 bg-blue-50 border border-blue-200 text-blue-700 text-xs font-semibold px-3 py-1.5 rounded-full">
+                            <Loader2 className="h-3 w-3 animate-spin" style={{ animationDuration: '3s' }} />
+                            <span>Sedang Dikerjakan</span>
+                            <button
+                                type="button"
+                                onClick={onClearFilter}
+                                className="ml-1 hover:text-blue-900 transition-colors"
+                                aria-label="Hapus filter"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                    )}
+                    {statusFilter === "pending" && (
+                        <div className="flex items-center gap-1.5 bg-yellow-50 border border-yellow-200 text-yellow-700 text-xs font-semibold px-3 py-1.5 rounded-full">
+                            <Loader2 className="h-3 w-3 animate-pulse" />
+                            <span>Pekerjaan Pending</span>
+                            <button
+                                type="button"
+                                onClick={onClearFilter}
+                                className="ml-1 hover:text-yellow-900 transition-colors"
+                                aria-label="Hapus filter"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                    )}
+                </div>
             </div>
 
             {/* Table */}
@@ -398,8 +469,9 @@ export function TaskItTable({ statusFilter, onClearFilter }: TaskItTableProps = 
                 <Table>
                     <TableHeader className="bg-neutral-50/80">
                         <TableRow>
-                            <TableHead className="w-[50px]">#</TableHead>
-                            <TableHead className="max-w-[300px]">{sortableHeader("deskripsi", "Deskripsi")}</TableHead>
+                            <TableHead className="w-[45px]">#</TableHead>
+                            <TableHead className="w-[125px]">{sortableHeader("tipe", "Tipe")}</TableHead>
+                            <TableHead className="max-w-[320px]">{sortableHeader("deskripsi", "Judul & Deskripsi")}</TableHead>
                             <TableHead>{sortableHeader("user", "Request By")}</TableHead>
                             <TableHead>{sortableHeader("pic", "PIC IT")}</TableHead>
                             <TableHead>{sortableHeader("prioritas", "Prioritas")}</TableHead>
@@ -413,13 +485,13 @@ export function TaskItTable({ statusFilter, onClearFilter }: TaskItTableProps = 
                     <TableBody>
                         {isLoading ? (
                             <TableRow>
-                                <TableCell colSpan={10} className="h-32 text-center">
+                                <TableCell colSpan={11} className="h-32 text-center">
                                     <Loader2 className="h-6 w-6 animate-spin mx-auto text-neutral-400" />
                                 </TableCell>
                             </TableRow>
                         ) : filtered.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={10} className="h-32 text-center text-muted-foreground text-sm">
+                                <TableCell colSpan={11} className="h-32 text-center text-muted-foreground text-sm">
                                     {search ? "Tidak ada task yang cocok." : "Belum ada task IT. Klik 'Tambah Task' untuk memulai."}
                                 </TableCell>
                             </TableRow>
@@ -427,12 +499,47 @@ export function TaskItTable({ statusFilter, onClearFilter }: TaskItTableProps = 
                             paginatedItems.map((task, index) => (
                                 <TableRow key={task.id} className="hover:bg-neutral-50/50 transition-colors">
                                     <TableCell className="font-medium text-muted-foreground">{startIndex + index + 1}</TableCell>
-                                    <TableCell className="max-w-[300px] whitespace-pre-line text-sm text-neutral-800 font-medium">
-                                        {task.deskripsi}
+                                    <TableCell>
+                                        {task.tipe === "Request Fitur" ? (
+                                            <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 gap-1 text-[11px] font-semibold py-0.5 whitespace-nowrap">
+                                                <Sparkles className="h-3 w-3 text-purple-600 shrink-0" />
+                                                Request Fitur
+                                            </Badge>
+                                        ) : task.tipe === "Lapor Kendala" ? (
+                                            <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 gap-1 text-[11px] font-semibold py-0.5 whitespace-nowrap">
+                                                <AlertCircle className="h-3 w-3 text-red-500 shrink-0" />
+                                                Lapor Kendala
+                                            </Badge>
+                                        ) : (
+                                            <Badge variant="outline" className="bg-neutral-100 text-neutral-600 border-neutral-200 text-[11px] py-0.5 font-medium whitespace-nowrap">
+                                                Internal
+                                            </Badge>
+                                        )}
+                                    </TableCell>
+                                    <TableCell className="max-w-[320px]">
+                                        {task.judul && (
+                                            <p className="text-sm font-bold text-neutral-900 leading-snug">
+                                                {task.judul}
+                                            </p>
+                                        )}
+                                        {task.project?.name && (
+                                            <div className="inline-flex items-center gap-1 text-[10px] font-semibold bg-orange-50 text-orange-700 border border-orange-200 px-1.5 py-0.5 rounded mt-0.5 mb-1">
+                                                <FolderGit2 className="h-2.5 w-2.5 text-orange-500 shrink-0" />
+                                                <span>{task.project.name}</span>
+                                            </div>
+                                        )}
+                                        <p className="text-xs text-neutral-600 whitespace-pre-line line-clamp-3 mt-0.5">
+                                            {task.deskripsi}
+                                        </p>
                                     </TableCell>
                                     <TableCell>
                                         <div className="flex flex-col">
-                                            <span className="text-sm font-semibold text-neutral-700">{task.user?.name || "Unassigned"}</span>
+                                            <div className="flex items-center gap-1.5 flex-wrap">
+                                                <span className="text-sm font-semibold text-neutral-800">{task.user?.name || "Unassigned"}</span>
+                                                {(task.user?.client_id || task.tipe === "Request Fitur" || task.tipe === "Lapor Kendala") && (
+                                                    <Badge variant="outline" className="text-[9px] bg-orange-50 text-orange-700 border-orange-200 px-1 py-0 font-bold">Client</Badge>
+                                                )}
+                                            </div>
                                             <span className="text-xs text-muted-foreground">{task.user?.email || "-"}</span>
                                         </div>
                                     </TableCell>

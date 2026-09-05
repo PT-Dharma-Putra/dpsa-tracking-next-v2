@@ -4,6 +4,9 @@ export interface TaskIt {
     id: number;
     user_id: number;
     pic_id?: number | null;
+    project_id?: number | null;
+    tipe?: 'Request Fitur' | 'Lapor Kendala' | 'Internal' | string;
+    judul?: string | null;
     deskripsi: string;
     file: string | null;
     file_url?: string | null;
@@ -17,17 +20,22 @@ export interface TaskIt {
         id: number;
         name: string;
         email: string;
+        client_id?: number | null;
     };
     pic?: {
         id: number;
         name: string;
         email: string;
     } | null;
+    project?: {
+        id: number;
+        name: string;
+    } | null;
 }
 
 export const taskItService = {
-    getTasks: async () => {
-        const { data } = await apiClient.get<TaskIt[]>('/task-it');
+    getTasks: async (params?: { tipe?: string; status?: string; project_id?: number }) => {
+        const { data } = await apiClient.get<TaskIt[]>('/task-it', { params });
         return data;
     },
 

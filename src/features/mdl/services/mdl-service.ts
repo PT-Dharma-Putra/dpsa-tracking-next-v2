@@ -8,10 +8,11 @@ export interface Mdl {
     lokasi_mdl_id: number | null;
     barang_id: number | null;
     kode_mdl: string;
+    foto?: string | null;
     kategori_mdl?: { id: number; nama: string; kode: string; spesifikasi?: string | null; dimensi?: string | null } | null;
     sub_kategori_mdl?: { id: number; nama: string; kode: string } | null;
     lokasi_mdl?: { id: number; nama: string; kode: string } | null;
-    barang?: { id: number; nama: string; kode: string; harga?: number; spesifikasi?: string | null; panjang?: number | null; lebar?: number | null; tinggi?: number | null; satuan?: string | null } | null;
+    barang?: { id: number; nama: string; kode: string; harga?: number; spesifikasi?: string | null; panjang?: number | null; lebar?: number | null; tinggi?: number | null; satuan?: string | null; foto?: string | null } | null;
     created_at?: string;
     updated_at?: string;
 }

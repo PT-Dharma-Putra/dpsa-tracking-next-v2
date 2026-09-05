@@ -12,8 +12,17 @@ export interface DetailPengiriman {
     id: number;
     item: string;
     jumlah: number;
+    divisi_id?: number | null;
+    divisi?: {
+      id: number;
+      nama?: string | null;
+      name?: string | null;
+    } | string | null;
+    po_divisi?: string | null;
     lantai?: string | null;
     ruang?: string | null;
+    keterangan?: string | null;
+    deskripsi?: string | null;
     panjang?: number | null;
     lebar?: number | null;
     tinggi?: number | null;
@@ -31,6 +40,7 @@ export interface Pengiriman {
   id: number;
   tanggal: string;
   client_id: number;
+  user_id?: number | null;
   surat_jalan?: string | null;
   setrim?: string | null;
   tanggal_mulai_setting?: string | null;
@@ -47,12 +57,32 @@ export interface Pengiriman {
     name: string;
     address?: string | null;
   };
+  user?: {
+    id: number;
+    name: string;
+    email?: string | null;
+  };
 }
 
 export interface ProjectItemWithShipmentStats {
   id: number;
   item: string;
+  divisi_id?: number | null;
+  divisi?: {
+    id: number;
+    nama?: string | null;
+    name?: string | null;
+  } | string | null;
+  po_divisi?: string | null;
+  lantai?: string | null;
+  ruang?: string | null;
+  keterangan?: string | null;
+  deskripsi?: string | null;
   jumlah: number;
+  panjang?: number | null;
+  lebar?: number | null;
+  tinggi?: number | null;
+  satuan?: string | null;
   project_id: number;
   project?: {
     id: number;

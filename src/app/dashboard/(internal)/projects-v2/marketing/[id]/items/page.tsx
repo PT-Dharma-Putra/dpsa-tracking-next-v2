@@ -31,6 +31,9 @@ import {
   AlertCircle,
   CheckCircle,
   ExternalLink,
+  ShieldCheck,
+  MapPin,
+  Layers,
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -82,6 +85,9 @@ import { toast } from 'sonner';
 import {
   projectV2Service,
   ProjectItemV2,
+  getBasts,
+  uploadBast,
+  Bast,
 } from '@/features/projects/services/project-v2-service';
 import { ProjectItemFormDialog } from '../../../_components/project-item-form-dialog';
 import { CatalogModal } from '../../../_components/catalog-modal';
@@ -311,21 +317,7 @@ export default function ProjectItemsPage() {
     setIsSpdModalOpen(true);
   };
 
-  const [isLinkPendukungModalOpen, setIsLinkPendukungModalOpen] = React.useState(false);
-  const [linkPendukungInput, setLinkPendukungInput] = React.useState('');
 
-  const saveLinkPendukungMutation = useMutation({
-    mutationFn: (url: string) =>
-      projectV2Service.uploadSPD(projectId, null, '', url),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['projects-v2', projectId] });
-      toast.success('Link pendukung berhasil disimpan');
-      setIsLinkPendukungModalOpen(false);
-    },
-    onError: () => {
-      toast.error('Gagal menyimpan link pendukung');
-    },
-  });
 
   const [sphFile, setSphFile] = React.useState<File | null>(null);
   const [sphNumber, setSphNumber] = React.useState<string>('');
@@ -498,7 +490,7 @@ export default function ProjectItemsPage() {
       grand_total,
       penerbit_id,
     }: {
-      file: File;
+      file?: File | null;
       number: string;
       tanggal_masuk?: string;
       nominal_dpp?: string;
@@ -551,6 +543,30 @@ export default function ProjectItemsPage() {
       grand_total: spkGrandTotal,
       penerbit_id: spkPenerbitId || undefined,
     });
+  };
+
+  const uploadBastMutation = useMutation({
+    mutationFn: (payload: { no_surat: string; date: string; file?: File | null }) =>
+      uploadBast(projectId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects-v2', projectId] });
+      toast.success('BAST berhasil disimpan');
+      setIsBastModalOpen(false);
+      setBastNoSurat('');
+      setBastDate('');
+      setBastFile(null);
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || 'Gagal menyimpan BAST');
+    },
+  });
+
+  const handleOpenEditBast = () => {
+    if (project?.basts && project.basts.length > 0) {
+      setBastNoSurat(project.basts[0].no_surat || '');
+      setBastDate(project.basts[0].date || '');
+    }
+    setIsBastModalOpen(true);
   };
 
   const [isEditSphModalOpen, setIsEditSphModalOpen] = React.useState(false);
@@ -719,11 +735,17 @@ export default function ProjectItemsPage() {
   const [isAccModalOpen, setIsAccModalOpen] = React.useState(false);
   const [isSphModalOpen, setIsSphModalOpen] = React.useState(false);
   const [isSpkModalOpen, setIsSpkModalOpen] = React.useState(false);
+  const [isBastModalOpen, setIsBastModalOpen] = React.useState(false);
+
+  const [bastNoSurat, setBastNoSurat] = React.useState('');
+  const [bastDate, setBastDate] = React.useState('');
+  const [bastFile, setBastFile] = React.useState<File | null>(null);
 
   const [isSpdCollapsed, setIsSpdCollapsed] = React.useState(true);
   const [isAccCollapsed, setIsAccCollapsed] = React.useState(true);
   const [isSphCollapsed, setIsSphCollapsed] = React.useState(true);
   const [isSpkCollapsed, setIsSpkCollapsed] = React.useState(true);
+  const [isBastCollapsed, setIsBastCollapsed] = React.useState(true);
   const [isNeedDesignModalOpen, setIsNeedDesignModalOpen] =
     React.useState(false);
   const [needDesignValue, setNeedDesignValue] = React.useState<number>(
@@ -731,9 +753,16 @@ export default function ProjectItemsPage() {
   );
 
   const existingSpd = project?.designs?.[0];
-  const existingSph = project?.sphs?.[0];
+  const existingSph = project?.sphs?.[0] || project?.sph;
   const existingAcc = existingSpd?.acc_design;
   const existingSpk = project?.spk;
+
+  const spkNominalVal =
+    existingSpk?.nominal !== undefined && existingSpk?.nominal !== null
+      ? Number(existingSpk.nominal)
+      : null;
+  const isSpkBelow50Juta =
+    spkNominalVal !== null && spkNominalVal > 0 && spkNominalVal < 50000000;
 
   // Sync state when project data loads
   React.useEffect(() => {
@@ -839,7 +868,7 @@ export default function ProjectItemsPage() {
       title: 'Upload SPK',
       description: 'Surat Perintah Kerja',
       isCompleted: !!existingSpk?.file || !!existingSpk?.spk_signed_file,
-      isActive: !!existingSph?.file,
+      isActive: project.need_design === 0 || existingAcc?.status === 'Approved',
       icon: ClipboardCheck,
       color: 'text-purple-600',
       bgColor: 'bg-purple-500',
@@ -851,12 +880,26 @@ export default function ProjectItemsPage() {
       title: 'Project Items',
       description: 'Add items',
       isCompleted: items && items.length > 0,
-      isActive: !!existingSpk?.file,
+      isActive: !!existingSpk?.file || !!existingSpk?.spk_signed_file,
       icon: Package,
       color: 'text-blue-600',
       bgColor: 'bg-blue-500',
       lightBg: 'bg-blue-50',
       borderColor: 'border-blue-200',
+    },
+    {
+      id: 6,
+      title: 'Upload BAST',
+      description: isSpkBelow50Juta
+        ? 'Tanpa BAST'
+        : 'Berita Acara Serah Terima',
+      isCompleted: isSpkBelow50Juta || !!project?.basts?.[0]?.file_path,
+      isActive: !!existingSpk?.file || !!existingSpk?.spk_signed_file,
+      icon: ShieldCheck,
+      color: 'text-teal-600',
+      bgColor: 'bg-teal-500',
+      lightBg: 'bg-teal-50',
+      borderColor: 'border-teal-200',
     },
   ];
 
@@ -916,28 +959,30 @@ export default function ProjectItemsPage() {
                   </span>
                 )}
               </button>
-              {project.need_design === 0 && (
-                <div className='flex items-center gap-1 border-l border-neutral-200 pl-2 ml-1'>
-                  <Button
-                    variant='outline'
-                    size='sm'
-                    className='h-6 text-[10px] px-2 bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100 font-medium'
-                    onClick={() => {
-                      setLinkPendukungInput(
-                        project?.file_pendukung_spd?.[0]?.file || ''
-                      );
-                      setIsLinkPendukungModalOpen(true);
-                    }}
-                  >
-                    <FileText className='h-3 w-3 mr-1' />
-                    {project.file_pendukung_spd?.[0]?.file
-                      ? 'Edit Link Pendukung'
-                      : 'Input Link Pendukung'}
-                  </Button>
-                </div>
-              )}
+
             </div>
           </div>
+        </div>
+
+        {/* Quick Tabs Navigation */}
+        <div className='flex items-center gap-1 bg-neutral-100 p-1 rounded-xl border border-neutral-200 shrink-0'>
+          <Button
+            variant='default'
+            size='sm'
+            className='text-xs font-semibold bg-white text-neutral-900 shadow-sm rounded-lg h-8 hover:bg-white hover:text-neutral-900'
+          >
+            <Layers className='h-3.5 w-3.5 mr-1.5 text-neutral-500' />
+            Workflow & Items
+          </Button>
+          <Button
+            variant='ghost'
+            size='sm'
+            onClick={() => router.push(`/dashboard/projects-v2/marketing/${projectId}/kesiapan-lokasi`)}
+            className='text-xs font-medium text-neutral-600 hover:text-neutral-900 hover:bg-white rounded-lg h-8'
+          >
+            <MapPin className='h-3.5 w-3.5 mr-1.5 text-orange-600' />
+            Kesiapan Lokasi
+          </Button>
         </div>
 
         {/* Stepper Progress */}
@@ -1002,7 +1047,7 @@ export default function ProjectItemsPage() {
       </div>
 
       {/* Document Section at Top */}
-      <div className='grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 w-full'>
+      <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 w-full'>
         {/* 1. SPD SECTION */}
         <Card
           className={`border shadow-sm transition-all duration-300 ${
@@ -1746,7 +1791,7 @@ export default function ProjectItemsPage() {
           </CardHeader>
           {!isSpkCollapsed && (
             <CardContent>
-              {existingSpk?.file || existingSpk?.spk_signed_file ? (
+              {existingSpk ? (
                 <div className='space-y-3'>
                   <div className='p-3 rounded-xl bg-purple-50/80 border border-purple-100 flex items-center justify-between shadow-sm min-w-0 gap-2'>
                     <div className='flex items-center gap-3 min-w-0 flex-1 mr-2'>
@@ -1761,7 +1806,7 @@ export default function ProjectItemsPage() {
                           {existingSpk.nomor_spk}
                         </p>
                         <p className='text-[10px] text-purple-600/80 truncate'>
-                          {format(
+                          {existingSpk.created_at && format(
                             new Date(existingSpk.created_at),
                             'MMM d, yyyy'
                           )}
@@ -1773,27 +1818,29 @@ export default function ProjectItemsPage() {
                         </p>
                       </div>
                     </div>
-                    <div className='flex gap-2 shrink-0'>
-                      <Button
-                        variant='ghost'
-                        size='icon'
-                        className='h-8 w-8 text-purple-600 hover:bg-purple-200 bg-white shadow-sm border border-purple-100'
-                        asChild
-                      >
-                        <a
-                          href={`${(
-                            process.env.NEXT_PUBLIC_API_URL ||
-                            'http://localhost:8000'
-                          ).replace('/api', '')}/storage/${
-                            existingSpk.spk_signed_file || existingSpk.file
-                          }`}
-                          target='_blank'
-                          rel='noopener noreferrer'
+                    {(existingSpk.file || existingSpk.spk_signed_file) && (
+                      <div className='flex gap-2 shrink-0'>
+                        <Button
+                          variant='ghost'
+                          size='icon'
+                          className='h-8 w-8 text-purple-600 hover:bg-purple-200 bg-white shadow-sm border border-purple-100'
+                          asChild
                         >
-                          <FileDown className='h-4 w-4' />
-                        </a>
-                      </Button>
-                    </div>
+                          <a
+                            href={`${(
+                              process.env.NEXT_PUBLIC_API_URL ||
+                              'http://localhost:8000'
+                            ).replace('/api', '')}/storage/${
+                              existingSpk.spk_signed_file || existingSpk.file
+                            }`}
+                            target='_blank'
+                            rel='noopener noreferrer'
+                          >
+                            <FileDown className='h-4 w-4' />
+                          </a>
+                        </Button>
+                      </div>
+                    )}
                   </div>
 
                   {/* Signed SPK Section */}
@@ -1851,6 +1898,7 @@ export default function ProjectItemsPage() {
                             variant='ghost'
                             size='icon'
                             className='h-8 w-8 text-neutral-400 hover:bg-neutral-100 bg-white shadow-sm border border-neutral-100'
+                            disabled={!flowSteps[3].isActive}
                             onClick={() => setIsSignedSpkModalOpen(true)}
                           >
                             <Upload className='h-3 w-3' />
@@ -1910,6 +1958,125 @@ export default function ProjectItemsPage() {
             </CardContent>
           )}
         </Card>
+
+        {/* 6. BAST SECTION */}
+        <Card
+          className={`border shadow-sm transition-all duration-300 ${
+            flowSteps[5].isActive
+              ? flowSteps[5].isCompleted
+                ? 'border-teal-200 bg-white ring-1 ring-teal-100'
+                : 'border-teal-300 bg-white ring-2 ring-teal-500 ring-offset-2'
+              : 'border-neutral-200 bg-neutral-50/80 opacity-60 grayscale-[0.5]'
+          }`}
+        >
+          <CardHeader className='pb-3 flex flex-row items-center justify-between gap-2 min-w-0'>
+            <button
+              className='flex items-center gap-2 flex-1 text-left min-w-0'
+              onClick={() => setIsBastCollapsed((v) => !v)}
+            >
+              <div
+                className={`h-8 w-8 rounded-full flex items-center justify-center font-bold shrink-0 ${
+                  flowSteps[5].isActive
+                    ? 'bg-teal-100 text-teal-600'
+                    : 'bg-neutral-200 text-neutral-500'
+                }`}
+              >
+                6
+              </div>
+              <div className='flex-1 min-w-0'>
+                <CardTitle
+                  className='text-sm sm:text-base text-neutral-800 truncate'
+                  title='Upload BAST'
+                >
+                  Upload BAST
+                </CardTitle>
+                <p
+                  className='text-[9px] sm:text-[10px] text-muted-foreground uppercase tracking-wider truncate'
+                  title='Berita Acara Serah Terima'
+                >
+                  Berita Acara Serah Terima
+                </p>
+              </div>
+              <ChevronDown
+                className={`h-4 w-4 text-neutral-400 transition-transform duration-200 mr-1 shrink-0 ${
+                  isBastCollapsed ? '-rotate-90' : ''
+                }`}
+              />
+            </button>
+          </CardHeader>
+          {!isBastCollapsed && (
+            <CardContent>
+              {project?.basts && project.basts.length > 0 ? (
+                <div className='space-y-3'>
+                  <div className='p-3 rounded-xl bg-teal-50/80 border border-teal-100 flex items-center justify-between shadow-sm min-w-0 gap-2'>
+                    <div className='flex items-center gap-3 min-w-0 flex-1 mr-2'>
+                      <div className='h-8 w-8 rounded-lg bg-white shadow-sm border border-teal-100 flex items-center justify-center text-teal-600 shrink-0'>
+                        <ShieldCheck className='h-4 w-4' />
+                      </div>
+                      <div className='min-w-0 flex-1'>
+                        <p
+                          className='text-xs font-bold text-teal-900 truncate'
+                          title={project.basts[0].no_surat}
+                        >
+                          {project.basts[0].no_surat}
+                        </p>
+                        <p className='text-[10px] text-teal-600/80 truncate'>
+                          {project.basts[0].date
+                            ? format(new Date(project.basts[0].date), 'MMM d, yyyy')
+                            : '-'}
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      variant='ghost'
+                      size='icon'
+                      className='h-8 w-8 text-teal-600 hover:bg-teal-200 bg-white shadow-sm border border-teal-100 shrink-0'
+                      asChild
+                    >
+                      <a
+                        href={project.basts[0].file_url || `${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '')}/storage/${project.basts[0].file_path}`}
+                        target='_blank'
+                        rel='noopener noreferrer'
+                      >
+                        <FileDown className='h-4 w-4' />
+                      </a>
+                    </Button>
+                  </div>
+                  <Button
+                    size='sm'
+                    variant='outline'
+                    className='w-full h-8 text-[10px] border-teal-200 text-teal-700 hover:bg-teal-50 shrink-0'
+                    disabled={!flowSteps[5].isActive}
+                    onClick={handleOpenEditBast}
+                  >
+                    <Pencil className='h-3 w-3 mr-1' />
+                    Edit BAST
+                  </Button>
+                </div>
+              ) : (
+                <div className='space-y-3'>
+                  <p className='text-xs text-muted-foreground italic'>
+                    {isSpkBelow50Juta
+                      ? 'Nominal SPK kurang dari 50 juta, Tanpa BAST'
+                      : 'Belum ada file BAST.'}
+                  </p>
+                  {!isSpkBelow50Juta && (
+                    <Button
+                      size='sm'
+                      variant='outline'
+                      className='w-full h-8 text-[10px] border-teal-200 text-teal-600 hover:bg-teal-50 shrink-0'
+                      disabled={!flowSteps[5].isActive}
+                      onClick={() => setIsBastModalOpen(true)}
+                    >
+                      <Upload className='h-3 w-3 mr-1' />
+                      Upload BAST
+                    </Button>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          )}
+        </Card>
       </div>
       <Card
         className={`border shadow-sm overflow-hidden transition-all duration-300 w-full ${
@@ -1945,17 +2112,31 @@ export default function ProjectItemsPage() {
               </Button>
             )}
             <Button
-              onClick={() => setIsImportOpen(true)}
+              onClick={() => {
+                if (!flowSteps[4].isActive) {
+                  toast.error('Upload SPK terlebih dahulu sebelum mengisi Project Items');
+                  return;
+                }
+                setIsImportOpen(true);
+              }}
               variant='outline'
               className='border-blue-200 text-blue-700 hover:bg-blue-50 hover:text-blue-800 shadow-sm'
+              disabled={!flowSteps[4].isActive}
             >
               <Upload className='mr-2 h-4 w-4' />
               Import Excel
             </Button>
 
             <Button
-              onClick={handleAddItem}
+              onClick={() => {
+                if (!flowSteps[4].isActive) {
+                  toast.error('Upload SPK terlebih dahulu sebelum mengisi Project Items');
+                  return;
+                }
+                handleAddItem();
+              }}
               className='bg-blue-600 hover:bg-blue-700 shadow-sm transition-all hover:scale-105 active:scale-95'
+              disabled={!flowSteps[4].isActive}
             >
               <Plus className='mr-2 h-4 w-4' />
               Add Item
@@ -2223,57 +2404,7 @@ export default function ProjectItemsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Modal Link Pendukung (Tanpa Desain) */}
-      <Dialog
-        open={isLinkPendukungModalOpen}
-        onOpenChange={setIsLinkPendukungModalOpen}
-      >
-        <DialogContent className='max-w-sm'>
-          <DialogHeader>
-            <DialogTitle className='flex items-center gap-2 text-orange-700'>
-              <FileText className='h-5 w-5' />
-              Input Link Pendukung
-            </DialogTitle>
-          </DialogHeader>
-          <div className='flex flex-col gap-3 py-2'>
-            <div className='space-y-1.5'>
-              <Label className='text-xs font-medium'>
-                Link Pendukung (URL)
-              </Label>
-              <Input
-                type='url'
-                placeholder='Masukkan link URL'
-                value={linkPendukungInput}
-                onChange={(e) => setLinkPendukungInput(e.target.value)}
-                className='h-9 text-xs'
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant='outline'
-              size='sm'
-              onClick={() => setIsLinkPendukungModalOpen(false)}
-            >
-              Batal
-            </Button>
-            <Button
-              size='sm'
-              className='bg-orange-600 hover:bg-orange-700'
-              onClick={() =>
-                saveLinkPendukungMutation.mutate(linkPendukungInput)
-              }
-              disabled={saveLinkPendukungMutation.isPending}
-            >
-              {saveLinkPendukungMutation.isPending ? (
-                <Loader2 className='h-4 w-4 animate-spin' />
-              ) : (
-                'Simpan'
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+
 
       {/* Modal ACC Design */}
       <Dialog open={isAccModalOpen} onOpenChange={setIsAccModalOpen}>
@@ -3052,14 +3183,15 @@ export default function ProjectItemsPage() {
               </Popover>
             </div>
             <div className='space-y-1.5'>
-              <Label className='text-xs font-medium'>
-                File (PDF/JPG/PNG/DOC)
+              <Label className='text-xs font-medium text-purple-700 flex items-center gap-1'>
+                <span>File SPK (PDF/JPG/PNG/DOC)</span>
+                <span className='text-red-500'>*</span>
               </Label>
               <Input
                 type='file'
                 accept='.pdf,.jpg,.jpeg,.png,.doc,.docx'
                 onChange={(e) => setSpkFile(e.target.files?.[0] || null)}
-                className='h-9 text-xs'
+                className='h-9 text-xs border-purple-200'
               />
             </div>
           </div>
@@ -3088,6 +3220,101 @@ export default function ProjectItemsPage() {
               Upload
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal BAST */}
+      <Dialog open={isBastModalOpen} onOpenChange={setIsBastModalOpen}>
+        <DialogContent className='max-w-sm'>
+          <DialogHeader>
+            <DialogTitle className='flex items-center gap-2 text-teal-700'>
+              <ShieldCheck className='h-5 w-5' />
+              Upload BAST
+            </DialogTitle>
+          </DialogHeader>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              const hasExistingBast = project?.basts && project.basts.length > 0;
+              if (!bastNoSurat || !bastDate || (!hasExistingBast && !bastFile)) {
+                toast.error('Harap lengkapi Nomor Surat, Tanggal, dan File BAST');
+                return;
+              }
+              uploadBastMutation.mutate({
+                no_surat: bastNoSurat,
+                date: bastDate,
+                file: bastFile,
+              });
+            }}
+            className='flex flex-col gap-3 py-2'
+          >
+            <div className='space-y-1.5'>
+              <Label className='text-xs font-medium text-teal-700'>
+                Nomor Surat
+              </Label>
+              <Input
+                placeholder='Nomor BAST (contoh: 001/BAST/2026)'
+                value={bastNoSurat}
+                onChange={(e) => setBastNoSurat(e.target.value)}
+                className='h-9 text-xs border-teal-200'
+                required
+              />
+            </div>
+            <div className='space-y-1.5'>
+              <Label className='text-xs font-medium text-teal-700'>
+                Tanggal
+              </Label>
+              <Input
+                type='date'
+                value={bastDate}
+                onChange={(e) => setBastDate(e.target.value)}
+                className='h-9 text-xs border-teal-200 w-full'
+                required
+              />
+            </div>
+            <div className='space-y-1.5'>
+              <Label className='text-xs font-medium text-teal-700'>
+                File BAST {project?.basts && project.basts.length > 0 && '(Opsional)'}
+              </Label>
+              <Input
+                type='file'
+                accept='.pdf,.jpg,.jpeg,.png,.doc,.docx'
+                onChange={(e) => {
+                  if (e.target.files && e.target.files[0]) {
+                    setBastFile(e.target.files[0]);
+                  }
+                }}
+                className='h-9 text-xs border-teal-200 w-full'
+                required={!project?.basts || project.basts.length === 0}
+              />
+            </div>
+            <DialogFooter className='mt-2 gap-2'>
+              <Button
+                type='button'
+                variant='outline'
+                size='sm'
+                onClick={() => setIsBastModalOpen(false)}
+                className='text-xs'
+              >
+                Batal
+              </Button>
+              <Button
+                type='submit'
+                size='sm'
+                className='bg-teal-600 hover:bg-teal-700 text-white text-xs'
+                disabled={uploadBastMutation.isPending}
+              >
+                {uploadBastMutation.isPending ? (
+                  <>
+                    <Loader2 className='h-3 w-3 animate-spin mr-1' />
+                    Mengunggah...
+                  </>
+                ) : (
+                  'Simpan BAST'
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
 

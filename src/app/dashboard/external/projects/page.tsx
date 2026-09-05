@@ -9,7 +9,7 @@ import { ClientService } from "@/features/dashboard/services/client-service"
 export default function ClientProjectListPage() {
     const { data: projects = [], isLoading } = useQuery({
         queryKey: ["client-projects"],
-        queryFn: ClientService.getMyProjects
+        queryFn: () => ClientService.getMyProjects()
     });
 
     if (isLoading) {

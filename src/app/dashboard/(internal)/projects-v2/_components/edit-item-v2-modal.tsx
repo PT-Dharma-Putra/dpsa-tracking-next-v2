@@ -81,8 +81,8 @@ const schema = z.object({
   ),
   satuan: z.string().default('UNIT'),
   jumlah: z.preprocess(
-    (v) => (v === '' || v === null ? 1 : Number(v)),
-    z.number().min(1)
+    (v) => (v === '' || v === null ? 0 : Number(v)),
+    z.number().min(0, 'Qty tidak boleh kurang dari 0')
   ),
   harga: z.preprocess(
     (v) => (v === '' || v === null ? null : Number(v)),
@@ -538,8 +538,8 @@ export function EditItemV2Modal({
                     <FormControl>
                       <Input
                         type='number'
-                        placeholder='1'
-                        min={1}
+                        placeholder='0'
+                        min={0}
                         {...field}
                         value={field.value ?? ''}
                       />

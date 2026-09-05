@@ -14,6 +14,7 @@ export interface Project {
   start_date?: string;
   due_date?: string;
   deadline?: string;
+  tanggal_selesai?: string;
   spk_number?: string;
   // Addendum fields
   parent_project_id?: number | null;
@@ -59,8 +60,13 @@ export const ProjectService = {
 
   // Get Detail
   getProject: async (id: string | number) => {
-    const response = await apiClient.get(`/projects/${id}`);
-    return response.data.data;
+    try {
+      const response = await apiClient.get(`/projects/${id}`);
+      return response.data.data || response.data;
+    } catch (err) {
+      const response = await apiClient.get(`/projects-v2/${id}`);
+      return response.data.data || response.data;
+    }
   },
 
   // Create

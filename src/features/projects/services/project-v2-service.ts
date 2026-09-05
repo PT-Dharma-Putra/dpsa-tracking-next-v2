@@ -15,6 +15,7 @@ export interface ProjectV2 {
   drawing_progress?: number;
   latest_drawing_submit?: string | null;
   progres_produksi?: number;
+  readiness_percentage?: number;
   client?: {
     id: number;
     name: string;
@@ -97,6 +98,7 @@ export interface ProjectV2 {
     tanggal_selesai: string | null;
     updated_at: string;
   };
+  basts?: Bast[];
   jadwal_pengiriman?: JadwalPengiriman;
   order_gambar_kerja?: Array<{
     id: number;
@@ -191,8 +193,11 @@ export interface ProjectV2Stats {
   total_spk: number;
   total_sph: number;
   sph_only: number;
+  belum_sph_spk?: number;
   selesai: number;
+  produksi_selesai?: number;
   on_progress: number;
+  produksi_on_progress?: number;
   belum_produksi: number;
   deadline_dekat: number;
   overdue: number;
@@ -584,8 +589,8 @@ export const projectV2Service = {
 
   uploadSPK: async (
     projectId: number,
-    file: File,
-    nomor_spk: string,
+    file?: File | null,
+    nomor_spk?: string,
     prioritas?: string,
     tanggal_masuk?: string,
     nominal_dpp?: string,
@@ -595,8 +600,8 @@ export const projectV2Service = {
     penerbit_id?: string
   ) => {
     const formData = new FormData();
-    formData.append('file', file);
-    formData.append('nomor_spk', nomor_spk);
+    if (file) formData.append('file', file);
+    if (nomor_spk) formData.append('nomor_spk', nomor_spk);
     if (prioritas) formData.append('prioritas', prioritas);
     if (tanggal_masuk) formData.append('tanggal_masuk', tanggal_masuk);
     if (nominal_dpp) formData.append('nominal_dpp', nominal_dpp);
@@ -1077,7 +1082,89 @@ export const projectV2Service = {
     const { data } = await apiClient.delete(`/jadwal-pengiriman/${id}`);
     return data;
   },
+  getSiteReadiness: async (projectId: number | string): Promise<SiteReadinessResponse> => {
+    const { data } = await apiClient.get<SiteReadinessResponse>(
+      `/projects-v2/${projectId}/site-readiness`
+    );
+    return data;
+  },
+  createSiteReadiness: async (
+    projectId: number | string,
+    payload: {
+      persentase: number;
+      ruang: string;
+      keterangan: string;
+      photos?: File[];
+      videos?: File[];
+    }
+  ) => {
+    const formData = new FormData();
+    formData.append('persentase', payload.persentase.toString());
+    formData.append('ruang', payload.ruang);
+    formData.append('keterangan', payload.keterangan);
+
+    if (payload.photos && payload.photos.length > 0) {
+      payload.photos.forEach((photo) => {
+        formData.append('photos[]', photo);
+      });
+    }
+
+    if (payload.videos && payload.videos.length > 0) {
+      payload.videos.forEach((video) => {
+        formData.append('videos[]', video);
+      });
+    }
+
+    const { data } = await apiClient.post(
+      `/projects-v2/${projectId}/site-readiness`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+    return data;
+  },
+  deleteSiteReadiness: async (id: number | string) => {
+    const { data } = await apiClient.delete(`/site-readiness/${id}`);
+    return data;
+  },
 };
+
+export interface SiteReadinessMedia {
+  id: number;
+  site_readiness_id: number;
+  file_path: string;
+  file_type: 'image' | 'video';
+  file_name: string | null;
+  file_size: number | null;
+  url: string;
+  created_at: string;
+}
+
+export interface SiteReadiness {
+  id: number;
+  project_id: number;
+  user_id: number;
+  persentase: number;
+  ruang: string | null;
+  keterangan: string | null;
+  user?: {
+    id: number;
+    name: string;
+  };
+  media: SiteReadinessMedia[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SiteReadinessResponse {
+  status: string;
+  project_id: number;
+  readiness_percentage: number;
+  data: SiteReadiness[];
+}
 
 export interface MDLItem {
   id: number;
@@ -1152,10 +1239,14 @@ export interface BarangSupplier {
   project_item_id: number;
   jumlah_order: number;
   barang_dipesan: number;
+  tanggal_barang_dipesan?: string | null;
   barang_tersedia: number;
+  tanggal_barang_tersedia?: string | null;
   rakit: number;
+  tanggal_rakit?: string | null;
   packing: number;
-  terkirim: number;
+  tanggal_packing?: string | null;
+  terkirim?: number;
   persen: number;
   skipped_fields?: string[];
   created_at: string;
@@ -1299,4 +1390,47 @@ export interface JadwalPengiriman {
   tanggal_pengiriman?: TanggalPengiriman;
   created_at: string;
   updated_at: string;
+}
+
+export interface Bast {
+  id: number;
+  project_id: number;
+  no_surat: string;
+  date: string;
+  file_path: string;
+  file_url: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function getBasts(projectId: number): Promise<Bast[]> {
+  const { data } = await apiClient.get<{ data: Bast[] }>(`/projects/${projectId}/basts`);
+  return data.data;
+}
+
+export async function uploadBast(
+  projectId: number,
+  payload: {
+    no_surat: string;
+    date: string;
+    file?: File | null;
+  }
+): Promise<{ message: string }> {
+  const formData = new FormData();
+  formData.append('no_surat', payload.no_surat);
+  formData.append('date', payload.date);
+  if (payload.file) {
+    formData.append('file', payload.file);
+  }
+
+  const { data } = await apiClient.post<{ message: string }>(
+    `/projects/${projectId}/basts`,
+    formData,
+    {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    }
+  );
+  return data;
 }

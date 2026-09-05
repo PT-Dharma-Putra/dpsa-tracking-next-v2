@@ -21,8 +21,10 @@ import {
   QrCode,
   Printer,
   Search,
+  FileSpreadsheet,
 } from 'lucide-react';
 import { format } from 'date-fns';
+import * as XLSX from 'xlsx-js-style';
 
 import {
   Table,
@@ -225,6 +227,179 @@ export default function ProduksiDetailPage() {
     
     return Array.from(grouped.values());
   }, [filteredItems, isGrouped]);
+
+  // Export Excel Function
+  const handleExportExcel = () => {
+    if (!displayItems || displayItems.length === 0) {
+      toast.error('Tidak ada data item untuk diekspor');
+      return;
+    }
+
+    const clientName = project?.client?.name || '-';
+    const nomorSpk = project?.spk_number || project?.spk?.nomor_spk || '-';
+    const deadlineStr = project?.deadline
+      ? format(new Date(project.deadline), 'dd/MM/yyyy')
+      : '-';
+
+    const headerLabelStyle = {
+      font: { bold: true, sz: 10 },
+      alignment: { horizontal: 'left', vertical: 'center' },
+    };
+
+    const headerValueStyle = {
+      font: { sz: 10 },
+      alignment: { horizontal: 'left', vertical: 'center' },
+    };
+
+    const tableHeaderStyle = {
+      font: { bold: true, sz: 10 },
+      alignment: { horizontal: 'center', vertical: 'center' },
+      border: {
+        top: { style: 'thin' },
+        bottom: { style: 'thin' },
+        left: { style: 'thin' },
+        right: { style: 'thin' },
+      },
+      fill: { fgColor: { rgb: 'F5F5F5' } },
+    };
+
+    const cellStyleLeft = {
+      font: { sz: 10 },
+      alignment: { horizontal: 'left', vertical: 'center', wrapText: true },
+      border: {
+        top: { style: 'thin' },
+        bottom: { style: 'thin' },
+        left: { style: 'thin' },
+        right: { style: 'thin' },
+      },
+    };
+
+    const cellStyleCenter = {
+      font: { sz: 10 },
+      alignment: { horizontal: 'center', vertical: 'center' },
+      border: {
+        top: { style: 'thin' },
+        bottom: { style: 'thin' },
+        left: { style: 'thin' },
+        right: { style: 'thin' },
+      },
+    };
+
+    const wsData: any[][] = [
+      [
+        { v: 'Client:', t: 's', s: headerLabelStyle },
+        { v: clientName, t: 's', s: headerValueStyle },
+      ],
+      [
+        { v: 'Nomor SPK:', t: 's', s: headerLabelStyle },
+        { v: nomorSpk, t: 's', s: headerValueStyle },
+      ],
+      [
+        { v: 'Deadline:', t: 's', s: headerLabelStyle },
+        { v: deadlineStr, t: 's', s: headerValueStyle },
+      ],
+      [],
+      [
+        { v: 'No', t: 's', s: tableHeaderStyle },
+        { v: 'Nama Item', t: 's', s: tableHeaderStyle },
+        { v: 'Deskripsi', t: 's', s: tableHeaderStyle },
+        { v: 'Vol', t: 's', s: tableHeaderStyle },
+        { v: 'Dimensi', t: 's', s: tableHeaderStyle },
+        { v: 'Qty', t: 's', s: tableHeaderStyle },
+        { v: 'Satuan', t: 's', s: tableHeaderStyle },
+        { v: 'PO Divisi', t: 's', s: tableHeaderStyle },
+        { v: 'Stok Material', t: 's', s: tableHeaderStyle },
+        { v: 'Produksi', t: 's', s: tableHeaderStyle },
+        { v: 'QC Cek', t: 's', s: tableHeaderStyle },
+        { v: 'B. Jadi', t: 's', s: tableHeaderStyle },
+        { v: 'Terkirim', t: 's', s: tableHeaderStyle },
+        { v: 'Tersetting', t: 's', s: tableHeaderStyle },
+      ],
+    ];
+
+    displayItems.forEach((item, index) => {
+      const dimensiStr = `${item.panjang || '-'} x ${item.lebar || '-'} x ${item.tinggi || '-'}`;
+      const poDivisiStr = item.divisi?.nama || '-';
+      const stokMaterialStr = item.bahan_baku?.ketersediaan_stok || '-';
+      const produksiStr = `${Math.round(item.produksi?.persen || 0)}%`;
+      const qcCekStr = isGrouped
+        ? '-'
+        : item.qc_cek
+        ? `${item.qc_cek.qty} Unit`
+        : '-';
+      const bJadiStr = isGrouped
+        ? '-'
+        : item.barang_jadi_masuk && item.barang_jadi_masuk.length > 0
+        ? `${item.barang_jadi_masuk.reduce(
+            (sum, bj) => sum + Number(bj.jumlah),
+            0
+          )} / ${item.jumlah}`
+        : `0 / ${item.jumlah}`;
+      const terkirimStr = isGrouped
+        ? '-'
+        : (() => {
+            const total =
+              item.detail_pengiriman?.reduce(
+                (sum, d) => sum + Number(d.jumlah_keluar),
+                0
+              ) ?? 0;
+            return `${total} / ${item.jumlah}`;
+          })();
+      const tersettingStr = isGrouped
+        ? '-'
+        : (() => {
+            const total =
+              item.detail_pengiriman?.reduce(
+                (sum, d) => sum + Number(d.jumlah_tersetting),
+                0
+              ) ?? 0;
+            return `${total} / ${item.jumlah}`;
+          })();
+
+      wsData.push([
+        { v: index + 1, t: 'n', s: cellStyleCenter },
+        { v: item.item || '-', t: 's', s: cellStyleLeft },
+        { v: item.keterangan || '-', t: 's', s: cellStyleLeft },
+        { v: item.volume ?? '-', t: typeof item.volume === 'number' ? 'n' : 's', s: cellStyleCenter },
+        { v: dimensiStr, t: 's', s: cellStyleCenter },
+        { v: item.jumlah ?? 0, t: 'n', s: cellStyleCenter },
+        { v: item.satuan || '-', t: 's', s: cellStyleCenter },
+        { v: poDivisiStr, t: 's', s: cellStyleLeft },
+        { v: stokMaterialStr, t: 's', s: cellStyleCenter },
+        { v: produksiStr, t: 's', s: cellStyleCenter },
+        { v: qcCekStr, t: 's', s: cellStyleCenter },
+        { v: bJadiStr, t: 's', s: cellStyleCenter },
+        { v: terkirimStr, t: 's', s: cellStyleCenter },
+        { v: tersettingStr, t: 's', s: cellStyleCenter },
+      ]);
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+    ws['!cols'] = [
+      { wch: 6 },  // No
+      { wch: 30 }, // Nama Item
+      { wch: 30 }, // Deskripsi
+      { wch: 10 }, // Vol
+      { wch: 20 }, // Dimensi
+      { wch: 8 },  // Qty
+      { wch: 10 }, // Satuan
+      { wch: 18 }, // PO Divisi
+      { wch: 16 }, // Stok Material
+      { wch: 12 }, // Produksi
+      { wch: 12 }, // QC Cek
+      { wch: 14 }, // B. Jadi
+      { wch: 14 }, // Terkirim
+      { wch: 14 }, // Tersetting
+    ];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Detail Produksi');
+
+    const safeProjectName = (project?.name || 'Project').replace(/[^a-zA-Z0-9 _-]/g, '');
+    const fileName = `Detail_Produksi_${safeProjectName}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+  };
 
   // QR Code per-item State
   const [isItemQrDialogOpen, setIsItemQrDialogOpen] = React.useState(false);
@@ -747,10 +922,13 @@ export default function ProduksiDetailPage() {
       item.barang_supplier || {
         jumlah_order: item.jumlah,
         barang_dipesan: 0,
+        tanggal_barang_dipesan: null,
         barang_tersedia: 0,
+        tanggal_barang_tersedia: null,
         rakit: 0,
+        tanggal_rakit: null,
         packing: 0,
-        terkirim: 0,
+        tanggal_packing: null,
         persen: 0,
       }
     );
@@ -878,7 +1056,6 @@ export default function ProduksiDetailPage() {
       'barang_tersedia',
       'rakit',
       'packing',
-      'terkirim',
     ] as const;
     const activeFields = allFields.filter((f) => !bsSkippedFields[f]);
     const order = Number(barangSupplierData.jumlah_order) || 1;
@@ -906,7 +1083,6 @@ export default function ProduksiDetailPage() {
     barangSupplierData.barang_tersedia,
     barangSupplierData.rakit,
     barangSupplierData.packing,
-    barangSupplierData.terkirim,
     barangSupplierData.jumlah_order,
     bsSkippedFields,
   ]);
@@ -1286,6 +1462,14 @@ export default function ProduksiDetailPage() {
 
           <div className='flex items-center gap-2'>
             <Button
+              variant='outline'
+              onClick={handleExportExcel}
+              className='shadow-sm h-8 text-xs gap-1.5 border-emerald-600 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800'
+            >
+              <FileSpreadsheet className='w-4 h-4 text-emerald-600' />
+              Export Excel
+            </Button>
+            <Button
               variant={isGrouped ? 'default' : 'outline'}
               onClick={() => setIsGrouped(!isGrouped)}
               className='shadow-sm h-8 text-xs'
@@ -1329,7 +1513,7 @@ export default function ProduksiDetailPage() {
                 <TableHead>Vol | Dimensi</TableHead>
                 <TableHead>Qty</TableHead>
                 <TableHead>Satuan</TableHead>
-                <TableHead>GK MDL</TableHead>
+                {/* <TableHead>GK MDL</TableHead> */}
                 <TableHead>GK Custom</TableHead>
                 <TableHead>PO Divisi</TableHead>
                 <TableHead>
@@ -1340,7 +1524,14 @@ export default function ProduksiDetailPage() {
                 </TableHead>
                 <TableHead>Produksi</TableHead>
                 <TableHead>QC Cek</TableHead>
-                <TableHead>B. Jadi</TableHead>
+                <TableHead>
+                    <div className='flex flex-col gap-0.5 align-center'>
+                      <span className='text-[12px] font-bold text-neutral-800'>Gudang</span>
+                      <span className='text-[12px] font-bold text-neutral-800'>B Jadi</span>
+                  </div>
+                </TableHead>
+                <TableHead>Terkirim</TableHead>
+                <TableHead>Tersetting</TableHead>
                 <TableHead className='text-center'>
                   {isGrouped ? (
                     <div className='text-center font-medium'>Aksi</div>
@@ -1436,7 +1627,7 @@ export default function ProduksiDetailPage() {
                     <TableCell className='text-[10px] text-muted-foreground'>
                       {item.satuan}
                     </TableCell>
-                    <TableCell>
+                    {/* <TableCell>
                       {item.mdl_item?.link_gambar_kerja ? (
                         <Button
                           variant='ghost'
@@ -1457,7 +1648,7 @@ export default function ProduksiDetailPage() {
                           -
                         </span>
                       )}
-                    </TableCell>
+                    </TableCell> */}
                     <TableCell>
                       {item.gambar_kerja?.file ? (
                         <div className='flex items-center gap-2'>
@@ -1468,7 +1659,17 @@ export default function ProduksiDetailPage() {
                             asChild
                           >
                             <a
-                              href={`${item.gambar_kerja.file}`}
+                              href={
+                                item.gambar_kerja.file.startsWith('http') ||
+                                item.gambar_kerja.file.startsWith('www')
+                                  ? item.gambar_kerja.file
+                                  : `${(
+                                      process.env.NEXT_PUBLIC_API_URL ||
+                                      'http://localhost:8000'
+                                    ).replace('/api', '')}/storage/${
+                                      item.gambar_kerja.file
+                                    }`
+                              }
                               target='_blank'
                               rel='noopener noreferrer'
                             >
@@ -1617,6 +1818,54 @@ export default function ProduksiDetailPage() {
                             </span>
                           )}
                         </div>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {isGrouped ? (
+                        <span className='text-[10px] text-muted-foreground italic text-center block w-full'>
+                          -
+                        </span>
+                      ) : (
+                        (() => {
+                          const total =
+                            item.detail_pengiriman?.reduce(
+                              (sum, d) => sum + Number(d.jumlah_keluar),
+                              0
+                            ) ?? 0;
+                          return total > 0 ? (
+                            <Badge className='bg-teal-600 text-white border-none font-bold text-[10px] h-5 px-1.5 shadow-sm'>
+                              {total} / {item.jumlah}
+                            </Badge>
+                          ) : (
+                            <span className='text-[9px] text-muted-foreground italic'>
+                              -
+                            </span>
+                          );
+                        })()
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {isGrouped ? (
+                        <span className='text-[10px] text-muted-foreground italic text-center block w-full'>
+                          -
+                        </span>
+                      ) : (
+                        (() => {
+                          const total =
+                            item.detail_pengiriman?.reduce(
+                              (sum, d) => sum + Number(d.jumlah_tersetting),
+                              0
+                            ) ?? 0;
+                          return total > 0 ? (
+                            <Badge className='bg-violet-600 text-white border-none font-bold text-[10px] h-5 px-1.5 shadow-sm'>
+                              {total} / {item.jumlah}
+                            </Badge>
+                          ) : (
+                            <span className='text-[9px] text-muted-foreground italic'>
+                              -
+                            </span>
+                          );
+                        })()
                       )}
                     </TableCell>
                     <TableCell className='text-center'>
@@ -2244,16 +2493,31 @@ export default function ProduksiDetailPage() {
 
           {/* Body */}
           <div className='flex-1 overflow-y-auto p-6 md:p-8 space-y-6'>
-            {/* Jumlah Order */}
+            {/* Jumlah Order & Persen (%) */}
             <div className='flex justify-center'>
-              <div className='w-1/2 sm:w-1/3 space-y-2 text-center'>
-                <Label className='text-sm font-bold'>Jumlah Order</Label>
-                <Input
-                  type='number'
-                  value={barangSupplierData.jumlah_order || 0}
-                  disabled
-                  className='bg-neutral-50 font-bold text-center text-lg h-12'
-                />
+              <div className='grid grid-cols-2 gap-4 w-full sm:max-w-md'>
+                <div className='space-y-2 text-center'>
+                  <Label className='text-sm font-bold'>Jumlah Order</Label>
+                  <Input
+                    type='number'
+                    value={barangSupplierData.jumlah_order || 0}
+                    disabled
+                    className='bg-neutral-50 font-bold text-center text-lg h-12'
+                  />
+                </div>
+                <div className='space-y-2 text-center'>
+                  <Label className='text-sm font-bold'>Persen (%)</Label>
+                  <Input
+                    type='text'
+                    value={
+                      typeof barangSupplierData.persen === 'number'
+                        ? `${barangSupplierData.persen.toFixed(2)}%`
+                        : `${(Number(barangSupplierData.persen) || 0).toFixed(2)}%`
+                    }
+                    disabled
+                    className='bg-blue-50 font-bold text-blue-700 text-center text-lg h-12 disabled:opacity-100'
+                  />
+                </div>
               </div>
             </div>
 
@@ -2262,19 +2526,18 @@ export default function ProduksiDetailPage() {
               <h4 className='font-semibold text-sm text-neutral-500 uppercase tracking-wider border-b pb-2'>
                 Progress Supplier
               </h4>
-              <div className='grid grid-cols-2 sm:grid-cols-3 gap-3'>
+              <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
                 {(
                   [
-                    { key: 'barang_dipesan', label: 'Barang Dipesan' },
-                    { key: 'barang_tersedia', label: 'Barang Tersedia' },
-                    { key: 'rakit', label: 'Rakit' },
-                    { key: 'packing', label: 'Packing' },
-                    { key: 'terkirim', label: 'Terkirim' },
+                    { key: 'barang_dipesan', dateKey: 'tanggal_barang_dipesan', label: 'Barang Dipesan' },
+                    { key: 'barang_tersedia', dateKey: 'tanggal_barang_tersedia', label: 'Barang Tersedia' },
+                    { key: 'rakit', dateKey: 'tanggal_rakit', label: 'Rakit' },
+                    { key: 'packing', dateKey: 'tanggal_packing', label: 'Packing' },
                   ] as const
-                ).map(({ key, label }) => (
-                  <div key={key} className='space-y-2'>
-                    <div className='flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between'>
-                      <Label>{label}</Label>
+                ).map(({ key, dateKey, label }) => (
+                  <div key={key} className='p-4 rounded-xl border border-neutral-200 bg-neutral-50/50 space-y-3 shadow-sm'>
+                    <div className='flex items-center justify-between pb-2 border-b border-neutral-200'>
+                      <Label className='font-bold text-sm text-neutral-800'>{label}</Label>
                       <Button
                         type='button'
                         variant={bsSkippedFields[key] ? 'default' : 'outline'}
@@ -2289,52 +2552,68 @@ export default function ProduksiDetailPage() {
                         {bsSkippedFields[key] ? 'Batalkan' : 'Lewati Proses'}
                       </Button>
                     </div>
-                    <Input
-                      type='number'
-                      min={0}
-                      max={barangSupplierData.jumlah_order}
-                      disabled={bsSkippedFields[key]}
-                      value={
-                        bsSkippedFields[key]
-                          ? '-'
-                          : barangSupplierData[key] === 0
-                          ? ''
-                          : barangSupplierData[key] || ''
-                      }
-                      onChange={(e) =>
-                        setBarangSupplierData((p) => ({
-                          ...p,
-                          [key]: Math.min(
-                            Math.max(parseInt(e.target.value) || 0, 0),
-                            p.jumlah_order ?? 0
-                          ),
-                        }))
-                      }
-                      className={
-                        bsSkippedFields[key]
-                          ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100'
-                          : ''
-                      }
-                    />
+
+                    <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
+                      <div className='space-y-1.5'>
+                        <Label className='text-xs font-semibold text-neutral-600'>Jumlah</Label>
+                        <Input
+                          type='number'
+                          min={0}
+                          max={barangSupplierData.jumlah_order}
+                          disabled={bsSkippedFields[key]}
+                          placeholder='0'
+                          value={
+                            bsSkippedFields[key]
+                              ? '-'
+                              : barangSupplierData[key] === 0
+                              ? ''
+                              : barangSupplierData[key] || ''
+                          }
+                          onChange={(e) =>
+                            setBarangSupplierData((p) => ({
+                              ...p,
+                              [key]: Math.min(
+                                Math.max(parseInt(e.target.value) || 0, 0),
+                                p.jumlah_order ?? 0
+                              ),
+                            }))
+                          }
+                          className={`bg-white ${
+                            bsSkippedFields[key]
+                              ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100'
+                              : ''
+                          }`}
+                        />
+                      </div>
+
+                      <div className='space-y-1.5'>
+                        <Label className='text-xs font-semibold text-neutral-600'>Tanggal</Label>
+                        <Input
+                          type='date'
+                          disabled={bsSkippedFields[key]}
+                          value={
+                            bsSkippedFields[key]
+                              ? ''
+                              : barangSupplierData[dateKey]
+                              ? String(barangSupplierData[dateKey]).slice(0, 10)
+                              : ''
+                          }
+                          onChange={(e) =>
+                            setBarangSupplierData((p) => ({
+                              ...p,
+                              [dateKey]: e.target.value || null,
+                            }))
+                          }
+                          className={`bg-white text-xs ${
+                            bsSkippedFields[key]
+                              ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100'
+                              : ''
+                          }`}
+                        />
+                      </div>
+                    </div>
                   </div>
                 ))}
-              </div>
-            </div>
-
-            {/* Persen */}
-            <div className='pt-4 border-t flex justify-center'>
-              <div className='space-y-2 w-full sm:w-[200px] text-center'>
-                <Label className='text-sm font-bold'>Persen (%)</Label>
-                <Input
-                  type='text'
-                  value={
-                    typeof barangSupplierData.persen === 'number'
-                      ? barangSupplierData.persen.toFixed(2)
-                      : (Number(barangSupplierData.persen) || 0).toFixed(2)
-                  }
-                  disabled
-                  className='bg-blue-50 font-bold text-blue-700 text-center text-lg h-12 disabled:opacity-100'
-                />
               </div>
             </div>
           </div>

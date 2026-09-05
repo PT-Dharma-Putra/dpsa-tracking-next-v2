@@ -19,6 +19,7 @@ import {
     BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 import { useAuthStore } from "@/lib/auth-store"
+import { isClientUser } from "@/lib/get-user-role"
 import { DashboardBreadcrumb } from "@/components/dashboard-breadcrumb"
 import { NotificationsPopover } from "@/components/notifications-popover"
 
@@ -42,7 +43,7 @@ export default function DashboardLayout({
         }
 
         // Check Role (RBAC)
-        if (user?.role === 'Client') {
+        if (isClientUser(user)) {
             // Client should not be here
             router.replace("/dashboard/external")
             return

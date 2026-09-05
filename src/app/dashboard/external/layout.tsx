@@ -3,7 +3,7 @@
 import { ReactNode, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Building2, LogOut, LayoutDashboard, Settings, FileText, ShoppingBag, ShoppingCart, CreditCard, User } from "lucide-react";
+import { Building2, LogOut, LayoutDashboard, Settings, FileText, ShoppingBag, ShoppingCart, CreditCard, User, LifeBuoy } from "lucide-react";
 import { usePathname } from "next/navigation";
 import {
     DropdownMenu,
@@ -15,9 +15,11 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ClientNotifications } from "@/features/dashboard/components/client/client-notifications";
+// import { ClientNotifications } from "@/features/dashboard/components/client/client-notifications";
 import { useAuthStore } from "@/lib/auth-store";
 import { useCartStore } from "@/features/shop/stores/cart-store";
+import { isClientUser } from "@/lib/get-user-role";
+import { ClientHelpButton } from "@/features/dashboard/components/client/client-help-button";
 
 export default function CustomerLayout({ children }: { children: ReactNode }) {
     const router = useRouter()
@@ -39,7 +41,7 @@ export default function CustomerLayout({ children }: { children: ReactNode }) {
         }
 
         // Check Role: Only Clients allowed
-        if (user?.role !== 'Client') {
+        if (!isClientUser(user)) {
             // Staff should not be here
             router.replace("/dashboard/all")
             return
@@ -55,11 +57,11 @@ export default function CustomerLayout({ children }: { children: ReactNode }) {
     return (
         <div className="min-h-screen bg-neutral-50 flex flex-col font-sans text-neutral-900">
             {/* === PREMIUM HEADER === */}
-            <header className="bg-white border-b border-neutral-200 sticky top-0 z-50 shadow-sm">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+            <header className="bg-white border-b border-neutral-200 sticky top-0 z-50 shadow-sm w-full">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 min-h-[5rem] flex flex-wrap sm:flex-nowrap items-center justify-between gap-4">
                     {/* Logo Section */}
                     <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 bg-gradient-to-br from-orange-500 to-amber-600 rounded-xl flex items-center justify-center shadow-lg shadow-orange-500/20 text-white">
+                        <div className="h-10 w-10 bg-gradient-to-br from-orange-500 to-amber-600 rounded-xl flex items-center justify-center shadow-lg shadow-orange-500/20 text-white shrink-0">
                             <Building2 className="h-6 w-6" />
                         </div>
                         <div>
@@ -68,32 +70,28 @@ export default function CustomerLayout({ children }: { children: ReactNode }) {
                         </div>
                     </div>
 
-                    {/* Navigation (Desktop) */}
-                    <nav className="hidden md:flex items-center gap-1 rounded-full bg-neutral-100/50 p-1 border border-neutral-200/50">
+                    {/* Navigation */}
+                    <nav className="flex items-center gap-1 rounded-full bg-neutral-100/50 p-1 border border-neutral-200/50">
                         <NavLink href="/dashboard/external" active={pathname === "/dashboard/external"}>
                             <LayoutDashboard className="h-4 w-4 mr-2" />
                             Dashboard
-                        </NavLink>
-                        <NavLink href="/dashboard/external/projects" active={pathname.startsWith("/dashboard/external/projects")}>
-                            <FileText className="h-4 w-4 mr-2" />
-                            My Projects
-                        </NavLink>
-                        <NavLink href="/dashboard/external/mdl" active={pathname.startsWith("/dashboard/external/mdl")}>
-                            <ShoppingBag className="h-4 w-4 mr-2" />
-                            Catalog
                         </NavLink>
                         <NavLink href="/dashboard/external/finance" active={pathname.startsWith("/dashboard/external/finance")}>
                             <CreditCard className="h-4 w-4 mr-2" />
                             Finance
                         </NavLink>
+                        <NavLink href="/dashboard/external/requests" active={pathname.startsWith("/dashboard/external/requests")}>
+                            <LifeBuoy className="h-4 w-4 mr-2" />
+                            Request & Kendala
+                        </NavLink>
                     </nav>
 
                     {/* Cart Button */}
-                    <CartButton />
+                    {/* <CartButton /> */}
 
                     {/* User Profile */}
                     <div className="flex items-center gap-2">
-                        <ClientNotifications />
+                        {/* <ClientNotifications /> */}
                         <div className="h-8 w-px bg-neutral-200 mx-2 hidden sm:block" />
 
                         <div className="text-right hidden sm:block">
@@ -118,14 +116,18 @@ export default function CustomerLayout({ children }: { children: ReactNode }) {
                                     </div>
                                 </DropdownMenuLabel>
                                 <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => router.push("/dashboard/external/requests")} className="cursor-pointer py-2.5">
+                                    <LifeBuoy className="mr-2 h-4 w-4 text-orange-600" />
+                                    <span>Request & Kendala IT</span>
+                                </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => router.push("/dashboard/external/profile")} className="cursor-pointer py-2.5">
-                                    <User className="mr-2 h-4 w-4 text-orange-600" />
+                                    <User className="mr-2 h-4 w-4 text-neutral-500" />
                                     <span>Profile & Keamanan</span>
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => router.push("/dashboard/external/settings")} className="cursor-pointer py-2.5">
+                                {/* <DropdownMenuItem onClick={() => router.push("/dashboard/external/settings")} className="cursor-pointer py-2.5">
                                     <Settings className="mr-2 h-4 w-4 text-neutral-400" />
                                     <span>Pengaturan Akun</span>
-                                </DropdownMenuItem>
+                                </DropdownMenuItem> */}
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem onClick={handleLogout} className="cursor-pointer py-2.5 text-red-600 focus:text-red-600 focus:bg-red-50">
                                     <LogOut className="mr-2 h-4 w-4" />
@@ -148,6 +150,9 @@ export default function CustomerLayout({ children }: { children: ReactNode }) {
                     <p>&copy; {new Date().getFullYear()} PT. Dharma Putra Interior. All rights reserved.</p>
                 </div>
             </footer>
+
+            {/* === FLOATING HELP & REQUEST WIDGET === */}
+            <ClientHelpButton />
         </div>
     );
 }
@@ -165,26 +170,26 @@ function NavLink({ href, children, active }: { href: string, children: ReactNode
     )
 }
 
-function CartButton() {
-    // Prevent hydration mismatch
-    const [mounted, setMounted] = useState(false);
-    const totalItems = useCartStore((state) => state.getTotalItems());
+// function CartButton() {
+//     // Prevent hydration mismatch
+//     const [mounted, setMounted] = useState(false);
+//     const totalItems = useCartStore((state) => state.getTotalItems());
 
-    useEffect(() => setMounted(true), []);
+//     useEffect(() => setMounted(true), []);
 
-    if (!mounted) return null;
+//     if (!mounted) return null;
 
-    return (
-        <Link href="/dashboard/external/cart">
-            <Button variant="ghost" size="icon" className="relative text-neutral-500 hover:text-orange-600">
-                <ShoppingCart className="h-5 w-5" />
-                {totalItems > 0 && (
-                    <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-orange-600 text-[10px] font-bold text-white flex items-center justify-center border-2 border-white">
-                        {totalItems}
-                    </span>
-                )}
-            </Button>
-        </Link>
-    )
-}
+//     return (
+//         <Link href="/dashboard/external/cart">
+//             <Button variant="ghost" size="icon" className="relative text-neutral-500 hover:text-orange-600">
+//                 <ShoppingCart className="h-5 w-5" />
+//                 {totalItems > 0 && (
+//                     <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-orange-600 text-[10px] font-bold text-white flex items-center justify-center border-2 border-white">
+//                         {totalItems}
+//                     </span>
+//                 )}
+//             </Button>
+//         </Link>
+//     )
+// }
 
