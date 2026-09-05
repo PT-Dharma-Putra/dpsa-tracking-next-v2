@@ -3086,6 +3086,25 @@ export function ProjectsV2Table({
                             )}
                           </div>
                         </TableHead>
+                      {showMarketingFilter && (
+                        <TableHead
+                          className='cursor-pointer hover:bg-neutral-100 transition-colors group'
+                          onClick={() => handleSortChange('spk_diupload')}
+                        >
+                          <div className='flex items-center gap-1'>
+                            SPK DIUPLOAD
+                            {sortBy === 'spk_diupload' ? (
+                              sortOrder === 'asc' ? (
+                                <ArrowUp className='h-3 w-3' />
+                              ) : (
+                                <ArrowDown className='h-3 w-3' />
+                              )
+                            ) : (
+                              <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
+                            )}
+                          </div>
+                        </TableHead>
+                      )}
                       {!showSPD &&
                         !showProduksi &&
                         !showPurchasing &&
@@ -3512,6 +3531,8 @@ export function ProjectsV2Table({
                           ? 12
                           : showPiutang
                           ? 14
+                          : showMarketingFilter
+                          ? 22
                           : isMainProjectsV2Page || showPerencanaan
                           ? 21
                           : 18
@@ -3537,6 +3558,8 @@ export function ProjectsV2Table({
                           ? 12
                           : showPiutang
                           ? 14
+                          : showMarketingFilter
+                          ? 22
                           : isMainProjectsV2Page || showPerencanaan
                           ? 21
                           : 18
@@ -4235,6 +4258,43 @@ export function ProjectsV2Table({
                                   )
                                 : '-'}
                             </TableCell>
+                          {showMarketingFilter && (
+                            <TableCell
+                              title={
+                                project.spk?.created_at
+                                  ? (() => {
+                                      try {
+                                        const d = new Date(project.spk.created_at);
+                                        const validD = isNaN(d.getTime())
+                                          ? new Date(project.spk.created_at.replace(' ', 'T'))
+                                          : d;
+                                        return isNaN(validD.getTime())
+                                          ? undefined
+                                          : format(validD, 'dd MMM yyyy HH:mm');
+                                      } catch {
+                                        return undefined;
+                                      }
+                                    })()
+                                  : undefined
+                              }
+                            >
+                              {project.spk?.created_at
+                                ? (() => {
+                                    try {
+                                      const d = new Date(project.spk.created_at);
+                                      const validD = isNaN(d.getTime())
+                                        ? new Date(project.spk.created_at.replace(' ', 'T'))
+                                        : d;
+                                      return isNaN(validD.getTime())
+                                        ? '-'
+                                        : format(validD, 'dd MMM yyyy');
+                                    } catch {
+                                      return '-';
+                                    }
+                                  })()
+                                : '-'}
+                            </TableCell>
+                          )}
                           {!showSPD &&
                             !showProduksi &&
                             !showPurchasing &&
