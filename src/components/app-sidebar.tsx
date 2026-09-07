@@ -13,6 +13,7 @@ import {
   User as UserIcon,
   ChevronsUpDown,
   Building2,
+  FileText,
 } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
@@ -102,6 +103,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           {
             title: 'Rekap Penagihan',
             url: '/dashboard/projects-v2/rekap-penagihan',
+          },
+          {
+            title: 'List SPK Masuk',
+            url: '/dashboard/master-data/list-spk-masuk',
           },
           {
             title: 'Clients',
@@ -831,6 +836,19 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     <Link href='/dashboard/master-data/mdl-v2'>
                       <Users />
                       <span>MDL V2</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    tooltip='List SPK Masuk'
+                    isActive={isActive('/dashboard/master-data/list-spk-masuk')}
+                  >
+                    <Link href='/dashboard/master-data/list-spk-masuk'>
+                      <FileText />
+                      <span>List SPK Masuk</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
