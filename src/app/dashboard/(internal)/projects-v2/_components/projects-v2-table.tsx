@@ -3105,7 +3105,7 @@ export function ProjectsV2Table({
                             )}
                           </div>
                         </TableHead>
-                      {showMarketingFilter && (
+                      {(showMarketingFilter || showPerencanaan || showEngineer) && (
                         <TableHead
                           className='cursor-pointer hover:bg-neutral-100 transition-colors group'
                           onClick={() => handleSortChange('spk_diupload')}
@@ -4296,7 +4296,7 @@ export function ProjectsV2Table({
                                   )
                                 : '-'}
                             </TableCell>
-                          {showMarketingFilter && (
+                          {(showMarketingFilter || showPerencanaan || showEngineer) && (
                             <TableCell
                               title={
                                 project.spk?.created_at
