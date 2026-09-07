@@ -392,6 +392,14 @@ export const projectV2Service = {
     return data;
   },
 
+  getAllProduksiItems: async (params?: GetProduksiGlobalItemsParams) => {
+    const { data } = await apiClient.get<ProduksiGlobalItemsResponse>(
+      '/produksi/all-items',
+      { params }
+    );
+    return data;
+  },
+
   createProjectItemsBulk: async (projectId: number, items: any[]) => {
     const { data } = await apiClient.post<ProjectItemV2[]>(
       `/projects-v2/${projectId}/items/bulk`,
@@ -1434,3 +1442,47 @@ export async function uploadBast(
   );
   return data;
 }
+
+export interface ProduksiGlobalItem {
+  id: number;
+  item: string;
+  nama_item: string;
+  lantai: string;
+  ruang: string;
+  panjang: number | null;
+  lebar: number | null;
+  tinggi: number | null;
+  jumlah: number;
+  satuan: string;
+  divisi: string;
+  divisi_id: number | null;
+  client: string;
+  nomor_spk: string;
+  deadline: string | null;
+  progress_produksi: number;
+  project_id: number;
+  project_name: string | null;
+  status: string;
+}
+
+export interface ProduksiGlobalItemsResponse {
+  success: boolean;
+  data: ProduksiGlobalItem[];
+  meta: {
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+    total_qty: number;
+  };
+}
+
+export interface GetProduksiGlobalItemsParams {
+  search?: string;
+  divisi_id?: string | number;
+  page?: number;
+  per_page?: number;
+  sort_by?: string;
+  sort_order?: 'asc' | 'desc';
+}
+
