@@ -17,7 +17,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Switch } from "@/components/ui/switch"
 import { ClientService, Client } from "@/features/clients/services/client-service"
 
 interface ClientFormDialogProps {
@@ -33,7 +32,7 @@ export function ClientFormDialog({ open, onOpenChange, client }: ClientFormDialo
     const [email, setEmail] = React.useState("")
     const [phone, setPhone] = React.useState("")
     const [address, setAddress] = React.useState("")
-    const [isHermina, setIsHermina] = React.useState(false)
+    const [hermina, setHermina] = React.useState<number>(0)
 
     React.useEffect(() => {
         if (client) {
@@ -42,14 +41,14 @@ export function ClientFormDialog({ open, onOpenChange, client }: ClientFormDialo
             setEmail(client.email || "")
             setPhone(client.phone || "")
             setAddress(client.address || "")
-            setIsHermina(client.hermina === 1)
+            setHermina(client.hermina ?? 0)
         } else {
             setKode("")
             setName("")
             setEmail("")
             setPhone("")
             setAddress("")
-            setIsHermina(false)
+            setHermina(0)
         }
     }, [client, open])
 
@@ -78,7 +77,7 @@ export function ClientFormDialog({ open, onOpenChange, client }: ClientFormDialo
             email: email || undefined,
             phone: phone || undefined,
             address: address || undefined,
-            hermina: isHermina ? 1 : 0
+            hermina: Number(hermina)
         })
     }
 
@@ -136,18 +135,42 @@ export function ClientFormDialog({ open, onOpenChange, client }: ClientFormDialo
                                 />
                             </div>
                         </div>
-                        <div className="flex items-center justify-between p-4 rounded-xl bg-neutral-50 border border-neutral-100">
-                            <div className="space-y-0.5">
-                                <Label htmlFor="kategori">Kategori</Label>
-                            </div>
-                            <div className="flex items-center gap-3">
-                                <span className={`text-xs font-medium ${!isHermina ? 'text-orange-600' : 'text-neutral-400'}`}>Non Hermina</span>
-                                <Switch
-                                    id="kategori"
-                                    checked={isHermina}
-                                    onCheckedChange={setIsHermina}
-                                />
-                                <span className={`text-xs font-medium ${isHermina ? 'text-blue-600' : 'text-neutral-400'}`}>Hermina</span>
+                        <div className="grid gap-2">
+                            <Label>Kategori Client</Label>
+                            <div className="grid grid-cols-3 gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setHermina(0)}
+                                    className={`flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all cursor-pointer select-none ${
+                                        hermina === 0
+                                            ? "border-orange-500 bg-orange-50/70 text-orange-700 ring-2 ring-orange-400/20 font-semibold"
+                                            : "border-neutral-200 bg-neutral-50/50 hover:bg-neutral-100/70 text-neutral-600"
+                                    }`}
+                                >
+                                    <span className="text-xs">Non Hermina</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setHermina(1)}
+                                    className={`flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all cursor-pointer select-none ${
+                                        hermina === 1
+                                            ? "border-blue-500 bg-blue-50/70 text-blue-700 ring-2 ring-blue-400/20 font-semibold"
+                                            : "border-neutral-200 bg-neutral-50/50 hover:bg-neutral-100/70 text-neutral-600"
+                                    }`}
+                                >
+                                    <span className="text-xs">Hermina</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setHermina(2)}
+                                    className={`flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all cursor-pointer select-none ${
+                                        hermina === 2
+                                            ? "border-emerald-500 bg-emerald-50/70 text-emerald-700 ring-2 ring-emerald-400/20 font-semibold"
+                                            : "border-neutral-200 bg-neutral-50/50 hover:bg-neutral-100/70 text-neutral-600"
+                                    }`}
+                                >
+                                    <span className="text-xs">Managed by Hermina</span>
+                                </button>
                             </div>
                         </div>
                         <div className="grid gap-2">
