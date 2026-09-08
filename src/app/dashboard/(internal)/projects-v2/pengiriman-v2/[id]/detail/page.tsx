@@ -3081,66 +3081,23 @@ export default function PerencanaanDetailPage() {
                       >
                         {item.jumlah}
                       </TableCell>
-                      <TableCell
-                        className={cn(
-                          item.history_fields?.includes('divisi_id')
-                            ? 'bg-amber-100/80 border-x border-amber-200/50'
-                            : ''
-                        )}
-                      >
-                        <div className='flex items-center gap-2 group/divisi relative'>
-                          {item.divisi && editingDivisiItemId !== item.id ? (
-                            <Badge
-                              variant='outline'
-                              className='bg-emerald-50 text-emerald-700 border-emerald-100 font-bold text-[9px] px-1.5 h-5 cursor-pointer hover:bg-emerald-100 transition-colors'
-                              onClick={() => setEditingDivisiItemId(item.id)}
-                            >
-                              {item.divisi.nama}
-                            </Badge>
-                          ) : (
-                            <div className='flex items-center gap-1'>
-                              <Select
-                                defaultValue={item.divisi_id?.toString()}
-                                onValueChange={(val) =>
-                                  updateItemDivisiMutation.mutate({
-                                    itemId: item.id,
-                                    divisiId: parseInt(val),
-                                  })
-                                }
-                              >
-                                <SelectTrigger className='h-6 text-[9px] w-[80px] bg-white border-neutral-200'>
-                                  <SelectValue placeholder='Pilih' />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {divisions
-                                    ? [...divisions]
-                                        .sort((a, b) =>
-                                          a.nama.localeCompare(b.nama)
-                                        )
-                                        .map((d) => (
-                                          <SelectItem
-                                            key={d.id}
-                                            value={d.id.toString()}
-                                            className='text-[10px]'
-                                          >
-                                            {d.nama}
-                                          </SelectItem>
-                                        ))
-                                    : null}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          )}
-                          <Button
-                            variant='ghost'
-                            size='icon'
-                            className='h-5 w-5 text-neutral-400 hover:text-amber-600 opacity-0 group-hover/divisi:opacity-100 transition-opacity'
-                            onClick={() => openHistory(item)}
+                      
+                      <TableCell>
+                        {item.divisi ? (
+                          <Badge
+                            variant='outline'
+                            className='bg-purple-50 text-purple-700 border-purple-200 font-bold'
                           >
-                            <History className='h-3 w-3' />
-                          </Button>
-                        </div>
+                            {item.divisi.nama}
+                          </Badge>
+                        ) : (
+                          <span className='text-[10px] text-muted-foreground italic'>
+                            -
+                          </span>
+                        )}
                       </TableCell>
+
+
                       <TableCell>
                         {item.gambar_kerja?.file ? (
                           <div className='flex items-center gap-1'>
