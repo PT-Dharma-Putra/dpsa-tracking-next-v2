@@ -2804,22 +2804,7 @@ export default function PerencanaanDetailPage() {
             >
               Belum Terkirim
             </Button>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant='outline'
-                  size='sm'
-                  className='h-8 text-xs font-semibold text-blue-600 border-blue-200 hover:bg-blue-50'
-                  onClick={handleExportRealisasiPengiriman}
-                >
-                  <FileDown className='h-3.5 w-3.5 mr-1.5' />
-                  Export Realisasi
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Export Excel Realisasi Pengiriman (Matriks & Rincian per Pengiriman)</p>
-              </TooltipContent>
-            </Tooltip>
+
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -2836,6 +2821,24 @@ export default function PerencanaanDetailPage() {
                 <p>Export Excel Item Belum Terkirim</p>
               </TooltipContent>
             </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant='outline'
+                  size='sm'
+                  className='h-8 text-xs font-semibold text-blue-600 border-blue-200 hover:bg-blue-50'
+                  onClick={handleExportRealisasiPengiriman}
+                >
+                  <FileDown className='h-3.5 w-3.5 mr-1.5' />
+                  Export Realisasi
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Export Excel Realisasi Pengiriman (Matriks & Rincian per Pengiriman)</p>
+              </TooltipContent>
+            </Tooltip>
+
             {selectedLabelItemIds.length > 0 && (
               <Button
                 size='sm'
