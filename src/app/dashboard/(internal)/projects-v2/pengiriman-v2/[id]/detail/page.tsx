@@ -1324,6 +1324,551 @@ export default function PerencanaanDetailPage() {
     setIsProduksiViewOpen(true);
   };
 
+  const handleExportRealisasiPengiriman = () => {
+    const rawShipments = pengirimanPerSpkData?.data ?? [];
+    if (rawShipments.length === 0) {
+      toast.error('Belum ada data riwayat pengiriman untuk diekspor');
+      return;
+    }
+
+    if (!items || items.length === 0) {
+      toast.error('Tidak ada item pada proyek ini untuk diekspor');
+      return;
+    }
+
+    // Urutkan pengiriman secara kronologis (ascending)
+    const sortedShipments = [...rawShipments].sort(
+      (a, b) =>
+        new Date(a.tanggal).getTime() - new Date(b.tanggal).getTime() ||
+        a.id - b.id
+    );
+
+    // Urutkan items berdasarkan lantai, ruang, item
+    const sortedItems = [...items].sort((a, b) => {
+      const lantaiA = a.lantai ?? '';
+      const lantaiB = b.lantai ?? '';
+      const lantaiCmp = lantaiA.localeCompare(lantaiB, undefined, {
+        numeric: true,
+        sensitivity: 'base',
+      });
+      if (lantaiCmp !== 0) return lantaiCmp;
+      const ruangA = a.ruang ?? '';
+      const ruangB = b.ruang ?? '';
+      const ruangCmp = ruangA.localeCompare(ruangB, undefined, {
+        numeric: true,
+        sensitivity: 'base',
+      });
+      if (ruangCmp !== 0) return ruangCmp;
+      return (a.item ?? '').localeCompare(b.item ?? '', undefined, {
+        numeric: true,
+        sensitivity: 'base',
+      });
+    });
+
+    const wb = XLSX.utils.book_new();
+
+    // Style Definitions
+    const borderThin = {
+      top: { style: 'thin', color: { rgb: 'D4D4D8' } },
+      bottom: { style: 'thin', color: { rgb: 'D4D4D8' } },
+      left: { style: 'thin', color: { rgb: 'D4D4D8' } },
+      right: { style: 'thin', color: { rgb: 'D4D4D8' } },
+    };
+
+    const titleStyle = {
+      font: { bold: true, sz: 13, color: { rgb: '18181B' } },
+      alignment: { horizontal: 'left', vertical: 'center' },
+    };
+
+    const metaLabelStyle = {
+      font: { bold: true, sz: 9, color: { rgb: '71717A' } },
+      alignment: { horizontal: 'left', vertical: 'center' },
+    };
+
+    const metaValStyle = {
+      font: { bold: true, sz: 9, color: { rgb: '18181B' } },
+      alignment: { horizontal: 'left', vertical: 'center' },
+    };
+
+    const headerBaseStyle = {
+      font: { bold: true, sz: 9, color: { rgb: '27272A' } },
+      alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+      border: borderThin,
+      fill: { fgColor: { rgb: 'F4F4F5' } },
+    };
+
+    const headerShipmentStyle = {
+      font: { bold: true, sz: 9, color: { rgb: '1E3A8A' } },
+      alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+      border: borderThin,
+      fill: { fgColor: { rgb: 'E0F2FE' } },
+    };
+
+    const headerRekapStyle = {
+      font: { bold: true, sz: 9, color: { rgb: '78350F' } },
+      alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+      border: borderThin,
+      fill: { fgColor: { rgb: 'FEF3C7' } },
+    };
+
+    const dataCenter = {
+      font: { sz: 9, color: { rgb: '27272A' } },
+      alignment: { horizontal: 'center', vertical: 'center' },
+      border: borderThin,
+    };
+
+    const dataLeft = {
+      font: { sz: 9, color: { rgb: '27272A' } },
+      alignment: { horizontal: 'left', vertical: 'center', wrapText: true },
+      border: borderThin,
+    };
+
+    const dataCenterBold = {
+      font: { bold: true, sz: 9, color: { rgb: '18181B' } },
+      alignment: { horizontal: 'center', vertical: 'center' },
+      border: borderThin,
+    };
+
+    const totalRowStyle = {
+      font: { bold: true, sz: 9, color: { rgb: '18181B' } },
+      alignment: { horizontal: 'center', vertical: 'center' },
+      border: borderThin,
+      fill: { fgColor: { rgb: 'F4F4F5' } },
+    };
+
+    const totalRowLabelStyle = {
+      font: { bold: true, sz: 9, color: { rgb: '18181B' } },
+      alignment: { horizontal: 'right', vertical: 'center' },
+      border: borderThin,
+      fill: { fgColor: { rgb: 'F4F4F5' } },
+    };
+
+    const spkNomor = project?.spk?.nomor_spk || project?.spk_number || '-';
+    const clientName = project?.client?.name || '-';
+    const projectName = project?.name || '-';
+
+    // ==========================================
+    // SHEET 1: REKAP REALISASI (MATRIKS)
+    // ==========================================
+    const ws1Data: any[][] = [];
+    const ws1Merges: any[] = [];
+
+    // Header info metadata proyek
+    ws1Data.push([{ v: 'REKAPITULASI REALISASI PENGIRIMAN', t: 's', s: titleStyle }]);
+    ws1Data.push([]);
+    ws1Data.push([
+      { v: 'PROYEK', t: 's', s: metaLabelStyle },
+      { v: `: ${projectName}`, t: 's', s: metaValStyle },
+    ]);
+    ws1Data.push([
+      { v: 'RUMAH SAKIT / CLIENT', t: 's', s: metaLabelStyle },
+      { v: `: ${clientName}`, t: 's', s: metaValStyle },
+    ]);
+    ws1Data.push([
+      { v: 'NO. SPK', t: 's', s: metaLabelStyle },
+      { v: `: ${spkNomor}`, t: 's', s: metaValStyle },
+    ]);
+    ws1Data.push([
+      { v: 'TANGGAL EXPORT', t: 's', s: metaLabelStyle },
+      { v: `: ${format(new Date(), 'dd MMMM yyyy')}`, t: 's', s: metaValStyle },
+    ]);
+    ws1Data.push([]);
+
+    const headerRow1Idx = ws1Data.length;
+    const headerRow2Idx = headerRow1Idx + 1;
+
+    const rowHeader1: any[] = [
+      { v: 'NO', t: 's', s: headerBaseStyle },
+      { v: 'LANTAI', t: 's', s: headerBaseStyle },
+      { v: 'RUANG', t: 's', s: headerBaseStyle },
+      { v: 'NAMA ITEM / PERABOT', t: 's', s: headerBaseStyle },
+      { v: 'DIMENSI (METER)', t: 's', s: headerBaseStyle },
+      '',
+      '',
+      { v: 'VOL', t: 's', s: headerBaseStyle },
+      { v: 'SAT', t: 's', s: headerBaseStyle },
+      { v: 'QTY SPK', t: 's', s: headerBaseStyle },
+    ];
+
+    const rowHeader2: any[] = [
+      '', '', '', '',
+      { v: 'P', t: 's', s: headerBaseStyle },
+      { v: 'L', t: 's', s: headerBaseStyle },
+      { v: 'T', t: 's', s: headerBaseStyle },
+      '', '', '',
+    ];
+
+    // Merges for base columns
+    ws1Merges.push(
+      { s: { r: headerRow1Idx, c: 0 }, e: { r: headerRow2Idx, c: 0 } },
+      { s: { r: headerRow1Idx, c: 1 }, e: { r: headerRow2Idx, c: 1 } },
+      { s: { r: headerRow1Idx, c: 2 }, e: { r: headerRow2Idx, c: 2 } },
+      { s: { r: headerRow1Idx, c: 3 }, e: { r: headerRow2Idx, c: 3 } },
+      { s: { r: headerRow1Idx, c: 4 }, e: { r: headerRow1Idx, c: 6 } },
+      { s: { r: headerRow1Idx, c: 7 }, e: { r: headerRow2Idx, c: 7 } },
+      { s: { r: headerRow1Idx, c: 8 }, e: { r: headerRow2Idx, c: 8 } },
+      { s: { r: headerRow1Idx, c: 9 }, e: { r: headerRow2Idx, c: 9 } }
+    );
+
+    // Dynamic columns for each shipment
+    sortedShipments.forEach((s, sIdx) => {
+      const colStart = 10 + sIdx * 2;
+      const tglStr = s.tanggal ? format(new Date(s.tanggal), 'dd/MM/yy') : '-';
+      const sjStr = s.surat_jalan ? ` (${s.surat_jalan})` : '';
+      const shipmentTitle = `PENGIRIMAN ${sIdx + 1}\n${tglStr}`;
+
+      rowHeader1.push(
+        { v: shipmentTitle, t: 's', s: headerShipmentStyle },
+        ''
+      );
+      rowHeader2.push(
+        { v: 'KIRIM', t: 's', s: headerShipmentStyle },
+        { v: 'KET', t: 's', s: headerShipmentStyle }
+      );
+
+      ws1Merges.push({
+        s: { r: headerRow1Idx, c: colStart },
+        e: { r: headerRow1Idx, c: colStart + 1 },
+      });
+    });
+
+    // Summary columns
+    const rekapColStart = 10 + sortedShipments.length * 2;
+    rowHeader1.push(
+      { v: 'TOTAL TERKIRIM', t: 's', s: headerRekapStyle },
+      { v: 'SISA SPK', t: 's', s: headerRekapStyle },
+      { v: 'STATUS', t: 's', s: headerRekapStyle }
+    );
+    rowHeader2.push('', '', '');
+
+    ws1Merges.push(
+      { s: { r: headerRow1Idx, c: rekapColStart }, e: { r: headerRow2Idx, c: rekapColStart } },
+      { s: { r: headerRow1Idx, c: rekapColStart + 1 }, e: { r: headerRow2Idx, c: rekapColStart + 1 } },
+      { s: { r: headerRow1Idx, c: rekapColStart + 2 }, e: { r: headerRow2Idx, c: rekapColStart + 2 } }
+    );
+
+    ws1Data.push(rowHeader1);
+    ws1Data.push(rowHeader2);
+
+    // Grand total counters
+    let grandTotalSpk = 0;
+    const grandTotalPerShipment = new Array(sortedShipments.length).fill(0);
+    let grandTotalTerkirim = 0;
+    let grandTotalSisa = 0;
+
+    // Fill Data Rows
+    sortedItems.forEach((item, idx) => {
+      grandTotalSpk += item.jumlah;
+      let totalItemKeluar = 0;
+
+      const row: any[] = [
+        { v: idx + 1, t: 'n', s: dataCenter },
+        { v: item.lantai || '-', t: 's', s: dataCenter },
+        { v: item.ruang || '-', t: 's', s: dataLeft },
+        { v: item.item || '-', t: 's', s: dataLeft },
+        { v: item.panjang || '-', t: 's', s: dataCenter },
+        { v: item.lebar || '-', t: 's', s: dataCenter },
+        { v: item.tinggi || '-', t: 's', s: dataCenter },
+        { v: item.volume || '-', t: 's', s: dataCenter },
+        { v: item.satuan || '-', t: 's', s: dataCenter },
+        { v: item.jumlah, t: 'n', s: dataCenterBold },
+      ];
+
+      // Columns per shipment
+      sortedShipments.forEach((s, sIdx) => {
+        const detail = s.details?.find(
+          (d) => Number(d.project_item_id) === Number(item.id)
+        );
+        const qtyKeluar = detail ? Number(detail.jumlah_keluar) : 0;
+        const ketKeluar = detail?.keterangan || '';
+
+        totalItemKeluar += qtyKeluar;
+        grandTotalPerShipment[sIdx] += qtyKeluar;
+
+        row.push(
+          {
+            v: qtyKeluar > 0 ? qtyKeluar : '-',
+            t: qtyKeluar > 0 ? 'n' : 's',
+            s: qtyKeluar > 0 ? dataCenterBold : dataCenter,
+          },
+          {
+            v: ketKeluar || '-',
+            t: 's',
+            s: dataLeft,
+          }
+        );
+      });
+
+      const sisa = Math.max(0, item.jumlah - totalItemKeluar);
+      grandTotalTerkirim += totalItemKeluar;
+      grandTotalSisa += sisa;
+
+      const statusText =
+        totalItemKeluar >= item.jumlah
+          ? 'LENGKAP'
+          : totalItemKeluar > 0
+          ? `PARSIAL (${Math.round((totalItemKeluar / item.jumlah) * 100)}%)`
+          : 'BELUM';
+
+      const statusColor =
+        totalItemKeluar >= item.jumlah
+          ? '15803D'
+          : totalItemKeluar > 0
+          ? 'D97706'
+          : 'DC2626';
+
+      row.push(
+        {
+          v: totalItemKeluar,
+          t: 'n',
+          s: { ...dataCenterBold, font: { bold: true, sz: 9, color: { rgb: '0F766E' } } },
+        },
+        {
+          v: sisa,
+          t: 'n',
+          s: { ...dataCenterBold, font: { bold: true, sz: 9, color: { rgb: sisa > 0 ? 'B45309' : '15803D' } } },
+        },
+        {
+          v: statusText,
+          t: 's',
+          s: { ...dataCenterBold, font: { bold: true, sz: 9, color: { rgb: statusColor } } },
+        }
+      );
+
+      ws1Data.push(row);
+    });
+
+    // Grand Total Row
+    const totalRowIdx = ws1Data.length;
+    const totalRow: any[] = [
+      { v: 'TOTAL KESELURUHAN', t: 's', s: totalRowLabelStyle },
+      '', '', '', '', '', '', '', '',
+      { v: grandTotalSpk, t: 'n', s: totalRowStyle },
+    ];
+
+    ws1Merges.push({
+      s: { r: totalRowIdx, c: 0 },
+      e: { r: totalRowIdx, c: 8 },
+    });
+
+    sortedShipments.forEach((_, sIdx) => {
+      totalRow.push(
+        { v: grandTotalPerShipment[sIdx], t: 'n', s: totalRowStyle },
+        { v: '', t: 's', s: totalRowStyle }
+      );
+    });
+
+    const percentTerkirim =
+      grandTotalSpk > 0 ? Math.round((grandTotalTerkirim / grandTotalSpk) * 100) : 0;
+    totalRow.push(
+      { v: grandTotalTerkirim, t: 'n', s: { ...totalRowStyle, font: { bold: true, sz: 9, color: { rgb: '0F766E' } } } },
+      { v: grandTotalSisa, t: 'n', s: { ...totalRowStyle, font: { bold: true, sz: 9, color: { rgb: 'B45309' } } } },
+      { v: `${percentTerkirim}%`, t: 's', s: totalRowStyle }
+    );
+
+    ws1Data.push(totalRow);
+
+    const ws1 = XLSX.utils.aoa_to_sheet(ws1Data);
+    ws1['!merges'] = ws1Merges;
+
+    // Column widths for ws1
+    const ws1Cols = [
+      { wch: 5 },  // NO
+      { wch: 10 }, // LANTAI
+      { wch: 18 }, // RUANG
+      { wch: 32 }, // ITEM
+      { wch: 7 },  // P
+      { wch: 7 },  // L
+      { wch: 7 },  // T
+      { wch: 7 },  // VOL
+      { wch: 8 },  // SAT
+      { wch: 10 }, // QTY SPK
+    ];
+
+    sortedShipments.forEach(() => {
+      ws1Cols.push({ wch: 10 }, { wch: 16 });
+    });
+    ws1Cols.push({ wch: 14 }, { wch: 12 }, { wch: 16 });
+    ws1['!cols'] = ws1Cols;
+
+    // ==========================================
+    // SHEET 2: RINCIAN PER PENGIRIMAN (VERTIKAL)
+    // ==========================================
+    const ws2Data: any[][] = [];
+    const ws2Merges: any[] = [];
+
+    ws2Data.push([{ v: 'RINCIAN REALISASI ITEM PER PENGIRIMAN', t: 's', s: titleStyle }]);
+    ws2Data.push([]);
+    ws2Data.push([
+      { v: 'PROYEK', t: 's', s: metaLabelStyle },
+      { v: `: ${projectName}`, t: 's', s: metaValStyle },
+    ]);
+    ws2Data.push([
+      { v: 'CLIENT', t: 's', s: metaLabelStyle },
+      { v: `: ${clientName}`, t: 's', s: metaValStyle },
+    ]);
+    ws2Data.push([
+      { v: 'NO. SPK', t: 's', s: metaLabelStyle },
+      { v: `: ${spkNomor}`, t: 's', s: metaValStyle },
+    ]);
+    ws2Data.push([]);
+
+    // Loop through each shipment to render its dedicated block
+    sortedShipments.forEach((s, sIdx) => {
+      const blockStartRow = ws2Data.length;
+
+      const bannerTitle = `PENGIRIMAN KE-${sIdx + 1} — ${
+        s.tanggal ? format(new Date(s.tanggal), 'dd MMMM yyyy') : '-'
+      }`;
+
+      const bannerStyle = {
+        font: { bold: true, sz: 10, color: { rgb: 'FFFFFF' } },
+        alignment: { horizontal: 'left', vertical: 'center' },
+        fill: { fgColor: { rgb: '1E3A8A' } },
+        border: borderThin,
+      };
+
+      ws2Data.push([
+        { v: bannerTitle, t: 's', s: bannerStyle },
+        '', '', '', '', '', '', '', '',
+      ]);
+      ws2Merges.push({
+        s: { r: blockStartRow, c: 0 },
+        e: { r: blockStartRow, c: 8 },
+      });
+
+      // Shipment Meta Info
+      ws2Data.push([
+        { v: 'No. Surat Jalan', t: 's', s: metaLabelStyle },
+        { v: `: ${s.surat_jalan || '-'}`, t: 's', s: metaValStyle },
+        '',
+        { v: 'Nama Supir', t: 's', s: metaLabelStyle },
+        { v: `: ${s.supir || '-'}`, t: 's', s: metaValStyle },
+        '',
+        { v: 'No. Kendaraan', t: 's', s: metaLabelStyle },
+        { v: `: ${s.no_kendaraan || '-'}`, t: 's', s: metaValStyle },
+      ]);
+      ws2Data.push([
+        { v: 'No. Setrim', t: 's', s: metaLabelStyle },
+        { v: `: ${s.setrim || '-'}`, t: 's', s: metaValStyle },
+        '',
+        { v: 'No. HP Supir', t: 's', s: metaLabelStyle },
+        { v: `: ${s.no_hp || '-'}`, t: 's', s: metaValStyle },
+        '',
+        { v: 'Koor Setting', t: 's', s: metaLabelStyle },
+        { v: `: ${s.koor_setting || '-'}`, t: 's', s: metaValStyle },
+      ]);
+      ws2Data.push([]);
+
+      // Table Header for this shipment
+      ws2Data.push([
+        { v: 'NO', t: 's', s: headerShipmentStyle },
+        { v: 'LANTAI', t: 's', s: headerShipmentStyle },
+        { v: 'RUANG', t: 's', s: headerShipmentStyle },
+        { v: 'NAMA ITEM / PERABOT', t: 's', s: headerShipmentStyle },
+        { v: 'DIMENSI (P x L x T)', t: 's', s: headerShipmentStyle },
+        { v: 'SAT', t: 's', s: headerShipmentStyle },
+        { v: 'QTY KELUAR', t: 's', s: headerShipmentStyle },
+        { v: 'QTY TERSETTING', t: 's', s: headerShipmentStyle },
+        { v: 'KETERANGAN', t: 's', s: headerShipmentStyle },
+      ]);
+
+      // Items shipped in this shipment
+      const shippedDetails = (s.details ?? []).filter(
+        (d) => Number(d.jumlah_keluar) > 0 || Number(d.jumlah_tersetting) > 0
+      );
+
+      let subtotalKeluar = 0;
+      let subtotalSetting = 0;
+
+      if (shippedDetails.length === 0) {
+        const emptyRowIdx = ws2Data.length;
+        ws2Data.push([
+          { v: 'Belum ada rincian item keluar pada pengiriman ini', t: 's', s: dataCenter },
+          '', '', '', '', '', '', '', '',
+        ]);
+        ws2Merges.push({
+          s: { r: emptyRowIdx, c: 0 },
+          e: { r: emptyRowIdx, c: 8 },
+        });
+      } else {
+        shippedDetails.forEach((detail, dIdx) => {
+          const itemMatch = sortedItems.find(
+            (i) => Number(i.id) === Number(detail.project_item_id)
+          );
+          const itemName = itemMatch?.item || detail.project_item?.item || '-';
+          const lantai = itemMatch?.lantai || detail.project_item?.lantai || '-';
+          const ruang = itemMatch?.ruang || detail.project_item?.ruang || '-';
+          const dimensi = itemMatch
+            ? `${itemMatch.panjang || '-'} x ${itemMatch.lebar || '-'} x ${itemMatch.tinggi || '-'}`
+            : '-';
+          const satuan = itemMatch?.satuan || detail.project_item?.satuan || '-';
+          const jmlKeluar = Number(detail.jumlah_keluar) || 0;
+          const jmlSetting = Number(detail.jumlah_tersetting) || 0;
+
+          subtotalKeluar += jmlKeluar;
+          subtotalSetting += jmlSetting;
+
+          ws2Data.push([
+            { v: dIdx + 1, t: 'n', s: dataCenter },
+            { v: lantai, t: 's', s: dataCenter },
+            { v: ruang, t: 's', s: dataLeft },
+            { v: itemName, t: 's', s: dataLeft },
+            { v: dimensi, t: 's', s: dataCenter },
+            { v: satuan, t: 's', s: dataCenter },
+            { v: jmlKeluar, t: 'n', s: dataCenterBold },
+            { v: jmlSetting, t: 'n', s: dataCenter },
+            { v: detail.keterangan || '-', t: 's', s: dataLeft },
+          ]);
+        });
+
+        // Subtotal row for this shipment
+        const subtotalRowIdx = ws2Data.length;
+        ws2Data.push([
+          { v: `SUBTOTAL PENGIRIMAN KE-${sIdx + 1}`, t: 's', s: totalRowLabelStyle },
+          '', '', '', '', '',
+          { v: subtotalKeluar, t: 'n', s: totalRowStyle },
+          { v: subtotalSetting, t: 'n', s: totalRowStyle },
+          { v: '', t: 's', s: totalRowStyle },
+        ]);
+        ws2Merges.push({
+          s: { r: subtotalRowIdx, c: 0 },
+          e: { r: subtotalRowIdx, c: 5 },
+        });
+      }
+
+      // Spacing between shipments
+      ws2Data.push([]);
+      ws2Data.push([]);
+    });
+
+    const ws2 = XLSX.utils.aoa_to_sheet(ws2Data);
+    ws2['!merges'] = ws2Merges;
+    ws2['!cols'] = [
+      { wch: 5 },  // NO
+      { wch: 10 }, // LANTAI
+      { wch: 18 }, // RUANG
+      { wch: 32 }, // ITEM
+      { wch: 20 }, // DIMENSI
+      { wch: 8 },  // SAT
+      { wch: 14 }, // QTY KELUAR
+      { wch: 16 }, // QTY TERSETTING
+      { wch: 25 }, // KET
+    ];
+
+    // Append both sheets to workbook
+    XLSX.utils.book_append_sheet(wb, ws1, 'Rekap Matriks');
+    XLSX.utils.book_append_sheet(wb, ws2, 'Rincian Pengiriman');
+
+    // Download file
+    const safeProject = (project?.name || 'Project').replace(/[^a-zA-Z0-9 _-]/g, '');
+    const safeClient = (project?.client?.name || '').replace(/[^a-zA-Z0-9 _-]/g, '');
+    const fileName = `Realisasi Pengiriman ${safeProject} ${safeClient}`.trim() + '.xlsx';
+
+    XLSX.writeFile(wb, fileName);
+    toast.success('File Realisasi Pengiriman berhasil diunduh');
+  };
+
   if (isLoadingProject) {
     return (
       <div className='flex h-[400px] items-center justify-center'>
@@ -2259,6 +2804,22 @@ export default function PerencanaanDetailPage() {
             >
               Belum Terkirim
             </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant='outline'
+                  size='sm'
+                  className='h-8 text-xs font-semibold text-blue-600 border-blue-200 hover:bg-blue-50'
+                  onClick={handleExportRealisasiPengiriman}
+                >
+                  <FileDown className='h-3.5 w-3.5 mr-1.5' />
+                  Export Realisasi
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Export Excel Realisasi Pengiriman (Matriks & Rincian per Pengiriman)</p>
+              </TooltipContent>
+            </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
