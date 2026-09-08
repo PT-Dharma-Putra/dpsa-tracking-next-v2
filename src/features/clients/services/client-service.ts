@@ -2,6 +2,7 @@ import { axiosInstance as apiClient } from "@/lib/axios";
 
 export interface Client {
     id: number;
+    kode?: number | null;
     name: string;
     email: string;
     phone?: string;

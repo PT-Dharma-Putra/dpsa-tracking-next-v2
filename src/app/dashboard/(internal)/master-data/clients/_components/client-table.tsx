@@ -233,6 +233,7 @@ export function ClientTable() {
                     <TableHeader className="bg-neutral-50/80">
                         <TableRow>
                             <TableHead className="w-[50px]">#</TableHead>
+                            <TableHead className="w-[90px]">Kode</TableHead>
                             <TableHead>Client</TableHead>
                             <TableHead>Kontak</TableHead>
                             <TableHead>Alamat</TableHead>
@@ -257,13 +258,13 @@ export function ClientTable() {
                     <TableBody>
                         {isLoading ? (
                             <TableRow>
-                                <TableCell colSpan={6} className="h-32 text-center">
+                                <TableCell colSpan={7} className="h-32 text-center">
                                     <Loader2 className="h-6 w-6 animate-spin mx-auto text-neutral-400" />
                                 </TableCell>
                             </TableRow>
                         ) : filtered.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={6} className="h-32 text-center text-muted-foreground text-sm">
+                                <TableCell colSpan={7} className="h-32 text-center text-muted-foreground text-sm">
                                     {search ? "Tidak ada client yang cocok." : "Belum ada client. Klik 'Tambah Client' untuk memulai."}
                                 </TableCell>
                             </TableRow>
@@ -271,6 +272,15 @@ export function ClientTable() {
                             filtered.map((client: Client, index: number) => (
                                 <TableRow key={client.id} className="hover:bg-neutral-50/50 transition-colors">
                                     <TableCell className="font-medium text-muted-foreground">{index + 1}</TableCell>
+                                    <TableCell>
+                                        {client.kode !== null && client.kode !== undefined ? (
+                                            <span className="font-mono text-xs font-semibold text-neutral-800 bg-neutral-100 px-2 py-0.5 rounded border border-neutral-200">
+                                                {client.kode}
+                                            </span>
+                                        ) : (
+                                            <span className="text-neutral-400 text-xs">-</span>
+                                        )}
+                                    </TableCell>
                                     <TableCell>
                                         <div className="flex flex-col gap-1">
                                             <div className="flex items-center gap-2">
