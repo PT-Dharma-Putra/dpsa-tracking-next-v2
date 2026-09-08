@@ -28,6 +28,7 @@ interface ClientFormDialogProps {
 
 export function ClientFormDialog({ open, onOpenChange, client }: ClientFormDialogProps) {
     const queryClient = useQueryClient()
+    const [kode, setKode] = React.useState("")
     const [name, setName] = React.useState("")
     const [email, setEmail] = React.useState("")
     const [phone, setPhone] = React.useState("")
@@ -36,12 +37,14 @@ export function ClientFormDialog({ open, onOpenChange, client }: ClientFormDialo
 
     React.useEffect(() => {
         if (client) {
+            setKode(client.kode !== null && client.kode !== undefined ? String(client.kode) : "")
             setName(client.name || "")
             setEmail(client.email || "")
             setPhone(client.phone || "")
             setAddress(client.address || "")
             setIsHermina(client.hermina === 1)
         } else {
+            setKode("")
             setName("")
             setEmail("")
             setPhone("")
@@ -70,6 +73,7 @@ export function ClientFormDialog({ open, onOpenChange, client }: ClientFormDialo
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault()
         mutation.mutate({
+            kode: kode !== "" ? Number(kode) : null,
             name,
             email: email || undefined,
             phone: phone || undefined,
@@ -89,15 +93,27 @@ export function ClientFormDialog({ open, onOpenChange, client }: ClientFormDialo
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
-                        <div className="grid gap-2">
-                            <Label htmlFor="name">Nama Client / Perusahaan</Label>
-                            <Input
-                                id="name"
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
-                                placeholder="Contoh: PT. Maju Mundur"
-                                required
-                            />
+                        <div className="grid grid-cols-3 gap-4">
+                            <div className="col-span-1 grid gap-2">
+                                <Label htmlFor="kode">Kode Client</Label>
+                                <Input
+                                    id="kode"
+                                    type="number"
+                                    value={kode}
+                                    onChange={(e) => setKode(e.target.value)}
+                                    placeholder="Contoh: 101"
+                                />
+                            </div>
+                            <div className="col-span-2 grid gap-2">
+                                <Label htmlFor="name">Nama Client / Perusahaan</Label>
+                                <Input
+                                    id="name"
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
+                                    placeholder="Contoh: PT. Maju Mundur"
+                                    required
+                                />
+                            </div>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="grid gap-2">
