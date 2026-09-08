@@ -140,7 +140,7 @@ export function ListSpkMasukTable() {
     const formatDateSafe = (dateString?: string | null) => {
         if (!dateString) return "-";
         try {
-            const parsed = parseISO(dateString.substring(0, 10));
+            const parsed = parseISO(dateString);
             return format(parsed, "dd MMM yyyy", { locale: localeId });
         } catch {
             return dateString;
