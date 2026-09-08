@@ -4,7 +4,7 @@ import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 
 import {
     Dialog,
@@ -63,15 +63,24 @@ export function ListSpkMasukFormDialog({
         enabled: isOpen,
     });
 
+    const toDateInputString = (dateStr?: string | null) => {
+        if (!dateStr) return "";
+        try {
+            return format(parseISO(dateStr), "yyyy-MM-dd");
+        } catch {
+            return dateStr.substring(0, 10);
+        }
+    };
+
     React.useEffect(() => {
         if (item) {
-            setTanggalSpkMasuk(item.tanggal_spk_masuk ? item.tanggal_spk_masuk.substring(0, 10) : "");
+            setTanggalSpkMasuk(toDateInputString(item.tanggal_spk_masuk));
             setMarketingId(item.marketing_id ? String(item.marketing_id) : "");
             setClientId(item.client_id ? String(item.client_id) : "");
             setNoSpk(item.no_spk || "");
             setNamaProjek(item.nama_projek || "");
             setIsUploaded(Boolean(item.is_uploaded));
-            setTanggalUpload(item.tanggal_upload ? item.tanggal_upload.substring(0, 10) : "");
+            setTanggalUpload(toDateInputString(item.tanggal_upload));
         } else {
             setTanggalSpkMasuk(format(new Date(), "yyyy-MM-dd"));
             setMarketingId("");
