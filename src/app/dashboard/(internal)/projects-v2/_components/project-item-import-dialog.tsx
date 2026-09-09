@@ -251,6 +251,54 @@ export function ProjectItemImportDialog({
           raw: true,
           rawNumbers: true,
         });
+
+        // Find column index for "Item / Perabot" (default to 3)
+        let itemColIndex = 3;
+        for (let r = 0; r < Math.min(6, allRows.length); r++) {
+          const row = allRows[r];
+          if (Array.isArray(row)) {
+            const foundIdx = row.findIndex(
+              (c) => typeof c === 'string' && /item\s*\/?\s*perabot/i.test(c.trim())
+            );
+            if (foundIdx !== -1) {
+              itemColIndex = foundIdx;
+              break;
+            }
+          }
+        }
+
+        const isCellEmpty = (v: any) => v == null || String(v).trim() === '';
+
+        // Check if there are rows where "Item / Perabot" is empty but other columns have data
+        const invalidRows: number[] = [];
+        for (let i = 5; i < allRows.length; i++) {
+          const r = allRows[i] || [];
+          const isItemEmpty = isCellEmpty(r[itemColIndex]);
+          const hasOtherCols = r.some(
+            (val, colIdx) => colIdx !== itemColIndex && !isCellEmpty(val)
+          );
+
+          if (isItemEmpty && hasOtherCols) {
+            invalidRows.push(i + 1); // 1-based Excel row number
+          }
+        }
+
+        if (invalidRows.length > 0) {
+          const rowText =
+            invalidRows.length === 1
+              ? `Baris ${invalidRows[0]}`
+              : `Baris ${invalidRows.join(', ')}`;
+          const alertMsg = `Kolom Item / Perabot tidak boleh kosong (${rowText})`;
+          toast.error('Kolom Item / Perabot tidak boleh kosong', {
+            description: `Ditemukan pada ${rowText}`,
+          });
+          if (typeof window !== 'undefined') {
+            alert(alertMsg);
+          }
+          setIsLoadingFile(false);
+          return;
+        }
+
         // Skip: 2 instruction rows + 2 col-header rows + 1 example row = 5 rows
         const raw = allRows
           .slice(5)
