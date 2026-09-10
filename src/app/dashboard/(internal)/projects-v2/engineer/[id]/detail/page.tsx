@@ -256,6 +256,20 @@ export default function EngineerDetailPage() {
     return result;
   }, [items, searchQuery, sortConfig]);
 
+  const rowIsGrayList = React.useMemo(() => {
+    let isGray = false;
+    let prevRuang: string | null = null;
+    return filteredItems.map((item) => {
+      const raw = item.ruang?.trim().toLowerCase() || "";
+      const currentRuang = raw === "-" ? "" : raw;
+      if (prevRuang !== null && currentRuang !== prevRuang) {
+        isGray = !isGray;
+      }
+      prevRuang = currentRuang;
+      return isGray;
+    });
+  }, [filteredItems]);
+
   const { data: stages, isLoading: isLoadingStages } = useQuery({
     queryKey: ["design-stages"],
     queryFn: () => projectV2Service.getDesignStages(),
@@ -1289,11 +1303,20 @@ export default function EngineerDetailPage() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredItems.map((item, index) => (
-                    <TableRow
-                      key={item.id}
-                      className="group hover:bg-neutral-50/50 transition-colors"
-                    >
+                  filteredItems.map((item, index) => {
+                    const isGray = rowIsGrayList[index];
+                    return (
+                      <TableRow
+                        key={item.id}
+                        className={cn(
+                          "group transition-colors",
+                          selectedItemIds.includes(item.id)
+                            ? "bg-orange-50/70 hover:bg-orange-100/70"
+                            : isGray
+                            ? "bg-neutral-100/80 hover:bg-neutral-200/50"
+                            : "bg-white hover:bg-neutral-50"
+                        )}
+                      >
                       <TableCell className="text-center font-medium text-neutral-400">
                         {index + 1}
                       </TableCell>
@@ -1621,7 +1644,8 @@ export default function EngineerDetailPage() {
                         })()}
                       </TableCell>
                     </TableRow>
-                  ))
+                    );
+                  })
                 )}
               </TableBody>
             </Table>
