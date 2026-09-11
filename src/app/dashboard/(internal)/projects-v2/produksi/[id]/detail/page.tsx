@@ -1508,8 +1508,8 @@ export default function ProduksiDetailPage() {
                 <TableHead className='w-[50px]'>#</TableHead>
                 {/* <TableHead>Kode Barang</TableHead> */}
                 <TableHead>Lantai | Ruang</TableHead>
-                <TableHead>Nama Item</TableHead>
-                <TableHead>Deskripsi</TableHead>
+                <TableHead>Nama Item | Deskripsi</TableHead>
+                {/* <TableHead>Deskripsi</TableHead> */}
                 <TableHead>Vol | Dimensi</TableHead>
                 <TableHead>Qty</TableHead>
                 <TableHead>Satuan</TableHead>
@@ -1589,7 +1589,8 @@ export default function ProduksiDetailPage() {
                         <span className='text-[9px] text-muted-foreground truncate max-w-[120px]'>{item.ruang || '-'}</span>
                       </div>
                     </TableCell>
-                    <TableCell className='font-bold text-neutral-800 text-sm max-w-[160px]'>
+
+                    {/* <TableCell className='font-bold text-neutral-800 text-sm max-w-[160px]'>
                       {item.item ? (
                         <span
                           className='line-clamp-2'
@@ -1616,7 +1617,20 @@ export default function ProduksiDetailPage() {
                           -
                         </span>
                       )}
-                    </TableCell>                    
+                    </TableCell>   */}
+
+                    <TableCell className="max-w-[300px] break-words">
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-xs font-bold text-neutral-900 group-hover:text-blue-600 transition-colors">
+                          {item.item}
+                        </span>
+
+                        <span className="text-sm text-muted-foreground whitespace-pre-wrap">
+                          {item.keterangan || "-"}
+                        </span>
+                      </div>
+                    </TableCell>
+
                     <TableCell>
                       <div className='flex flex-col gap-0.5'>
                         <span className='text-xs font-bold text-neutral-800'>{item.volume || '-'}</span>
