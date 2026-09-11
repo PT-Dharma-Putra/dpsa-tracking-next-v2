@@ -1273,16 +1273,22 @@ export default function EngineerDetailPage() {
                   </TableHead>
                   {/* <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>GK MDL</TableHead> */}
                   <TableHead className="text-[12px] uppercase font-bold text-neutral-500">
-                    Gambar Kerja
+                    <div className="flex flex-col items-center gap-0.5">
+                      <span>GAMBAR</span>
+                      <span>KERJA</span>
+                    </div>
                   </TableHead>
                   <TableHead className="text-[12px] uppercase font-bold text-neutral-500">
                     Submit
                   </TableHead>
                   <TableHead className="text-[12px] uppercase font-bold text-neutral-500">
-                    Timeline Drawing
+                    Timeline
                   </TableHead>
                   <TableHead className="text-[12px] uppercase font-bold text-neutral-500">
-                    Tepat Waktu
+                    <div className="flex flex-col items-center gap-0.5">
+                      <span>TEPAT</span>
+                      <span>WAKTU</span>
+                    </div>
                   </TableHead>
                 </TableRow>
               </TableHeader>
@@ -1334,6 +1340,7 @@ export default function EngineerDetailPage() {
                           <span className="text-xs font-bold text-neutral-800">
                             {item.lantai || "-"}
                           </span>
+                          
                           <span
                             className="text-[12px] text-muted-foreground truncate max-w-[120px]"
                             title={item.ruang}
@@ -1343,7 +1350,7 @@ export default function EngineerDetailPage() {
                         </div>
                       </TableCell>
 
-                      <TableCell>
+                      {/* <TableCell>
                         <div className="flex flex-col gap-0.5">
                           <span className="text-xs font-bold text-neutral-900 group-hover:text-blue-600 transition-colors">
                             {item.item}
@@ -1355,6 +1362,18 @@ export default function EngineerDetailPage() {
                         <span className="text-sm text-muted-foreground whitespace-pre-wrap">
                           {item.keterangan || "-"}
                         </span>
+                      </TableCell> */ }
+                      
+                      <TableCell className="max-w-[300px] break-words">
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-xs font-bold text-neutral-900 group-hover:text-blue-600 transition-colors">
+                            {item.item}
+                          </span>
+
+                          <span className="text-sm text-muted-foreground whitespace-pre-wrap">
+                            {item.keterangan || "-"}
+                          </span>
+                        </div>
                       </TableCell>
 
                       <TableCell className="text-center text-sm tabular-nums text-neutral-600">
