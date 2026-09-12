@@ -17,6 +17,8 @@ import {
   User,
   Eye,
   Settings,
+  Check,
+  ChevronsUpDown,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -33,6 +35,19 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
 
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
@@ -50,6 +65,7 @@ export default function PengirimanPage() {
   const [page, setPage] = React.useState(1);
   const [debouncedSearch, setDebouncedSearch] = React.useState('');
   const [selectedIds, setSelectedIds] = React.useState<number[]>([]);
+  const [clientPopoverOpen, setClientPopoverOpen] = React.useState(false);
 
   // Form dialog state
   const [dialogOpen, setDialogOpen] = React.useState(false);
@@ -119,10 +135,10 @@ export default function PengirimanPage() {
     );
   };
 
-  // Fetch Clients for Filter dropdown (small list is fine)
-  const { data: clientsResponse } = useQuery({
+  // Fetch Clients for Filter dropdown (load all clients for searchable combobox)
+  const { data: clientsResponse, isLoading: isLoadingClients } = useQuery({
     queryKey: ['clients-all-filter'],
-    queryFn: () => ClientService.getClients({ per_page: 100 }),
+    queryFn: () => ClientService.getClients({ per_page: -1 }),
   });
   const clientsList = clientsResponse?.data || [];
 
@@ -204,18 +220,81 @@ export default function PengirimanPage() {
 
           {/* Client Filter */}
           <div className='w-full'>
-            <select
-              value={clientId}
-              onChange={(e) => setClientId(e.target.value)}
-              className='w-full h-10 px-3 rounded-md border border-neutral-200 bg-neutral-50 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary'
+            <Popover
+              open={clientPopoverOpen}
+              onOpenChange={setClientPopoverOpen}
             >
-              <option value=''>Semua Client</option>
-              {clientsList.map((client) => (
-                <option key={client.id} value={client.id}>
-                  {client.name}
-                </option>
-              ))}
-            </select>
+              <PopoverTrigger asChild>
+                <Button
+                  variant='outline'
+                  role='combobox'
+                  aria-expanded={clientPopoverOpen}
+                  className={cn(
+                    'w-full justify-between h-10 px-3 bg-neutral-50 border-neutral-200 hover:bg-neutral-100/70 font-normal text-sm',
+                    !clientId && 'text-muted-foreground'
+                  )}
+                >
+                  <span className='truncate flex items-center gap-2'>
+                    <Building2 className='h-4 w-4 text-neutral-400 shrink-0' />
+                    {clientId
+                      ? clientsList.find(
+                          (client) => client.id.toString() === clientId
+                        )?.name || 'Pilih Client'
+                      : 'Semua Client'}
+                  </span>
+                  <ChevronsUpDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className='w-[350px] p-0' align='start'>
+                <Command>
+                  <CommandInput placeholder='Cari client...' />
+                  <CommandList className='max-h-[280px] overflow-y-auto'>
+                    <CommandEmpty>
+                      {isLoadingClients
+                        ? 'Memuat client...'
+                        : 'Client tidak ditemukan.'}
+                    </CommandEmpty>
+                    <CommandGroup>
+                      <CommandItem
+                        value='Semua Client'
+                        onSelect={() => {
+                          setClientId('');
+                          setClientPopoverOpen(false);
+                        }}
+                      >
+                        <Check
+                          className={cn(
+                            'mr-2 h-4 w-4',
+                            !clientId ? 'opacity-100' : 'opacity-0'
+                          )}
+                        />
+                        Semua Client
+                      </CommandItem>
+                      {clientsList.map((client) => (
+                        <CommandItem
+                          key={client.id}
+                          value={client.name}
+                          onSelect={() => {
+                            setClientId(client.id.toString());
+                            setClientPopoverOpen(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              'mr-2 h-4 w-4',
+                              clientId === client.id.toString()
+                                ? 'opacity-100'
+                                : 'opacity-0'
+                            )}
+                          />
+                          {client.name}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
       </div>
