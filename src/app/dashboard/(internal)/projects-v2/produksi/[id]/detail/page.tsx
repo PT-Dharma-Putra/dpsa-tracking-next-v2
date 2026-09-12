@@ -228,6 +228,368 @@ export default function ProduksiDetailPage() {
     return Array.from(grouped.values());
   }, [filteredItems, isGrouped]);
 
+  // Bulk Selection State
+  const [selectedItemIds, setSelectedItemIds] = React.useState<number[]>([]);
+  const [isBulkProduksiOpen, setIsBulkProduksiOpen] = React.useState(false);
+
+  // Bulk Production Data (0-100%)
+  const [bulkProduksiData, setBulkProduksiData] = React.useState<Record<string, number>>({
+    cold_press: 0,
+    running_saw: 0,
+    edging: 0,
+    cnc: 0,
+    tukang_kayu: 0,
+    tukang_jok: 0,
+    rakit: 0,
+    finishing: 0,
+    menggunakan_stok: 0,
+  });
+
+  // Bulk Supplier Data (0-100%)
+  const [bulkSupplierData, setBulkSupplierData] = React.useState<Record<string, number>>({
+    barang_dipesan: 0,
+    barang_tersedia: 0,
+    rakit: 0,
+    packing: 0,
+  });
+
+  // Bulk Supplier Dates
+  const [bulkSupplierDates, setBulkSupplierDates] = React.useState<Record<string, string | null>>({
+    tanggal_barang_dipesan: null,
+    tanggal_barang_tersedia: null,
+    tanggal_rakit: null,
+    tanggal_packing: null,
+  });
+
+  // Bulk Skipped Fields
+  const [bulkSkippedFields, setBulkSkippedFields] = React.useState<Record<string, boolean>>({});
+
+  const allSelectedAreSupplier = React.useMemo(() => {
+    if (selectedItemIds.length === 0) return false;
+    return selectedItemIds.every((id) => {
+      const item = items?.find((i) => i.id === id);
+      return item?.produksi?.is_supplier;
+    });
+  }, [selectedItemIds, items]);
+
+  const totalQtySelected = React.useMemo(() => {
+    return selectedItemIds.reduce((sum, itemId) => {
+      const item = items?.find((i) => i.id === itemId);
+      return sum + (item?.jumlah || 0);
+    }, 0);
+  }, [selectedItemIds, items]);
+
+  const bulkEstimatedPersen = React.useMemo(() => {
+    if (totalQtySelected === 0) return 0;
+    if (allSelectedAreSupplier) {
+      const allFields = ['barang_dipesan', 'barang_tersedia', 'rakit', 'packing'];
+      const skipped = Object.keys(bulkSkippedFields).filter((k) => bulkSkippedFields[k]);
+      const activeFields = allFields.filter((f) => !skipped.includes(f));
+      const activeCount = activeFields.length;
+      if (activeCount === 0) return 0;
+      
+      let totalSum = 0;
+      activeFields.forEach((f) => {
+        totalSum += bulkSupplierData[f] || 0;
+      });
+      return (totalSum * 100) / (activeCount * totalQtySelected);
+    } else {
+      const allFields = ['cold_press', 'running_saw', 'edging', 'cnc', 'tukang_kayu', 'finishing', 'rakit'];
+      const skipped = Object.keys(bulkSkippedFields).filter((k) => bulkSkippedFields[k]);
+      const activeFields = allFields.filter((f) => !skipped.includes(f));
+      const activeCount = activeFields.length;
+      
+      let totalSum = 0;
+      activeFields.forEach((f) => {
+        totalSum += bulkProduksiData[f] || 0;
+      });
+      
+      const persenProduksi = activeCount > 0 ? ((totalSum * 100) / (activeCount * totalQtySelected)) : 0;
+      const persenStok = (bulkProduksiData.menggunakan_stok / totalQtySelected) * 100;
+      return Math.min(persenProduksi + persenStok, 100);
+    }
+  }, [allSelectedAreSupplier, bulkProduksiData, bulkSupplierData, bulkSkippedFields, totalQtySelected]);
+
+  const openBulkProduksiDialog = () => {
+    const selectedItems = selectedItemIds
+      .map((itemId) => items?.find((i) => i.id === itemId))
+      .filter(Boolean) as ProjectItemV2[];
+
+    // 1. Initialize bulk production data with sums
+    const initialProduksiData: Record<string, number> = {
+      cold_press: 0,
+      running_saw: 0,
+      edging: 0,
+      cnc: 0,
+      tukang_kayu: 0,
+      tukang_jok: 0,
+      rakit: 0,
+      finishing: 0,
+      menggunakan_stok: 0,
+    };
+
+    selectedItems.forEach((item) => {
+      if (item.produksi) {
+        initialProduksiData.cold_press += parseInt(item.produksi.cold_press as any, 10) || 0;
+        initialProduksiData.running_saw += parseInt(item.produksi.running_saw as any, 10) || 0;
+        initialProduksiData.edging += parseInt(item.produksi.edging as any, 10) || 0;
+        initialProduksiData.cnc += parseInt(item.produksi.cnc as any, 10) || 0;
+        initialProduksiData.tukang_kayu += parseInt(item.produksi.tukang_kayu as any, 10) || 0;
+        initialProduksiData.tukang_jok += parseInt(item.produksi.tukang_jok as any, 10) || 0;
+        initialProduksiData.rakit += parseInt(item.produksi.rakit as any, 10) || 0;
+        initialProduksiData.finishing += parseInt(item.produksi.finishing as any, 10) || 0;
+        initialProduksiData.menggunakan_stok += parseInt(item.produksi.menggunakan_stok as any, 10) || 0;
+      }
+    });
+
+    // 2. Initialize bulk supplier data with sums
+    const initialSupplierData: Record<string, number> = {
+      barang_dipesan: 0,
+      barang_tersedia: 0,
+      rakit: 0,
+      packing: 0,
+    };
+
+    const initialSupplierDates: Record<string, string | null> = {
+      tanggal_barang_dipesan: null,
+      tanggal_barang_tersedia: null,
+      tanggal_rakit: null,
+      tanggal_packing: null,
+    };
+
+    selectedItems.forEach((item) => {
+      if (item.barang_supplier) {
+        initialSupplierData.barang_dipesan += parseInt(item.barang_supplier.barang_dipesan as any, 10) || 0;
+        initialSupplierData.barang_tersedia += parseInt(item.barang_supplier.barang_tersedia as any, 10) || 0;
+        initialSupplierData.rakit += parseInt(item.barang_supplier.rakit as any, 10) || 0;
+        initialSupplierData.packing += parseInt(item.barang_supplier.packing as any, 10) || 0;
+      }
+    });
+
+    const supplierItems = selectedItems.filter((i) => i.barang_supplier);
+    if (supplierItems.length > 0) {
+      const dateKeys = [
+        'tanggal_barang_dipesan',
+        'tanggal_barang_tersedia',
+        'tanggal_rakit',
+        'tanggal_packing',
+      ] as const;
+
+      dateKeys.forEach((dKey) => {
+        const firstVal = supplierItems[0].barang_supplier?.[dKey]
+          ? String(supplierItems[0].barang_supplier[dKey]).slice(0, 10)
+          : null;
+        const allSame = supplierItems.every((i) => {
+          const val = i.barang_supplier?.[dKey]
+            ? String(i.barang_supplier[dKey]).slice(0, 10)
+            : null;
+          return val === firstVal;
+        });
+        if (allSame && firstVal) {
+          initialSupplierDates[dKey] = firstVal;
+        }
+      });
+    }
+
+    // 3. Initialize skipped fields (if a field is skipped in all selected items, mark it as skipped in bulk)
+    const initialSkippedFields: Record<string, boolean> = {};
+    const allSkippedFieldsLists = selectedItems.map((item) => {
+      if (item.produksi?.is_supplier) {
+        return item.barang_supplier?.skipped_fields || [];
+      } else {
+        return item.produksi?.skipped_fields || [];
+      }
+    });
+
+    if (allSkippedFieldsLists.length > 0) {
+      const firstList = allSkippedFieldsLists[0];
+      firstList.forEach((field) => {
+        const isSkippedInAll = allSkippedFieldsLists.every((list) => list.includes(field));
+        if (isSkippedInAll) {
+          initialSkippedFields[field] = true;
+        }
+      });
+    }
+
+    setBulkProduksiData(initialProduksiData);
+    setBulkSupplierData(initialSupplierData);
+    setBulkSupplierDates(initialSupplierDates);
+    setBulkSkippedFields(initialSkippedFields);
+    setIsBulkProduksiOpen(true);
+  };
+
+  const toggleBulkSkipField = (field: string) => {
+    setBulkSkippedFields((prev) => ({ ...prev, [field]: !prev[field] }));
+  };
+
+  const bulkUpdateProduksiMutation = useMutation({
+    mutationFn: async () => {
+      const skippedList = Object.keys(bulkSkippedFields).filter((k) => bulkSkippedFields[k]);
+      const selectedItems = selectedItemIds
+        .map((itemId) => items?.find((i) => i.id === itemId))
+        .filter(Boolean) as ProjectItemV2[];
+
+      if (allSelectedAreSupplier) {
+        // It's a supplier item, update barang_supplier
+        const fields = ['barang_dipesan', 'barang_tersedia', 'rakit', 'packing'] as const;
+        
+        const updates = selectedItems.map((item) => {
+          return {
+            id: item.id,
+            data: {
+              jumlah_order: item.jumlah,
+              skipped_fields: skippedList,
+            } as any,
+            capacity: item.jumlah,
+          };
+        });
+
+        fields.forEach((f) => {
+          let remaining = bulkSupplierData[f] || 0;
+          updates.forEach((update) => {
+            if (skippedList.includes(f)) {
+              update.data[f] = 0;
+            } else {
+              const allocate = Math.min(remaining, update.capacity);
+              update.data[f] = allocate;
+              remaining -= allocate;
+            }
+          });
+        });
+
+        const dateFieldMapping = [
+          { field: 'barang_dipesan', dateKey: 'tanggal_barang_dipesan' },
+          { field: 'barang_tersedia', dateKey: 'tanggal_barang_tersedia' },
+          { field: 'rakit', dateKey: 'tanggal_rakit' },
+          { field: 'packing', dateKey: 'tanggal_packing' },
+        ] as const;
+
+        updates.forEach((update) => {
+          const item = selectedItems.find((i) => i.id === update.id);
+          dateFieldMapping.forEach(({ field, dateKey }) => {
+            if (skippedList.includes(field)) {
+              update.data[dateKey] = null;
+            } else if (bulkSupplierDates[dateKey]) {
+              update.data[dateKey] = bulkSupplierDates[dateKey];
+            } else if (item?.barang_supplier && (item.barang_supplier as any)[dateKey]) {
+              update.data[dateKey] = (item.barang_supplier as any)[dateKey];
+            } else {
+              update.data[dateKey] = null;
+            }
+          });
+        });
+
+        const promises = updates.map((update) =>
+          projectV2Service.updateBarangSupplier(update.id, update.data)
+        );
+        await Promise.all(promises);
+      } else {
+        // It's a regular production item, update produksi
+        const fields = [
+          'cold_press',
+          'running_saw',
+          'edging',
+          'cnc',
+          'tukang_kayu',
+          'tukang_jok',
+          'rakit',
+          'finishing',
+        ] as const;
+
+        const updates = selectedItems.map((item) => {
+          return {
+            id: item.id,
+            data: {
+              jumlah_order: item.jumlah,
+              skipped_fields: skippedList,
+            } as any,
+            capacity: item.jumlah,
+          };
+        });
+
+        fields.forEach((f) => {
+          let remaining = bulkProduksiData[f] || 0;
+          updates.forEach((update) => {
+            if (skippedList.includes(f)) {
+              update.data[f] = 0;
+            } else {
+              const allocate = Math.min(remaining, update.capacity);
+              update.data[f] = allocate;
+              remaining -= allocate;
+            }
+          });
+        });
+
+        let remainingStok = bulkProduksiData.menggunakan_stok || 0;
+        updates.forEach((update) => {
+          const allocate = Math.min(remainingStok, update.capacity);
+          update.data.menggunakan_stok = allocate;
+          remainingStok -= allocate;
+        });
+
+        // Keep other fields (quality_control, packing)
+        updates.forEach((update) => {
+          const item = selectedItems.find((i) => i.id === update.id);
+          const otherFields = ['quality_control', 'packing'];
+          otherFields.forEach((field) => {
+            if (item && item.produksi && (item.produksi as any)[field] !== undefined) {
+              update.data[field] = (item.produksi as any)[field];
+            } else {
+              update.data[field] = 0;
+            }
+          });
+        });
+
+        const promises = updates.map((update) =>
+          projectV2Service.updateProduksi(update.id, update.data)
+        );
+        await Promise.all(promises);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['project-v2-items', projectId],
+      });
+      queryClient.invalidateQueries({ queryKey: ['projects-v2', projectId] });
+      toast.success('Progress produksi massal berhasil diupdate');
+      setSelectedItemIds([]);
+      setIsBulkProduksiOpen(false);
+    },
+    onError: () => {
+      toast.error('Gagal mengupdate progress produksi massal');
+    },
+  });
+
+  const bulkMarkAsSupplierMutation = useMutation({
+    mutationFn: async () => {
+      const promises = selectedItemIds.map((id) => projectV2Service.markAsSupplier(id));
+      await Promise.all(promises);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['project-v2-items', projectId] });
+      toast.success('Berhasil menandai sebagai barang supplier');
+      setBulkSkippedFields({});
+    },
+    onError: () => {
+      toast.error('Gagal menandai sebagai barang supplier');
+    },
+  });
+
+  const bulkCancelSupplierMutation = useMutation({
+    mutationFn: async () => {
+      const promises = selectedItemIds.map((id) => projectV2Service.cancelBarangSupplier(id));
+      await Promise.all(promises);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['project-v2-items', projectId] });
+      toast.success('Berhasil membatalkan status barang supplier');
+      setBulkSkippedFields({});
+    },
+    onError: () => {
+      toast.error('Gagal membatalkan status barang supplier');
+    },
+  });
+
   // Export Excel Function
   const handleExportExcel = () => {
     if (!displayItems || displayItems.length === 0) {
@@ -1461,6 +1823,21 @@ export default function ProduksiDetailPage() {
           </h2>
 
           <div className='flex items-center gap-2'>
+            {selectedItemIds.length > 0 && (
+              <div className='flex items-center gap-2 pr-2 border-r border-neutral-200'>
+                <span className='text-xs text-muted-foreground font-medium'>
+                  {selectedItemIds.length} item dipilih
+                </span>
+                <Button
+                  variant='outline'
+                  onClick={openBulkProduksiDialog}
+                  className='h-8 bg-white shadow-sm border-orange-200 text-orange-700 hover:bg-orange-50 font-medium text-xs'
+                >
+                  <BarChart3 className='w-4 h-4 mr-1.5' />
+                  Set Persentase Produksi Massal
+                </Button>
+              </div>
+            )}
             <Button
               variant='outline'
               onClick={handleExportExcel}
@@ -1471,7 +1848,10 @@ export default function ProduksiDetailPage() {
             </Button>
             <Button
               variant={isGrouped ? 'default' : 'outline'}
-              onClick={() => setIsGrouped(!isGrouped)}
+              onClick={() => {
+                setIsGrouped(!isGrouped);
+                setSelectedItemIds([]);
+              }}
               className='shadow-sm h-8 text-xs'
             >
               <Package className='w-4 h-4 mr-2' />
@@ -1506,6 +1886,33 @@ export default function ProduksiDetailPage() {
             <TableHeader className='bg-neutral-50 sticky top-0 z-10 shadow-sm shadow-neutral-200/50'>
               <TableRow>
                 <TableHead className='w-[50px]'>#</TableHead>
+                <TableHead className='w-[40px] text-center'>
+                  <Checkbox
+                    checked={
+                      displayItems.length > 0 &&
+                      displayItems.every((item) =>
+                        isGrouped && (item as any).groupedItems
+                          ? (item as any).groupedItems.every((g: any) => selectedItemIds.includes(g.id))
+                          : selectedItemIds.includes(item.id)
+                      )
+                    }
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        const ids: number[] = [];
+                        displayItems.forEach((item) => {
+                          if (isGrouped && (item as any).groupedItems) {
+                            (item as any).groupedItems.forEach((g: any) => ids.push(g.id));
+                          } else {
+                            ids.push(item.id);
+                          }
+                        });
+                        setSelectedItemIds(Array.from(new Set(ids)));
+                      } else {
+                        setSelectedItemIds([]);
+                      }
+                    }}
+                  />
+                </TableHead>
                 {/* <TableHead>Kode Barang</TableHead> */}
                 <TableHead>Lantai | Ruang</TableHead>
                 <TableHead>Nama Item | Deskripsi</TableHead>
@@ -1556,7 +1963,7 @@ export default function ProduksiDetailPage() {
               {isLoadingItems ? (
                 <TableRow>
                   <TableCell
-                    colSpan={18}
+                    colSpan={19}
                     className='h-32 text-center text-muted-foreground'
                   >
                     <Loader2 className='h-6 w-6 animate-spin mx-auto' />
@@ -1565,7 +1972,7 @@ export default function ProduksiDetailPage() {
               ) : displayItems.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={18}
+                    colSpan={19}
                     className='h-32 text-center text-muted-foreground'
                   >
                     No items recorded for this project.
@@ -1579,6 +1986,26 @@ export default function ProduksiDetailPage() {
                   >
                     <TableCell className='text-muted-foreground font-medium'>
                       {index + 1}
+                    </TableCell>
+                    <TableCell className='text-center'>
+                      <Checkbox
+                        checked={
+                          isGrouped && (item as any).groupedItems
+                            ? (item as any).groupedItems.every((g: any) => selectedItemIds.includes(g.id))
+                            : selectedItemIds.includes(item.id)
+                        }
+                        onCheckedChange={(checked) => {
+                          const rowIds =
+                            isGrouped && (item as any).groupedItems
+                              ? (item as any).groupedItems.map((g: any) => g.id)
+                              : [item.id];
+                          if (checked) {
+                            setSelectedItemIds((prev) => Array.from(new Set([...prev, ...rowIds])));
+                          } else {
+                            setSelectedItemIds((prev) => prev.filter((id) => !rowIds.includes(id)));
+                          }
+                        }}
+                      />
                     </TableCell>
                     {/* <TableCell className='text-xs font-mono text-neutral-600'>
                       {item.mdl_item?.kode_barang || '-'}
@@ -3397,6 +3824,385 @@ export default function ProduksiDetailPage() {
               Tutup
             </AlertDialogCancel>
           </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Set Bulk Production Percentage Dialog */}
+      <AlertDialog open={isBulkProduksiOpen} onOpenChange={setIsBulkProduksiOpen}>
+        <AlertDialogContent className="mb-4 flex h-[90dvh] sm:h-[calc(80vh-2rem)] w-[95vw] sm:min-w-[calc(75vw-2rem)] sm:max-w-[calc(75vw-2rem)] flex-col justify-between gap-0 p-0">
+          {/* Header */}
+          <div className="bg-white border-b px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between shrink-0 shadow-sm z-10">
+            <div>
+              <AlertDialogTitle className="flex items-center gap-2 text-lg sm:text-2xl font-bold tracking-tight text-neutral-800">
+                <BarChart3 className="h-6 w-6 text-orange-500" />
+                Update Progress Produksi Massal
+              </AlertDialogTitle>
+              <AlertDialogDescription className="text-sm text-neutral-500 mt-1">
+                Input target progress produksi secara massal untuk <strong>{selectedItemIds.length}</strong> item terpilih.
+              </AlertDialogDescription>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsBulkProduksiOpen(false)}
+              className="rounded-full text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700 shrink-0 h-10 w-10"
+            >
+              <X className="w-5 h-5" />
+            </Button>
+          </div>
+
+          {/* Body */}
+          <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6">
+            {/* Selected items list summary */}
+            <div className="bg-neutral-50 rounded-lg p-3 border border-neutral-100 max-h-32 overflow-y-auto custom-scrollbar space-y-1.5">
+              <Label className="text-[10px] uppercase text-neutral-500 font-bold block mb-1">
+                Daftar Item Terpilih ({selectedItemIds.length}):
+              </Label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {selectedItemIds.map((itemId) => {
+                  const item = items?.find((i) => i.id === itemId);
+                  if (!item) return null;
+                  return (
+                    <div key={itemId} className="flex justify-between items-center text-xs bg-white p-1.5 rounded border border-neutral-200/60">
+                      <span className="font-semibold text-neutral-700 truncate max-w-[200px]">
+                        {item.item}
+                      </span>
+                      <Badge variant="outline" className="bg-neutral-100 text-neutral-600 border-none font-bold text-[9px] px-1">
+                        {item.jumlah} pcs {item.produksi?.is_supplier ? '(Supplier)' : ''}
+                      </Badge>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Top Center: Jumlah Order & Estimasi Persen (%) */}
+            <div className="flex justify-center">
+              <div
+                className={`grid ${
+                  allSelectedAreSupplier
+                    ? 'grid-cols-2 sm:max-w-md'
+                    : 'grid-cols-1 sm:grid-cols-3 sm:max-w-xl'
+                } gap-4 w-full`}
+              >
+                <div className="space-y-2 text-center">
+                  <Label className="text-sm font-bold">Jumlah Order</Label>
+                  <Input
+                    type="number"
+                    value={totalQtySelected}
+                    disabled
+                    className="bg-neutral-50 font-bold text-center text-lg h-12 disabled:opacity-100"
+                  />
+                </div>
+                {!allSelectedAreSupplier && (
+                  <div className="space-y-2 text-center">
+                    <Label className="text-sm font-bold">Menggunakan Stok (Qty)</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      max={totalQtySelected}
+                      value={
+                        bulkProduksiData.menggunakan_stok === 0
+                          ? ''
+                          : bulkProduksiData.menggunakan_stok || ''
+                      }
+                      onChange={(e) => {
+                        const val = Math.min(
+                          Math.max(parseInt(e.target.value) || 0, 0),
+                          totalQtySelected
+                        );
+                        setBulkProduksiData((prev) => ({
+                          ...prev,
+                          menggunakan_stok: val,
+                        }));
+                      }}
+                      className="font-bold text-center text-lg h-12"
+                    />
+                  </div>
+                )}
+                <div className="space-y-2 text-center">
+                  <Label className="text-sm font-bold">Estimasi Persen (%)</Label>
+                  <Input
+                    type="text"
+                    value={`${bulkEstimatedPersen.toFixed(2)}%`}
+                    disabled
+                    className={`${
+                      allSelectedAreSupplier
+                        ? 'bg-blue-50 text-blue-700'
+                        : 'bg-orange-50 text-orange-700'
+                    } font-bold text-center text-lg h-12 disabled:opacity-100`}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Stages Form Inputs */}
+            {!allSelectedAreSupplier ? (
+              <>
+                {/* Mesin Section */}
+                <div className="space-y-3 pt-4 border-t">
+                  <h4 className="font-semibold text-sm text-neutral-500 uppercase tracking-wider border-b pb-2">
+                    Mesin
+                  </h4>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {['cold_press', 'running_saw', 'edging', 'cnc'].map((field) => {
+                      const labelMap: Record<string, string> = {
+                        cold_press: 'Cold Press',
+                        running_saw: 'Running Saw',
+                        edging: 'Edging',
+                        cnc: 'CNC',
+                      };
+                      return (
+                        <div key={field} className="space-y-2">
+                          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                            <Label className="text-xs font-semibold">{labelMap[field]}</Label>
+                            <Button
+                              type="button"
+                              variant={bulkSkippedFields[field] ? 'default' : 'outline'}
+                              size="sm"
+                              className={`h-5 px-1.5 text-[10px] ${
+                                bulkSkippedFields[field] ? 'bg-neutral-500 hover:bg-neutral-600' : 'text-neutral-500'
+                              }`}
+                              onClick={() => toggleBulkSkipField(field)}
+                            >
+                              {bulkSkippedFields[field] ? 'Batalkan' : 'Lewati'}
+                            </Button>
+                          </div>
+                          <div>
+                            <Input
+                              type="number"
+                              min={0}
+                              max={totalQtySelected}
+                              disabled={bulkSkippedFields[field]}
+                              value={
+                                bulkSkippedFields[field]
+                                  ? '-'
+                                  : bulkProduksiData[field] === 0
+                                  ? ''
+                                  : bulkProduksiData[field] || ''
+                              }
+                              onChange={(e) => {
+                                const val = Math.min(Math.max(parseInt(e.target.value) || 0, 0), totalQtySelected);
+                                setBulkProduksiData((prev) => ({
+                                  ...prev,
+                                  [field]: val,
+                                }));
+                              }}
+                              className={`${
+                                bulkSkippedFields[field] ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100' : ''
+                              } text-sm`}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Manual Section */}
+                <div className="space-y-3 pt-4 border-t">
+                  <h4 className="font-semibold text-sm text-neutral-500 uppercase tracking-wider border-b pb-2">
+                    Manual
+                  </h4>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {['tukang_kayu', 'tukang_jok', 'rakit', 'finishing'].map((field) => {
+                      const labelMap: Record<string, string> = {
+                        tukang_kayu: 'Tukang Kayu',
+                        tukang_jok: 'Tukang Jok',
+                        rakit: 'Rakit',
+                        finishing: 'Finishing',
+                      };
+                      return (
+                        <div key={field} className="space-y-2">
+                          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                            <Label className="text-xs font-semibold">{labelMap[field]}</Label>
+                            <Button
+                              type="button"
+                              variant={bulkSkippedFields[field] ? 'default' : 'outline'}
+                              size="sm"
+                              className={`h-5 px-1.5 text-[10px] ${
+                                bulkSkippedFields[field] ? 'bg-neutral-500 hover:bg-neutral-600' : 'text-neutral-500'
+                              }`}
+                              onClick={() => toggleBulkSkipField(field)}
+                            >
+                              {bulkSkippedFields[field] ? 'Batalkan' : 'Lewati'}
+                            </Button>
+                          </div>
+                          <div>
+                            <Input
+                              type="number"
+                              min={0}
+                              max={totalQtySelected}
+                              disabled={bulkSkippedFields[field]}
+                              value={
+                                bulkSkippedFields[field]
+                                  ? '-'
+                                  : bulkProduksiData[field] === 0
+                                  ? ''
+                                  : bulkProduksiData[field] || ''
+                              }
+                              onChange={(e) => {
+                                const val = Math.min(Math.max(parseInt(e.target.value) || 0, 0), totalQtySelected);
+                                setBulkProduksiData((prev) => ({
+                                  ...prev,
+                                  [field]: val,
+                                }));
+                              }}
+                              className={`${
+                                bulkSkippedFields[field] ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100' : ''
+                              } text-sm`}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </>
+            ) : (
+              /* Supplier Section */
+              <div className="space-y-3 pt-4 border-t">
+                <h4 className="font-semibold text-sm text-neutral-500 uppercase tracking-wider border-b pb-2">
+                  Tahapan Supplier
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {(
+                    [
+                      { key: 'barang_dipesan', dateKey: 'tanggal_barang_dipesan', label: 'Barang Dipesan' },
+                      { key: 'barang_tersedia', dateKey: 'tanggal_barang_tersedia', label: 'Barang Tersedia' },
+                      { key: 'rakit', dateKey: 'tanggal_rakit', label: 'Rakit' },
+                      { key: 'packing', dateKey: 'tanggal_packing', label: 'Packing' },
+                    ] as const
+                  ).map(({ key, dateKey, label }) => (
+                    <div key={key} className="p-4 rounded-xl border border-neutral-200 bg-neutral-50/50 space-y-3 shadow-sm">
+                      <div className="flex items-center justify-between pb-2 border-b border-neutral-200">
+                        <Label className="font-bold text-sm text-neutral-800">{label}</Label>
+                        <Button
+                          type="button"
+                          variant={bulkSkippedFields[key] ? 'default' : 'outline'}
+                          size="sm"
+                          className={`h-6 px-2 text-xs ${
+                            bulkSkippedFields[key] ? 'bg-neutral-500 hover:bg-neutral-600' : 'text-neutral-500'
+                          }`}
+                          onClick={() => toggleBulkSkipField(key)}
+                        >
+                          {bulkSkippedFields[key] ? 'Batalkan' : 'Lewati Proses'}
+                        </Button>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="space-y-1.5">
+                          <Label className="text-xs font-semibold text-neutral-600">Jumlah</Label>
+                          <Input
+                            type="number"
+                            min={0}
+                            max={totalQtySelected}
+                            disabled={bulkSkippedFields[key]}
+                            placeholder="0"
+                            value={
+                              bulkSkippedFields[key]
+                                ? '-'
+                                : bulkSupplierData[key] === 0
+                                ? ''
+                                : bulkSupplierData[key] || ''
+                            }
+                            onChange={(e) => {
+                              const val = Math.min(Math.max(parseInt(e.target.value) || 0, 0), totalQtySelected);
+                              setBulkSupplierData((prev) => ({
+                                ...prev,
+                                [key]: val,
+                              }));
+                            }}
+                            className={`bg-white ${
+                              bulkSkippedFields[key] ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100' : ''
+                            }`}
+                          />
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <Label className="text-xs font-semibold text-neutral-600">Tanggal</Label>
+                          <Input
+                            type="date"
+                            disabled={bulkSkippedFields[key]}
+                            value={
+                              bulkSkippedFields[key]
+                                ? ''
+                                : bulkSupplierDates[dateKey]
+                                ? String(bulkSupplierDates[dateKey]).slice(0, 10)
+                                : ''
+                            }
+                            onChange={(e) => {
+                              setBulkSupplierDates((prev) => ({
+                                ...prev,
+                                [dateKey]: e.target.value || null,
+                              }));
+                            }}
+                            className={`bg-white text-xs ${
+                              bulkSkippedFields[key] ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100' : ''
+                            }`}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Footer */}
+          <div className="bg-white border-t px-4 sm:px-6 py-3 sm:py-4 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2 sm:gap-4 shrink-0 shadow-[0_-4px_6px_-1px_rgb(0,0,0,0.05)] z-10">
+            {allSelectedAreSupplier ? (
+              <Button
+                variant="outline"
+                className="border-red-200 text-red-700 hover:bg-red-50 rounded-full px-5 text-sm"
+                onClick={() => bulkCancelSupplierMutation.mutate()}
+                disabled={bulkCancelSupplierMutation.isPending}
+              >
+                {bulkCancelSupplierMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <X className="w-4 h-4 mr-2" />
+                )}
+                Batalkan sebagai barang supplier
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                className="border-blue-200 text-blue-700 hover:bg-blue-50 rounded-full px-5 text-sm"
+                onClick={() => bulkMarkAsSupplierMutation.mutate()}
+                disabled={bulkMarkAsSupplierMutation.isPending}
+              >
+                {bulkMarkAsSupplierMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Truck className="w-4 h-4 mr-2" />
+                )}
+                Tandai sebagai barang supplier
+              </Button>
+            )}
+            
+            <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4">
+              <AlertDialogCancel
+                onClick={() => setIsBulkProduksiOpen(false)}
+                className="px-6 rounded-full font-medium"
+              >
+                Batal
+              </AlertDialogCancel>
+              <Button
+                className="bg-orange-600 hover:bg-orange-700 text-white rounded-full px-6"
+                onClick={() => bulkUpdateProduksiMutation.mutate()}
+                disabled={bulkUpdateProduksiMutation.isPending}
+              >
+                {bulkUpdateProduksiMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <CheckCircle2 className="w-4 h-4 mr-2" />
+                )}
+                Terapkan Progress
+              </Button>
+            </div>
+          </div>
         </AlertDialogContent>
       </AlertDialog>
     </div>
