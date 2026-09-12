@@ -19,6 +19,7 @@ export interface ClientProject {
 
 export interface HerminaClient {
     id: number;
+    kode?: number | string | null;
     name: string;
     company_name?: string | null;
     email?: string | null;
@@ -71,7 +72,7 @@ export const ClientService = {
 
     getHerminaClients: async (): Promise<HerminaClient[]> => {
         const response = await axiosInstance.get('/clients', {
-            params: { hermina: 1, per_page: -1 }
+            params: { hermina: 1, per_page: -1, sort_by: 'kode', sort_order: 'asc' }
         });
         return response.data.data || response.data || [];
     },
