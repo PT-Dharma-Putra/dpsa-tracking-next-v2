@@ -1283,7 +1283,7 @@ export function ProjectsV2Table({
       // 2. Fetch items and shipments for each project
       const projectsWithData = await Promise.all(
         selectedProjects.map(async (project) => {
-          const spkId = project.spk?.id || project.spk_id;
+          const spkId = project.spk?.id || (project as any).spk_id;
           try {
             const [items, shipmentsRes] = await Promise.all([
               projectV2Service.getProjectItems(project.id).catch(() => []),
