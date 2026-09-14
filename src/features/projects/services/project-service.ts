@@ -16,6 +16,7 @@ export interface Project {
   deadline?: string;
   tanggal_selesai?: string;
   spk_number?: string;
+  need_design?: number;
   // Addendum fields
   parent_project_id?: number | null;
   addendum_number?: number | null;
