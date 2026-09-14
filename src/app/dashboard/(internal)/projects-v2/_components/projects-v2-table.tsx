@@ -107,6 +107,7 @@ import { ScheduleDeliveryDialog } from './schedule-delivery-dialog';
 import { DeadlineDialog } from './deadline-dialog';
 import { SetTeamDialog } from './set-team-dialog';
 import { SiteReadinessViewDialog } from './site-readiness-view-dialog';
+import { CatatanKeterlambatanDialog } from './catatan-keterlambatan-dialog';
 const formatRupiah = (value: string | number) => {
   if (value === null || value === undefined || value === '') return '';
 
@@ -491,6 +492,27 @@ export function ProjectsV2Table({
   const [isReadinessViewOpen, setIsReadinessViewOpen] = React.useState(false);
   const [projectForReadinessView, setProjectForReadinessView] =
     React.useState<ProjectV2 | null>(null);
+
+  const [isCatatanDialogOpen, setIsCatatanDialogOpen] = React.useState(false);
+  const [projectForCatatan, setProjectForCatatan] =
+    React.useState<ProjectV2 | null>(null);
+
+  const { user } = useAuth();
+  const userRole = (user?.role || '').toLowerCase();
+  const userRoles = Array.isArray(user?.roles)
+    ? user.roles.map((r: any) =>
+        (typeof r === 'string' ? r : r.name).toLowerCase()
+      )
+    : [];
+  const canEditCatatan =
+    !showAllDashboard &&
+    (userRole === 'marketing' ||
+      userRole === 'ppic' ||
+      userRole === 'super-admin' ||
+      userRole === 'admin' ||
+      userRoles.includes('marketing') ||
+      userRoles.includes('ppic') ||
+      userRoles.includes('super-admin'));
 
   const { canUpdateDeadline } = usePermissions();
   const isJadwalEditable = showPerencanaan && canUpdateDeadline;
@@ -3039,6 +3061,12 @@ export function ProjectsV2Table({
                           )}
                         </div>
                       </TableHead>
+                      <TableHead className='text-center min-w-[140px]'>
+                        <div className='flex flex-col items-center'>
+                          <span>CATATAN</span>
+                          <span>KETERLAMBATAN</span>
+                        </div>
+                      </TableHead>
                       <TableHead
                         className='cursor-pointer hover:bg-neutral-100 transition-colors group text-center'
                         onClick={() => handleSortChange('readiness_percentage')}
@@ -3268,6 +3296,14 @@ export function ProjectsV2Table({
                             ) : (
                               <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
                             )}
+                          </div>
+                        </TableHead>
+                      )}
+                      {(showMarketingFilter || showPerencanaan || showPengirimanV2) && (
+                        <TableHead className='text-center min-w-[140px]'>
+                          <div className='flex flex-col items-center'>
+                            <span>CATATAN</span>
+                            <span>KETERLAMBATAN</span>
                           </div>
                         </TableHead>
                       )}
@@ -3541,7 +3577,7 @@ export function ProjectsV2Table({
                     <TableCell
                       colSpan={
                         showAllDashboard
-                          ? 12
+                          ? 13
                           : showEngineer
                           ? 18
                           : showPurchasing
@@ -3551,9 +3587,13 @@ export function ProjectsV2Table({
                           : showPiutang
                           ? 14
                           : showMarketingFilter
-                          ? 23
-                          : isMainProjectsV2Page || showPerencanaan
+                          ? 24
+                          : showPerencanaan
+                          ? 22
+                          : isMainProjectsV2Page
                           ? 21
+                          : showPengirimanV2
+                          ? 19
                           : 18
                       }
                       className='h-32 text-center text-muted-foreground'
@@ -3568,7 +3608,7 @@ export function ProjectsV2Table({
                     <TableCell
                       colSpan={
                         showAllDashboard
-                          ? 12
+                          ? 13
                           : showEngineer
                           ? 18
                           : showPurchasing
@@ -3578,9 +3618,13 @@ export function ProjectsV2Table({
                           : showPiutang
                           ? 14
                           : showMarketingFilter
-                          ? 23
-                          : isMainProjectsV2Page || showPerencanaan
+                          ? 24
+                          : showPerencanaan
+                          ? 22
+                          : isMainProjectsV2Page
                           ? 21
+                          : showPengirimanV2
+                          ? 19
                           : 18
                       }
                       className='h-32 text-center text-muted-foreground'
@@ -4059,6 +4103,43 @@ export function ProjectsV2Table({
                                 -
                               </span>
                             )}
+                          </TableCell>
+                          <TableCell className='text-center'>
+                            {(() => {
+                              const noteText =
+                                project.catatan_keterlambatan?.catatan ||
+                                project.catatan_keterlambatans?.[0]?.catatan;
+                              const noteCount =
+                                project.catatan_keterlambatans?.length ||
+                                (project.catatan_keterlambatan ? 1 : 0);
+
+                              if (noteText) {
+                                return (
+                                  <button
+                                    onClick={() => {
+                                      setProjectForCatatan(project);
+                                      setIsCatatanDialogOpen(true);
+                                    }}
+                                    className='inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-medium bg-amber-50 border-amber-200 text-amber-800 hover:bg-amber-100 transition-all max-w-[160px] truncate cursor-pointer shadow-xs'
+                                    title={noteText}
+                                  >
+                                    <FileText className='h-3 w-3 shrink-0 text-amber-600' />
+                                    <span className='truncate'>{noteText}</span>
+                                    {noteCount > 1 && (
+                                      <Badge className='ml-0.5 px-1 py-0 text-[10px] h-4 bg-amber-200 text-amber-900 border-none font-semibold'>
+                                        {noteCount}
+                                      </Badge>
+                                    )}
+                                  </button>
+                                );
+                              }
+
+                              return (
+                                <span className='text-muted-foreground italic text-xs'>
+                                  -
+                                </span>
+                              );
+                            })()}
                           </TableCell>
                           <TableCell className='text-center'>
                             <button
@@ -4570,6 +4651,63 @@ export function ProjectsV2Table({
                                   -
                                 </span>
                               )}
+                            </TableCell>
+                          )}
+                          {(showMarketingFilter || showPerencanaan || showPengirimanV2) && (
+                            <TableCell className='text-center'>
+                            {(() => {
+                                const noteText =
+                                  project.catatan_keterlambatan?.catatan ||
+                                  project.catatan_keterlambatans?.[0]?.catatan;
+                                const noteCount =
+                                  project.catatan_keterlambatans?.length ||
+                                  (project.catatan_keterlambatan ? 1 : 0);
+
+                                if (noteText) {
+                                  return (
+                                    <button
+                                      onClick={() => {
+                                        setProjectForCatatan(project);
+                                        setIsCatatanDialogOpen(true);
+                                      }}
+                                      className='inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-medium bg-amber-50 border-amber-200 text-amber-800 hover:bg-amber-100 transition-all max-w-[160px] truncate cursor-pointer shadow-xs'
+                                      title={noteText}
+                                    >
+                                      <FileText className='h-3 w-3 shrink-0 text-amber-600' />
+                                      <span className='truncate'>{noteText}</span>
+                                      {noteCount > 1 && (
+                                        <Badge className='ml-0.5 px-1 py-0 text-[10px] h-4 bg-amber-200 text-amber-900 border-none font-semibold'>
+                                          {noteCount}
+                                        </Badge>
+                                      )}
+                                    </button>
+                                  );
+                                }
+
+                                if (canEditCatatan) {
+                                  return (
+                                    <Button
+                                      variant='ghost'
+                                      size='sm'
+                                      onClick={() => {
+                                        setProjectForCatatan(project);
+                                        setIsCatatanDialogOpen(true);
+                                      }}
+                                      className='h-7 px-2 text-xs text-muted-foreground hover:text-amber-700 hover:bg-amber-50 border border-dashed border-neutral-200'
+                                      title='Tambah Catatan Keterlambatan'
+                                    >
+                                      <FileText className='h-3 w-3 mr-1 text-neutral-400' />
+                                      + Catatan
+                                    </Button>
+                                  );
+                                }
+
+                                return (
+                                  <span className='text-muted-foreground italic text-xs'>
+                                    -
+                                  </span>
+                                );
+                              })()}
                             </TableCell>
                           )}
                           {(showMarketingFilter || showPerencanaan || showPengirimanV2) && (
@@ -5425,6 +5563,14 @@ export function ProjectsV2Table({
               undefined
             }
             deadline={projectForReadinessView?.deadline}
+          />
+
+          <CatatanKeterlambatanDialog
+            open={isCatatanDialogOpen}
+            onOpenChange={setIsCatatanDialogOpen}
+            project={projectForCatatan}
+            canEdit={canEditCatatan}
+            isViewOnlyAllDashboard={showAllDashboard}
           />
 
           <AlertDialog

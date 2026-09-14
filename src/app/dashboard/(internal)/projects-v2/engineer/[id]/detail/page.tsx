@@ -1204,13 +1204,13 @@ export default function EngineerDetailPage() {
                     Lantai | Ruang
                   </TableHead>
                   <TableHead className="text-[12px] uppercase font-bold text-neutral-500">
-                    Nama Item
+                    Nama Item | Deskripsi
                   </TableHead>
-                  <TableHead className="text-[12px] uppercase font-bold text-neutral-500">
-                    Deskripsi
-                  </TableHead>
-                  <TableHead className="text-[12px] text-center uppercase font-bold text-neutral-500">
-                    Ukuran
+                  <TableHead className="text-[12px] text-center font-bold text-neutral-500">
+                    <div className="flex flex-col items-center gap-0.5">
+                      <span>UKURAN</span>
+                      <span>(P x L x T) (M)</span>
+                    </div>
                   </TableHead>
                   <TableHead className="text-[12px] uppercase font-bold text-neutral-500">
                     Volume
