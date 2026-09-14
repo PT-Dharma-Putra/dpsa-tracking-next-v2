@@ -3,7 +3,7 @@
 import { use, useState, useRef } from "react"
 import Link from "next/link"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { ArrowLeft, Download, CheckCircle, CheckCircle2, AlertCircle, MessageSquare, PlusCircle, FileText, Eye, Upload, CalendarIcon, Lock, X, History, Clock, MapPin, Sparkles, Video, Image as ImageIcon, Loader2, AlertTriangle } from "lucide-react"
+import { ArrowLeft, Download, CheckCircle, CheckCircle2, AlertCircle, MessageSquare, PlusCircle, FileText, Eye, Upload, CalendarIcon, Lock, X, History, Clock, MapPin, Sparkles, Video, Image as ImageIcon, Loader2, AlertTriangle, Building2 } from "lucide-react"
 import { ProjectService } from "@/features/projects/services/project-service"
 import { projectV2Service, SiteReadiness } from "@/features/projects/services/project-v2-service"
 import { DesignService, Design } from "@/features/projects/services/design-service"
@@ -44,6 +44,8 @@ export default function ClientProjectDetailPage({ params }: { params: Promise<{ 
     if (isLoading) return <div className="p-8 text-center animate-pulse">Loading project data...</div>
     if (!project) return <div className="p-8 text-center text-red-500">Project not found.</div>
 
+    const clientName = project.client?.name || "-";
+
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {/* Header */}
@@ -64,9 +66,17 @@ export default function ClientProjectDetailPage({ params }: { params: Promise<{ 
                         </Badge> */}
                     </div>
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 ml-8">
-                        <p className="text-neutral-500 text-sm">
-                            {project.description || "Project details and tracking information."}
-                        </p>
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 text-xs font-semibold px-2.5 py-1 inline-flex items-center gap-1.5 w-fit">
+                                <Building2 className="h-3.5 w-3.5 text-orange-600 shrink-0" />
+                                <span>{clientName}</span>
+                            </Badge>
+                            {project.description && (
+                                <p className="text-neutral-500 text-sm">
+                                    {project.description}
+                                </p>
+                            )}
+                        </div>
                         <div className="flex items-center gap-2 shrink-0 flex-wrap">
                             <div className="text-sm font-medium text-neutral-700 bg-neutral-100 px-3 py-1 rounded-md border border-neutral-200 inline-flex items-center gap-1.5">
                                 <FileText className="h-3.5 w-3.5 text-neutral-500" />

@@ -87,7 +87,7 @@ export default function ClientDashboardPage() {
         queryFn: () => ClientService.getMyProjects()
     })
 
-    // Sort clients by project count (descending) & filter by search query
+    // Sort clients by "kode" ascending (nulls last) & filter by search query
     const sortedAndFilteredHerminaClients = React.useMemo(() => {
         const withCounts = herminaClients.map(client => {
             const count = typeof client.projects_count === 'number' && client.projects_count > 0
@@ -96,12 +96,30 @@ export default function ClientDashboardPage() {
             return { client, count }
         })
 
-        // Sort descending by project count, then alphabetically by name
+        // Sort ascending by client.kode (nulls last), then alphabetically by name
         withCounts.sort((a, b) => {
-            if (b.count !== a.count) {
-                return b.count - a.count
+            const kodeA = a.client.kode;
+            const kodeB = b.client.kode;
+
+            const hasA = kodeA !== null && kodeA !== undefined && kodeA !== '';
+            const hasB = kodeB !== null && kodeB !== undefined && kodeB !== '';
+
+            if (hasA && hasB) {
+                const numA = Number(kodeA);
+                const numB = Number(kodeB);
+                if (!isNaN(numA) && !isNaN(numB)) {
+                    if (numA !== numB) return numA - numB;
+                } else {
+                    const cmp = String(kodeA).localeCompare(String(kodeB), undefined, { numeric: true });
+                    if (cmp !== 0) return cmp;
+                }
+            } else if (hasA) {
+                return -1;
+            } else if (hasB) {
+                return 1;
             }
-            return a.client.name.localeCompare(b.client.name)
+
+            return (a.client.name || '').localeCompare(b.client.name || '');
         })
 
         if (!searchQuery.trim()) return withCounts
@@ -110,7 +128,8 @@ export default function ClientDashboardPage() {
         return withCounts.filter(({ client }) =>
             client.name?.toLowerCase().includes(query) ||
             client.address?.toLowerCase().includes(query) ||
-            client.director_name?.toLowerCase().includes(query)
+            client.director_name?.toLowerCase().includes(query) ||
+            (client.kode !== null && client.kode !== undefined && String(client.kode).toLowerCase().includes(query))
         )
     }, [herminaClients, projects, searchQuery])
 
@@ -322,16 +341,23 @@ export default function ClientDashboardPage() {
                                                     <div className="p-2 rounded-lg bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100 transition-colors shrink-0">
                                                         <Building2 className="w-5 h-5" />
                                                     </div>
-                                                    <Badge
-                                                        variant="secondary"
-                                                        className={`text-[10px] font-bold ${
-                                                            isSelected
-                                                                ? "bg-orange-600 text-white"
-                                                                : "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                                                        }`}
-                                                    >
-                                                        {count} Projek
-                                                    </Badge>
+                                                    <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                                                        {client.kode !== null && client.kode !== undefined && client.kode !== '' && (
+                                                            <span className="font-mono text-[10px] font-semibold text-neutral-600 bg-neutral-100 px-1.5 py-0.5 rounded border border-neutral-200">
+                                                                Kode: {client.kode}
+                                                            </span>
+                                                        )}
+                                                        <Badge
+                                                            variant="secondary"
+                                                            className={`text-[10px] font-bold ${
+                                                                isSelected
+                                                                    ? "bg-orange-600 text-white"
+                                                                    : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                                            }`}
+                                                        >
+                                                            {count} Projek
+                                                        </Badge>
+                                                    </div>
                                                 </div>
 
                                                 <div>

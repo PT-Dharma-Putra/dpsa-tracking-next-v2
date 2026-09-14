@@ -73,7 +73,13 @@ const formatShortValue = (val: number) => {
       .replace(/(\.\d)0$/, '$1');
     return `${formatted} Jt`;
   }
-  return `${val}`;
+  if (val >= 1000) {
+    const formatted = (val / 1000)
+      .toFixed(1)
+      .replace(/\.0+$/, '');
+    return `${formatted} Rb`;
+  }
+  return `${new Intl.NumberFormat('id-ID').format(Math.round(val))}`;
 };
 import { format, differenceInDays, startOfDay } from 'date-fns';
 import {
@@ -199,6 +205,9 @@ export default function RekapPenagihanPage() {
     let under30Count = 0;
     let between31And60Count = 0;
     let over60Count = 0;
+    let under30Nominal = 0;
+    let between31And60Nominal = 0;
+    let over60Nominal = 0;
 
     const today = startOfDay(new Date());
 
@@ -206,25 +215,46 @@ export default function RekapPenagihanPage() {
       if (item.status !== 'Lunas' && item.tanggal_invoice) {
         const invDate = startOfDay(new Date(item.tanggal_invoice));
         if (!isNaN(invDate.getTime())) {
+          let nominal = 0;
+          if (item.nominal_penagihan) {
+            nominal = parseDatabaseNominal(item.nominal_penagihan);
+          }
+          if (!nominal) {
+            const spkNominal = parseDatabaseNominal(
+              item.project?.spk?.nominal || item.project?.spk?.grand_total
+            );
+            if (spkNominal > 0 && item.persentase) {
+              nominal = ((item.persentase || 0) / 100) * spkNominal;
+            }
+          }
+
           const diff = differenceInDays(today, invDate);
           if (diff <= 30) {
             under30Count++;
+            under30Nominal += nominal;
           } else if (diff <= 60) {
             between31And60Count++;
+            between31And60Nominal += nominal;
           } else {
             over60Count++;
+            over60Nominal += nominal;
           }
         }
       }
     });
 
     const totalActiveCount = under30Count + between31And60Count + over60Count;
+    const totalNominal = under30Nominal + between31And60Nominal + over60Nominal;
 
     return {
       under30Count,
       between31And60Count,
       over60Count,
       totalActiveCount,
+      under30Nominal,
+      between31And60Nominal,
+      over60Nominal,
+      totalNominal,
     };
   }, [penagihanList]);
 
@@ -511,12 +541,20 @@ export default function RekapPenagihanPage() {
             <p className='text-[10px] font-bold text-slate-500 uppercase tracking-wider'>
               Tagihan belum Lunas
             </p>
-            <div className='ml-auto flex items-center gap-1'>
+            <div className='ml-auto flex items-center gap-1.5'>
               <span className='text-[10px] font-semibold text-slate-500'>Total:</span>
-              <span className='text-lg font-bold text-slate-800 ml-0.5'>
+              <span className='text-lg font-bold text-slate-800'>
                 {agingStats.totalActiveCount}
               </span>
               <span className='text-[10px] font-medium text-slate-500'>Tagihan</span>
+              {agingStats.totalNominal > 0 && (
+                <span
+                  className='text-[10px] font-semibold text-purple-700 bg-purple-50 border border-purple-200 px-1.5 py-0.5 rounded-md'
+                  title={`Total nominal: ${formatRupiah(agingStats.totalNominal)}`}
+                >
+                  Rp {formatShortValue(agingStats.totalNominal)}
+                </span>
+              )}
             </div>
           </div>
 
@@ -527,15 +565,22 @@ export default function RekapPenagihanPage() {
                 setFilterAging(filterAging === 'under30' ? null : 'under30')
               }
               className={cn(
-                'flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                'flex flex-col justify-between p-1.5 rounded-lg border cursor-pointer select-none transition-all',
                 filterAging === 'under30'
                   ? 'border-emerald-500 bg-emerald-100 text-emerald-800 ring-2 ring-emerald-500/20 font-bold'
                   : 'border-emerald-100 bg-emerald-50/50 hover:border-emerald-300 text-emerald-700'
               )}
-              title='Klik untuk memfilter umur penagihan < 30 Hari'
+              title={`Klik untuk memfilter umur penagihan < 30 Hari (${agingStats.under30Count} tagihan, ${formatRupiah(agingStats.under30Nominal)})`}
             >
-              <span className='truncate font-medium'>&lt; 30 Hari</span>
-              <span className='font-bold ml-1'>{agingStats.under30Count}</span>
+              <div className='flex items-center justify-between text-[10px] w-full'>
+                <span className='truncate font-medium'>&lt; 30 Hari</span>
+                <span className='font-bold ml-1 shrink-0'>{agingStats.under30Count}</span>
+              </div>
+              <div className='text-[11px] font-bold mt-1 truncate'>
+                {agingStats.under30Nominal > 0
+                  ? `Rp ${formatShortValue(agingStats.under30Nominal)}`
+                  : 'Rp 0'}
+              </div>
             </div>
 
             {/* 31 - 60 Hari */}
@@ -546,15 +591,22 @@ export default function RekapPenagihanPage() {
                 )
               }
               className={cn(
-                'flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                'flex flex-col justify-between p-1.5 rounded-lg border cursor-pointer select-none transition-all',
                 filterAging === 'between31And60'
                   ? 'border-amber-500 bg-amber-100 text-amber-800 ring-2 ring-amber-500/20 font-bold'
                   : 'border-amber-100 bg-amber-50/50 hover:border-amber-300 text-amber-700'
               )}
-              title='Klik untuk memfilter umur penagihan 31-60 Hari'
+              title={`Klik untuk memfilter umur penagihan 31-60 Hari (${agingStats.between31And60Count} tagihan, ${formatRupiah(agingStats.between31And60Nominal)})`}
             >
-              <span className='truncate font-medium'>31-60 Hari</span>
-              <span className='font-bold ml-1'>{agingStats.between31And60Count}</span>
+              <div className='flex items-center justify-between text-[10px] w-full'>
+                <span className='truncate font-medium'>31-60 Hari</span>
+                <span className='font-bold ml-1 shrink-0'>{agingStats.between31And60Count}</span>
+              </div>
+              <div className='text-[11px] font-bold mt-1 truncate'>
+                {agingStats.between31And60Nominal > 0
+                  ? `Rp ${formatShortValue(agingStats.between31And60Nominal)}`
+                  : 'Rp 0'}
+              </div>
             </div>
 
             {/* > 60 Hari */}
@@ -563,15 +615,22 @@ export default function RekapPenagihanPage() {
                 setFilterAging(filterAging === 'over60' ? null : 'over60')
               }
               className={cn(
-                'flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                'flex flex-col justify-between p-1.5 rounded-lg border cursor-pointer select-none transition-all',
                 filterAging === 'over60'
                   ? 'border-rose-500 bg-rose-100 text-rose-800 ring-2 ring-rose-500/20 font-bold'
                   : 'border-rose-100 bg-rose-50/50 hover:border-rose-300 text-rose-700'
               )}
-              title='Klik untuk memfilter umur penagihan > 60 Hari'
+              title={`Klik untuk memfilter umur penagihan > 60 Hari (${agingStats.over60Count} tagihan, ${formatRupiah(agingStats.over60Nominal)})`}
             >
-              <span className='truncate font-medium'>&gt; 60 Hari</span>
-              <span className='font-bold ml-1'>{agingStats.over60Count}</span>
+              <div className='flex items-center justify-between text-[10px] w-full'>
+                <span className='truncate font-medium'>&gt; 60 Hari</span>
+                <span className='font-bold ml-1 shrink-0'>{agingStats.over60Count}</span>
+              </div>
+              <div className='text-[11px] font-bold mt-1 truncate'>
+                {agingStats.over60Nominal > 0
+                  ? `Rp ${formatShortValue(agingStats.over60Nominal)}`
+                  : 'Rp 0'}
+              </div>
             </div>
           </div>
         </div>

@@ -56,7 +56,7 @@ export function ClientTable() {
 
     const clients = clientResponse?.data || []
     const meta = clientResponse?.meta || { current_page: 1, last_page: 1, total: 0 }
-    const stats = clientResponse?.stats || { total: meta.total || 0, hermina: 0, non_hermina: 0 }
+    const stats = clientResponse?.stats || { total: meta.total || 0, hermina: 0, managed_by_hermina: 0, non_hermina: 0 }
 
     const deleteMutation = useMutation({
         mutationFn: (id: number) => ClientService.deleteClient(id),
@@ -90,8 +90,8 @@ export function ClientTable() {
 
     return (
         <div className="space-y-6">
-            {/* Summary Cards: Hermina & Non Hermina (OUTSIDE table container card) */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full">
+            {/* Summary Cards: Hermina, Managed by Hermina & Non Hermina */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
                 {/* Card 1: Total Client */}
                 <div
                     onClick={() => {
@@ -151,7 +151,38 @@ export function ClientTable() {
                     </Badge>
                 </div>
 
-                {/* Card 3: Client Non Hermina */}
+                {/* Card 3: Managed by Hermina */}
+                <div
+                    onClick={() => {
+                        setHerminaFilter(herminaFilter === 2 ? null : 2);
+                        setPage(1);
+                    }}
+                    className={cn(
+                        "flex items-center justify-between p-4 rounded-xl border cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md select-none",
+                        herminaFilter === 2
+                            ? "border-emerald-500 bg-emerald-50/60 ring-2 ring-emerald-500/20"
+                            : "border-emerald-100 bg-white hover:border-emerald-300"
+                    )}
+                >
+                    <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
+                            <Building2 className="h-5 w-5" />
+                        </div>
+                        <div>
+                            <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">
+                                Managed by Hermina
+                            </p>
+                            <p className="text-2xl font-bold text-slate-800">
+                                {stats.managed_by_hermina || 0}
+                            </p>
+                        </div>
+                    </div>
+                    <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px]">
+                        Managed
+                    </Badge>
+                </div>
+
+                {/* Card 4: Client Non Hermina */}
                 <div
                     onClick={() => {
                         setHerminaFilter(herminaFilter === 0 ? null : 0);
@@ -201,7 +232,7 @@ export function ClientTable() {
                                         onClick={() => setHerminaFilter(null)}
                                         title="Klik untuk menghapus filter kategori"
                                     >
-                                        Kategori: {herminaFilter === 1 ? 'Hermina' : 'Non Hermina'} ✕
+                                        Kategori: {herminaFilter === 1 ? 'Hermina' : herminaFilter === 2 ? 'Managed by Hermina' : 'Non Hermina'} ✕
                                     </Badge>
                                 )}
                             </p>
@@ -233,6 +264,7 @@ export function ClientTable() {
                     <TableHeader className="bg-neutral-50/80">
                         <TableRow>
                             <TableHead className="w-[50px]">#</TableHead>
+                            <TableHead className="w-[90px]">Kode</TableHead>
                             <TableHead>Client</TableHead>
                             <TableHead>Kontak</TableHead>
                             <TableHead>Alamat</TableHead>
@@ -257,13 +289,13 @@ export function ClientTable() {
                     <TableBody>
                         {isLoading ? (
                             <TableRow>
-                                <TableCell colSpan={6} className="h-32 text-center">
+                                <TableCell colSpan={7} className="h-32 text-center">
                                     <Loader2 className="h-6 w-6 animate-spin mx-auto text-neutral-400" />
                                 </TableCell>
                             </TableRow>
                         ) : filtered.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={6} className="h-32 text-center text-muted-foreground text-sm">
+                                <TableCell colSpan={7} className="h-32 text-center text-muted-foreground text-sm">
                                     {search ? "Tidak ada client yang cocok." : "Belum ada client. Klik 'Tambah Client' untuk memulai."}
                                 </TableCell>
                             </TableRow>
@@ -272,15 +304,26 @@ export function ClientTable() {
                                 <TableRow key={client.id} className="hover:bg-neutral-50/50 transition-colors">
                                     <TableCell className="font-medium text-muted-foreground">{index + 1}</TableCell>
                                     <TableCell>
+                                        {client.kode !== null && client.kode !== undefined ? (
+                                            <span className="font-mono text-xs font-semibold text-neutral-800 bg-neutral-100 px-2 py-0.5 rounded border border-neutral-200">
+                                                {client.kode}
+                                            </span>
+                                        ) : (
+                                            <span className="text-neutral-400 text-xs">-</span>
+                                        )}
+                                    </TableCell>
+                                    <TableCell>
                                         <div className="flex flex-col gap-1">
                                             <div className="flex items-center gap-2">
                                                 <span className="font-bold text-neutral-900">{client.name}</span>
                                                 <Badge variant="outline" className={`text-[9px] h-4 px-1.5 uppercase tracking-wider ${
                                                     client.hermina === 1 
                                                     ? 'bg-blue-50 text-blue-700 border-blue-200' 
+                                                    : client.hermina === 2
+                                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                                                     : 'bg-orange-50 text-orange-700 border-orange-200'
                                                 }`}>
-                                                    {client.hermina === 1 ? 'Hermina' : 'Non Hermina'}
+                                                    {client.hermina === 1 ? 'Hermina' : client.hermina === 2 ? 'Managed by Hermina' : 'Non Hermina'}
                                                 </Badge>
                                             </div>
                                             <span className="text-[10px] text-muted-foreground">ID: #{client.id}</span>

@@ -256,6 +256,20 @@ export default function EngineerDetailPage() {
     return result;
   }, [items, searchQuery, sortConfig]);
 
+  const rowIsGrayList = React.useMemo(() => {
+    let isGray = false;
+    let prevRuang: string | null = null;
+    return filteredItems.map((item) => {
+      const raw = item.ruang?.trim().toLowerCase() || "";
+      const currentRuang = raw === "-" ? "" : raw;
+      if (prevRuang !== null && currentRuang !== prevRuang) {
+        isGray = !isGray;
+      }
+      prevRuang = currentRuang;
+      return isGray;
+    });
+  }, [filteredItems]);
+
   const { data: stages, isLoading: isLoadingStages } = useQuery({
     queryKey: ["design-stages"],
     queryFn: () => projectV2Service.getDesignStages(),
@@ -1190,13 +1204,13 @@ export default function EngineerDetailPage() {
                     Lantai | Ruang
                   </TableHead>
                   <TableHead className="text-[12px] uppercase font-bold text-neutral-500">
-                    Nama Item
+                    Nama Item | Deskripsi
                   </TableHead>
-                  <TableHead className="text-[12px] uppercase font-bold text-neutral-500">
-                    Deskripsi
-                  </TableHead>
-                  <TableHead className="text-[12px] text-center uppercase font-bold text-neutral-500">
-                    Ukuran
+                  <TableHead className="text-[12px] text-center font-bold text-neutral-500">
+                    <div className="flex flex-col items-center gap-0.5">
+                      <span>UKURAN</span>
+                      <span>(P x L x T) (M)</span>
+                    </div>
                   </TableHead>
                   <TableHead className="text-[12px] uppercase font-bold text-neutral-500">
                     Volume
@@ -1259,16 +1273,22 @@ export default function EngineerDetailPage() {
                   </TableHead>
                   {/* <TableHead className='text-[12px] uppercase font-bold text-neutral-500'>GK MDL</TableHead> */}
                   <TableHead className="text-[12px] uppercase font-bold text-neutral-500">
-                    Gambar Kerja
+                    <div className="flex flex-col items-center gap-0.5">
+                      <span>GAMBAR</span>
+                      <span>KERJA</span>
+                    </div>
                   </TableHead>
                   <TableHead className="text-[12px] uppercase font-bold text-neutral-500">
                     Submit
                   </TableHead>
                   <TableHead className="text-[12px] uppercase font-bold text-neutral-500">
-                    Timeline Drawing
+                    Timeline
                   </TableHead>
                   <TableHead className="text-[12px] uppercase font-bold text-neutral-500">
-                    Tepat Waktu
+                    <div className="flex flex-col items-center gap-0.5">
+                      <span>TEPAT</span>
+                      <span>WAKTU</span>
+                    </div>
                   </TableHead>
                 </TableRow>
               </TableHeader>
@@ -1289,11 +1309,20 @@ export default function EngineerDetailPage() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredItems.map((item, index) => (
-                    <TableRow
-                      key={item.id}
-                      className="group hover:bg-neutral-50/50 transition-colors"
-                    >
+                  filteredItems.map((item, index) => {
+                    const isGray = rowIsGrayList[index];
+                    return (
+                      <TableRow
+                        key={item.id}
+                        className={cn(
+                          "group transition-colors",
+                          selectedItemIds.includes(item.id)
+                            ? "bg-orange-50/70 hover:bg-orange-100/70"
+                            : isGray
+                            ? "bg-neutral-100/80 hover:bg-neutral-200/50"
+                            : "bg-white hover:bg-neutral-50"
+                        )}
+                      >
                       <TableCell className="text-center font-medium text-neutral-400">
                         {index + 1}
                       </TableCell>
@@ -1311,6 +1340,7 @@ export default function EngineerDetailPage() {
                           <span className="text-xs font-bold text-neutral-800">
                             {item.lantai || "-"}
                           </span>
+                          
                           <span
                             className="text-[12px] text-muted-foreground truncate max-w-[120px]"
                             title={item.ruang}
@@ -1320,7 +1350,7 @@ export default function EngineerDetailPage() {
                         </div>
                       </TableCell>
 
-                      <TableCell>
+                      {/* <TableCell>
                         <div className="flex flex-col gap-0.5">
                           <span className="text-xs font-bold text-neutral-900 group-hover:text-blue-600 transition-colors">
                             {item.item}
@@ -1332,6 +1362,18 @@ export default function EngineerDetailPage() {
                         <span className="text-sm text-muted-foreground whitespace-pre-wrap">
                           {item.keterangan || "-"}
                         </span>
+                      </TableCell> */ }
+                      
+                      <TableCell className="max-w-[300px] break-words">
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-xs font-bold text-neutral-900 group-hover:text-blue-600 transition-colors">
+                            {item.item}
+                          </span>
+
+                          <span className="text-sm text-muted-foreground whitespace-pre-wrap">
+                            {item.keterangan || "-"}
+                          </span>
+                        </div>
                       </TableCell>
 
                       <TableCell className="text-center text-sm tabular-nums text-neutral-600">
@@ -1621,7 +1663,8 @@ export default function EngineerDetailPage() {
                         })()}
                       </TableCell>
                     </TableRow>
-                  ))
+                    );
+                  })
                 )}
               </TableBody>
             </Table>

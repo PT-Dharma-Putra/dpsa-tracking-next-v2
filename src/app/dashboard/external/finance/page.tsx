@@ -368,8 +368,10 @@ export default function FinanceOverviewPage() {
                             <thead className="bg-neutral-50 text-neutral-500 font-medium sticky top-0 z-10 shadow-xs">
                                 <tr>
                                     <th className="px-4 py-3 sticky top-0 bg-neutral-50 z-10 text-center max-w-[130px] break-words whitespace-normal">Invoice #</th>
+                                    <th className="px-4 py-3 sticky top-0 bg-neutral-50 z-10 text-center  max-w-[128px] break-words whitespace-normal">Client</th>
                                     <th className="px-4 py-3 sticky top-0 bg-neutral-50 z-10 text-center max-w-[130px] break-words whitespace-normal">Nomor SPK</th>
-                                    <th className="px-4 py-3 sticky top-0 bg-neutral-50 z-10 text-center">Project</th>
+                                    {/* <th className="px-4 py-3 sticky top-0 bg-neutral-50 z-10 text-center">Project</th> */}
+                                    <th className="px-4 py-3 sticky top-0 bg-neutral-50 z-10 text-center whitespace-nowrap">Termin</th>
                                     <th className="px-4 py-3 sticky top-0 bg-neutral-50 z-10 text-center whitespace-nowrap">Due Date</th>
                                     <th className="px-4 py-3 sticky top-0 bg-neutral-50 z-10 text-center whitespace-nowrap">
                                         <div className="text-center">
@@ -378,8 +380,20 @@ export default function FinanceOverviewPage() {
                                             Tagihan
                                         </div>
                                     </th>
-                                    <th className="px-4 py-3 sticky top-0 bg-neutral-50 z-10 text-center whitespace-nowrap">Nominal Tagihan</th>
-                                    <th className="px-4 py-3 sticky top-0 bg-neutral-50 z-10 text-center whitespace-nowrap">Nominal Terbayar</th>
+                                    <th className="px-4 py-3 sticky top-0 bg-neutral-50 z-10 text-center whitespace-nowrap">
+                                        <div className="text-center">
+                                            Nominal
+                                            <br />
+                                            Tagihan
+                                        </div>
+                                    </th>
+                                    <th className="px-4 py-3 sticky top-0 bg-neutral-50 z-10 text-center whitespace-nowrap">
+                                        <div className="text-center">
+                                            Nominal
+                                            <br />
+                                            Terbayar
+                                        </div>
+                                    </th>
                                     <th className="px-4 py-3 sticky top-0 bg-neutral-50 z-10 text-center whitespace-nowrap">Status</th>
                                     <th className="px-4 py-3 sticky top-0 bg-neutral-50 z-10 text-center whitespace-nowrap">File</th>
                                 </tr>
@@ -387,7 +401,7 @@ export default function FinanceOverviewPage() {
                             <tbody className="divide-y divide-neutral-100 bg-white">
                                 {isLoadingPenagihan ? (
                                     <tr>
-                                        <td colSpan={9} className="py-8 text-center text-neutral-400">
+                                        <td colSpan={11} className="py-8 text-center text-neutral-400">
                                             <div className="flex items-center justify-center gap-2">
                                                 <Loader2 className="h-4 w-4 animate-spin text-neutral-500" />
                                                 <span>Loading invoice data...</span>
@@ -396,7 +410,7 @@ export default function FinanceOverviewPage() {
                                     </tr>
                                 ) : finalPenagihanList.length === 0 ? (
                                     <tr>
-                                        <td colSpan={9} className="text-center py-8 text-neutral-400">No invoices found.</td>
+                                        <td colSpan={11} className="text-center py-8 text-neutral-400">No invoices found.</td>
                                     </tr>
                                 ) : (
                                     finalPenagihanList.map((inv: Penagihan) => {
@@ -406,12 +420,26 @@ export default function FinanceOverviewPage() {
                                                 : `${storageBase}/storage/${inv.file}`
                                             : null;
 
+                                        const projectSpk = inv.project?.spk || inv.project?.spks;
+                                        const spkObj = Array.isArray(projectSpk) ? projectSpk[0] : projectSpk;
+                                        const penerbit = spkObj?.penerbit;
+
+                                        const clientName =
+                                            penerbit?.name ||
+                                            inv.project?.client?.name ||
+                                            (spkObj?.penerbit_id ? `Client #${spkObj.penerbit_id}` : '-');
+
                                         const noSpkStr =
+                                            spkObj?.nomor_spk ||
                                             inv.project?.spk?.nomor_spk ||
                                             (inv as any).spk_number ||
                                             inv.project?.spk_number ||
                                             (inv as any).spk?.nomor_spk ||
                                             '-';
+
+                                        const terminStr =
+                                            inv.termin?.nama ||
+                                            (inv.termin_id ? `Termin ${inv.termin_id}` : '-');
 
                                         const dueDateStr = inv.jatuh_tempo
                                             ? format(new Date(inv.jatuh_tempo), 'dd MMM yyyy')
@@ -430,11 +458,17 @@ export default function FinanceOverviewPage() {
                                                 <td className="px-4 py-4 font-medium text-neutral-900 max-w-[130px] break-words whitespace-normal leading-tight">
                                                     {inv.nomor_invoice || '-'}
                                                 </td>
+                                                <td className="px-4 py-4 text-neutral-700 max-w-[128px] break-words whitespace-normal leading-tight" title={clientName}>
+                                                    {clientName}
+                                                </td>
                                                 <td className="px-4 py-4 text-neutral-700 max-w-[130px] break-words whitespace-normal leading-tight">
                                                     {noSpkStr}
                                                 </td>
-                                                <td className="px-4 py-4 max-w-[200px] truncate text-neutral-700" title={inv.project?.name || (inv as any).project_name || '-'}>
+                                                {/* <td className="px-4 py-4 max-w-[200px] truncate text-neutral-700" title={inv.project?.name || (inv as any).project_name || '-'}>
                                                     {inv.project?.name || (inv as any).project_name || '-'}
+                                                </td> */}
+                                                <td className="px-4 py-4 text-center whitespace-nowrap text-neutral-700">
+                                                    {terminStr}
                                                 </td>
                                                 <td className="px-4 py-4 text-neutral-500 whitespace-nowrap">
                                                     {dueDateStr}

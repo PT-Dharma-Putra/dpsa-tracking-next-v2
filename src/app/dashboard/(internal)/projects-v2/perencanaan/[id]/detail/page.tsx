@@ -1932,7 +1932,8 @@ export default function PerencanaanDetailPage() {
                         <span className='text-[9px] text-muted-foreground truncate max-w-[120px]'>{item.ruang || '-'}</span>
                       </div>
                     </TableCell>
-                    <TableCell>
+
+                    {/* <TableCell>
                       {item.keterangan ? (
                         <TooltipProvider delayDuration={200}>
                           <Tooltip>
@@ -1952,7 +1953,20 @@ export default function PerencanaanDetailPage() {
                           <span className='text-xs font-bold text-neutral-900 group-hover:text-blue-600 transition-colors'>{item.item}</span>
                         </div>
                       )}
+                    </TableCell> */}
+
+                    <TableCell className="max-w-[300px] break-words">
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-xs font-bold text-neutral-900 group-hover:text-blue-600 transition-colors">
+                          {item.item}
+                        </span>
+
+                        <span className="text-sm text-muted-foreground whitespace-pre-wrap">
+                          {item.keterangan || "-"}
+                        </span>
+                      </div>
                     </TableCell>
+
                     <TableCell className={cn(item.history_fields?.some(f => ['volume', 'panjang', 'lebar', 'tinggi', 'satuan'].includes(f)) ? 'bg-amber-100/80 border-x border-amber-200/50 shadow-[inset_0_0_0_1px_rgba(251,191,36,0.05)]' : '')}>
                       <div className='flex flex-col gap-0.5 group relative'>
                         <div className='flex items-center gap-1.5'>

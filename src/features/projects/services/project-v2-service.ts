@@ -140,6 +140,22 @@ export interface ProjectV2 {
     created_at?: string;
     updated_at?: string;
   };
+  catatan_keterlambatan?: CatatanKeterlambatan | null;
+  catatan_keterlambatans?: CatatanKeterlambatan[];
+}
+
+export interface CatatanKeterlambatan {
+  id: number;
+  project_id: number;
+  catatan: string | null;
+  user_id: number | null;
+  user?: {
+    id: number;
+    name: string;
+  } | null;
+  created_at: string;
+  updated_at: string;
+  deleted_at?: string | null;
 }
 
 export interface ProgresKerja {
@@ -388,6 +404,14 @@ export const projectV2Service = {
   getProjectItems: async (projectId: number) => {
     const { data } = await apiClient.get<ProjectItemV2[]>(
       `/projects-v2/${projectId}/items`
+    );
+    return data;
+  },
+
+  getAllProduksiItems: async (params?: GetProduksiGlobalItemsParams) => {
+    const { data } = await apiClient.get<ProduksiGlobalItemsResponse>(
+      '/produksi/all-items',
+      { params }
     );
     return data;
   },
@@ -1130,6 +1154,26 @@ export const projectV2Service = {
     const { data } = await apiClient.delete(`/site-readiness/${id}`);
     return data;
   },
+  getCatatanKeterlambatan: async (projectId: number) => {
+    const { data } = await apiClient.get<{ status: string; data: CatatanKeterlambatan[] }>(
+      `/projects-v2/${projectId}/catatan-keterlambatan`
+    );
+    return data.data;
+  },
+  addCatatanKeterlambatan: async (projectId: number, catatan: string) => {
+    const { data } = await apiClient.post(
+      `/projects-v2/${projectId}/catatan-keterlambatan`,
+      { catatan }
+    );
+    return data;
+  },
+  updateCatatanKeterlambatan: async (projectId: number, catatan: string | null) => {
+    const { data } = await apiClient.post(
+      `/projects-v2/${projectId}/catatan-keterlambatan`,
+      { catatan }
+    );
+    return data;
+  },
 };
 
 export interface SiteReadinessMedia {
@@ -1434,3 +1478,47 @@ export async function uploadBast(
   );
   return data;
 }
+
+export interface ProduksiGlobalItem {
+  id: number;
+  item: string;
+  nama_item: string;
+  lantai: string;
+  ruang: string;
+  panjang: number | null;
+  lebar: number | null;
+  tinggi: number | null;
+  jumlah: number;
+  satuan: string;
+  divisi: string;
+  divisi_id: number | null;
+  client: string;
+  nomor_spk: string;
+  deadline: string | null;
+  progress_produksi: number;
+  project_id: number;
+  project_name: string | null;
+  status: string;
+}
+
+export interface ProduksiGlobalItemsResponse {
+  success: boolean;
+  data: ProduksiGlobalItem[];
+  meta: {
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+    total_qty: number;
+  };
+}
+
+export interface GetProduksiGlobalItemsParams {
+  search?: string;
+  divisi_id?: string | number;
+  page?: number;
+  per_page?: number;
+  sort_by?: string;
+  sort_order?: 'asc' | 'desc';
+}
+
