@@ -140,6 +140,22 @@ export interface ProjectV2 {
     created_at?: string;
     updated_at?: string;
   };
+  catatan_keterlambatan?: CatatanKeterlambatan | null;
+  catatan_keterlambatans?: CatatanKeterlambatan[];
+}
+
+export interface CatatanKeterlambatan {
+  id: number;
+  project_id: number;
+  catatan: string | null;
+  user_id: number | null;
+  user?: {
+    id: number;
+    name: string;
+  } | null;
+  created_at: string;
+  updated_at: string;
+  deleted_at?: string | null;
 }
 
 export interface ProgresKerja {
@@ -1136,6 +1152,26 @@ export const projectV2Service = {
   },
   deleteSiteReadiness: async (id: number | string) => {
     const { data } = await apiClient.delete(`/site-readiness/${id}`);
+    return data;
+  },
+  getCatatanKeterlambatan: async (projectId: number) => {
+    const { data } = await apiClient.get<{ status: string; data: CatatanKeterlambatan[] }>(
+      `/projects-v2/${projectId}/catatan-keterlambatan`
+    );
+    return data.data;
+  },
+  addCatatanKeterlambatan: async (projectId: number, catatan: string) => {
+    const { data } = await apiClient.post(
+      `/projects-v2/${projectId}/catatan-keterlambatan`,
+      { catatan }
+    );
+    return data;
+  },
+  updateCatatanKeterlambatan: async (projectId: number, catatan: string | null) => {
+    const { data } = await apiClient.post(
+      `/projects-v2/${projectId}/catatan-keterlambatan`,
+      { catatan }
+    );
     return data;
   },
 };
