@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query"
 import { ProjectService } from "../../services/project-service"
 import { projectV2Service } from "../../services/project-v2-service"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
@@ -21,10 +22,15 @@ import {
     BarChart3,
     Truck,
     Activity,
-    User as UserIcon
+    User as UserIcon,
+    AlertTriangle,
+    Clock,
+    ChevronDown
 } from "lucide-react"
 import { format } from "date-fns"
 import { id as idLocale } from "date-fns/locale"
+import { cn } from "@/lib/utils"
+import { CatatanKeterlambatan } from "../../services/project-v2-service"
 import {
     AlertDialog,
     AlertDialogContent,
@@ -41,6 +47,7 @@ interface OverviewTabProps {
 
 export function OverviewTab({ projectId }: OverviewTabProps) {
     const [searchQuery, setSearchQuery] = useState("")
+    const [isDelayNotesOpen, setIsDelayNotesOpen] = useState(true);
 
     // View Produksi State
     const [isProduksiViewOpen, setIsProduksiViewOpen] = useState(false);
@@ -51,6 +58,29 @@ export function OverviewTab({ projectId }: OverviewTabProps) {
     const { data: overview, isLoading } = useQuery({
         queryKey: ['project-overview', projectId],
         queryFn: () => ProjectService.getOverview(projectId),
+    });
+
+    const { data: delayNotes = [] } = useQuery<CatatanKeterlambatan[]>({
+        queryKey: ['project-catatan-keterlambatan', projectId],
+        queryFn: async () => {
+            try {
+                return await projectV2Service.getCatatanKeterlambatan(projectId);
+            } catch {
+                return [];
+            }
+        },
+        initialData: () => {
+            const rawNotes = (overview?.project as any)?.catatan_keterlambatans;
+            if (Array.isArray(rawNotes) && rawNotes.length > 0) {
+                return rawNotes;
+            }
+            const singleNote = (overview?.project as any)?.catatan_keterlambatan;
+            if (singleNote && (singleNote.catatan || singleNote.id)) {
+                return [singleNote];
+            }
+            return [];
+        },
+        enabled: !!projectId,
     });
 
     const { data: v2Items = [] } = useQuery({
@@ -87,6 +117,25 @@ export function OverviewTab({ projectId }: OverviewTabProps) {
         const lantai = (item.lantai || item.floor || "").toLowerCase();
         return name.includes(q) || ruang.includes(q) || lantai.includes(q);
     });
+
+    const activeDelayNotes: CatatanKeterlambatan[] = (() => {
+        if (Array.isArray(delayNotes) && delayNotes.length > 0) {
+            const valid = delayNotes.filter(n => Boolean(n.catatan && n.catatan.trim() !== ''));
+            if (valid.length > 0) return valid;
+        }
+        const rawNotes = (project as any)?.catatan_keterlambatans;
+        if (Array.isArray(rawNotes) && rawNotes.length > 0) {
+            const valid = rawNotes.filter((n: any) => Boolean(n.catatan && n.catatan.trim() !== ''));
+            if (valid.length > 0) return valid;
+        }
+        const singleNote = (project as any)?.catatan_keterlambatan;
+        if (singleNote && singleNote.catatan && singleNote.catatan.trim() !== '') {
+            return [singleNote];
+        }
+        return [];
+    })();
+
+    const hasDelayNotes = activeDelayNotes.length > 0;
 
     return (
         <div className="space-y-6">
@@ -153,6 +202,120 @@ export function OverviewTab({ projectId }: OverviewTabProps) {
                     </div>
                 );
             })()}
+
+            {/* Catatan Keterlambatan Card (Kondisional: hanya tampil jika ada catatan keterlambatan) */}
+            {hasDelayNotes && (
+                <Card className="border-amber-200/90 bg-gradient-to-br from-amber-50/70 via-amber-50/30 to-white shadow-xs overflow-hidden transition-all">
+                    <CardHeader
+                        onClick={() => setIsDelayNotesOpen(prev => !prev)}
+                        className={cn(
+                            "py-3.5 px-5 bg-amber-50/60 cursor-pointer hover:bg-amber-100/50 transition-colors select-none",
+                            isDelayNotesOpen && "border-b border-amber-100/90"
+                        )}
+                    >
+                        <div className="flex items-center justify-between gap-4">
+                            <div className="flex items-center gap-2.5 min-w-0">
+                                <div className="p-2 rounded-lg bg-amber-100 text-amber-700 shrink-0">
+                                    <AlertTriangle className="h-5 w-5" />
+                                </div>
+                                <div className="min-w-0">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                        <CardTitle className="text-base font-bold text-neutral-900">
+                                            Catatan Keterlambatan
+                                        </CardTitle>
+                                        <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300 font-semibold text-xs px-2 py-0.5">
+                                            Perhatian
+                                        </Badge>
+                                        {activeDelayNotes.length > 1 && (
+                                            <span className="text-[11px] font-semibold text-amber-800 bg-amber-100/80 px-2.5 py-0.5 rounded-full border border-amber-200">
+                                                {activeDelayNotes.length} Catatan
+                                            </span>
+                                        )}
+                                    </div>
+                                    <CardDescription className="text-xs text-neutral-600 mt-0.5 truncate">
+                                        {isDelayNotesOpen
+                                            ? "Informasi resmi terkait kendala atau penyesuaian jadwal pelaksanaan proyek."
+                                            : activeDelayNotes[0]?.catatan
+                                                ? `Catatan terbaru: "${activeDelayNotes[0].catatan.slice(0, 85)}${activeDelayNotes[0].catatan.length > 85 ? '...' : ''}"`
+                                                : "Klik untuk melihat rincian catatan keterlambatan."}
+                                    </CardDescription>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setIsDelayNotesOpen(prev => !prev);
+                                    }}
+                                    className="h-8 px-2.5 text-xs font-semibold text-amber-900 hover:text-amber-950 hover:bg-amber-100/80 gap-1.5 rounded-lg"
+                                >
+                                    <span>{isDelayNotesOpen ? "Ciutkan" : "Buka Catatan"}</span>
+                                    <ChevronDown
+                                        className={cn(
+                                            "h-4 w-4 text-amber-700 transition-transform duration-200",
+                                            isDelayNotesOpen && "rotate-180"
+                                        )}
+                                    />
+                                </Button>
+                            </div>
+                        </div>
+                    </CardHeader>
+                    {isDelayNotesOpen && (
+                        <CardContent className="pt-4 space-y-3">
+                            {activeDelayNotes.map((item, index) => {
+                                const isLatest = index === 0;
+                                return (
+                                    <div
+                                        key={item.id || index}
+                                        className={cn(
+                                            "rounded-xl border p-4 transition-all",
+                                            isLatest
+                                                ? "bg-white border-amber-200/90 shadow-2xs"
+                                                : "bg-white/70 border-neutral-200/80"
+                                        )}
+                                    >
+                                        <div className="flex items-center justify-between gap-2 text-xs text-neutral-500 pb-2 mb-2.5 border-b border-neutral-100">
+                                            <div className="flex items-center gap-2 font-medium text-neutral-700">
+                                                {isLatest && activeDelayNotes.length > 1 && (
+                                                    <Badge className="bg-amber-600 hover:bg-amber-600 text-white text-[10px] font-semibold px-2 py-0 h-4">
+                                                        Terbaru
+                                                    </Badge>
+                                                )}
+                                                <span className="flex items-center gap-1.5">
+                                                    <UserIcon className="h-3.5 w-3.5 text-amber-600" />
+                                                    <span className="font-semibold text-neutral-800">{item.user?.name || "Tim Project"}</span>
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-1.5 text-neutral-500 text-[11px]">
+                                                <Clock className="h-3.5 w-3.5 text-neutral-400" />
+                                                <span>
+                                                    {item.created_at
+                                                        ? (() => {
+                                                            try {
+                                                                return (
+                                                                    format(new Date(item.created_at), 'd MMMM yyyy, HH:mm', { locale: idLocale }) + ' WIB'
+                                                                );
+                                                            } catch {
+                                                                return item.created_at;
+                                                            }
+                                                        })()
+                                                        : '-'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div className="text-sm text-neutral-800 whitespace-pre-wrap leading-relaxed">
+                                            {item.catatan}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </CardContent>
+                    )}
+                </Card>
+            )}
 
             {/* 2. Item Progress Matrix */}
             <Card>

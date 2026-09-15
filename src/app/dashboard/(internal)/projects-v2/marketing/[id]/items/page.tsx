@@ -1845,7 +1845,7 @@ export default function ProjectItemsPage() {
 
                   {/* Signed SPK Section */}
                   {
-                    existingSpk?.spk_signed_file && (
+                    existingSpk?.spk_signed_file ? (
                       <div className='p-3 rounded-xl bg-emerald-50/80 border border-emerald-100 flex items-center justify-between shadow-sm min-w-0 gap-2'>
                         <div className='flex items-center gap-3 min-w-0 flex-1 mr-2'>
                           <div className='h-8 w-8 rounded-lg bg-white shadow-sm border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0'>
@@ -1906,16 +1906,16 @@ export default function ProjectItemsPage() {
                         </div>
                       </div>
                     )
-                    // : (
-                    //   <Button
-                    //     variant='outline'
-                    //     className='w-full text-xs h-9 border-dashed border-emerald-300 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-400 font-semibold'
-                    //     onClick={() => setIsSignedSpkModalOpen(true)}
-                    //   >
-                    //     <Upload className='h-3.5 w-3.5 mr-1.5' />
-                    //     Upload SPK Bertanda Tangan
-                    //   </Button>
-                    // )
+                    : (
+                      <Button
+                        variant='outline'
+                        className='w-full text-xs h-9 border-dashed border-emerald-300 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-400 font-semibold'
+                        onClick={() => setIsSignedSpkModalOpen(true)}
+                      >
+                        <Upload className='h-3.5 w-3.5 mr-1.5' />
+                        Upload SPK Bertanda Tangan
+                      </Button>
+                    )
                   }
                   <Button
                     size='sm'
