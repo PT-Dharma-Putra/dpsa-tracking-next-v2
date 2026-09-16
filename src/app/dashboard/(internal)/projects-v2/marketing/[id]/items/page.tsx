@@ -725,9 +725,6 @@ export default function ProjectItemsPage() {
     }
     approveSpkMutation.mutate({
       file: signedSpkFile,
-      deadline: signedSpkDeadline,
-      tanggal_masuk: signedSpkTanggalMasuk,
-      nominal: parseRawNumber(signedSpkNominal) || undefined,
     });
   };
 
@@ -3331,42 +3328,6 @@ export default function ProjectItemsPage() {
             </DialogTitle>
           </DialogHeader>
           <div className='flex flex-col gap-4 py-4'>
-            <div className='space-y-1.5'>
-              <Label className='text-xs font-medium text-emerald-700'>
-                Tanggal Masuk
-              </Label>
-              <Input
-                type='date'
-                value={signedSpkTanggalMasuk}
-                onChange={(e) => setSignedSpkTanggalMasuk(e.target.value)}
-                className='h-9 text-xs border-emerald-200'
-              />
-            </div>
-            <div className='space-y-1.5'>
-              <Label className='text-xs font-medium text-emerald-700'>
-                Deadline Penyelesaian
-              </Label>
-              <Input
-                type='date'
-                value={signedSpkDeadline}
-                onChange={(e) => setSignedSpkDeadline(e.target.value)}
-                className='h-9 text-xs border-emerald-200'
-              />
-            </div>
-            <div className='space-y-1.5'>
-              <Label className='text-xs font-medium text-emerald-700'>
-                Nominal
-              </Label>
-              <Input
-                type='text'
-                placeholder='Masukkan Nominal SPK'
-                value={signedSpkNominal}
-                onChange={(e) =>
-                  setSignedSpkNominal(formatRupiah(e.target.value))
-                }
-                className='h-9 text-xs border-emerald-200'
-              />
-            </div>
             <div className='space-y-1.5'>
               <Label className='text-xs font-medium text-emerald-700'>
                 File SPK Bertanda Tangan
