@@ -3371,7 +3371,23 @@ export function ProjectsV2Table({
                       </TableHead>
                     )}
                   {!showAllDashboard && !showSPD && !showPiutang && (
-                    <TableHead>JADWAL KIRIM</TableHead>
+                    <TableHead
+                      className='cursor-pointer hover:bg-neutral-100 transition-colors group'
+                      onClick={() => handleSortChange('jadwal_kirim')}
+                    >
+                      <div className='flex items-center gap-1'>
+                        JADWAL KIRIM
+                        {sortBy === 'jadwal_kirim' ? (
+                          sortOrder === 'asc' ? (
+                            <ArrowUp className='h-3 w-3' />
+                          ) : (
+                            <ArrowDown className='h-3 w-3' />
+                          )
+                        ) : (
+                          <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
+                        )}
+                      </div>
+                    </TableHead>
                   )}
                   {(showPengirimanV2 || showQC) && (
                     <TableHead
@@ -3422,7 +3438,23 @@ export function ProjectsV2Table({
 
                   {showAllDashboard && (
                     <>
-                      <TableHead>JADWAL KIRIM</TableHead>
+                      <TableHead
+                        className='cursor-pointer hover:bg-neutral-100 transition-colors group'
+                        onClick={() => handleSortChange('jadwal_kirim')}
+                      >
+                        <div className='flex items-center gap-1'>
+                          JADWAL KIRIM
+                          {sortBy === 'jadwal_kirim' ? (
+                            sortOrder === 'asc' ? (
+                              <ArrowUp className='h-3 w-3' />
+                            ) : (
+                              <ArrowDown className='h-3 w-3' />
+                            )
+                          ) : (
+                            <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
+                          )}
+                        </div>
+                      </TableHead>
                       <TableHead
                         className='cursor-pointer hover:bg-neutral-100 transition-colors group'
                         onClick={() => handleSortChange('persentase_kerja')}
