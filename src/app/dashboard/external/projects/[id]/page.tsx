@@ -227,7 +227,7 @@ function ProjectReadinessSummary({
                         <div>
                             <p className="text-[11px] font-semibold text-neutral-500 uppercase tracking-wider">Design Approvals</p>
                             <p className="text-sm font-bold text-neutral-900 mt-0.5">
-                                {isTanpaDesain ? "Tanpa Desain (N/A)" : isDesignApproved ? "ACC / Approved" : "Pending Approval"}
+                                {isTanpaDesain ? "Tanpa Desain" : isDesignApproved ? "ACC / Approved" : "Pending Approval"}
                             </p>
                         </div>
                     </div>
