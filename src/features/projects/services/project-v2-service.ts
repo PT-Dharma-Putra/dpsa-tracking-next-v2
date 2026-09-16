@@ -108,6 +108,18 @@ export interface ProjectV2 {
     created_at: string;
     tertanda_tangan_lengkap?: number;
     pakai_gambar?: number;
+    no_order?: string | null;
+    jenis_order?: string | null;
+    detail_pekerjaan?: string | null;
+    prioritas?: string | null;
+    catatan_pengirim?: string | null;
+    tanggal_order?: string | null;
+    penerima_id?: number | null;
+    tanggal_diterima?: string | null;
+    catatan_penerima?: string | null;
+    deleted_at?: string | null;
+    user?: { id: number; name: string };
+    penerima?: { id: number; name: string };
   }>;
   order_produksi?: Array<{
     id: number;
@@ -671,6 +683,35 @@ export const projectV2Service = {
     formData.append('pakai_gambar', pakaiGambar.toString());
     const { data } = await apiClient.post(
       `/projects-v2/${projectId}/upload-order-gambar-kerja`,
+      formData
+    );
+    return data;
+  },
+
+  uploadOrderGambarKerjaV2: async (
+    projectId: number,
+    payload: {
+      file?: File | null;
+      target_selesai?: string | null;
+      pakai_gambar: number;
+      no_order?: string | null;
+      detail_pekerjaan?: string | null;
+      prioritas?: string | null;
+      catatan_pengirim?: string | null;
+    }
+  ) => {
+    const formData = new FormData();
+    if (payload.file) formData.append('file', payload.file);
+    if (payload.target_selesai) formData.append('target_selesai', payload.target_selesai);
+    formData.append('pakai_gambar', payload.pakai_gambar.toString());
+    if (payload.no_order) formData.append('no_order', payload.no_order);
+    if (payload.prioritas) formData.append('prioritas', payload.prioritas);
+    formData.append('jenis_order', '3'); // Otomatis 3: Gambar Kerja
+    if (payload.detail_pekerjaan) formData.append('detail_pekerjaan', payload.detail_pekerjaan);
+    if (payload.catatan_pengirim) formData.append('catatan_pengirim', payload.catatan_pengirim);
+
+    const { data } = await apiClient.post(
+      `/projects-v2/${projectId}/upload-order-gambar-kerja-v2`,
       formData
     );
     return data;
