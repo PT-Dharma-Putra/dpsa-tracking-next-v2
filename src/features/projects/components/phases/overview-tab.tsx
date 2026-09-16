@@ -137,12 +137,34 @@ export function OverviewTab({ projectId }: OverviewTabProps) {
 
     const hasDelayNotes = activeDelayNotes.length > 0;
 
+    const isCompleted = Boolean((project as any)?.tanggal_selesai) || String(project?.status).toLowerCase() === 'completed' || stats.overall_progress === 100;
+
+    const isOverdue = (() => {
+        if (isCompleted) return false;
+        if (typeof stats.deadline_days === 'number' && stats.deadline_days !== null) {
+            if (stats.deadline_days < 0) return true;
+        }
+        const deadlineStr = project?.deadline || (project as any)?.due_date;
+        if (deadlineStr) {
+            try {
+                const deadlineDate = new Date(deadlineStr);
+                deadlineDate.setHours(23, 59, 59, 999);
+                const now = new Date();
+                return deadlineDate < now;
+            } catch {
+                return false;
+            }
+        }
+        return false;
+    })();
+
+    const shouldShowDelayNotes = isOverdue || hasDelayNotes;
+
     return (
         <div className="space-y-6">
 
             {/* 1. Project Health Stats */}
             {(() => {
-                const isCompleted = Boolean((project as any)?.tanggal_selesai) || String(project?.status).toLowerCase() === 'completed' || stats.overall_progress === 100;
                 const jadwalKirimFormatted = (() => {
                     if (!project?.deadline) return "Belum diatur";
                     try {
@@ -203,8 +225,8 @@ export function OverviewTab({ projectId }: OverviewTabProps) {
                 );
             })()}
 
-            {/* Catatan Keterlambatan Card (Kondisional: hanya tampil jika ada catatan keterlambatan) */}
-            {hasDelayNotes && (
+            {/* Catatan Keterlambatan Card (Kondisional: tampil jika deadline overdue ATAU ada catatan keterlambatan) */}
+            {shouldShowDelayNotes && (
                 <Card className="border-amber-200/90 bg-gradient-to-br from-amber-50/70 via-amber-50/30 to-white shadow-xs overflow-hidden transition-all">
                     <CardHeader
                         onClick={() => setIsDelayNotesOpen(prev => !prev)}
@@ -224,7 +246,7 @@ export function OverviewTab({ projectId }: OverviewTabProps) {
                                             Catatan Keterlambatan
                                         </CardTitle>
                                         <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300 font-semibold text-xs px-2 py-0.5">
-                                            Perhatian
+                                            {isOverdue ? "Overdue" : "Perhatian"}
                                         </Badge>
                                         {activeDelayNotes.length > 1 && (
                                             <span className="text-[11px] font-semibold text-amber-800 bg-amber-100/80 px-2.5 py-0.5 rounded-full border border-amber-200">
@@ -265,53 +287,65 @@ export function OverviewTab({ projectId }: OverviewTabProps) {
                     </CardHeader>
                     {isDelayNotesOpen && (
                         <CardContent className="pt-4 space-y-3">
-                            {activeDelayNotes.map((item, index) => {
-                                const isLatest = index === 0;
-                                return (
-                                    <div
-                                        key={item.id || index}
-                                        className={cn(
-                                            "rounded-xl border p-4 transition-all",
-                                            isLatest
-                                                ? "bg-white border-amber-200/90 shadow-2xs"
-                                                : "bg-white/70 border-neutral-200/80"
-                                        )}
-                                    >
-                                        <div className="flex items-center justify-between gap-2 text-xs text-neutral-500 pb-2 mb-2.5 border-b border-neutral-100">
-                                            <div className="flex items-center gap-2 font-medium text-neutral-700">
-                                                {isLatest && activeDelayNotes.length > 1 && (
-                                                    <Badge className="bg-amber-600 hover:bg-amber-600 text-white text-[10px] font-semibold px-2 py-0 h-4">
-                                                        Terbaru
-                                                    </Badge>
-                                                )}
-                                                <span className="flex items-center gap-1.5">
-                                                    <UserIcon className="h-3.5 w-3.5 text-amber-600" />
-                                                    <span className="font-semibold text-neutral-800">{item.user?.name || "Tim Project"}</span>
-                                                </span>
+                            {activeDelayNotes.length > 0 ? (
+                                activeDelayNotes.map((item, index) => {
+                                    const isLatest = index === 0;
+                                    return (
+                                        <div
+                                            key={item.id || index}
+                                            className={cn(
+                                                "rounded-xl border p-4 transition-all",
+                                                isLatest
+                                                    ? "bg-white border-amber-200/90 shadow-2xs"
+                                                    : "bg-white/70 border-neutral-200/80"
+                                            )}
+                                        >
+                                            <div className="flex items-center justify-between gap-2 text-xs text-neutral-500 pb-2 mb-2.5 border-b border-neutral-100">
+                                                <div className="flex items-center gap-2 font-medium text-neutral-700">
+                                                    {isLatest && activeDelayNotes.length > 1 && (
+                                                        <Badge className="bg-amber-600 hover:bg-amber-600 text-white text-[10px] font-semibold px-2 py-0 h-4">
+                                                            Terbaru
+                                                        </Badge>
+                                                    )}
+                                                    <span className="flex items-center gap-1.5">
+                                                        <UserIcon className="h-3.5 w-3.5 text-amber-600" />
+                                                        <span className="font-semibold text-neutral-800">{item.user?.name || "Tim Project"}</span>
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center gap-1.5 text-neutral-500 text-[11px]">
+                                                    <Clock className="h-3.5 w-3.5 text-neutral-400" />
+                                                    <span>
+                                                        {item.created_at
+                                                            ? (() => {
+                                                                try {
+                                                                    return (
+                                                                        format(new Date(item.created_at), 'd MMMM yyyy, HH:mm', { locale: idLocale }) + ' WIB'
+                                                                    );
+                                                                } catch {
+                                                                    return item.created_at;
+                                                                }
+                                                            })()
+                                                            : "-"}
+                                                    </span>
+                                                </div>
                                             </div>
-                                            <div className="flex items-center gap-1.5 text-neutral-500 text-[11px]">
-                                                <Clock className="h-3.5 w-3.5 text-neutral-400" />
-                                                <span>
-                                                    {item.created_at
-                                                        ? (() => {
-                                                            try {
-                                                                return (
-                                                                    format(new Date(item.created_at), 'd MMMM yyyy, HH:mm', { locale: idLocale }) + ' WIB'
-                                                                );
-                                                            } catch {
-                                                                return item.created_at;
-                                                            }
-                                                        })()
-                                                        : '-'}
-                                                </span>
-                                            </div>
+                                            <p className="text-sm text-neutral-800 whitespace-pre-line leading-relaxed">
+                                                {item.catatan}
+                                            </p>
                                         </div>
-                                        <div className="text-sm text-neutral-800 whitespace-pre-wrap leading-relaxed">
-                                            {item.catatan}
-                                        </div>
+                                    );
+                                })
+                            ) : (
+                                <div className="rounded-xl border border-amber-200/80 bg-white p-4 text-xs text-amber-900 flex items-start gap-2.5">
+                                    <AlertCircle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                                    <div>
+                                        <p className="font-semibold text-neutral-800">Deadline Terlewati (Overdue)</p>
+                                        <p className="text-neutral-600 mt-0.5">
+                                            Proyek ini telah melewati tenggat waktu (deadline), namun belum ada catatan keterlambatan tertulis yang dimasukkan oleh tim.
+                                        </p>
                                     </div>
-                                );
-                            })}
+                                </div>
+                            )}
                         </CardContent>
                     )}
                 </Card>
