@@ -34,6 +34,7 @@ export default function ClientProjectDetailPage({ params }: { params: Promise<{ 
     const router = useRouter();
     const queryClient = useQueryClient();
     const [ticketDialogOpen, setTicketDialogOpen] = useState(false);
+    const [activeTab, setActiveTab] = useState("tracking");
 
     // Fetch Project Data
     const { data: project, isLoading } = useQuery({
@@ -109,8 +110,11 @@ export default function ClientProjectDetailPage({ params }: { params: Promise<{ 
 
             <Separator />
 
+            {/* Readiness Summary Bar */}
+            <ProjectReadinessSummary projectId={id} project={project} onTabChange={setActiveTab} />
+
             {/* Main Tabs */}
-            <Tabs defaultValue="tracking" className="w-full">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList className="bg-neutral-100 p-1 mb-6">
                     <TabsTrigger value="tracking" className="px-6 data-[state=active]:bg-white data-[state=active]:text-orange-600 data-[state=active]:shadow-sm">Tracking & Status</TabsTrigger>
                     <TabsTrigger value="designs" className="px-6 data-[state=active]:bg-white data-[state=active]:text-orange-600 data-[state=active]:shadow-sm">Design Approvals</TabsTrigger>
@@ -149,6 +153,148 @@ export default function ClientProjectDetailPage({ params }: { params: Promise<{ 
             />
         </div>
     )
+}
+
+function ProjectReadinessSummary({
+    projectId,
+    project,
+    onTabChange
+}: {
+    projectId: string;
+    project: any;
+    onTabChange: (tab: string) => void;
+}) {
+    // 1. Fetch Designs
+    const { data: designData } = useQuery({
+        queryKey: ["designs", projectId],
+        queryFn: () => DesignService.getProjectDesigns(projectId),
+    });
+
+    const { data: projectV2 } = useQuery({
+        queryKey: ["project-v2", projectId],
+        queryFn: () => projectV2Service.getProject(Number(projectId)),
+    });
+
+    // 2. Fetch Kesiapan Lokasi
+    const { data: readinessResponse } = useQuery({
+        queryKey: ['site-readiness', projectId],
+        queryFn: () => projectV2Service.getSiteReadiness(projectId),
+    });
+
+    const isTanpaDesain = projectV2?.need_design === 0 || project?.need_design === 0;
+    const designs = Array.isArray(designData) ? designData : [];
+    const approvedClientDesign = designs.find((d: Design) => d.status === 'approved');
+    const accDesign = projectV2?.designs?.[0]?.acc_design;
+    const isDesignApproved = isTanpaDesain || accDesign?.status?.toLowerCase() === 'approved' || !!approvedClientDesign;
+
+    // Documents (SPK)
+    const spkNumber = project.spk_number || (project as any).spk?.nomor_spk;
+    const hasSpk = Boolean(spkNumber || (project as any).spk?.spk_signed_file_url || (project as any).spk?.file_url);
+
+    // Site Readiness
+    const readinessPercentage = readinessResponse?.readiness_percentage ?? 0;
+    const isSiteReady = readinessPercentage === 100;
+
+    return (
+        <div className="bg-white border border-neutral-200 rounded-xl p-4 shadow-sm space-y-3">
+            <div className="flex items-center justify-between">
+                <h2 className="text-xs font-bold text-neutral-600 uppercase tracking-wider flex items-center gap-1.5">
+                    <Sparkles className="h-3.5 w-3.5 text-orange-600" />
+                    <span>Summary Kesiapan Proyek</span>
+                </h2>
+                <span className="text-[11px] text-neutral-400 font-medium hidden sm:inline">Klik item untuk menuju tab terkait</span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {/* 1. Design Approvals */}
+                <button
+                    type="button"
+                    onClick={() => onTabChange("designs")}
+                    className={cn(
+                        "flex items-center justify-between p-3.5 rounded-xl border text-left transition-all cursor-pointer group hover:shadow-md",
+                        isDesignApproved
+                            ? "bg-emerald-50/70 border-emerald-200 hover:border-emerald-300"
+                            : "bg-amber-50/60 border-amber-200 hover:border-amber-300"
+                    )}
+                >
+                    <div className="flex items-center gap-3">
+                        <div className={cn(
+                            "h-9 w-9 rounded-full flex items-center justify-center font-bold text-white shrink-0 transition-transform group-hover:scale-105",
+                            isDesignApproved ? "bg-emerald-600" : "bg-amber-500"
+                        )}>
+                            {isDesignApproved ? <CheckCircle2 className="h-5 w-5" /> : <Clock className="h-5 w-5" />}
+                        </div>
+                        <div>
+                            <p className="text-[11px] font-semibold text-neutral-500 uppercase tracking-wider">Design Approvals</p>
+                            <p className="text-sm font-bold text-neutral-900 mt-0.5">
+                                {isTanpaDesain ? "Tanpa Desain" : isDesignApproved ? "ACC / Approved" : "Pending Approval"}
+                            </p>
+                        </div>
+                    </div>
+                </button>
+
+                {/* 2. Documents (SPK) */}
+                <button
+                    type="button"
+                    onClick={() => onTabChange("docs")}
+                    className={cn(
+                        "flex items-center justify-between p-3.5 rounded-xl border text-left transition-all cursor-pointer group hover:shadow-md",
+                        hasSpk
+                            ? "bg-emerald-50/70 border-emerald-200 hover:border-emerald-300"
+                            : "bg-neutral-50 border-neutral-200 hover:border-neutral-300"
+                    )}
+                >
+                    <div className="flex items-center gap-3">
+                        <div className={cn(
+                            "h-9 w-9 rounded-full flex items-center justify-center font-bold text-white shrink-0 transition-transform group-hover:scale-105",
+                            hasSpk ? "bg-emerald-600" : "bg-neutral-400"
+                        )}>
+                            {hasSpk ? <CheckCircle2 className="h-5 w-5" /> : <FileText className="h-5 w-5" />}
+                        </div>
+                        <div>
+                            <p className="text-[11px] font-semibold text-neutral-500 uppercase tracking-wider">Documents</p>
+                            <p className="text-sm font-bold text-neutral-900 mt-0.5">
+                                {hasSpk ? "SPK Tersedia" : "Belum Ada SPK"}
+                            </p>
+                        </div>
+                    </div>
+                </button>
+
+                {/* 3. Kesiapan Lokasi */}
+                <button
+                    type="button"
+                    onClick={() => onTabChange("kesiapan-lokasi")}
+                    className={cn(
+                        "flex items-center justify-between p-3.5 rounded-xl border text-left transition-all cursor-pointer group hover:shadow-md",
+                        isSiteReady
+                            ? "bg-emerald-50/70 border-emerald-200 hover:border-emerald-300"
+                            : readinessPercentage > 0
+                            ? "bg-blue-50/60 border-blue-200 hover:border-blue-300"
+                            : "bg-neutral-50 border-neutral-200 hover:border-neutral-300"
+                    )}
+                >
+                    <div className="flex items-center gap-3">
+                        <div className={cn(
+                            "h-9 w-9 rounded-full flex items-center justify-center font-bold text-white shrink-0 transition-transform group-hover:scale-105",
+                            isSiteReady ? "bg-emerald-600" : readinessPercentage > 0 ? "bg-blue-600" : "bg-neutral-400"
+                        )}>
+                            {isSiteReady ? (
+                                <CheckCircle2 className="h-5 w-5" />
+                            ) : (
+                                <span className="text-xs font-extrabold">{readinessPercentage}%</span>
+                            )}
+                        </div>
+                        <div>
+                            <p className="text-[11px] font-semibold text-neutral-500 uppercase tracking-wider">Kesiapan Lokasi</p>
+                            <p className="text-sm font-bold text-neutral-900 mt-0.5">
+                                {isSiteReady ? "Lokasi Siap 100%" : `${readinessPercentage}% Siap`}
+                            </p>
+                        </div>
+                    </div>
+                </button>
+            </div>
+        </div>
+    );
 }
 
 function DesignTabContent({ projectId, project }: { projectId: string; project?: any }) {
