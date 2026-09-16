@@ -1,4 +1,5 @@
 import { axiosInstance as apiClient } from '@/lib/axios';
+import { CatatanKeterlambatan } from './project-v2-service';
 
 export interface Project {
   id: number;
@@ -17,6 +18,8 @@ export interface Project {
   tanggal_selesai?: string;
   spk_number?: string;
   need_design?: number;
+  catatan_keterlambatan?: CatatanKeterlambatan | null;
+  catatan_keterlambatans?: CatatanKeterlambatan[];
   // Addendum fields
   parent_project_id?: number | null;
   addendum_number?: number | null;
