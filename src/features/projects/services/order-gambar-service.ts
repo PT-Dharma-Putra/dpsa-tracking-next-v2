@@ -29,14 +29,28 @@ export interface OrderGambarItem {
     id: number;
     name: string;
   } | null;
+  spk?: {
+    id: number;
+    project_id?: number;
+    nomor_spk?: string | null;
+  } | null;
   project?: {
     id: number;
-    nama_projek: string;
+    name?: string;
+    nama_projek?: string;
     no_spk?: string | null;
+    spk_number?: string | null;
     status?: string;
+    spk?: {
+      id: number;
+      project_id?: number;
+      nomor_spk?: string | null;
+    } | null;
     client?: {
       id: number;
-      nama: string;
+      name?: string;
+      nama?: string;
+      company_name?: string | null;
     } | null;
     marketing?: {
       id: number;

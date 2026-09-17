@@ -441,7 +441,7 @@ export default function RekapOrderGambarPage() {
                 <TableHead className='whitespace-nowrap text-xs font-bold text-neutral-700'>Pengirim</TableHead>
                 <TableHead className='whitespace-nowrap text-xs font-bold text-neutral-700'>Penerima</TableHead>
                 <TableHead className='whitespace-nowrap text-xs font-bold text-neutral-700'>Status</TableHead>
-                <TableHead className='min-w-[200px] text-xs font-bold text-neutral-700'>Proyek & Klien</TableHead>
+                <TableHead className='whitespace-nowrap text-xs font-bold text-neutral-700'>Link</TableHead>
                 <TableHead className='w-[110px] text-xs font-bold text-neutral-700 text-right pr-4'>Aksi</TableHead>
               </TableRow>
             </TableHeader>
@@ -581,28 +581,18 @@ export default function RekapOrderGambarPage() {
                       </TableCell>
 
                       {/* 11. Proyek & Klien */}
-                      <TableCell className='text-xs align-top py-3 min-w-[200px] max-w-[280px]'>
+                      <TableCell className='text-xs align-top py-3 max-w-[280px]'>
                         <div className='flex flex-col gap-0.5'>
                           {order.project ? (
                             <Link
                               href={`/dashboard/projects-v2/perencanaan/${order.project.id}/detail`}
                               className='font-bold text-neutral-900 hover:text-orange-600 hover:underline flex items-center gap-1'
                             >
-                              <span className='truncate max-w-[220px]'>{order.project.nama_projek}</span>
                               <ExternalLink className='h-3 w-3 text-neutral-400 shrink-0' />
                             </Link>
                           ) : (
                             <span className='font-bold text-neutral-500'>-</span>
                           )}
-                          <div className='flex items-center gap-2 text-[10px] text-neutral-500'>
-                            {order.project?.client?.nama && (
-                              <span className='flex items-center gap-0.5 text-neutral-600'>
-                                <Building className='h-2.5 w-2.5' />
-                                {order.project.client.nama}
-                              </span>
-                            )}
-                            {order.project?.no_spk && <span>SPK: {order.project.no_spk}</span>}
-                          </div>
                         </div>
                       </TableCell>
 
@@ -733,15 +723,21 @@ export default function RekapOrderGambarPage() {
                 <div className='grid grid-cols-2 gap-2 pt-2 border-t border-neutral-200/80'>
                   <div>
                     <span className='text-[10px] text-neutral-500'>Proyek:</span>
-                    <p className='font-bold text-neutral-800'>{selectedOrder.project?.nama_projek || '-'}</p>
+                    <p className='font-bold text-neutral-800'>
+                      {selectedOrder.project?.name || selectedOrder.project?.nama_projek || '-'}
+                    </p>
                   </div>
                   <div>
                     <span className='text-[10px] text-neutral-500'>No. SPK:</span>
-                    <p className='font-bold text-neutral-800'>{selectedOrder.project?.no_spk || '-'}</p>
+                    <p className='font-bold text-neutral-800'>
+                      {selectedOrder.spk?.nomor_spk || selectedOrder.project?.spk?.nomor_spk || selectedOrder.project?.no_spk || '-'}
+                    </p>
                   </div>
                   <div>
                     <span className='text-[10px] text-neutral-500'>Klien:</span>
-                    <p className='font-semibold text-neutral-700'>{selectedOrder.project?.client?.nama || '-'}</p>
+                    <p className='font-semibold text-neutral-700'>
+                      {selectedOrder.project?.client?.name || selectedOrder.project?.client?.nama || '-'}
+                    </p>
                   </div>
                   <div>
                     <span className='text-[10px] text-neutral-500'>Metode Order:</span>
@@ -816,7 +812,7 @@ export default function RekapOrderGambarPage() {
             <AlertDialogDescription className='text-xs'>
               Apakah Anda yakin ingin menerima order{' '}
               <strong>{orderToAccept?.no_order || `#${orderToAccept?.id}`}</strong> untuk proyek{' '}
-              <strong>{orderToAccept?.project?.nama_projek}</strong>?
+              <strong>{orderToAccept?.project?.name || orderToAccept?.project?.nama_projek}</strong>?
               <br />
               Nama Anda akan dicatat sebagai penerima dan status akan berubah menjadi <strong>Diproses</strong>.
             </AlertDialogDescription>
