@@ -432,7 +432,7 @@ export default function RekapOrderGambarPage() {
             <TableHeader className='bg-neutral-50'>
               <TableRow>
                 <TableHead className='whitespace-nowrap text-xs font-bold text-neutral-700'>No Order</TableHead>
-                <TableHead className='whitespace-nowrap text-xs font-bold text-neutral-700'>Tgl Order</TableHead>
+                <TableHead className='whitespace-nowrap text-xs font-bold text-neutral-700'>Tanggal Order</TableHead>
                 <TableHead className='whitespace-nowrap text-xs font-bold text-neutral-700'>Jenis</TableHead>
                 <TableHead className='whitespace-nowrap text-xs font-bold text-neutral-700'>Metode</TableHead>
                 <TableHead className='min-w-[220px] text-xs font-bold text-neutral-700'>Detail Pekerjaan</TableHead>
@@ -448,7 +448,7 @@ export default function RekapOrderGambarPage() {
             <TableBody>
               {isLoadingList ? (
                 <TableRow>
-                  <TableCell colSpan={11} className='h-32 text-center text-xs text-neutral-500'>
+                  <TableCell colSpan={12} className='h-32 text-center text-xs text-neutral-500'>
                     <div className='flex items-center justify-center gap-2'>
                       <RefreshCw className='h-4 w-4 animate-spin text-orange-600' />
                       Memuat data order gambar kerja...
@@ -457,7 +457,7 @@ export default function RekapOrderGambarPage() {
                 </TableRow>
               ) : orders.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={11} className='h-32 text-center text-xs text-neutral-500'>
+                  <TableCell colSpan={12} className='h-32 text-center text-xs text-neutral-500'>
                     Tidak ada data order gambar kerja yang sesuai filter.
                   </TableCell>
                 </TableRow>
@@ -475,14 +475,29 @@ export default function RekapOrderGambarPage() {
                         {order.no_order || `ORD-#${order.id}`}
                       </TableCell>
 
-                      {/* 2. Jenis */}
+                      {/* 2. Tanggal Order */}
+                      <TableCell className='text-xs align-top py-3 whitespace-nowrap'>
+                        <span className='text-neutral-700 text-xs'>
+                          {(() => {
+                            const dateStr = order.tanggal_order || order.created_at;
+                            if (!dateStr) return '-';
+                            try {
+                              return format(new Date(dateStr), 'dd MMM yyyy');
+                            } catch {
+                              return '-';
+                            }
+                          })()}
+                        </span>
+                      </TableCell>
+
+                      {/* 3. Jenis */}
                       <TableCell className='text-xs align-top py-3 whitespace-nowrap'>
                         <span className='font-semibold text-neutral-700'>
                           {getJenisOrderLabel(order.jenis_order)}
                         </span>
                       </TableCell>
 
-                      {/* 3. Metode */}
+                      {/* 4. Metode */}
                       <TableCell className='text-xs align-top py-3 whitespace-nowrap'>
                         <span
                           className={cn(
@@ -496,7 +511,7 @@ export default function RekapOrderGambarPage() {
                         </span>
                       </TableCell>
 
-                      {/* 4. Detail Pekerjaan */}
+                      {/* 5. Detail Pekerjaan */}
                       <TableCell className='text-xs align-top py-3 min-w-[220px] max-w-[320px]'>
                         <p
                           className='line-clamp-2 text-neutral-700 text-xs leading-snug'
@@ -506,7 +521,7 @@ export default function RekapOrderGambarPage() {
                         </p>
                       </TableCell>
 
-                      {/* 5. Prioritas */}
+                      {/* 6. Prioritas */}
                       <TableCell className='text-xs align-top py-3 whitespace-nowrap'>
                         {order.prioritas === '2' ? (
                           <span className='text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-red-100 text-red-700 border border-red-200 inline-block'>
@@ -519,7 +534,7 @@ export default function RekapOrderGambarPage() {
                         )}
                       </TableCell>
 
-                      {/* 6. Target Selesai */}
+                      {/* 7. Target Selesai */}
                       <TableCell className='text-xs align-top py-3 whitespace-nowrap'>
                         {order.target_selesai ? (
                           <div className='flex items-center gap-1.5'>
@@ -542,14 +557,14 @@ export default function RekapOrderGambarPage() {
                         )}
                       </TableCell>
 
-                      {/* 7. Pengirim */}
+                      {/* 8. Pengirim */}
                       <TableCell className='text-xs align-top py-3 whitespace-nowrap'>
                         <span className='font-medium text-neutral-800'>
                           {order.user?.name || '-'}
                         </span>
                       </TableCell>
 
-                      {/* 8. Penerima */}
+                      {/* 9. Penerima */}
                       <TableCell className='text-xs align-top py-3 whitespace-nowrap'>
                         {order.penerima ? (
                           <span className='font-semibold text-neutral-800'>
@@ -560,12 +575,12 @@ export default function RekapOrderGambarPage() {
                         )}
                       </TableCell>
 
-                      {/* 9. Status */}
+                      {/* 10. Status */}
                       <TableCell className='align-top py-3 whitespace-nowrap'>
                         {getStatusBadge(order.status)}
                       </TableCell>
 
-                      {/* 10. Proyek & Klien */}
+                      {/* 11. Proyek & Klien */}
                       <TableCell className='text-xs align-top py-3 min-w-[200px] max-w-[280px]'>
                         <div className='flex flex-col gap-0.5'>
                           {order.project ? (
@@ -591,7 +606,7 @@ export default function RekapOrderGambarPage() {
                         </div>
                       </TableCell>
 
-                      {/* 11. Aksi */}
+                      {/* 12. Aksi */}
                       <TableCell className='text-right align-top py-3 pr-4 whitespace-nowrap'>
                         <div className='flex items-center justify-end gap-1'>
                           {/* Tombol Lihat Detail */}
