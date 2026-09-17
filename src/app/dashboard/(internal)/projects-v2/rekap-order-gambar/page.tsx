@@ -431,20 +431,24 @@ export default function RekapOrderGambarPage() {
           <Table>
             <TableHeader className='bg-neutral-50'>
               <TableRow>
-                <TableHead className='w-[160px] text-xs font-bold text-neutral-700'>No. Order & Prioritas</TableHead>
+                <TableHead className='whitespace-nowrap text-xs font-bold text-neutral-700'>No Order</TableHead>
+                <TableHead className='whitespace-nowrap text-xs font-bold text-neutral-700'>Tgl Order</TableHead>
+                <TableHead className='whitespace-nowrap text-xs font-bold text-neutral-700'>Jenis</TableHead>
+                <TableHead className='whitespace-nowrap text-xs font-bold text-neutral-700'>Metode</TableHead>
+                <TableHead className='min-w-[220px] text-xs font-bold text-neutral-700'>Detail Pekerjaan</TableHead>
+                <TableHead className='whitespace-nowrap text-xs font-bold text-neutral-700'>Prioritas</TableHead>
+                <TableHead className='whitespace-nowrap text-xs font-bold text-neutral-700'>Target Selesai</TableHead>
+                <TableHead className='whitespace-nowrap text-xs font-bold text-neutral-700'>Pengirim</TableHead>
+                <TableHead className='whitespace-nowrap text-xs font-bold text-neutral-700'>Penerima</TableHead>
+                <TableHead className='whitespace-nowrap text-xs font-bold text-neutral-700'>Status</TableHead>
                 <TableHead className='min-w-[200px] text-xs font-bold text-neutral-700'>Proyek & Klien</TableHead>
-                <TableHead className='w-[120px] text-xs font-bold text-neutral-700'>Jenis / Metode</TableHead>
-                <TableHead className='w-[150px] text-xs font-bold text-neutral-700'>Pengirim (PPIC)</TableHead>
-                <TableHead className='w-[130px] text-xs font-bold text-neutral-700'>Target Selesai</TableHead>
-                <TableHead className='w-[160px] text-xs font-bold text-neutral-700'>Penerima (Studio)</TableHead>
-                <TableHead className='w-[110px] text-xs font-bold text-neutral-700'>Status</TableHead>
-                <TableHead className='w-[120px] text-xs font-bold text-neutral-700 text-right pr-4'>Aksi</TableHead>
+                <TableHead className='w-[110px] text-xs font-bold text-neutral-700 text-right pr-4'>Aksi</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoadingList ? (
                 <TableRow>
-                  <TableCell colSpan={8} className='h-32 text-center text-xs text-neutral-500'>
+                  <TableCell colSpan={11} className='h-32 text-center text-xs text-neutral-500'>
                     <div className='flex items-center justify-center gap-2'>
                       <RefreshCw className='h-4 w-4 animate-spin text-orange-600' />
                       Memuat data order gambar kerja...
@@ -453,7 +457,7 @@ export default function RekapOrderGambarPage() {
                 </TableRow>
               ) : orders.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className='h-32 text-center text-xs text-neutral-500'>
+                  <TableCell colSpan={11} className='h-32 text-center text-xs text-neutral-500'>
                     Tidak ada data order gambar kerja yang sesuai filter.
                   </TableCell>
                 </TableRow>
@@ -466,28 +470,103 @@ export default function RekapOrderGambarPage() {
 
                   return (
                     <TableRow key={order.id} className='hover:bg-neutral-50/60'>
-                      {/* No. Order & Prioritas */}
-                      <TableCell className='font-medium text-xs align-top py-3'>
-                        <div className='flex flex-col gap-1'>
-                          <span className='font-mono font-bold text-neutral-800 text-[11px]'>
-                            {order.no_order || `ORD-#${order.id}`}
+                      {/* 1. No Order */}
+                      <TableCell className='font-mono font-bold text-neutral-800 text-xs align-top py-3 whitespace-nowrap'>
+                        {order.no_order || `ORD-#${order.id}`}
+                      </TableCell>
+
+                      {/* 2. Jenis */}
+                      <TableCell className='text-xs align-top py-3 whitespace-nowrap'>
+                        <span className='font-semibold text-neutral-700'>
+                          {getJenisOrderLabel(order.jenis_order)}
+                        </span>
+                      </TableCell>
+
+                      {/* 3. Metode */}
+                      <TableCell className='text-xs align-top py-3 whitespace-nowrap'>
+                        <span
+                          className={cn(
+                            'text-[10px] font-bold px-2 py-0.5 rounded-full border inline-block',
+                            order.pakai_gambar === 0
+                              ? 'bg-neutral-100 text-neutral-600 border-neutral-200'
+                              : 'bg-orange-50 text-orange-700 border-orange-200'
+                          )}
+                        >
+                          {order.pakai_gambar === 0 ? 'Tanpa Gambar' : 'Pakai Gambar'}
+                        </span>
+                      </TableCell>
+
+                      {/* 4. Detail Pekerjaan */}
+                      <TableCell className='text-xs align-top py-3 min-w-[220px] max-w-[320px]'>
+                        <p
+                          className='line-clamp-2 text-neutral-700 text-xs leading-snug'
+                          title={order.detail_pekerjaan || undefined}
+                        >
+                          {order.detail_pekerjaan || <span className='text-neutral-400 italic'>-</span>}
+                        </p>
+                      </TableCell>
+
+                      {/* 5. Prioritas */}
+                      <TableCell className='text-xs align-top py-3 whitespace-nowrap'>
+                        {order.prioritas === '2' ? (
+                          <span className='text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-red-100 text-red-700 border border-red-200 inline-block'>
+                            Mendesak
                           </span>
-                          <div className='flex items-center gap-1'>
-                            {order.prioritas === '2' ? (
+                        ) : (
+                          <span className='text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 inline-block'>
+                            Biasa
+                          </span>
+                        )}
+                      </TableCell>
+
+                      {/* 6. Target Selesai */}
+                      <TableCell className='text-xs align-top py-3 whitespace-nowrap'>
+                        {order.target_selesai ? (
+                          <div className='flex items-center gap-1.5'>
+                            <span
+                              className={cn(
+                                'text-xs font-semibold',
+                                isOverdue ? 'text-red-600 font-bold' : 'text-neutral-800'
+                              )}
+                            >
+                              {format(new Date(order.target_selesai), 'dd MMM yyyy')}
+                            </span>
+                            {isOverdue && (
                               <span className='text-[9px] font-extrabold px-1.5 py-0.5 rounded bg-red-100 text-red-700 border border-red-200'>
-                                Mendesak
-                              </span>
-                            ) : (
-                              <span className='text-[9px] font-extrabold px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200'>
-                                Biasa
+                                Overdue
                               </span>
                             )}
                           </div>
-                        </div>
+                        ) : (
+                          <span className='text-neutral-400 text-xs'>-</span>
+                        )}
                       </TableCell>
 
-                      {/* Proyek & Klien */}
-                      <TableCell className='text-xs align-top py-3'>
+                      {/* 7. Pengirim */}
+                      <TableCell className='text-xs align-top py-3 whitespace-nowrap'>
+                        <span className='font-medium text-neutral-800'>
+                          {order.user?.name || '-'}
+                        </span>
+                      </TableCell>
+
+                      {/* 8. Penerima */}
+                      <TableCell className='text-xs align-top py-3 whitespace-nowrap'>
+                        {order.penerima ? (
+                          <span className='font-semibold text-neutral-800'>
+                            {order.penerima.name}
+                          </span>
+                        ) : (
+                          <span className='text-neutral-400 italic text-xs'>Belum diambil</span>
+                        )}
+                      </TableCell>
+
+                      {/* 9. Status */}
+                      <TableCell className='align-top py-3 whitespace-nowrap'>
+                        {getStatusBadge(order.status)}
+                      </TableCell>
+
+                      {/* 10. Proyek & Klien */}
+                      <TableCell className='text-xs align-top py-3 min-w-[200px] max-w-[280px]'>
                         <div className='flex flex-col gap-0.5'>
                           {order.project ? (
                             <Link
@@ -501,98 +580,19 @@ export default function RekapOrderGambarPage() {
                             <span className='font-bold text-neutral-500'>-</span>
                           )}
                           <div className='flex items-center gap-2 text-[10px] text-neutral-500'>
-                            {order.project?.no_spk && <span>SPK: {order.project.no_spk}</span>}
                             {order.project?.client?.nama && (
                               <span className='flex items-center gap-0.5 text-neutral-600'>
                                 <Building className='h-2.5 w-2.5' />
                                 {order.project.client.nama}
                               </span>
                             )}
+                            {order.project?.no_spk && <span>SPK: {order.project.no_spk}</span>}
                           </div>
                         </div>
                       </TableCell>
 
-                      {/* Jenis / Metode */}
-                      <TableCell className='text-xs align-top py-3'>
-                        <div className='flex flex-col gap-1'>
-                          <span className='text-[10px] font-semibold text-neutral-700'>
-                            {getJenisOrderLabel(order.jenis_order)}
-                          </span>
-                          <span
-                            className={cn(
-                              'text-[9px] font-bold px-1.5 py-0.5 rounded w-fit border',
-                              order.pakai_gambar === 0
-                                ? 'bg-neutral-100 text-neutral-600 border-neutral-200'
-                                : 'bg-orange-50 text-orange-700 border-orange-200'
-                            )}
-                          >
-                            {order.pakai_gambar === 0 ? 'Tanpa Gambar' : 'Pakai Gambar'}
-                          </span>
-                        </div>
-                      </TableCell>
-
-                      {/* Pengirim (PPIC) & Tanggal */}
-                      <TableCell className='text-xs align-top py-3'>
-                        <div className='flex flex-col gap-0.5'>
-                          <span className='font-medium text-neutral-800 text-[11px]'>
-                            {order.user?.name || '-'}
-                          </span>
-                          <span className='text-[10px] text-neutral-500'>
-                            {order.tanggal_order
-                              ? format(new Date(order.tanggal_order), 'dd MMM yyyy, HH:mm')
-                              : format(new Date(order.created_at), 'dd MMM yyyy')}
-                          </span>
-                        </div>
-                      </TableCell>
-
-                      {/* Target Selesai */}
-                      <TableCell className='text-xs align-top py-3'>
-                        {order.target_selesai ? (
-                          <div className='flex flex-col gap-0.5'>
-                            <span
-                              className={cn(
-                                'font-bold text-[11px]',
-                                isOverdue ? 'text-red-600' : 'text-neutral-800'
-                              )}
-                            >
-                              {format(new Date(order.target_selesai), 'dd MMM yyyy')}
-                            </span>
-                            {isOverdue && (
-                              <span className='text-[8px] font-bold px-1 py-0.2 rounded bg-red-100 text-red-700 w-fit'>
-                                Overdue
-                              </span>
-                            )}
-                          </div>
-                        ) : (
-                          <span className='text-neutral-400 text-xs'>-</span>
-                        )}
-                      </TableCell>
-
-                      {/* Penerima (Studio) */}
-                      <TableCell className='text-xs align-top py-3'>
-                        {order.penerima ? (
-                          <div className='flex flex-col gap-0.5'>
-                            <span className='font-semibold text-neutral-800 text-[11px]'>
-                              {order.penerima.name}
-                            </span>
-                            <span className='text-[10px] text-neutral-500'>
-                              {order.tanggal_diterima
-                                ? format(new Date(order.tanggal_diterima), 'dd MMM yyyy, HH:mm')
-                                : '-'}
-                            </span>
-                          </div>
-                        ) : (
-                          <span className='text-neutral-400 italic text-[10px]'>Belum diambil</span>
-                        )}
-                      </TableCell>
-
-                      {/* Status */}
-                      <TableCell className='align-top py-3'>
-                        {getStatusBadge(order.status)}
-                      </TableCell>
-
-                      {/* Aksi */}
-                      <TableCell className='text-right align-top py-3 pr-4'>
+                      {/* 11. Aksi */}
+                      <TableCell className='text-right align-top py-3 pr-4 whitespace-nowrap'>
                         <div className='flex items-center justify-end gap-1'>
                           {/* Tombol Lihat Detail */}
                           <Button
