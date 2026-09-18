@@ -140,6 +140,11 @@ export const adminService = {
         return data;
     },
 
+    resetUserPermissions: async (userId: number) => {
+        const { data } = await axiosInstance.post(`/access-management/users/${userId}/reset-permissions`);
+        return data;
+    },
+
     getUserSidebarMenus: async () => {
         const { data } = await axiosInstance.get<{ data: any[] }>('/access-management/user-menus');
         return data.data;

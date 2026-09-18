@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, isPast } from 'date-fns';
 import {
@@ -76,7 +77,21 @@ import { cn } from '@/lib/utils';
 
 export default function RekapOrderGambarPage() {
   const { user } = useAuth();
+  const searchParams = useSearchParams();
   const queryClient = useQueryClient();
+
+  const fromParam = searchParams.get('from')?.toLowerCase();
+
+  // Determine whether current context is Studio or PPIC
+  const isStudio =
+    fromParam === 'studio' ||
+    (fromParam !== 'ppic' && (user?.role === 'Studio' || user?.roles?.some((r) => (typeof r === 'string' ? r : r.name) === 'Studio')));
+
+  const getProjectDetailUrl = (projectId: number) => {
+    return isStudio
+      ? `/dashboard/projects-v2/engineer/${projectId}/detail`
+      : `/dashboard/projects-v2/perencanaan/${projectId}/detail`;
+  };
 
   // Filter & Pagination state
   const [search, setSearch] = React.useState('');
@@ -268,9 +283,22 @@ export default function RekapOrderGambarPage() {
               <Layers className='h-5 w-5' />
             </div>
             <div>
-              <h1 className='text-2xl font-bold tracking-tight text-neutral-900'>
-                Rekap Order Gambar
-              </h1>
+              <div className='flex items-center gap-2'>
+                <h1 className='text-2xl font-bold tracking-tight text-neutral-900'>
+                  Rekap Order Gambar
+                </h1>
+                <Badge
+                  variant='outline'
+                  className={cn(
+                    'text-[11px] font-bold px-2 py-0.5 border',
+                    isStudio
+                      ? 'bg-blue-50 text-blue-700 border-blue-200'
+                      : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                  )}
+                >
+                  {isStudio ? 'Halaman Studio' : 'Halaman PPIC'}
+                </Badge>
+              </div>
               <p className='text-xs text-muted-foreground'>
                 Daftar antrean dan rekapitulasi permintaan order gambar kerja dari PPIC ke Studio
               </p>
@@ -419,6 +447,34 @@ export default function RekapOrderGambarPage() {
                     <SelectItem value='1'>Biasa</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              {/* View Switcher: PPIC / Studio */}
+              <div className='flex items-center gap-1 bg-neutral-100 p-0.5 rounded-md border border-neutral-200 ml-1'>
+                <Link
+                  href='/dashboard/projects-v2/rekap-order-gambar?from=ppic'
+                  className={cn(
+                    'text-[11px] font-bold px-2 py-1 rounded transition-all',
+                    !isStudio
+                      ? 'bg-white text-emerald-800 shadow-xs'
+                      : 'text-neutral-500 hover:text-neutral-900'
+                  )}
+                  title='Lihat dalam konteks PPIC (link mengarah ke Perencanaan)'
+                >
+                  PPIC
+                </Link>
+                <Link
+                  href='/dashboard/projects-v2/rekap-order-gambar?from=studio'
+                  className={cn(
+                    'text-[11px] font-bold px-2 py-1 rounded transition-all',
+                    isStudio
+                      ? 'bg-white text-blue-800 shadow-xs'
+                      : 'text-neutral-500 hover:text-neutral-900'
+                  )}
+                  title='Lihat dalam konteks Studio (link mengarah ke Engineer)'
+                >
+                  Studio
+                </Link>
               </div>
             </div>
           </div>
@@ -581,18 +637,32 @@ export default function RekapOrderGambarPage() {
                       </TableCell>
 
                       {/* 11. Proyek & Klien */}
-                      <TableCell className='text-xs align-top py-3 max-w-[280px]'>
+                      <TableCell className='text-xs align-top py-3 min-w-[200px] max-w-[280px]'>
                         <div className='flex flex-col gap-0.5'>
                           {order.project ? (
                             <Link
-                              href={`/dashboard/projects-v2/perencanaan/${order.project.id}/detail`}
+                              href={getProjectDetailUrl(order.project.id)}
                               className='font-bold text-neutral-900 hover:text-orange-600 hover:underline flex items-center gap-1'
                             >
+                              <span className='truncate max-w-[220px]'>
+                                {order.project.name || order.project.nama_projek}
+                              </span>
                               <ExternalLink className='h-3 w-3 text-neutral-400 shrink-0' />
                             </Link>
                           ) : (
                             <span className='font-bold text-neutral-500'>-</span>
                           )}
+                          <div className='flex items-center gap-2 text-[10px] text-neutral-500'>
+                            {(order.project?.client?.name || order.project?.client?.nama) && (
+                              <span className='flex items-center gap-0.5 text-neutral-600'>
+                                <Building className='h-2.5 w-2.5' />
+                                {order.project.client.name || order.project.client.nama}
+                              </span>
+                            )}
+                            {(order.spk?.nomor_spk || order.project?.spk?.nomor_spk || order.project?.no_spk) && (
+                              <span>SPK: {order.spk?.nomor_spk || order.project?.spk?.nomor_spk || order.project?.no_spk}</span>
+                            )}
+                          </div>
                         </div>
                       </TableCell>
 
@@ -723,9 +793,17 @@ export default function RekapOrderGambarPage() {
                 <div className='grid grid-cols-2 gap-2 pt-2 border-t border-neutral-200/80'>
                   <div>
                     <span className='text-[10px] text-neutral-500'>Proyek:</span>
-                    <p className='font-bold text-neutral-800'>
-                      {selectedOrder.project?.name || selectedOrder.project?.nama_projek || '-'}
-                    </p>
+                    {selectedOrder.project ? (
+                      <Link
+                        href={getProjectDetailUrl(selectedOrder.project.id)}
+                        className='font-bold text-neutral-800 hover:text-orange-600 hover:underline flex items-center gap-1'
+                      >
+                        <span>{selectedOrder.project.name || selectedOrder.project.nama_projek}</span>
+                        <ExternalLink className='h-3 w-3 text-neutral-400 shrink-0' />
+                      </Link>
+                    ) : (
+                      <p className='font-bold text-neutral-800'>-</p>
+                    )}
                   </div>
                   <div>
                     <span className='text-[10px] text-neutral-500'>No. SPK:</span>
