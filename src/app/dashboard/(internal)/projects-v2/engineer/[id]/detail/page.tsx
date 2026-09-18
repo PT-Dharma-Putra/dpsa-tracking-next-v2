@@ -593,7 +593,7 @@ export default function EngineerDetailPage() {
     setIsGkDialogOpen(true);
   };
 
-  const [isSpdCollapsed, setIsSpdCollapsed] = React.useState(true);
+  const [isSpdCollapsed, setIsSpdCollapsed] = React.useState(false);
   const [isAccCollapsed, setIsAccCollapsed] = React.useState(true);
   const [isProgressCollapsed, setIsProgressCollapsed] = React.useState(true);
   const [isLfCollapsed, setIsLfCollapsed] = React.useState(true);
@@ -620,14 +620,12 @@ export default function EngineerDetailPage() {
   }, [project?.list_furnitur]);
 
   React.useEffect(() => {
-    if (orderGk?.file) {
+    if (orderGk) {
       setIsProgressCollapsed(false);
-      setIsSpdCollapsed(true);
     } else {
       setIsProgressCollapsed(true);
-      setIsSpdCollapsed(false);
     }
-  }, [orderGk?.file]);
+  }, [orderGk]);
 
   if (isLoadingProject) {
     return (
@@ -662,8 +660,8 @@ export default function EngineerDetailPage() {
       id: 2,
       title: "Order Gambar Kerja",
       description: "Engineering Order",
-      isCompleted: !!orderGk?.file,
-      isActive: !!project.spk?.file || !!project.spk?.spk_signed_file,
+      isCompleted: !!orderGk,
+      isActive: !!project.spk?.file || !!project.spk?.spk_signed_file || !!project.spk_number,
       icon: FileText,
       color: "text-orange-600",
       bgColor: "bg-orange-500",
@@ -675,7 +673,7 @@ export default function EngineerDetailPage() {
       title: "Gambar Kerja",
       description: "Technical Drawings",
       isCompleted: hasProgress,
-      isActive: !!orderGk?.file,
+      isActive: !!orderGk,
       icon: ImageIcon,
       color: "text-blue-600",
       bgColor: "bg-blue-500",
@@ -911,7 +909,7 @@ export default function EngineerDetailPage() {
               : "border-neutral-200 bg-neutral-50/80 opacity-60 grayscale-[0.5]"
           }`}
         >
-          {orderGk?.file && (
+          {orderGk && (
             <div className="absolute -top-1.5 -right-1.5 h-5 w-5 bg-emerald-500 rounded-full flex items-center justify-center shadow-sm z-10 animate-in zoom-in duration-300">
               <CheckCircle2 className="h-3 w-3 text-white" />
             </div>
@@ -947,43 +945,116 @@ export default function EngineerDetailPage() {
           </CardHeader>
           {!isSpdCollapsed && (
             <CardContent>
-              {orderGk?.file ? (
-                <div className="space-y-2">
-                  <div className="p-3 rounded-xl bg-orange-50/80 border border-orange-100 flex items-center justify-between shadow-sm">
-                    <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 rounded-lg bg-white shadow-sm border border-orange-100 flex items-center justify-center text-orange-600">
-                        <FileText className="h-4 w-4" />
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold text-orange-900">
-                          Order Drawing
-                        </p>
-                        <p className="text-[10px] text-orange-600/80">
-                          Tanggal Order:{" "}
-                          {format(new Date(orderGk.created_at), "MMM d, yyyy")}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-orange-600 hover:bg-orange-200 bg-white shadow-sm border border-orange-100"
-                        asChild
-                      >
-                        <a
-                          href={`${(
-                            process.env.NEXT_PUBLIC_API_URL ||
-                            "http://localhost:8000"
-                          ).replace("/api", "")}/storage/${orderGk.file}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          <FileDown className="h-4 w-4" />
-                        </a>
-                      </Button>
-                    </div>
+              {orderGk ? (
+                <div className="space-y-3">
+                  <div className="space-y-2 max-h-[300px] overflow-y-auto pr-0.5">
+                    {project.order_gambar_kerja &&
+                    project.order_gambar_kerja.length > 0 ? (
+                      project.order_gambar_kerja.map((order, idx) => {
+                        const orderDate =
+                          order.tanggal_order || order.created_at;
+                        return (
+                          <div
+                            key={order.id || idx}
+                            className="p-3 rounded-xl bg-orange-50/80 border border-orange-100 shadow-sm space-y-2"
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                                <div className="h-8 w-8 rounded-lg bg-white shadow-sm border border-orange-100 flex items-center justify-center text-orange-600 shrink-0">
+                                  <FileText className="h-4 w-4" />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <p className="text-xs font-bold text-orange-900 truncate">
+                                      {order.no_order || "Order Gambar"}
+                                    </p>
+                                    {order.prioritas === "2" ? (
+                                      <span className="text-[9px] bg-red-100 text-red-700 font-bold px-1.5 py-0.5 rounded shrink-0">
+                                        Mendesak
+                                      </span>
+                                    ) : order.prioritas === "1" ? (
+                                      <span className="text-[9px] bg-blue-100 text-blue-700 font-bold px-1.5 py-0.5 rounded shrink-0">
+                                        Biasa
+                                      </span>
+                                    ) : null}
+                                    <span
+                                      className={cn(
+                                        "text-[9px] font-semibold px-1.5 py-0.5 rounded shrink-0",
+                                        order.pakai_gambar === 0
+                                          ? "bg-neutral-100 text-neutral-600 border border-neutral-200"
+                                          : "bg-orange-100 text-orange-700 border border-orange-200",
+                                      )}
+                                    >
+                                      {order.pakai_gambar === 0
+                                        ? "Tanpa Gambar"
+                                        : "Pakai Gambar"}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-2 text-[10px] text-orange-600/80 mt-0.5 flex-wrap">
+                                    <span>
+                                      Tanggal:{" "}
+                                      {orderDate
+                                        ? format(
+                                            new Date(orderDate),
+                                            "d MMM yyyy",
+                                          )
+                                        : "-"}
+                                    </span>
+                                    {order.target_selesai && (
+                                      <>
+                                        <span>•</span>
+                                        <span>
+                                          Target:{" "}
+                                          {format(
+                                            new Date(order.target_selesai),
+                                            "d MMM yyyy",
+                                          )}
+                                        </span>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                              {order.file ? (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-orange-600 hover:bg-orange-200 bg-white shadow-sm border border-orange-100 shrink-0"
+                                  asChild
+                                >
+                                  <a
+                                    href={`${(
+                                      process.env.NEXT_PUBLIC_API_URL ||
+                                      "http://localhost:8000"
+                                    ).replace("/api", "")}/storage/${order.file}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    title="Download File Lampiran"
+                                  >
+                                    <FileDown className="h-4 w-4" />
+                                  </a>
+                                </Button>
+                              ) : (
+                                <span className="text-[9px] text-neutral-400 bg-white/80 border border-neutral-200 px-1.5 py-1 rounded shrink-0 italic">
+                                  Tanpa File
+                                </span>
+                              )}
+                            </div>
+
+                            {order.detail_pekerjaan && (
+                              <div className="text-[11px] text-neutral-600 bg-white/80 p-2 rounded-lg border border-orange-100/60 leading-relaxed break-words">
+                                <span className="font-semibold text-neutral-700">
+                                  Detail:{" "}
+                                </span>
+                                {order.detail_pekerjaan}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })
+                    ) : null}
                   </div>
+
                   <Button
                     variant="outline"
                     size="sm"
