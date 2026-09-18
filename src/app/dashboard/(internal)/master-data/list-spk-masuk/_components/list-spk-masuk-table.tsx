@@ -50,6 +50,7 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Card, CardContent } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 import {
     ListSpkMasuk,
@@ -193,9 +194,19 @@ export function ListSpkMasukTable() {
                 </div>
             </div>
 
-            {/* Quick Stats Cards */}
+            {/* Quick Stats Cards (Interactive Filter) */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <Card className="border border-neutral-200 shadow-sm bg-gradient-to-br from-white to-neutral-50/50">
+                {/* Total Card */}
+                <Card
+                    onClick={() => {
+                        setUploadFilter("all");
+                        setPage(1);
+                    }}
+                    className={cn(
+                        "border shadow-sm bg-gradient-to-br from-white to-neutral-50/50 cursor-pointer transition-all hover:shadow-md hover:border-orange-300 select-none",
+                        uploadFilter === "all" ? "border-orange-500 ring-2 ring-orange-500/20 bg-orange-50/20" : "border-neutral-200"
+                    )}
+                >
                     <CardContent className="p-4 flex items-center justify-between">
                         <div>
                             <p className="text-xs font-medium text-neutral-500 uppercase tracking-wider">
@@ -209,7 +220,17 @@ export function ListSpkMasukTable() {
                     </CardContent>
                 </Card>
 
-                <Card className="border border-neutral-200 shadow-sm bg-gradient-to-br from-white to-neutral-50/50">
+                {/* Sudah Upload Card */}
+                <Card
+                    onClick={() => {
+                        setUploadFilter(uploadFilter === "uploaded" ? "all" : "uploaded");
+                        setPage(1);
+                    }}
+                    className={cn(
+                        "border shadow-sm bg-gradient-to-br from-white to-neutral-50/50 cursor-pointer transition-all hover:shadow-md hover:border-emerald-300 select-none",
+                        uploadFilter === "uploaded" ? "border-emerald-500 ring-2 ring-emerald-500/20 bg-emerald-50/20" : "border-neutral-200"
+                    )}
+                >
                     <CardContent className="p-4 flex items-center justify-between">
                         <div>
                             <p className="text-xs font-medium text-neutral-500 uppercase tracking-wider">
@@ -223,7 +244,17 @@ export function ListSpkMasukTable() {
                     </CardContent>
                 </Card>
 
-                <Card className="border border-neutral-200 shadow-sm bg-gradient-to-br from-white to-neutral-50/50">
+                {/* Belum Upload Card */}
+                <Card
+                    onClick={() => {
+                        setUploadFilter(uploadFilter === "not_uploaded" ? "all" : "not_uploaded");
+                        setPage(1);
+                    }}
+                    className={cn(
+                        "border shadow-sm bg-gradient-to-br from-white to-neutral-50/50 cursor-pointer transition-all hover:shadow-md hover:border-amber-300 select-none",
+                        uploadFilter === "not_uploaded" ? "border-amber-500 ring-2 ring-amber-500/20 bg-amber-50/20" : "border-neutral-200"
+                    )}
+                >
                     <CardContent className="p-4 flex items-center justify-between">
                         <div>
                             <p className="text-xs font-medium text-neutral-500 uppercase tracking-wider">
