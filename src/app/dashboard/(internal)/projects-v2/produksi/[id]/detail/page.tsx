@@ -55,10 +55,18 @@ import {
   Produksi,
   BarangSupplier,
 } from '@/features/projects/services/project-v2-service';
+import { kopSuratService } from '@/features/master-data/services/kop-surat-service';
 import { QRCodeSVG } from 'qrcode.react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 export default function ProduksiDetailPage() {
   const params = useParams();
@@ -76,6 +84,80 @@ export default function ProduksiDetailPage() {
     queryKey: ['project-v2-items', projectId],
     queryFn: () => projectV2Service.getProjectItems(projectId),
   });
+
+  const { data: teamData } = useQuery({
+    queryKey: ['project-team', projectId],
+    queryFn: () => projectV2Service.getProjectTeam(projectId),
+  });
+
+  const { data: kopSuratList } = useQuery({
+    queryKey: ['kop-surat-list'],
+    queryFn: () => kopSuratService.getKopSuratList(),
+  });
+
+  const { data: kopSuratActive } = useQuery({
+    queryKey: ['kop-surat-active'],
+    queryFn: () => kopSuratService.getActiveKopSurat(),
+  });
+
+  const [selectedKopId, setSelectedKopId] = React.useState<number | null>(null);
+
+  const projectDivisiIds = React.useMemo(() => {
+    const raw = teamData?.divisi_id || (project as any)?.project_team?.divisi_id || '';
+    if (!raw) return [];
+    return String(raw)
+      .split(',')
+      .map((s) => parseInt(s.trim(), 10))
+      .filter((n) => !isNaN(n));
+  }, [teamData, project]);
+
+  React.useEffect(() => {
+    if (selectedKopId !== null || !kopSuratList || kopSuratList.length === 0) return;
+
+    if (projectDivisiIds.length > 0) {
+      const match = kopSuratList.find(
+        (k) => k.divisi_id !== null && k.divisi_id !== undefined && projectDivisiIds.includes(Number(k.divisi_id))
+      );
+      if (match) {
+        setSelectedKopId(match.id);
+        return;
+      }
+    }
+
+    if (kopSuratActive) {
+      setSelectedKopId(kopSuratActive.id);
+      return;
+    }
+
+    if (kopSuratList[0]) {
+      setSelectedKopId(kopSuratList[0].id);
+    }
+  }, [kopSuratList, kopSuratActive, projectDivisiIds, selectedKopId]);
+
+  const selectedKop = React.useMemo(() => {
+    if (selectedKopId) {
+      const found = kopSuratList?.find((k) => k.id === selectedKopId);
+      if (found) return found;
+    }
+    return kopSuratActive || kopSuratList?.[0] || null;
+  }, [selectedKopId, kopSuratList, kopSuratActive]);
+
+  const kopData = React.useMemo(() => {
+    return {
+      logo: selectedKop?.logo || '/Logo.png',
+      nama_perusahaan: selectedKop?.nama_perusahaan || 'PT DHARMA PUTERA SEJAHTERA ABADI',
+      jenis_usaha: selectedKop?.jenis_usaha || 'Interior & Furniture Manufaktur',
+      alamat: selectedKop?.alamat || 'Jl. Matraman No. 88, Ringinsari, Maguwoharjo, Depok, Sleman, Yogyakarta',
+      telepon: selectedKop?.telepon || '(0274) 2800089',
+      fax: selectedKop?.fax || '(0274) 433 2248',
+      email: selectedKop?.email || 'piutang.dpsa@gmail.com',
+      website: selectedKop?.website || 'www.dpm-jogja.com',
+      nama_identitas_iso: selectedKop?.nama_identitas_iso || 'PROD',
+      nomor_identitas_iso: selectedKop?.nomor_identitas_iso || '003',
+      revisi_ke: selectedKop?.revisi_ke || '00',
+      terbit: selectedKop?.terbit || '08/25',
+    };
+  }, [selectedKop]);
 
   // Produksi State
   const [isProduksiDialogOpen, setIsProduksiDialogOpen] = React.useState(false);
@@ -847,20 +929,24 @@ export default function ProduksiDetailPage() {
           ['NO. SPK/TAHUN', spkValue]
         );
 
+        const logoUrl = kopData.logo.startsWith('/')
+          ? `${window.location.origin}${kopData.logo}`
+          : kopData.logo;
+
         return `
           <div class="label">
             <div class="hdr">
-              <div class="logo"><img src="${window.location.origin}/Logo.png" alt="Logo"/></div>
+              <div class="logo"><img src="${logoUrl}" alt="Logo"/></div>
               <div class="co">
-                <p class="n">PT DHARMA PUTERA SEJAHTERA ABADI</p>
-                <p class="it">Interior &amp; Furniture Manufaktur</p>
-                <p>Jl. Matraman No. 88, Ringinsari, Maguwoharjo, Depok, Sleman, Yogyakarta</p>
-                <p>Telepon : (0274) 2800089&nbsp;&nbsp;Fax : (0274) 433 2248</p>
-                <p>E-mail : piutang.dpsa@gmail.com&nbsp;Website : www.dpm-jogja.com</p>
+                <p class="n">${kopData.nama_perusahaan}</p>
+                ${kopData.jenis_usaha ? `<p class="it">${kopData.jenis_usaha}</p>` : ''}
+                ${kopData.alamat ? `<p>${kopData.alamat}</p>` : ''}
+                <p>Telepon : ${kopData.telepon || '-'}&nbsp;&nbsp;Fax : ${kopData.fax || '-'}</p>
+                <p>E-mail : ${kopData.email || '-'}&nbsp;Website : ${kopData.website || '-'}</p>
               </div>
               <div class="dc">
-                <div class="dr">PROD</div><div class="dr b">003</div>
-                <div class="db"><span>Rev:00</span><span>Terbit:<br>08/25</span></div>
+                <div class="dr">${kopData.nama_identitas_iso || 'PROD'}</div><div class="dr b">${kopData.nomor_identitas_iso || '003'}</div>
+                <div class="db"><span>Rev:${kopData.revisi_ke || '00'}</span><span>Terbit:<br>${kopData.terbit || '08/25'}</span></div>
               </div>
             </div>
             <div class="bd">
@@ -1006,22 +1092,24 @@ export default function ProduksiDetailPage() {
         ['NO. SPK/TAHUN', spkValue]
       );
 
+      const logoUrl = kopData.logo.startsWith('/')
+        ? `${window.location.origin}${kopData.logo}`
+        : kopData.logo;
+
       return `
         <div class="label">
           <div class="hdr">
-            <div class="logo"><img src="${
-              window.location.origin
-            }/Logo.png" alt="Logo"/></div>
+            <div class="logo"><img src="${logoUrl}" alt="Logo"/></div>
             <div class="co">
-              <p class="n">PT DHARMA PUTERA SEJAHTERA ABADI</p>
-              <p class="it">Interior &amp; Furniture Manufaktur</p>
-              <p>Jl. Matraman No. 88, Ringinsari, Maguwoharjo, Depok, Sleman, Yogyakarta</p>
-              <p>Telepon : (0274) 2800089&nbsp;&nbsp;Fax : (0274) 433 2248</p>
-              <p>E-mail : piutang.dpsa@gmail.com&nbsp;Website : www.dpm-jogja.com</p>
+              <p class="n">${kopData.nama_perusahaan}</p>
+              ${kopData.jenis_usaha ? `<p class="it">${kopData.jenis_usaha}</p>` : ''}
+              ${kopData.alamat ? `<p>${kopData.alamat}</p>` : ''}
+              <p>Telepon : ${kopData.telepon || '-'}&nbsp;&nbsp;Fax : ${kopData.fax || '-'}</p>
+              <p>E-mail : ${kopData.email || '-'}&nbsp;Website : ${kopData.website || '-'}</p>
             </div>
             <div class="dc">
-              <div class="dr">PROD</div><div class="dr b">003</div>
-              <div class="db"><span>Rev:00</span><span>Terbit:<br>08/25</span></div>
+              <div class="dr">${kopData.nama_identitas_iso || 'PROD'}</div><div class="dr b">${kopData.nomor_identitas_iso || '003'}</div>
+              <div class="db"><span>Rev:${kopData.revisi_ke || '00'}</span><span>Terbit:<br>${kopData.terbit || '08/25'}</span></div>
             </div>
           </div>
           <div class="bd">
@@ -3483,6 +3571,40 @@ export default function ProduksiDetailPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
 
+          {/* Kop Surat Selector */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-neutral-50 rounded-lg border border-neutral-200 mt-2">
+            <div className="flex items-center gap-2">
+              <Building2 className="h-4 w-4 text-neutral-500 shrink-0" />
+              <Label className="text-xs font-semibold text-neutral-700 whitespace-nowrap">Kop Surat Produksi:</Label>
+              <Select
+                value={selectedKop?.id ? String(selectedKop.id) : ''}
+                onValueChange={(val) => setSelectedKopId(parseInt(val, 10))}
+              >
+                <SelectTrigger className="h-8 text-xs w-[280px] bg-white border-neutral-300">
+                  <SelectValue placeholder="Pilih Kop Surat" />
+                </SelectTrigger>
+                <SelectContent>
+                  {kopSuratList?.map((kop) => {
+                    const isDivisiMatch = kop.divisi_id && projectDivisiIds.includes(Number(kop.divisi_id));
+                    return (
+                      <SelectItem key={kop.id} value={String(kop.id)} className="text-xs">
+                        <span className="font-medium">{kop.nama_kop}</span>
+                        {isDivisiMatch && (
+                          <span className="ml-1 text-[10px] text-blue-600 font-semibold">(Sesuai Divisi Team)</span>
+                        )}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+            {selectedKop?.divisi?.nama && (
+              <Badge variant="outline" className="text-[10px] text-blue-700 bg-blue-50 border-blue-200">
+                Divisi: {selectedKop.divisi.nama}
+              </Badge>
+            )}
+          </div>
+
           <div className='max-h-[60vh] overflow-y-auto border border-neutral-200 rounded-md mt-2'>
             <Table>
               <TableHeader className='bg-neutral-50'>
@@ -3570,6 +3692,40 @@ export default function ProduksiDetailPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
 
+          {/* Kop Surat Selector */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-neutral-50 rounded-lg border border-neutral-200 mt-2">
+            <div className="flex items-center gap-2">
+              <Building2 className="h-4 w-4 text-neutral-500 shrink-0" />
+              <Label className="text-xs font-semibold text-neutral-700 whitespace-nowrap">Kop Surat Produksi:</Label>
+              <Select
+                value={selectedKop?.id ? String(selectedKop.id) : ''}
+                onValueChange={(val) => setSelectedKopId(parseInt(val, 10))}
+              >
+                <SelectTrigger className="h-8 text-xs w-[280px] bg-white border-neutral-300">
+                  <SelectValue placeholder="Pilih Kop Surat" />
+                </SelectTrigger>
+                <SelectContent>
+                  {kopSuratList?.map((kop) => {
+                    const isDivisiMatch = kop.divisi_id && projectDivisiIds.includes(Number(kop.divisi_id));
+                    return (
+                      <SelectItem key={kop.id} value={String(kop.id)} className="text-xs">
+                        <span className="font-medium">{kop.nama_kop}</span>
+                        {isDivisiMatch && (
+                          <span className="ml-1 text-[10px] text-blue-600 font-semibold">(Sesuai Divisi Team)</span>
+                        )}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+            {selectedKop?.divisi?.nama && (
+              <Badge variant="outline" className="text-[10px] text-blue-700 bg-blue-50 border-blue-200">
+                Divisi: {selectedKop.divisi.nama}
+              </Badge>
+            )}
+          </div>
+
           {/* Label Preview */}
           <div
             id='qr-item-print-area'
@@ -3581,7 +3737,7 @@ export default function ProduksiDetailPage() {
               <div className='flex items-center justify-center p-2 border-r border-black w-20 shrink-0'>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src='/Logo.png'
+                  src={kopData.logo}
                   alt='Logo DPM'
                   className='w-14 h-14 object-contain'
                 />
@@ -3590,41 +3746,42 @@ export default function ProduksiDetailPage() {
               {/* Company Info */}
               <div className='flex-1 text-center py-2 px-4 border-r border-black'>
                 <p className='font-extrabold text-blue-700 text-[13px] tracking-wide uppercase leading-tight'>
-                  PT DHARMA PUTERA SEJAHTERA ABADI
+                  {kopData.nama_perusahaan}
                 </p>
-                <p className='italic text-[10px] text-neutral-600 mt-0.5'>
-                  Interior &amp; Furniture Manufaktur
-                </p>
-                <p className='text-[10px] text-neutral-600 mt-0.5'>
-                  Jl. Matraman No. 88, Ringinsari, Maguwoharjo, Depok, Sleman,
-                  Yogyakarta
+                {kopData.jenis_usaha && (
+                  <p className='italic text-[10px] text-neutral-600 mt-0.5'>
+                    {kopData.jenis_usaha}
+                  </p>
+                )}
+                {kopData.alamat && (
+                  <p className='text-[10px] text-neutral-600 mt-0.5'>
+                    {kopData.alamat}
+                  </p>
+                )}
+                <p className='text-[10px] text-neutral-600'>
+                  Telepon : {kopData.telepon || '-'}&nbsp;&nbsp;&nbsp;Fax : {kopData.fax || '-'}
                 </p>
                 <p className='text-[10px] text-neutral-600'>
-                  Telepon : (0274) 2800089&nbsp;&nbsp;&nbsp;Fax : (0274) 433
-                  2248
-                </p>
-                <p className='text-[10px] text-neutral-600'>
-                  E-mail : piutang.dpsa@gmail.com&nbsp;&nbsp;Website :
-                  www.dpm-jogja.com
+                  E-mail : {kopData.email || '-'}&nbsp;&nbsp;Website : {kopData.website || '-'}
                 </p>
               </div>
 
               {/* Doc Code Box */}
               <div className='w-24 shrink-0 flex flex-col text-[10px] text-center'>
                 <div className='border-b border-black py-0.5 px-1 font-bold'>
-                  PROD
+                  {kopData.nama_identitas_iso || 'PROD'}
                 </div>
                 <div className='border-b border-black py-0.5 px-1 font-bold text-[13px]'>
-                  003
+                  {kopData.nomor_identitas_iso || '003'}
                 </div>
                 <div className='flex flex-1'>
                   <div className='flex-1 border-r border-black py-0.5 px-1'>
-                    Rev:00
+                    Rev:{kopData.revisi_ke || '00'}
                   </div>
                   <div className='flex-1 py-0.5 px-1 leading-tight'>
                     Terbit:
                     <br />
-                    08/25
+                    {kopData.terbit || '08/25'}
                   </div>
                 </div>
               </div>
