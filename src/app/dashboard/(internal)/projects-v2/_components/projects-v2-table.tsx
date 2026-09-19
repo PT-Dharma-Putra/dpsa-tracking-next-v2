@@ -3759,7 +3759,7 @@ export function ProjectsV2Table({
                         <TableHead>MKT</TableHead>
                       )}
                       <TableHead>CLIENT</TableHead>
-                      {(showPiutang || showMarketingFilter) && <TableHead>CLIENT (PENERBIT SPK)</TableHead>}
+                      {showPiutang && <TableHead>CLIENT (PENERBIT SPK)</TableHead>}
                       {(!showSPD || showEngineer) && <TableHead>NO SPK</TableHead>}
                       {showPiutang && <TableHead>NOIMNAL</TableHead>}
                       {showMarketingFilter && (
@@ -3824,23 +3824,25 @@ export function ProjectsV2Table({
                         !showQC && <TableHead>NO SPH</TableHead>}
                       {!showSPD && (
                         <>
-                          <TableHead
-                            className='cursor-pointer hover:bg-neutral-100 transition-colors group'
-                            onClick={() => handleSortChange('prioritas')}
-                          >
-                            <div className='flex items-center gap-1'>
-                              PRIORITAS
-                              {sortBy === 'prioritas' ? (
-                                sortOrder === 'asc' ? (
-                                  <ArrowUp className='h-3 w-3' />
+                          {!showMarketingFilter && (
+                            <TableHead
+                              className='cursor-pointer hover:bg-neutral-100 transition-colors group'
+                              onClick={() => handleSortChange('prioritas')}
+                            >
+                              <div className='flex items-center gap-1'>
+                                PRIORITAS
+                                {sortBy === 'prioritas' ? (
+                                  sortOrder === 'asc' ? (
+                                    <ArrowUp className='h-3 w-3' />
+                                  ) : (
+                                    <ArrowDown className='h-3 w-3' />
+                                  )
                                 ) : (
-                                  <ArrowDown className='h-3 w-3' />
-                                )
-                              ) : (
-                                <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
-                              )}
-                            </div>
-                          </TableHead>
+                                  <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
+                                )}
+                              </div>
+                            </TableHead>
+                          )}
                           <TableHead>TEAM</TableHead>
                         </>
                       )}
@@ -3997,6 +3999,7 @@ export function ProjectsV2Table({
                     </>
                   )}
                   {!showAllDashboard &&
+                    !showMarketingFilter &&
                     !showProduksi &&
                     !showPurchasing &&
                     !showPiutang &&
@@ -4284,7 +4287,7 @@ export function ProjectsV2Table({
                           : showPiutang
                           ? 14
                           : showMarketingFilter
-                          ? 24
+                          ? 21
                           : showPerencanaan
                           ? 22
                           : isMainProjectsV2Page
@@ -4315,7 +4318,7 @@ export function ProjectsV2Table({
                           : showPiutang
                           ? 14
                           : showMarketingFilter
-                          ? 24
+                          ? 21
                           : showPerencanaan
                           ? 22
                           : isMainProjectsV2Page
@@ -5027,7 +5030,7 @@ export function ProjectsV2Table({
                               {project.client?.name || '-'}
                             </TableCell>
                           )}
-                          {(showPiutang || showMarketingFilter) && (
+                          {showPiutang && (
                             <TableCell className='font-semibold'>
                               {project.spk?.penerbit?.name || '-'}
                             </TableCell>
@@ -5125,24 +5128,26 @@ export function ProjectsV2Table({
                             )}
                           {!showSPD && (
                             <>
-                              <TableCell>
-                                {project.prioritas === 'Urgent' ? (
-                                  <Badge className='bg-red-100 text-red-700 border border-red-200 hover:bg-red-100 font-semibold text-[11px]'>
-                                    Urgent
-                                  </Badge>
-                                ) : project.prioritas === 'Normal' ? (
-                                  <Badge
-                                    variant='secondary'
-                                    className='font-normal text-[11px]'
-                                  >
-                                    Normal
-                                  </Badge>
-                                ) : (
-                                  <span className='text-muted-foreground italic text-xs'>
-                                    -
-                                  </span>
-                                )}
-                              </TableCell>
+                              {!showMarketingFilter && (
+                                <TableCell>
+                                  {project.prioritas === 'Urgent' ? (
+                                    <Badge className='bg-red-100 text-red-700 border border-red-200 hover:bg-red-100 font-semibold text-[11px]'>
+                                      Urgent
+                                    </Badge>
+                                  ) : project.prioritas === 'Normal' ? (
+                                    <Badge
+                                      variant='secondary'
+                                      className='font-normal text-[11px]'
+                                    >
+                                      Normal
+                                    </Badge>
+                                  ) : (
+                                    <span className='text-muted-foreground italic text-xs'>
+                                      -
+                                    </span>
+                                  )}
+                                </TableCell>
+                              )}
                               <TableCell>
                                 {project.project_team?.divisi_id ? (
                                   <div className='flex flex-wrap gap-1 max-w-[200px]'>
@@ -5461,6 +5466,7 @@ export function ProjectsV2Table({
                         </>
                       )}
                       {!showAllDashboard &&
+                        !showMarketingFilter &&
                         !showProduksi &&
                         !showPurchasing &&
                         !showPiutang &&
