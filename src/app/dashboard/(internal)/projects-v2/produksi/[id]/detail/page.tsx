@@ -3560,7 +3560,7 @@ export default function ProduksiDetailPage() {
         open={isMassQrDialogOpen}
         onOpenChange={setIsMassQrDialogOpen}
       >
-        <AlertDialogContent className='max-w-2xl'>
+        <AlertDialogContent className='sm:max-w-2xl max-w-2xl'>
           <AlertDialogHeader>
             <AlertDialogTitle className='flex items-center gap-2 text-base'>
               <Printer className='h-4 w-4 text-blue-600' />
@@ -3680,28 +3680,27 @@ export default function ProduksiDetailPage() {
         open={isItemQrDialogOpen}
         onOpenChange={setIsItemQrDialogOpen}
       >
-        <AlertDialogContent className='max-w-4xl'>
-          <AlertDialogHeader>
-            <AlertDialogTitle className='flex items-center gap-2 text-base'>
-              <QrCode className='h-4 w-4 text-blue-600' />
-              Label Produksi — {qrItem?.item}
+        <AlertDialogContent className='sm:max-w-3xl max-w-3xl max-h-[90vh] overflow-y-auto p-4 sm:p-6'>
+          <AlertDialogHeader className="pb-2 border-b border-neutral-100">
+            <AlertDialogTitle className='flex items-center gap-2 text-base font-semibold text-neutral-900'>
+              <QrCode className='h-5 w-5 text-blue-600 shrink-0' />
+              <span className="truncate">Label Produksi — {qrItem?.item}</span>
             </AlertDialogTitle>
-            <AlertDialogDescription className='text-xs'>
-              Preview label cetak. Klik <strong>Print Label</strong> untuk
-              mencetak.
+            <AlertDialogDescription className='text-xs text-neutral-500'>
+              Preview label cetak. Klik <strong>Print Label</strong> untuk mencetak.
             </AlertDialogDescription>
           </AlertDialogHeader>
 
           {/* Kop Surat Selector */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-neutral-50 rounded-lg border border-neutral-200 mt-2">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
               <Building2 className="h-4 w-4 text-neutral-500 shrink-0" />
               <Label className="text-xs font-semibold text-neutral-700 whitespace-nowrap">Kop Surat Produksi:</Label>
               <Select
                 value={selectedKop?.id ? String(selectedKop.id) : ''}
                 onValueChange={(val) => setSelectedKopId(parseInt(val, 10))}
               >
-                <SelectTrigger className="h-8 text-xs w-[280px] bg-white border-neutral-300">
+                <SelectTrigger className="h-8 text-xs w-full sm:w-[280px] bg-white border-neutral-300">
                   <SelectValue placeholder="Pilih Kop Surat" />
                 </SelectTrigger>
                 <SelectContent>
@@ -3720,168 +3719,169 @@ export default function ProduksiDetailPage() {
               </Select>
             </div>
             {selectedKop?.divisi?.nama && (
-              <Badge variant="outline" className="text-[10px] text-blue-700 bg-blue-50 border-blue-200">
+              <Badge variant="outline" className="text-[10px] text-blue-700 bg-blue-50 border-blue-200 shrink-0 self-start sm:self-center">
                 Divisi: {selectedKop.divisi.nama}
               </Badge>
             )}
           </div>
 
           {/* Label Preview */}
-          <div
-            id='qr-item-print-area'
-            className='border border-black font-sans text-neutral-900 bg-white text-[11px] mt-2'
-          >
-            {/* ── Header ── */}
-            <div className='flex border-b border-black'>
-              {/* Logo */}
-              <div className='flex items-center justify-center p-2 border-r border-black w-20 shrink-0'>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={kopData.logo}
-                  alt='Logo DPM'
-                  className='w-14 h-14 object-contain'
-                />
-              </div>
+          <div className="overflow-x-auto p-1">
+            <div
+              id='qr-item-print-area'
+              className='border border-black font-sans text-neutral-900 bg-white text-[11px] mt-2 max-w-[650px] mx-auto shadow-xs'
+            >
+              {/* ── Header ── */}
+              <div className='flex border-b border-black'>
+                {/* Logo */}
+                <div className='flex items-center justify-center p-2 border-r border-black w-20 shrink-0'>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={kopData.logo}
+                    alt='Logo DPM'
+                    className='w-14 h-14 object-contain'
+                  />
+                </div>
 
-              {/* Company Info */}
-              <div className='flex-1 text-center py-2 px-4 border-r border-black'>
-                <p className='font-extrabold text-blue-700 text-[13px] tracking-wide uppercase leading-tight'>
-                  {kopData.nama_perusahaan}
-                </p>
-                {kopData.jenis_usaha && (
-                  <p className='italic text-[10px] text-neutral-600 mt-0.5'>
-                    {kopData.jenis_usaha}
+                {/* Company Info */}
+                <div className='flex-1 text-center py-2 px-3 border-r border-black flex flex-col justify-center'>
+                  <p className='font-extrabold text-blue-700 text-[13px] tracking-wide uppercase leading-tight'>
+                    {kopData.nama_perusahaan}
                   </p>
-                )}
-                {kopData.alamat && (
-                  <p className='text-[10px] text-neutral-600 mt-0.5'>
-                    {kopData.alamat}
-                  </p>
-                )}
-                <p className='text-[10px] text-neutral-600'>
-                  Telepon : {kopData.telepon || '-'}&nbsp;&nbsp;&nbsp;Fax : {kopData.fax || '-'}
-                </p>
-                <p className='text-[10px] text-neutral-600'>
-                  E-mail : {kopData.email || '-'}&nbsp;&nbsp;Website : {kopData.website || '-'}
-                </p>
-              </div>
-
-              {/* Doc Code Box */}
-              <div className='w-24 shrink-0 flex flex-col text-[10px] text-center'>
-                <div className='border-b border-black py-0.5 px-1 font-bold'>
-                  {kopData.nama_identitas_iso || 'PROD'}
-                </div>
-                <div className='border-b border-black py-0.5 px-1 font-bold text-[13px]'>
-                  {kopData.nomor_identitas_iso || '003'}
-                </div>
-                <div className='flex flex-1'>
-                  <div className='flex-1 border-r border-black py-0.5 px-1'>
-                    Rev:{kopData.revisi_ke || '00'}
-                  </div>
-                  <div className='flex-1 py-0.5 px-1 leading-tight'>
-                    Terbit:
-                    <br />
-                    {kopData.terbit || '08/25'}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* ── Info Fields + QR ── */}
-            <div className='flex'>
-              {/* Left: info rows */}
-              <div className='flex-1 border-r border-black'>
-                {[
-                  {
-                    label: 'NAMA ITEM',
-                    value: qrItem?.item || '-',
-                  },
-                  {
-                    label: 'UKURAN',
-                    value: `${qrItem?.panjang || '-'} x ${
-                      qrItem?.lebar || '-'
-                    } x ${qrItem?.tinggi || '-'}`,
-                  },
-                  {
-                    label: 'JUMLAH',
-                    value: qrItem?.jumlah
-                      ? `${qrItem.jumlah} ${qrItem.satuan || ''}`.trim()
-                      : '-',
-                  },
-                  ...(qrParts > 1 ? [{
-                    label: 'BAGIAN',
-                    value: `1/${qrParts}`,
-                  }] : []),
-                  {
-                    label: 'RUANG',
-                    value: qrItem?.ruang || '-',
-                  },
-                  {
-                    label: 'RUMAH SAKIT',
-                    value: project?.client?.name || '-',
-                  },
-                  {
-                    label: 'NO. SPK/TAHUN',
-                    value: project?.spk?.nomor_spk || '-',
-                  },
-                ].map((row) => (
-                  <div
-                    key={row.label}
-                    className='flex border-b border-black last:border-b-0'
-                  >
-                    <div className='w-36 font-bold py-2 px-2 border-r border-black shrink-0'>
-                      {row.label}
-                    </div>
-                    <div className='w-5 text-center py-2 border-r border-black shrink-0'>
-                      :
-                    </div>
-                    <div className='flex-1 py-2 px-2'>{row.value}</div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Right: QR code */}
-              {/* <div className='w-48 shrink-0 flex flex-col items-center justify-center gap-2 p-4'>
-                {qrItem?.mdl_item?.kode_barang ? (
-                  <>
-                    <QRCodeSVG
-                      value={qrItem.mdl_item.kode_barang}
-                      size={140}
-                      bgColor='#ffffff'
-                      fgColor='#000000'
-                      level='M'
-                    />
-                    <p className='font-mono font-bold text-center break-all leading-tight text-[10px]'>
-                      {qrItem.mdl_item.kode_barang}
+                  {kopData.jenis_usaha && (
+                    <p className='italic text-[10px] text-neutral-600 mt-0.5 leading-tight'>
+                      {kopData.jenis_usaha}
                     </p>
-                  </>
-                ) : (
-                  <p className='text-neutral-400 italic text-center'>
-                    Kode tidak tersedia
+                  )}
+                  {kopData.alamat && (
+                    <p className='text-[10px] text-neutral-600 mt-0.5 leading-tight'>
+                      {kopData.alamat}
+                    </p>
+                  )}
+                  <p className='text-[10px] text-neutral-600 leading-tight mt-0.5'>
+                    Telepon : {kopData.telepon || '-'}&nbsp;&nbsp;&nbsp;Fax : {kopData.fax || '-'}
                   </p>
-                )}
-              </div> */}
+                  <p className='text-[10px] text-neutral-600 leading-tight'>
+                    E-mail : {kopData.email || '-'}&nbsp;&nbsp;Website : {kopData.website || '-'}
+                  </p>
+                </div>
+
+                {/* Doc Code Box */}
+                <div className='w-24 shrink-0 flex flex-col text-[10px] text-center'>
+                  <div className='border-b border-black py-0.5 px-1 font-bold bg-neutral-50/50'>
+                    {kopData.nama_identitas_iso || 'PROD'}
+                  </div>
+                  <div className='border-b border-black py-0.5 px-1 font-bold text-[13px] bg-neutral-50/50'>
+                    {kopData.nomor_identitas_iso || '003'}
+                  </div>
+                  <div className='flex flex-1'>
+                    <div className='flex-1 border-r border-black py-0.5 px-1 flex items-center justify-center'>
+                      Rev:{kopData.revisi_ke || '00'}
+                    </div>
+                    <div className='flex-1 py-0.5 px-1 leading-tight flex flex-col justify-center'>
+                      <span>Terbit:</span>
+                      <span>{kopData.terbit || '08/25'}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* ── Info Fields + QR ── */}
+              <div className='flex'>
+                {/* Left: info rows */}
+                <div className='flex-1 border-r border-black'>
+                  {[
+                    {
+                      label: 'NAMA ITEM',
+                      value: qrItem?.item || '-',
+                    },
+                    {
+                      label: 'UKURAN',
+                      value: `${qrItem?.panjang || '-'} x ${
+                        qrItem?.lebar || '-'
+                      } x ${qrItem?.tinggi || '-'}`,
+                    },
+                    {
+                      label: 'JUMLAH',
+                      value: qrItem?.jumlah
+                        ? `${qrItem.jumlah} ${qrItem.satuan || ''}`.trim()
+                        : '-',
+                    },
+                    ...(qrParts > 1 ? [{
+                      label: 'BAGIAN',
+                      value: `1/${qrParts}`,
+                    }] : []),
+                    {
+                      label: 'RUANG',
+                      value: qrItem?.ruang || '-',
+                    },
+                    {
+                      label: 'RUMAH SAKIT',
+                      value: project?.client?.name || '-',
+                    },
+                    {
+                      label: 'NO. SPK/TAHUN',
+                      value: project?.spk?.nomor_spk || '-',
+                    },
+                  ].map((row) => (
+                    <div
+                      key={row.label}
+                      className='flex border-b border-black last:border-b-0'
+                    >
+                      <div className='w-32 font-bold py-1.5 px-2 border-r border-black shrink-0 text-[11px]'>
+                        {row.label}
+                      </div>
+                      <div className='w-5 text-center py-1.5 border-r border-black shrink-0 text-[11px]'>
+                        :
+                      </div>
+                      <div className='flex-1 py-1.5 px-2 font-medium text-[11px] break-words'>{row.value}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Right: QR code preview */}
+                <div className='w-32 shrink-0 flex flex-col items-center justify-center gap-1 p-2 bg-white'>
+                  {qrItem?.id ? (
+                    <>
+                      <QRCodeSVG
+                        value={String(qrItem.id)}
+                        size={88}
+                        bgColor='#ffffff'
+                        fgColor='#000000'
+                        level='M'
+                      />
+                      <p className='font-mono font-bold text-center break-all leading-tight text-[10px] text-neutral-800 mt-0.5'>
+                        {qrItem.id}
+                      </p>
+                    </>
+                  ) : (
+                    <p className='text-neutral-400 italic text-center text-[10px]'>
+                      Kode tidak tersedia
+                    </p>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
 
-          <AlertDialogFooter className='mt-4 flex-col sm:flex-row items-start sm:items-center gap-2'>
+          <AlertDialogFooter className='mt-4 flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-3 border-t border-neutral-100'>
             <div className='flex items-center gap-2'>
-              <Label className='text-xs'>Bagian per Qty:</Label>
+              <Label className='text-xs whitespace-nowrap font-medium text-neutral-700'>Bagian per Qty:</Label>
               <Input
                 type='number'
                 min={1}
                 value={qrParts}
                 onChange={(e) => setQrParts(Math.max(1, parseInt(e.target.value) || 1))}
-                className='h-8 w-16 text-xs'
+                className='h-8 w-16 text-xs text-center'
               />
             </div>
             {qrItem?.jumlah && (
-              <p className='text-xs text-muted-foreground flex-1 ml-2'>
-                Akan mencetak <strong>{qrItem.jumlah * qrParts} label</strong> 
+              <p className='text-xs text-muted-foreground flex-1'>
+                Akan mencetak <strong>{qrItem.jumlah * qrParts} label</strong>{' '}
                 ({qrItem.jumlah} Qty × {qrParts} Bagian)
               </p>
             )}
-            <div className='flex gap-2 ml-auto'>
+            <div className='flex gap-2 justify-end sm:ml-auto'>
               <AlertDialogCancel onClick={() => setIsItemQrDialogOpen(false)}>
                 Tutup
               </AlertDialogCancel>
