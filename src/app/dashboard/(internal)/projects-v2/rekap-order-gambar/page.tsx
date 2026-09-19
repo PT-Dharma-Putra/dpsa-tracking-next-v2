@@ -448,34 +448,6 @@ export default function RekapOrderGambarPage() {
                   </SelectContent>
                 </Select>
               </div>
-
-              {/* View Switcher: PPIC / Studio */}
-              <div className='flex items-center gap-1 bg-neutral-100 p-0.5 rounded-md border border-neutral-200 ml-1'>
-                <Link
-                  href='/dashboard/projects-v2/rekap-order-gambar?from=ppic'
-                  className={cn(
-                    'text-[11px] font-bold px-2 py-1 rounded transition-all',
-                    !isStudio
-                      ? 'bg-white text-emerald-800 shadow-xs'
-                      : 'text-neutral-500 hover:text-neutral-900'
-                  )}
-                  title='Lihat dalam konteks PPIC (link mengarah ke Perencanaan)'
-                >
-                  PPIC
-                </Link>
-                <Link
-                  href='/dashboard/projects-v2/rekap-order-gambar?from=studio'
-                  className={cn(
-                    'text-[11px] font-bold px-2 py-1 rounded transition-all',
-                    isStudio
-                      ? 'bg-white text-blue-800 shadow-xs'
-                      : 'text-neutral-500 hover:text-neutral-900'
-                  )}
-                  title='Lihat dalam konteks Studio (link mengarah ke Engineer)'
-                >
-                  Studio
-                </Link>
-              </div>
             </div>
           </div>
         </CardContent>
@@ -497,14 +469,17 @@ export default function RekapOrderGambarPage() {
                 <TableHead className='whitespace-nowrap text-xs font-bold text-neutral-700'>Pengirim</TableHead>
                 <TableHead className='whitespace-nowrap text-xs font-bold text-neutral-700'>Penerima</TableHead>
                 <TableHead className='whitespace-nowrap text-xs font-bold text-neutral-700'>Status</TableHead>
-                <TableHead className='whitespace-nowrap text-xs font-bold text-neutral-700'>Link</TableHead>
-                <TableHead className='w-[110px] text-xs font-bold text-neutral-700 text-right pr-4'>Aksi</TableHead>
+                <TableHead className='whitespace-nowrap text-xs font-bold text-neutral-700 text-center'>Link</TableHead>
+                <TableHead className='whitespace-nowrap text-xs font-bold text-neutral-700 text-center'>Lihat</TableHead>
+                {isStudio && (
+                  <TableHead className='w-[110px] text-xs font-bold text-neutral-700 text-right pr-4'>Aksi</TableHead>
+                )}
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoadingList ? (
                 <TableRow>
-                  <TableCell colSpan={12} className='h-32 text-center text-xs text-neutral-500'>
+                  <TableCell colSpan={isStudio ? 13 : 12} className='h-32 text-center text-xs text-neutral-500'>
                     <div className='flex items-center justify-center gap-2'>
                       <RefreshCw className='h-4 w-4 animate-spin text-orange-600' />
                       Memuat data order gambar kerja...
@@ -513,7 +488,7 @@ export default function RekapOrderGambarPage() {
                 </TableRow>
               ) : orders.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={12} className='h-32 text-center text-xs text-neutral-500'>
+                  <TableCell colSpan={isStudio ? 13 : 12} className='h-32 text-center text-xs text-neutral-500'>
                     Tidak ada data order gambar kerja yang sesuai filter.
                   </TableCell>
                 </TableRow>
@@ -636,79 +611,68 @@ export default function RekapOrderGambarPage() {
                         {getStatusBadge(order.status)}
                       </TableCell>
 
-                      {/* 11. Proyek & Klien */}
-                      <TableCell className='text-xs align-top py-3 min-w-[200px] max-w-[280px]'>
-                        <div className='flex flex-col gap-0.5'>
-                          {order.project ? (
-                            <Link
-                              href={getProjectDetailUrl(order.project.id)}
-                              className='font-bold text-neutral-900 hover:text-orange-600 hover:underline flex items-center gap-1'
-                            >
-                              <span className='truncate max-w-[220px]'>
-                                {order.project.name || order.project.nama_projek}
-                              </span>
-                              <ExternalLink className='h-3 w-3 text-neutral-400 shrink-0' />
-                            </Link>
-                          ) : (
-                            <span className='font-bold text-neutral-500'>-</span>
-                          )}
-                          <div className='flex items-center gap-2 text-[10px] text-neutral-500'>
-                            {(order.project?.client?.name || order.project?.client?.nama) && (
-                              <span className='flex items-center gap-0.5 text-neutral-600'>
-                                <Building className='h-2.5 w-2.5' />
-                                {order.project.client.name || order.project.client.nama}
-                              </span>
+                      {/* 11. Link */}
+                      <TableCell className='text-center align-middle py-3 whitespace-nowrap'>
+                        {order.project ? (
+                          <Link
+                            href={getProjectDetailUrl(order.project.id)}
+                            className='inline-flex items-center justify-center font-bold text-neutral-900 hover:text-orange-600'
+                            title={isStudio ? 'Buka Detail Engineer' : 'Buka Detail Perencanaan'}
+                          >
+                            <ExternalLink className='h-3.5 w-3.5 text-neutral-500 hover:text-orange-600' />
+                          </Link>
+                        ) : (
+                          <span className='font-bold text-neutral-400'>-</span>
+                        )}
+                      </TableCell>
+
+                      {/* 12. Lihat */}
+                      <TableCell className='text-center align-middle py-3 whitespace-nowrap'>
+                        <Button
+                          variant='ghost'
+                          size='icon'
+                          className='h-7 w-7 text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 mx-auto'
+                          title='Lihat Detail'
+                          onClick={() => handleOpenDetail(order)}
+                        >
+                          <Eye className='h-3.5 w-3.5' />
+                        </Button>
+                      </TableCell>
+
+                      {/* 13. Aksi (Khusus Studio) */}
+                      {isStudio && (
+                        <TableCell className='text-right align-middle py-3 pr-4 whitespace-nowrap'>
+                          <div className='flex items-center justify-end gap-1'>
+                            {/* Tombol Terima Order (khusus jika status masih Pending) */}
+                            {order.status === 'Pending' && (
+                              <Button
+                                variant='default'
+                                size='sm'
+                                className='h-7 px-2 text-[10px] bg-blue-600 hover:bg-blue-700 text-white font-bold gap-1'
+                                title='Terima Order'
+                                onClick={() => handleOpenAccept(order)}
+                              >
+                                <Check className='h-3 w-3' />
+                                Terima
+                              </Button>
                             )}
-                            {(order.spk?.nomor_spk || order.project?.spk?.nomor_spk || order.project?.no_spk) && (
-                              <span>SPK: {order.spk?.nomor_spk || order.project?.spk?.nomor_spk || order.project?.no_spk}</span>
+
+                            {/* Tombol Update Status (jika sudah diproses atau perlu diupdate) */}
+                            {order.status !== 'Pending' && (
+                              <Button
+                                variant='outline'
+                                size='sm'
+                                className='h-7 px-2 text-[10px] border-neutral-300 text-neutral-700 hover:bg-neutral-50 font-bold gap-1'
+                                title='Update Status'
+                                onClick={() => handleOpenUpdate(order)}
+                              >
+                                <MessageSquare className='h-3 w-3' />
+                                Status
+                              </Button>
                             )}
                           </div>
-                        </div>
-                      </TableCell>
-
-                      {/* 12. Aksi */}
-                      <TableCell className='text-right align-top py-3 pr-4 whitespace-nowrap'>
-                        <div className='flex items-center justify-end gap-1'>
-                          {/* Tombol Lihat Detail */}
-                          <Button
-                            variant='ghost'
-                            size='icon'
-                            className='h-7 w-7 text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100'
-                            title='Lihat Detail'
-                            onClick={() => handleOpenDetail(order)}
-                          >
-                            <Eye className='h-3.5 w-3.5' />
-                          </Button>
-
-                          {/* Tombol Terima Order (khusus jika status masih Pending) */}
-                          {order.status === 'Pending' && (
-                            <Button
-                              variant='default'
-                              size='sm'
-                              className='h-7 px-2 text-[10px] bg-blue-600 hover:bg-blue-700 text-white font-bold gap-1'
-                              title='Terima Order'
-                              onClick={() => handleOpenAccept(order)}
-                            >
-                              <Check className='h-3 w-3' />
-                              Terima
-                            </Button>
-                          )}
-
-                          {/* Tombol Update Status (jika sudah diproses atau perlu diupdate) */}
-                          {order.status !== 'Pending' && (
-                            <Button
-                              variant='outline'
-                              size='sm'
-                              className='h-7 px-2 text-[10px] border-neutral-300 text-neutral-700 hover:bg-neutral-50 font-bold gap-1'
-                              title='Update Status'
-                              onClick={() => handleOpenUpdate(order)}
-                            >
-                              <MessageSquare className='h-3 w-3' />
-                              Status
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
+                        </TableCell>
+                      )}
                     </TableRow>
                   );
                 })
