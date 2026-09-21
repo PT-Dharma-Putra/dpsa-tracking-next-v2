@@ -22,6 +22,12 @@ import {
   Printer,
   Search,
   FileSpreadsheet,
+  Maximize2,
+  Minimize2,
+  ZoomIn,
+  ZoomOut,
+  RotateCcw,
+  SlidersHorizontal,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import * as XLSX from 'xlsx-js-style';
@@ -45,6 +51,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
@@ -849,6 +863,8 @@ export default function ProduksiDetailPage() {
   const [isItemQrDialogOpen, setIsItemQrDialogOpen] = React.useState(false);
   const [qrItem, setQrItem] = React.useState<ProjectItemV2 | null>(null);
   const [qrParts, setQrParts] = React.useState<number>(1);
+  const [qrModalWidth, setQrModalWidth] = React.useState<'normal' | 'wide' | 'extra' | 'full'>('wide');
+  const [qrLabelZoom, setQrLabelZoom] = React.useState<number>(100);
   const hiddenQrRef = React.useRef<HTMLDivElement>(null);
 
   // Mass QR Print State
@@ -1048,6 +1064,7 @@ export default function ProduksiDetailPage() {
   const openItemQrDialog = (item: ProjectItemV2) => {
     setQrItem(item);
     setQrParts(1);
+    setQrLabelZoom(100);
     setIsItemQrDialogOpen(true);
   };
 
@@ -3675,227 +3692,499 @@ export default function ProduksiDetailPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Per-Item QR Code Dialog - Label Format */}
-      <AlertDialog
+      {/* Per-Item QR Code Dialog - Label Format (Catalog-Modal Style with Adjustable Width) */}
+      <Dialog
         open={isItemQrDialogOpen}
         onOpenChange={setIsItemQrDialogOpen}
       >
-        <AlertDialogContent className='sm:max-w-3xl max-w-3xl max-h-[90vh] overflow-y-auto p-4 sm:p-6'>
-          <AlertDialogHeader className="pb-2 border-b border-neutral-100">
-            <AlertDialogTitle className='flex items-center gap-2 text-base font-semibold text-neutral-900'>
-              <QrCode className='h-5 w-5 text-blue-600 shrink-0' />
-              <span className="truncate">Label Produksi — {qrItem?.item}</span>
-            </AlertDialogTitle>
-            <AlertDialogDescription className='text-xs text-neutral-500'>
-              Preview label cetak. Klik <strong>Print Label</strong> untuk mencetak.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
+        <DialogContent
+          showCloseButton={false}
+          className={cn(
+            'flex flex-col gap-0 p-0 overflow-hidden border-0 shadow-2xl rounded-2xl bg-white transition-all duration-200',
+            qrModalWidth === 'full'
+              ? 'min-w-[calc(100vw-2rem)] w-[calc(100vw-2rem)] max-w-none h-[calc(100vh-2rem)]'
+              : qrModalWidth === 'extra'
+              ? 'w-[95vw] sm:max-w-7xl max-w-7xl h-[90vh]'
+              : qrModalWidth === 'wide'
+              ? 'w-[95vw] sm:max-w-5xl max-w-5xl h-[90vh]'
+              : 'w-[95vw] sm:max-w-3xl max-w-3xl h-[90vh]'
+          )}
+        >
+          {/* Header Bar */}
+          <div className='bg-white border-b border-neutral-200/80 px-6 py-3.5 flex items-center justify-between shrink-0 z-10'>
+            <div className='flex items-center gap-3.5 min-w-0'>
+              <div className='h-10 w-10 rounded-2xl bg-blue-50 border border-blue-200/60 flex items-center justify-center shrink-0'>
+                <QrCode className='h-5 w-5 text-blue-600' />
+              </div>
+              <div className='min-w-0'>
+                <DialogTitle className='text-base sm:text-lg font-bold tracking-tight text-neutral-800 truncate'>
+                  Label Produksi — {qrItem?.item}
+                </DialogTitle>
+                <DialogDescription className='text-xs text-neutral-400 font-normal truncate'>
+                  Preview label cetak. Ukuran lebar modal dapat disesuaikan.
+                </DialogDescription>
+              </div>
+            </div>
 
-          {/* Kop Surat Selector */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-neutral-50 rounded-lg border border-neutral-200 mt-2">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              <Building2 className="h-4 w-4 text-neutral-500 shrink-0" />
-              <Label className="text-xs font-semibold text-neutral-700 whitespace-nowrap">Kop Surat Produksi:</Label>
-              <Select
-                value={selectedKop?.id ? String(selectedKop.id) : ''}
-                onValueChange={(val) => setSelectedKopId(parseInt(val, 10))}
+            <div className='flex items-center gap-2 sm:gap-3 shrink-0'>
+              {/* Width Selector Buttons */}
+              <div className='hidden sm:flex items-center bg-neutral-100 p-1 rounded-xl border border-neutral-200/80 gap-0.5 text-xs'>
+                <span className='px-2 text-[11px] font-medium text-neutral-500 flex items-center gap-1'>
+                  <SlidersHorizontal className='h-3 w-3' /> Lebar:
+                </span>
+                <button
+                  type='button'
+                  onClick={() => setQrModalWidth('normal')}
+                  className={cn(
+                    'px-2.5 py-1 rounded-lg text-xs font-medium transition-all',
+                    qrModalWidth === 'normal'
+                      ? 'bg-white text-blue-700 shadow-xs font-semibold'
+                      : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-200/60'
+                  )}
+                  title='Normal (3XL - 768px)'
+                >
+                  Normal
+                </button>
+                <button
+                  type='button'
+                  onClick={() => setQrModalWidth('wide')}
+                  className={cn(
+                    'px-2.5 py-1 rounded-lg text-xs font-medium transition-all',
+                    qrModalWidth === 'wide'
+                      ? 'bg-white text-blue-700 shadow-xs font-semibold'
+                      : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-200/60'
+                  )}
+                  title='Lebar (5XL - 1024px)'
+                >
+                  Lebar
+                </button>
+                <button
+                  type='button'
+                  onClick={() => setQrModalWidth('extra')}
+                  className={cn(
+                    'px-2.5 py-1 rounded-lg text-xs font-medium transition-all',
+                    qrModalWidth === 'extra'
+                      ? 'bg-white text-blue-700 shadow-xs font-semibold'
+                      : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-200/60'
+                  )}
+                  title='Ekstra Lebar (7XL - 1280px)'
+                >
+                  Ekstra
+                </button>
+                <button
+                  type='button'
+                  onClick={() => setQrModalWidth('full')}
+                  className={cn(
+                    'px-2.5 py-1 rounded-lg text-xs font-medium transition-all flex items-center gap-1',
+                    qrModalWidth === 'full'
+                      ? 'bg-white text-blue-700 shadow-xs font-semibold'
+                      : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-200/60'
+                  )}
+                  title='Penuh seperti Catalog Modal (100vw - 2rem)'
+                >
+                  <Maximize2 className='h-3 w-3' />
+                  Penuh (Catalog)
+                </button>
+              </div>
+
+              {/* Quick Toggle Fullscreen Button */}
+              <button
+                type='button'
+                onClick={() => setQrModalWidth((w) => (w === 'full' ? 'wide' : 'full'))}
+                title={qrModalWidth === 'full' ? 'Kecilkan Modal' : 'Maksimalkan Modal (Catalog Fullscreen)'}
+                className='h-8 w-8 text-neutral-500 hover:text-neutral-800 hover:bg-neutral-100 rounded-lg flex items-center justify-center transition-colors'
               >
-                <SelectTrigger className="h-8 text-xs w-full sm:w-[280px] bg-white border-neutral-300">
-                  <SelectValue placeholder="Pilih Kop Surat" />
-                </SelectTrigger>
-                <SelectContent>
-                  {kopSuratList?.map((kop) => {
-                    const isDivisiMatch = kop.divisi_id && projectDivisiIds.includes(Number(kop.divisi_id));
-                    return (
-                      <SelectItem key={kop.id} value={String(kop.id)} className="text-xs">
-                        <span className="font-medium">{kop.nama_kop}</span>
-                        {isDivisiMatch && (
-                          <span className="ml-1 text-[10px] text-blue-600 font-semibold">(Sesuai Divisi Team)</span>
-                        )}
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
+                {qrModalWidth === 'full' ? (
+                  <Minimize2 className='h-4 w-4' />
+                ) : (
+                  <Maximize2 className='h-4 w-4' />
+                )}
+              </button>
+
+              {/* Close Button */}
+              <button
+                type='button'
+                onClick={() => setIsItemQrDialogOpen(false)}
+                className='h-8 w-8 text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 rounded-full flex items-center justify-center transition-colors'
+                title='Tutup Modal'
+              >
+                <X className='w-5 h-5' />
+              </button>
             </div>
-            {selectedKop?.divisi?.nama && (
-              <Badge variant="outline" className="text-[10px] text-blue-700 bg-blue-50 border-blue-200 shrink-0 self-start sm:self-center">
-                Divisi: {selectedKop.divisi.nama}
-              </Badge>
-            )}
           </div>
 
-          {/* Label Preview */}
-          <div className="overflow-x-auto p-1">
+          {/* Body Area */}
+          <div className='flex-1 overflow-y-auto bg-neutral-50/70 p-4 sm:p-6'>
             <div
-              id='qr-item-print-area'
-              className='border border-black font-sans text-neutral-900 bg-white text-[11px] mt-2 max-w-[650px] mx-auto shadow-xs'
+              className={cn(
+                'mx-auto w-full gap-6',
+                qrModalWidth === 'normal'
+                  ? 'flex flex-col'
+                  : 'flex flex-col lg:flex-row items-start'
+              )}
             >
-              {/* ── Header ── */}
-              <div className='flex border-b border-black'>
-                {/* Logo */}
-                <div className='flex items-center justify-center p-2 border-r border-black w-20 shrink-0'>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={kopData.logo}
-                    alt='Logo DPM'
-                    className='w-14 h-14 object-contain'
-                  />
+              {/* Left Panel: Configuration & Details */}
+              <div
+                className={cn(
+                  'flex flex-col gap-4 w-full shrink-0',
+                  qrModalWidth === 'normal'
+                    ? 'w-full'
+                    : 'lg:w-[360px] xl:w-[400px]'
+                )}
+              >
+                {/* Kop Surat Card */}
+                <div className='bg-white p-4 rounded-xl border border-neutral-200 shadow-2xs space-y-3'>
+                  <div className='flex items-center justify-between'>
+                    <div className='flex items-center gap-2'>
+                      <Building2 className='h-4 w-4 text-blue-600 shrink-0' />
+                      <Label className='text-xs font-semibold text-neutral-800'>
+                        Kop Surat Produksi
+                      </Label>
+                    </div>
+                    {selectedKop?.divisi?.nama && (
+                      <Badge
+                        variant='outline'
+                        className='text-[10px] text-blue-700 bg-blue-50 border-blue-200'
+                      >
+                        {selectedKop.divisi.nama}
+                      </Badge>
+                    )}
+                  </div>
+
+                  <Select
+                    value={selectedKop?.id ? String(selectedKop.id) : ''}
+                    onValueChange={(val) => setSelectedKopId(parseInt(val, 10))}
+                  >
+                    <SelectTrigger className='h-9 text-xs w-full bg-neutral-50 border-neutral-200 focus:bg-white'>
+                      <SelectValue placeholder='Pilih Kop Surat' />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {kopSuratList?.map((kop) => {
+                        const isDivisiMatch =
+                          kop.divisi_id &&
+                          projectDivisiIds.includes(Number(kop.divisi_id));
+                        return (
+                          <SelectItem
+                            key={kop.id}
+                            value={String(kop.id)}
+                            className='text-xs'
+                          >
+                            <span className='font-medium'>{kop.nama_kop}</span>
+                            {isDivisiMatch && (
+                              <span className='ml-1 text-[10px] text-blue-600 font-semibold'>
+                                (Sesuai Divisi Team)
+                              </span>
+                            )}
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+
+                  <div className='p-2.5 rounded-lg bg-neutral-50 border border-neutral-100 text-[11px] space-y-1 text-neutral-600'>
+                    <p className='font-semibold text-neutral-800 truncate'>
+                      {kopData.nama_perusahaan}
+                    </p>
+                    <p className='text-[10px] text-neutral-500 truncate'>
+                      ISO: {kopData.nama_identitas_iso || 'PROD'} /{' '}
+                      {kopData.nomor_identitas_iso || '003'} (Rev:{' '}
+                      {kopData.revisi_ke || '00'})
+                    </p>
+                  </div>
                 </div>
 
-                {/* Company Info */}
-                <div className='flex-1 text-center py-2 px-3 border-r border-black flex flex-col justify-center'>
-                  <p className='font-extrabold text-blue-700 text-[13px] tracking-wide uppercase leading-tight'>
-                    {kopData.nama_perusahaan}
-                  </p>
-                  {kopData.jenis_usaha && (
-                    <p className='italic text-[10px] text-neutral-600 mt-0.5 leading-tight'>
-                      {kopData.jenis_usaha}
-                    </p>
+                {/* Print Configuration Card */}
+                <div className='bg-white p-4 rounded-xl border border-neutral-200 shadow-2xs space-y-3'>
+                  <Label className='text-xs font-semibold text-neutral-800 flex items-center gap-2'>
+                    <Printer className='h-4 w-4 text-neutral-600' />
+                    Pengaturan Cetak
+                  </Label>
+
+                  <div className='flex items-center justify-between gap-3 p-2.5 rounded-lg bg-neutral-50 border border-neutral-100'>
+                    <div>
+                      <p className='text-xs font-medium text-neutral-700'>
+                        Bagian per Qty:
+                      </p>
+                      <p className='text-[10px] text-neutral-500'>
+                        Jumlah label part per item
+                      </p>
+                    </div>
+                    <Input
+                      type='number'
+                      min={1}
+                      value={qrParts}
+                      onChange={(e) =>
+                        setQrParts(Math.max(1, parseInt(e.target.value) || 1))
+                      }
+                      className='h-8 w-16 text-xs text-center font-bold bg-white'
+                    />
+                  </div>
+
+                  {qrItem?.jumlah && (
+                    <div className='p-2.5 rounded-lg bg-blue-50/70 border border-blue-100 text-xs text-blue-800 space-y-0.5'>
+                      <div className='flex justify-between font-medium'>
+                        <span>Total Label:</span>
+                        <span className='font-bold text-blue-900'>
+                          {qrItem.jumlah * qrParts} Label
+                        </span>
+                      </div>
+                      <p className='text-[11px] text-blue-600'>
+                        ({qrItem.jumlah} Qty × {qrParts} Bagian)
+                      </p>
+                    </div>
                   )}
-                  {kopData.alamat && (
-                    <p className='text-[10px] text-neutral-600 mt-0.5 leading-tight'>
-                      {kopData.alamat}
-                    </p>
-                  )}
-                  <p className='text-[10px] text-neutral-600 leading-tight mt-0.5'>
-                    Telepon : {kopData.telepon || '-'}&nbsp;&nbsp;&nbsp;Fax : {kopData.fax || '-'}
-                  </p>
-                  <p className='text-[10px] text-neutral-600 leading-tight'>
-                    E-mail : {kopData.email || '-'}&nbsp;&nbsp;Website : {kopData.website || '-'}
-                  </p>
                 </div>
 
-                {/* Doc Code Box */}
-                <div className='w-24 shrink-0 flex flex-col text-[10px] text-center'>
-                  <div className='border-b border-black py-0.5 px-1 font-bold bg-neutral-50/50'>
-                    {kopData.nama_identitas_iso || 'PROD'}
-                  </div>
-                  <div className='border-b border-black py-0.5 px-1 font-bold text-[13px] bg-neutral-50/50'>
-                    {kopData.nomor_identitas_iso || '003'}
-                  </div>
-                  <div className='flex flex-1'>
-                    <div className='flex-1 border-r border-black py-0.5 px-1 flex items-center justify-center'>
-                      Rev:{kopData.revisi_ke || '00'}
-                    </div>
-                    <div className='flex-1 py-0.5 px-1 leading-tight flex flex-col justify-center'>
-                      <span>Terbit:</span>
-                      <span>{kopData.terbit || '08/25'}</span>
-                    </div>
-                  </div>
-                </div>
+
               </div>
 
-              {/* ── Info Fields + QR ── */}
-              <div className='flex'>
-                {/* Left: info rows */}
-                <div className='flex-1 border-r border-black'>
-                  {[
-                    {
-                      label: 'NAMA ITEM',
-                      value: qrItem?.item || '-',
-                    },
-                    {
-                      label: 'UKURAN',
-                      value: `${qrItem?.panjang || '-'} x ${
-                        qrItem?.lebar || '-'
-                      } x ${qrItem?.tinggi || '-'}`,
-                    },
-                    {
-                      label: 'JUMLAH',
-                      value: qrItem?.jumlah
-                        ? `${qrItem.jumlah} ${qrItem.satuan || ''}`.trim()
-                        : '-',
-                    },
-                    ...(qrParts > 1 ? [{
-                      label: 'BAGIAN',
-                      value: `1/${qrParts}`,
-                    }] : []),
-                    {
-                      label: 'RUANG',
-                      value: qrItem?.ruang || '-',
-                    },
-                    {
-                      label: 'RUMAH SAKIT',
-                      value: project?.client?.name || '-',
-                    },
-                    {
-                      label: 'NO. SPK/TAHUN',
-                      value: project?.spk?.nomor_spk || '-',
-                    },
-                  ].map((row) => (
-                    <div
-                      key={row.label}
-                      className='flex border-b border-black last:border-b-0'
+              {/* Right Panel: Label Preview */}
+              <div className='flex-1 flex flex-col min-w-0 w-full bg-white rounded-xl border border-neutral-200 shadow-2xs overflow-hidden'>
+                {/* Preview Toolbar */}
+                <div className='px-4 py-2.5 border-b border-neutral-100 bg-neutral-50/80 flex items-center justify-between'>
+                  <div className='flex items-center gap-2'>
+                    <span className='text-xs font-semibold text-neutral-700'>
+                      Preview Tampilan Label
+                    </span>
+                    <Badge variant='outline' className='text-[10px] bg-white text-neutral-600'>
+                      Format Cetak
+                    </Badge>
+                  </div>
+
+                  {/* Zoom Controls */}
+                  <div className='flex items-center gap-1.5'>
+                    <button
+                      type='button'
+                      onClick={() => setQrLabelZoom((z) => Math.max(60, z - 10))}
+                      className='h-7 w-7 rounded-md border border-neutral-200 bg-white hover:bg-neutral-100 flex items-center justify-center text-neutral-600 transition-colors'
+                      title='Perkecil (-10%)'
                     >
-                      <div className='w-32 font-bold py-1.5 px-2 border-r border-black shrink-0 text-[11px]'>
-                        {row.label}
-                      </div>
-                      <div className='w-5 text-center py-1.5 border-r border-black shrink-0 text-[11px]'>
-                        :
-                      </div>
-                      <div className='flex-1 py-1.5 px-2 font-medium text-[11px] break-words'>{row.value}</div>
-                    </div>
-                  ))}
+                      <ZoomOut className='h-3.5 w-3.5' />
+                    </button>
+                    <span className='text-xs font-semibold text-neutral-700 min-w-[42px] text-center'>
+                      {qrLabelZoom}%
+                    </span>
+                    <button
+                      type='button'
+                      onClick={() => setQrLabelZoom((z) => Math.min(150, z + 10))}
+                      className='h-7 w-7 rounded-md border border-neutral-200 bg-white hover:bg-neutral-100 flex items-center justify-center text-neutral-600 transition-colors'
+                      title='Perbesar (+10%)'
+                    >
+                      <ZoomIn className='h-3.5 w-3.5' />
+                    </button>
+                    <button
+                      type='button'
+                      onClick={() => setQrLabelZoom(100)}
+                      className='h-7 w-7 rounded-md border border-neutral-200 bg-white hover:bg-neutral-100 flex items-center justify-center text-neutral-600 transition-colors ml-1'
+                      title='Reset Ukuran 100%'
+                    >
+                      <RotateCcw className='h-3 w-3' />
+                    </button>
+                  </div>
                 </div>
 
-                {/* Right: QR code preview */}
-                <div className='w-32 shrink-0 flex flex-col items-center justify-center gap-1 p-2 bg-white'>
-                  {qrItem?.id ? (
-                    <>
-                      <QRCodeSVG
-                        value={String(qrItem.id)}
-                        size={88}
-                        bgColor='#ffffff'
-                        fgColor='#000000'
-                        level='M'
-                      />
-                      <p className='font-mono font-bold text-center break-all leading-tight text-[10px] text-neutral-800 mt-0.5'>
-                        {qrItem.id}
-                      </p>
-                    </>
-                  ) : (
-                    <p className='text-neutral-400 italic text-center text-[10px]'>
-                      Kode tidak tersedia
-                    </p>
-                  )}
+                {/* Preview Canvas */}
+                <div className='p-4 sm:p-6 overflow-x-auto flex items-center justify-center bg-neutral-100/50 min-h-[350px]'>
+                  <div
+                    style={{
+                      transform: qrLabelZoom !== 100 ? `scale(${qrLabelZoom / 100})` : undefined,
+                      transformOrigin: 'top center',
+                      transition: 'transform 0.15s ease-out',
+                    }}
+                    className='w-full max-w-[650px]'
+                  >
+                    <div
+                      id='qr-item-print-area'
+                      className='border border-black font-sans text-neutral-900 bg-white text-[11px] mx-auto shadow-md'
+                    >
+                      {/* ── Header ── */}
+                      <div className='flex border-b border-black'>
+                        {/* Logo */}
+                        <div className='flex items-center justify-center p-2 border-r border-black w-20 shrink-0'>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={kopData.logo}
+                            alt='Logo DPM'
+                            className='w-14 h-14 object-contain'
+                          />
+                        </div>
+
+                        {/* Company Info */}
+                        <div className='flex-1 text-center py-2 px-3 border-r border-black flex flex-col justify-center'>
+                          <p className='font-extrabold text-blue-700 text-[13px] tracking-wide uppercase leading-tight'>
+                            {kopData.nama_perusahaan}
+                          </p>
+                          {kopData.jenis_usaha && (
+                            <p className='italic text-[10px] text-neutral-600 mt-0.5 leading-tight'>
+                              {kopData.jenis_usaha}
+                            </p>
+                          )}
+                          {kopData.alamat && (
+                            <p className='text-[10px] text-neutral-600 mt-0.5 leading-tight'>
+                              {kopData.alamat}
+                            </p>
+                          )}
+                          <p className='text-[10px] text-neutral-600 leading-tight mt-0.5'>
+                            Telepon : {kopData.telepon || '-'}&nbsp;&nbsp;&nbsp;Fax : {kopData.fax || '-'}
+                          </p>
+                          <p className='text-[10px] text-neutral-600 leading-tight'>
+                            E-mail : {kopData.email || '-'}&nbsp;&nbsp;Website : {kopData.website || '-'}
+                          </p>
+                        </div>
+
+                        {/* Doc Code Box */}
+                        <div className='w-24 shrink-0 flex flex-col text-[10px] text-center'>
+                          <div className='border-b border-black py-0.5 px-1 font-bold bg-neutral-50/50'>
+                            {kopData.nama_identitas_iso || 'PROD'}
+                          </div>
+                          <div className='border-b border-black py-0.5 px-1 font-bold text-[13px] bg-neutral-50/50'>
+                            {kopData.nomor_identitas_iso || '003'}
+                          </div>
+                          <div className='flex flex-1'>
+                            <div className='flex-1 border-r border-black py-0.5 px-1 flex items-center justify-center'>
+                              Rev:{kopData.revisi_ke || '00'}
+                            </div>
+                            <div className='flex-1 py-0.5 px-1 leading-tight flex flex-col justify-center'>
+                              <span>Terbit:</span>
+                              <span>{kopData.terbit || '08/25'}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* ── Info Fields + QR ── */}
+                      <div className='flex'>
+                        {/* Left: info rows */}
+                        <div className='flex-1 border-r border-black'>
+                          {[
+                            {
+                              label: 'NAMA ITEM',
+                              value: qrItem?.item || '-',
+                            },
+                            {
+                              label: 'UKURAN',
+                              value: `${qrItem?.panjang || '-'} x ${
+                                qrItem?.lebar || '-'
+                              } x ${qrItem?.tinggi || '-'}`,
+                            },
+                            {
+                              label: 'JUMLAH',
+                              value: qrItem?.jumlah
+                                ? `${qrItem.jumlah} ${qrItem.satuan || ''}`.trim()
+                                : '-',
+                            },
+                            ...(qrParts > 1
+                              ? [
+                                  {
+                                    label: 'BAGIAN',
+                                    value: `1/${qrParts}`,
+                                  },
+                                ]
+                              : []),
+                            {
+                              label: 'RUANG',
+                              value: qrItem?.ruang || '-',
+                            },
+                            {
+                              label: 'RUMAH SAKIT',
+                              value: project?.client?.name || '-',
+                            },
+                            {
+                              label: 'NO. SPK/TAHUN',
+                              value: project?.spk?.nomor_spk || '-',
+                            },
+                          ].map((row) => (
+                            <div
+                              key={row.label}
+                              className='flex border-b border-black last:border-b-0'
+                            >
+                              <div className='w-32 font-bold py-1.5 px-2 border-r border-black shrink-0 text-[11px]'>
+                                {row.label}
+                              </div>
+                              <div className='w-5 text-center py-1.5 border-r border-black shrink-0 text-[11px]'>
+                                :
+                              </div>
+                              <div className='flex-1 py-1.5 px-2 font-medium text-[11px] break-words'>
+                                {row.value}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Right: QR code preview */}
+                        <div className='w-32 shrink-0 flex flex-col items-center justify-center gap-1 p-2 bg-white'>
+                          {qrItem?.id ? (
+                            <>
+                              <QRCodeSVG
+                                value={String(qrItem.id)}
+                                size={88}
+                                bgColor='#ffffff'
+                                fgColor='#000000'
+                                level='M'
+                              />
+                              <p className='font-mono font-bold text-center break-all leading-tight text-[10px] text-neutral-800 mt-0.5'>
+                                {qrItem.id}
+                              </p>
+                            </>
+                          ) : (
+                            <p className='text-neutral-400 italic text-center text-[10px]'>
+                              Kode tidak tersedia
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <AlertDialogFooter className='mt-4 flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-3 border-t border-neutral-100'>
-            <div className='flex items-center gap-2'>
-              <Label className='text-xs whitespace-nowrap font-medium text-neutral-700'>Bagian per Qty:</Label>
+          {/* Footer Bar */}
+          <div className='bg-white border-t border-neutral-200/80 px-6 py-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shrink-0 z-10'>
+            <div className='flex items-center gap-2 text-xs text-neutral-600'>
+              <Label className='whitespace-nowrap font-medium text-neutral-700'>
+                Bagian per Qty:
+              </Label>
               <Input
                 type='number'
                 min={1}
                 value={qrParts}
-                onChange={(e) => setQrParts(Math.max(1, parseInt(e.target.value) || 1))}
-                className='h-8 w-16 text-xs text-center'
+                onChange={(e) =>
+                  setQrParts(Math.max(1, parseInt(e.target.value) || 1))
+                }
+                className='h-8 w-16 text-xs text-center font-semibold'
               />
+              {qrItem?.jumlah && (
+                <span className='text-neutral-500 hidden sm:inline'>
+                  (Akan mencetak{' '}
+                  <strong className='text-blue-700'>
+                    {qrItem.jumlah * qrParts} label
+                  </strong>
+                  )
+                </span>
+              )}
             </div>
-            {qrItem?.jumlah && (
-              <p className='text-xs text-muted-foreground flex-1'>
-                Akan mencetak <strong>{qrItem.jumlah * qrParts} label</strong>{' '}
-                ({qrItem.jumlah} Qty × {qrParts} Bagian)
-              </p>
-            )}
-            <div className='flex gap-2 justify-end sm:ml-auto'>
-              <AlertDialogCancel onClick={() => setIsItemQrDialogOpen(false)}>
-                Tutup
-              </AlertDialogCancel>
+
+            <div className='flex items-center gap-2 justify-end'>
               <Button
-                className='bg-blue-600 hover:bg-blue-700 text-white gap-2'
+                variant='outline'
+                onClick={() => setIsItemQrDialogOpen(false)}
+                className='h-9 px-4 text-xs font-medium border-neutral-300'
+              >
+                Tutup
+              </Button>
+              <Button
+                className='bg-blue-600 hover:bg-blue-700 text-white gap-2 h-9 px-5 text-xs font-medium shadow-xs'
                 onClick={handlePrintItemQR}
               >
                 <Printer className='h-4 w-4' />
                 Print {qrItem?.jumlah ? qrItem.jumlah * qrParts : ''} Label
               </Button>
             </div>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Hidden QR capture — rendered off-screen for SVG extraction before printing */}
       <div
