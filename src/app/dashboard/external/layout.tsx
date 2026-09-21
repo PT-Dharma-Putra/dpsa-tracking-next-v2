@@ -18,13 +18,14 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 // import { ClientNotifications } from "@/features/dashboard/components/client/client-notifications";
 import { useAuthStore } from "@/lib/auth-store";
 import { useCartStore } from "@/features/shop/stores/cart-store";
-import { isClientUser } from "@/lib/get-user-role";
+import { isClientUser, isHerminaPusatUser } from "@/lib/get-user-role";
 import { ClientHelpButton } from "@/features/dashboard/components/client/client-help-button";
 
 export default function CustomerLayout({ children }: { children: ReactNode }) {
     const router = useRouter()
     const pathname = usePathname()
     const { token, hydrated, user, logout } = useAuthStore()
+    const isHerminaPusat = isHerminaPusatUser(user)
     const [isChecking, setIsChecking] = useState(true)
 
     const handleLogout = () => {
@@ -82,7 +83,7 @@ export default function CustomerLayout({ children }: { children: ReactNode }) {
                         </NavLink>
                         <NavLink href="/dashboard/external/requests" active={pathname.startsWith("/dashboard/external/requests")}>
                             <LifeBuoy className="h-4 w-4 mr-2" />
-                            Request & Kendala
+                            {isHerminaPusat ? "Request & Kendala" : "Kendala"}
                         </NavLink>
                     </nav>
 
@@ -118,7 +119,7 @@ export default function CustomerLayout({ children }: { children: ReactNode }) {
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem onClick={() => router.push("/dashboard/external/requests")} className="cursor-pointer py-2.5">
                                     <LifeBuoy className="mr-2 h-4 w-4 text-orange-600" />
-                                    <span>Request & Kendala IT</span>
+                                    <span>{isHerminaPusat ? "Request & Kendala IT" : "Lapor Kendala IT"}</span>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => router.push("/dashboard/external/profile")} className="cursor-pointer py-2.5">
                                     <User className="mr-2 h-4 w-4 text-neutral-500" />

@@ -42,9 +42,14 @@ import {
 } from "@/components/ui/alert-dialog"
 import { taskItService, TaskIt } from "@/features/projects/services/task-it-service"
 import { ClientTaskDialog } from "@/features/dashboard/components/client/client-task-dialog"
+import { useAuthStore } from "@/lib/auth-store"
+import { isHerminaPusatUser } from "@/lib/get-user-role"
 
 export default function ClientRequestsPage() {
     const queryClient = useQueryClient()
+    const { user } = useAuthStore()
+    const isHerminaPusat = isHerminaPusatUser(user)
+
     const [search, setSearch] = React.useState("")
     const [tipeFilter, setTipeFilter] = React.useState<string>("all")
     const [statusFilter, setStatusFilter] = React.useState<string>("all")
@@ -154,9 +159,13 @@ export default function ClientRequestsPage() {
                             <LifeBuoy className="h-5 w-5" />
                         </div>
                         <div>
-                            <h1 className="text-xl font-bold text-neutral-900 tracking-tight">Pusat Request & Lapor Kendala</h1>
+                            <h1 className="text-xl font-bold text-neutral-900 tracking-tight">
+                                {isHerminaPusat ? "Pusat Request & Lapor Kendala" : "Pusat Lapor Kendala"}
+                            </h1>
                             <p className="text-xs text-muted-foreground mt-0.5">
-                                Pantau status usulan fitur dan kendala operasional yang Anda ajukan ke tim IT.
+                                {isHerminaPusat
+                                    ? "Pantau status usulan fitur dan kendala operasional yang Anda ajukan ke tim IT."
+                                    : "Pantau status kendala operasional yang Anda ajukan ke tim IT."}
                             </p>
                         </div>
                     </div>
@@ -167,7 +176,7 @@ export default function ClientRequestsPage() {
                     className="bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-semibold shadow-sm shrink-0"
                 >
                     <Plus className="h-4 w-4 mr-1.5" />
-                    Buat Tiket Baru
+                    {isHerminaPusat ? "Buat Tiket Baru" : "Lapor Kendala"}
                 </Button>
             </div>
 
@@ -204,39 +213,41 @@ export default function ClientRequestsPage() {
                 </div>
 
                 <div className="flex items-center gap-2 w-full md:w-auto flex-wrap">
-                    {/* Tipe Filter */}
-                    <div className="flex items-center gap-1 bg-neutral-100 p-1 rounded-lg text-xs font-medium">
-                        <button
-                            type="button"
-                            onClick={() => setTipeFilter("all")}
-                            className={cn(
-                                "px-2.5 py-1 rounded-md transition-all text-xs",
-                                tipeFilter === "all" ? "bg-white text-neutral-900 shadow-sm font-semibold" : "text-neutral-500 hover:text-neutral-900"
-                            )}
-                        >
-                            Semua Tipe
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setTipeFilter("Request Fitur")}
-                            className={cn(
-                                "px-2.5 py-1 rounded-md transition-all text-xs",
-                                tipeFilter === "Request Fitur" ? "bg-white text-purple-700 shadow-sm font-semibold" : "text-neutral-500 hover:text-neutral-900"
-                            )}
-                        >
-                            Request Fitur
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setTipeFilter("Lapor Kendala")}
-                            className={cn(
-                                "px-2.5 py-1 rounded-md transition-all text-xs",
-                                tipeFilter === "Lapor Kendala" ? "bg-white text-red-700 shadow-sm font-semibold" : "text-neutral-500 hover:text-neutral-900"
-                            )}
-                        >
-                            Lapor Kendala
-                        </button>
-                    </div>
+                    {/* Tipe Filter (Hanya tampil untuk Hermina Pusat) */}
+                    {isHerminaPusat && (
+                        <div className="flex items-center gap-1 bg-neutral-100 p-1 rounded-lg text-xs font-medium">
+                            <button
+                                type="button"
+                                onClick={() => setTipeFilter("all")}
+                                className={cn(
+                                    "px-2.5 py-1 rounded-md transition-all text-xs",
+                                    tipeFilter === "all" ? "bg-white text-neutral-900 shadow-sm font-semibold" : "text-neutral-500 hover:text-neutral-900"
+                                )}
+                            >
+                                Semua Tipe
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setTipeFilter("Request Fitur")}
+                                className={cn(
+                                    "px-2.5 py-1 rounded-md transition-all text-xs",
+                                    tipeFilter === "Request Fitur" ? "bg-white text-purple-700 shadow-sm font-semibold" : "text-neutral-500 hover:text-neutral-900"
+                                )}
+                            >
+                                Request Fitur
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setTipeFilter("Lapor Kendala")}
+                                className={cn(
+                                    "px-2.5 py-1 rounded-md transition-all text-xs",
+                                    tipeFilter === "Lapor Kendala" ? "bg-white text-red-700 shadow-sm font-semibold" : "text-neutral-500 hover:text-neutral-900"
+                                )}
+                            >
+                                Lapor Kendala
+                            </button>
+                        </div>
+                    )}
 
                     {/* Status Filter */}
                     <div className="flex items-center gap-1 bg-neutral-100 p-1 rounded-lg text-xs font-medium">

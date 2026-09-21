@@ -20,6 +20,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { taskItService } from "@/features/projects/services/task-it-service"
 import { useAuthStore } from "@/lib/auth-store"
+import { isHerminaPusatUser } from "@/lib/get-user-role"
 
 interface ClientTaskDialogProps {
     open: boolean
@@ -41,7 +42,10 @@ export function ClientTaskDialog({
     const queryClient = useQueryClient()
     const { user } = useAuthStore()
 
-    const [tipe, setTipe] = React.useState<"Request Fitur" | "Lapor Kendala">(defaultTipe)
+    const isHerminaPusat = isHerminaPusatUser(user)
+    const effectiveDefaultTipe = isHerminaPusat ? defaultTipe : "Lapor Kendala"
+
+    const [tipe, setTipe] = React.useState<"Request Fitur" | "Lapor Kendala">(effectiveDefaultTipe)
     const [judul, setJudul] = React.useState("")
     const [deskripsi, setDeskripsi] = React.useState("")
     const [file, setFile] = React.useState<File | null>(null)
@@ -52,7 +56,7 @@ export function ClientTaskDialog({
     // Reset or initialize fields when dialog opens
     React.useEffect(() => {
         if (open) {
-            setTipe(defaultTipe)
+            setTipe(isHerminaPusat ? defaultTipe : "Lapor Kendala")
             setJudul("")
             setDeskripsi("")
             setFile(null)
@@ -61,7 +65,7 @@ export function ClientTaskDialog({
                 fileInputRef.current.value = ""
             }
         }
-    }, [open, defaultTipe])
+    }, [open, defaultTipe, isHerminaPusat])
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const selectedFile = e.target.files?.[0]
@@ -123,7 +127,7 @@ export function ClientTaskDialog({
         }
 
         const formData = new FormData()
-        formData.append("tipe", tipe)
+        formData.append("tipe", isHerminaPusat ? tipe : "Lapor Kendala")
         formData.append("judul", judul.trim())
         formData.append("deskripsi", deskripsi.trim())
         formData.append("prioritas", "Medium")
@@ -150,7 +154,7 @@ export function ClientTaskDialog({
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <DialogHeader className="space-y-1.5 text-left">
                         <DialogTitle className="text-xl font-bold flex items-center gap-2">
-                            {tipe === "Request Fitur" ? (
+                            {isHerminaPusat && tipe === "Request Fitur" ? (
                                 <span className="flex items-center gap-2 text-purple-700">
                                     <Sparkles className="h-5 w-5 text-purple-600" />
                                     Request Fitur Baru
@@ -163,39 +167,43 @@ export function ClientTaskDialog({
                             )}
                         </DialogTitle>
                         <DialogDescription className="text-xs text-neutral-500">
-                            Sampaikan kebutuhan atau kendala Anda langsung kepada tim IT kami. Kami akan merespon tiket Anda secepat mungkin.
+                            {isHerminaPusat
+                                ? "Sampaikan kebutuhan atau kendala Anda langsung kepada tim IT kami. Kami akan merespon tiket Anda secepat mungkin."
+                                : "Sampaikan kendala sistem atau bug yang Anda temukan langsung kepada tim IT kami. Kami akan merespon tiket Anda secepat mungkin."}
                         </DialogDescription>
                     </DialogHeader>
 
-                    {/* Tipe Selector Buttons */}
-                    <div className="grid grid-cols-2 gap-3 p-1 bg-neutral-100/80 rounded-xl border border-neutral-200/70">
-                        <button
-                            type="button"
-                            onClick={() => setTipe("Lapor Kendala")}
-                            className={cn(
-                                "flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer",
-                                tipe === "Lapor Kendala"
-                                    ? "bg-white text-red-700 shadow-sm border border-red-200 ring-1 ring-red-100"
-                                    : "text-neutral-600 hover:text-neutral-900"
-                            )}
-                        >
-                            <AlertCircle className={cn("h-4 w-4", tipe === "Lapor Kendala" ? "text-red-500" : "text-neutral-400")} />
-                            <span>Lapor Kendala</span>
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setTipe("Request Fitur")}
-                            className={cn(
-                                "flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer",
-                                tipe === "Request Fitur"
-                                    ? "bg-white text-purple-700 shadow-sm border border-purple-200 ring-1 ring-purple-100"
-                                    : "text-neutral-600 hover:text-neutral-900"
-                            )}
-                        >
-                            <Sparkles className={cn("h-4 w-4", tipe === "Request Fitur" ? "text-purple-600" : "text-neutral-400")} />
-                            <span>Request Fitur</span>
-                        </button>
-                    </div>
+                    {/* Tipe Selector Buttons (Hanya muncul jika user adalah Hermina Pusat) */}
+                    {isHerminaPusat && (
+                        <div className="grid grid-cols-2 gap-3 p-1 bg-neutral-100/80 rounded-xl border border-neutral-200/70">
+                            <button
+                                type="button"
+                                onClick={() => setTipe("Lapor Kendala")}
+                                className={cn(
+                                    "flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer",
+                                    tipe === "Lapor Kendala"
+                                        ? "bg-white text-red-700 shadow-sm border border-red-200 ring-1 ring-red-100"
+                                        : "text-neutral-600 hover:text-neutral-900"
+                                )}
+                            >
+                                <AlertCircle className={cn("h-4 w-4", tipe === "Lapor Kendala" ? "text-red-500" : "text-neutral-400")} />
+                                <span>Lapor Kendala</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setTipe("Request Fitur")}
+                                className={cn(
+                                    "flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer",
+                                    tipe === "Request Fitur"
+                                        ? "bg-white text-purple-700 shadow-sm border border-purple-200 ring-1 ring-purple-100"
+                                        : "text-neutral-600 hover:text-neutral-900"
+                                )}
+                            >
+                                <Sparkles className={cn("h-4 w-4", tipe === "Request Fitur" ? "text-purple-600" : "text-neutral-400")} />
+                                <span>Request Fitur</span>
+                            </button>
+                        </div>
+                    )}
 
                     {/* Subjek / Judul */}
                     <div className="space-y-1.5">
@@ -207,7 +215,7 @@ export function ClientTaskDialog({
                             value={judul}
                             onChange={(e) => setJudul(e.target.value)}
                             placeholder={
-                                tipe === "Request Fitur"
+                                isHerminaPusat && tipe === "Request Fitur"
                                     ? "Contoh: Minta penambahan fitur filter tanggal di menu Finance"
                                     : "Contoh: Tombol cetak SPK tidak merespon saat diklik"
                             }
@@ -227,7 +235,7 @@ export function ClientTaskDialog({
                             value={deskripsi}
                             onChange={(e) => setDeskripsi(e.target.value)}
                             placeholder={
-                                tipe === "Request Fitur"
+                                isHerminaPusat && tipe === "Request Fitur"
                                     ? "Jelaskan ide fitur yang Anda inginkan, bagaimana cara kerjanya, dan manfaatnya untuk kebutuhan Anda..."
                                     : "Jelaskan kendala atau pesan error yang muncul, halaman tempat terjadinya kendala, atau kronologi sebelum error terjadi..."
                             }
