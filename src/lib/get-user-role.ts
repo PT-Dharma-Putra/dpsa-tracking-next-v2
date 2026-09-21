@@ -26,6 +26,29 @@ export function isClientUser(user: User | null): boolean {
 }
 
 /**
+ * Checks if the user is Hermina Pusat.
+ * Returns true if role, roles list, or role_id matches Hermina Pusat (e.g., role_id 19 or role name contains 'hermina pusat').
+ */
+export function isHerminaPusatUser(user: User | null | any): boolean {
+    if (!user) return false;
+
+    if (
+        user.role_id === 19 ||
+        (Array.isArray(user.role_ids) && user.role_ids.includes(19))
+    ) {
+        return true;
+    }
+
+    const roleNames = [
+        user.role?.toLowerCase(),
+        ...(user.roles?.map((r: any) => typeof r === 'string' ? r.toLowerCase() : r.name?.toLowerCase()) || []),
+        ...(user.roles_list?.map((r: any) => r.toLowerCase()) || []),
+    ].filter(Boolean) as string[];
+
+    return roleNames.some(r => r.includes('hermina pusat'));
+}
+
+/**
  * Derives the user's business role from their auth profile.
  * Used to render role-appropriate views in the tracking system.
  */

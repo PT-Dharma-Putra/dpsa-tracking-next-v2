@@ -15,7 +15,7 @@ import {
   Building2,
   FileText,
 } from 'lucide-react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { adminService } from '@/features/admin/api/admin-service';
@@ -56,6 +56,7 @@ import {
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { user, logout } = useAuthStore();
   const { isMobile } = useSidebar();
 
@@ -84,8 +85,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   };
 
   const isActive = (href: string) => {
-    if (href === '/dashboard') return pathname === '/dashboard';
-    return pathname.startsWith(href);
+    const [path, query] = href.split('?');
+    if (path === '/dashboard') return pathname === '/dashboard';
+    if (!pathname.startsWith(path)) return false;
+    if (query) {
+      const qParams = new URLSearchParams(query);
+      for (const [key, val] of qParams.entries()) {
+        if (searchParams.get(key) !== val) return false;
+      }
+    }
+    return true;
   };
 
   const data = {
@@ -434,7 +443,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           },
           {
             title: 'Rekap Order Gambar',
-            url: '/dashboard/projects-v2/rekap-order-gambar',
+            url: '/dashboard/projects-v2/rekap-order-gambar?from=studio',
           },
         ],
       },
@@ -449,7 +458,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           },
           {
             title: 'Rekap Order Gambar',
-            url: '/dashboard/projects-v2/rekap-order-gambar',
+            url: '/dashboard/projects-v2/rekap-order-gambar?from=ppic',
           },
           {
             title: 'Project V2 | Pengiriman V2',

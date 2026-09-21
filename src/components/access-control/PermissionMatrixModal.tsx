@@ -133,10 +133,24 @@ export function PermissionMatrixModal({
         }
     }
 
+    // Reset User Permissions Mutation (Kembalikan ke Murni Default Role)
+    const resetUserMutation = useMutation({
+        mutationFn: () => adminService.resetUserPermissions(targetId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['target-permissions', type, targetId] })
+            queryClient.invalidateQueries({ queryKey: ['user-sidebar-menus'] })
+            queryClient.invalidateQueries({ queryKey: ['admin-users-all'] })
+            toast.success(`Hak akses user ${targetName} berhasil di-reset murni ke default role`)
+            onClose()
+        },
+        onError: (err: any) => {
+            toast.error(err.response?.data?.message || 'Gagal mereset hak akses user')
+        }
+    })
+
     const handleResetToRoleDefault = () => {
-        if (currentPermData?.role_permission_ids) {
-            setSelectedIds(currentPermData.role_permission_ids)
-            toast.info("Hak akses disesuaikan dengan template default Role")
+        if (window.confirm(`Apakah Anda yakin ingin mereset hak akses user "${targetName}" ke default role? Status akses khusus akan dihapus dan user akan selalu otomatis mengikuti pembaruan role.`)) {
+            resetUserMutation.mutate()
         }
     }
 
@@ -209,9 +223,11 @@ export function PermissionMatrixModal({
                                     type="button"
                                     variant="outline"
                                     size="sm"
+                                    disabled={resetUserMutation.isPending || saveMutation.isPending}
                                     onClick={handleResetToRoleDefault}
                                     className="text-xs text-neutral-700"
                                 >
+                                    {resetUserMutation.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />}
                                     Reset ke Default Role
                                 </Button>
                             </div>
@@ -356,12 +372,12 @@ export function PermissionMatrixModal({
                 </div>
 
                 <DialogFooter className="pt-2 border-t gap-2 sm:gap-0">
-                    <Button variant="outline" onClick={onClose} disabled={saveMutation.isPending}>
+                    <Button variant="outline" onClick={onClose} disabled={saveMutation.isPending || resetUserMutation.isPending}>
                         Batal
                     </Button>
                     <Button 
                         onClick={() => saveMutation.mutate()} 
-                        disabled={saveMutation.isPending}
+                        disabled={saveMutation.isPending || resetUserMutation.isPending}
                         className="bg-orange-600 hover:bg-orange-700 text-white"
                     >
                         {saveMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}

@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, isPast } from 'date-fns';
 import {
@@ -76,7 +77,21 @@ import { cn } from '@/lib/utils';
 
 export default function RekapOrderGambarPage() {
   const { user } = useAuth();
+  const searchParams = useSearchParams();
   const queryClient = useQueryClient();
+
+  const fromParam = searchParams.get('from')?.toLowerCase();
+
+  // Determine whether current context is Studio or PPIC
+  const isStudio =
+    fromParam === 'studio' ||
+    (fromParam !== 'ppic' && (user?.role === 'Studio' || user?.roles?.some((r) => (typeof r === 'string' ? r : r.name) === 'Studio')));
+
+  const getProjectDetailUrl = (projectId: number) => {
+    return isStudio
+      ? `/dashboard/projects-v2/engineer/${projectId}/detail`
+      : `/dashboard/projects-v2/perencanaan/${projectId}/detail`;
+  };
 
   // Filter & Pagination state
   const [search, setSearch] = React.useState('');
@@ -268,9 +283,22 @@ export default function RekapOrderGambarPage() {
               <Layers className='h-5 w-5' />
             </div>
             <div>
-              <h1 className='text-2xl font-bold tracking-tight text-neutral-900'>
-                Rekap Order Gambar
-              </h1>
+              <div className='flex items-center gap-2'>
+                <h1 className='text-2xl font-bold tracking-tight text-neutral-900'>
+                  Rekap Order Gambar
+                </h1>
+                <Badge
+                  variant='outline'
+                  className={cn(
+                    'text-[11px] font-bold px-2 py-0.5 border',
+                    isStudio
+                      ? 'bg-blue-50 text-blue-700 border-blue-200'
+                      : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                  )}
+                >
+                  {isStudio ? 'Halaman Studio' : 'Halaman PPIC'}
+                </Badge>
+              </div>
               <p className='text-xs text-muted-foreground'>
                 Daftar antrean dan rekapitulasi permintaan order gambar kerja dari PPIC ke Studio
               </p>
@@ -441,14 +469,17 @@ export default function RekapOrderGambarPage() {
                 <TableHead className='whitespace-nowrap text-xs font-bold text-neutral-700'>Pengirim</TableHead>
                 <TableHead className='whitespace-nowrap text-xs font-bold text-neutral-700'>Penerima</TableHead>
                 <TableHead className='whitespace-nowrap text-xs font-bold text-neutral-700'>Status</TableHead>
-                <TableHead className='whitespace-nowrap text-xs font-bold text-neutral-700'>Link</TableHead>
-                <TableHead className='w-[110px] text-xs font-bold text-neutral-700 text-right pr-4'>Aksi</TableHead>
+                <TableHead className='whitespace-nowrap text-xs font-bold text-neutral-700 text-center'>Link</TableHead>
+                <TableHead className='whitespace-nowrap text-xs font-bold text-neutral-700 text-center'>Lihat</TableHead>
+                {isStudio && (
+                  <TableHead className='w-[110px] text-xs font-bold text-neutral-700 text-right pr-4'>Aksi</TableHead>
+                )}
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoadingList ? (
                 <TableRow>
-                  <TableCell colSpan={12} className='h-32 text-center text-xs text-neutral-500'>
+                  <TableCell colSpan={isStudio ? 13 : 12} className='h-32 text-center text-xs text-neutral-500'>
                     <div className='flex items-center justify-center gap-2'>
                       <RefreshCw className='h-4 w-4 animate-spin text-orange-600' />
                       Memuat data order gambar kerja...
@@ -457,7 +488,7 @@ export default function RekapOrderGambarPage() {
                 </TableRow>
               ) : orders.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={12} className='h-32 text-center text-xs text-neutral-500'>
+                  <TableCell colSpan={isStudio ? 13 : 12} className='h-32 text-center text-xs text-neutral-500'>
                     Tidak ada data order gambar kerja yang sesuai filter.
                   </TableCell>
                 </TableRow>
@@ -580,65 +611,68 @@ export default function RekapOrderGambarPage() {
                         {getStatusBadge(order.status)}
                       </TableCell>
 
-                      {/* 11. Proyek & Klien */}
-                      <TableCell className='text-xs align-top py-3 max-w-[280px]'>
-                        <div className='flex flex-col gap-0.5'>
-                          {order.project ? (
-                            <Link
-                              href={`/dashboard/projects-v2/perencanaan/${order.project.id}/detail`}
-                              className='font-bold text-neutral-900 hover:text-orange-600 hover:underline flex items-center gap-1'
-                            >
-                              <ExternalLink className='h-3 w-3 text-neutral-400 shrink-0' />
-                            </Link>
-                          ) : (
-                            <span className='font-bold text-neutral-500'>-</span>
-                          )}
-                        </div>
-                      </TableCell>
-
-                      {/* 12. Aksi */}
-                      <TableCell className='text-right align-top py-3 pr-4 whitespace-nowrap'>
-                        <div className='flex items-center justify-end gap-1'>
-                          {/* Tombol Lihat Detail */}
-                          <Button
-                            variant='ghost'
-                            size='icon'
-                            className='h-7 w-7 text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100'
-                            title='Lihat Detail'
-                            onClick={() => handleOpenDetail(order)}
+                      {/* 11. Link */}
+                      <TableCell className='text-center align-middle py-3 whitespace-nowrap'>
+                        {order.project ? (
+                          <Link
+                            href={getProjectDetailUrl(order.project.id)}
+                            className='inline-flex items-center justify-center font-bold text-neutral-900 hover:text-orange-600'
+                            title={isStudio ? 'Buka Detail Engineer' : 'Buka Detail Perencanaan'}
                           >
-                            <Eye className='h-3.5 w-3.5' />
-                          </Button>
-
-                          {/* Tombol Terima Order (khusus jika status masih Pending) */}
-                          {order.status === 'Pending' && (
-                            <Button
-                              variant='default'
-                              size='sm'
-                              className='h-7 px-2 text-[10px] bg-blue-600 hover:bg-blue-700 text-white font-bold gap-1'
-                              title='Terima Order'
-                              onClick={() => handleOpenAccept(order)}
-                            >
-                              <Check className='h-3 w-3' />
-                              Terima
-                            </Button>
-                          )}
-
-                          {/* Tombol Update Status (jika sudah diproses atau perlu diupdate) */}
-                          {order.status !== 'Pending' && (
-                            <Button
-                              variant='outline'
-                              size='sm'
-                              className='h-7 px-2 text-[10px] border-neutral-300 text-neutral-700 hover:bg-neutral-50 font-bold gap-1'
-                              title='Update Status'
-                              onClick={() => handleOpenUpdate(order)}
-                            >
-                              <MessageSquare className='h-3 w-3' />
-                              Status
-                            </Button>
-                          )}
-                        </div>
+                            <ExternalLink className='h-3.5 w-3.5 text-neutral-500 hover:text-orange-600' />
+                          </Link>
+                        ) : (
+                          <span className='font-bold text-neutral-400'>-</span>
+                        )}
                       </TableCell>
+
+                      {/* 12. Lihat */}
+                      <TableCell className='text-center align-middle py-3 whitespace-nowrap'>
+                        <Button
+                          variant='ghost'
+                          size='icon'
+                          className='h-7 w-7 text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 mx-auto'
+                          title='Lihat Detail'
+                          onClick={() => handleOpenDetail(order)}
+                        >
+                          <Eye className='h-3.5 w-3.5' />
+                        </Button>
+                      </TableCell>
+
+                      {/* 13. Aksi (Khusus Studio) */}
+                      {isStudio && (
+                        <TableCell className='text-right align-middle py-3 pr-4 whitespace-nowrap'>
+                          <div className='flex items-center justify-end gap-1'>
+                            {/* Tombol Terima Order (khusus jika status masih Pending) */}
+                            {order.status === 'Pending' && (
+                              <Button
+                                variant='default'
+                                size='sm'
+                                className='h-7 px-2 text-[10px] bg-blue-600 hover:bg-blue-700 text-white font-bold gap-1'
+                                title='Terima Order'
+                                onClick={() => handleOpenAccept(order)}
+                              >
+                                <Check className='h-3 w-3' />
+                                Terima
+                              </Button>
+                            )}
+
+                            {/* Tombol Update Status (jika sudah diproses atau perlu diupdate) */}
+                            {order.status !== 'Pending' && (
+                              <Button
+                                variant='outline'
+                                size='sm'
+                                className='h-7 px-2 text-[10px] border-neutral-300 text-neutral-700 hover:bg-neutral-50 font-bold gap-1'
+                                title='Update Status'
+                                onClick={() => handleOpenUpdate(order)}
+                              >
+                                <MessageSquare className='h-3 w-3' />
+                                Status
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      )}
                     </TableRow>
                   );
                 })
@@ -723,9 +757,17 @@ export default function RekapOrderGambarPage() {
                 <div className='grid grid-cols-2 gap-2 pt-2 border-t border-neutral-200/80'>
                   <div>
                     <span className='text-[10px] text-neutral-500'>Proyek:</span>
-                    <p className='font-bold text-neutral-800'>
-                      {selectedOrder.project?.name || selectedOrder.project?.nama_projek || '-'}
-                    </p>
+                    {selectedOrder.project ? (
+                      <Link
+                        href={getProjectDetailUrl(selectedOrder.project.id)}
+                        className='font-bold text-neutral-800 hover:text-orange-600 hover:underline flex items-center gap-1'
+                      >
+                        <span>{selectedOrder.project.name || selectedOrder.project.nama_projek}</span>
+                        <ExternalLink className='h-3 w-3 text-neutral-400 shrink-0' />
+                      </Link>
+                    ) : (
+                      <p className='font-bold text-neutral-800'>-</p>
+                    )}
                   </div>
                   <div>
                     <span className='text-[10px] text-neutral-500'>No. SPK:</span>
