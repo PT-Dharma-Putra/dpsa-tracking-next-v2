@@ -77,6 +77,13 @@ export const ClientService = {
         return response.data.data || response.data || [];
     },
 
+    getManagedByHerminaClients: async (): Promise<HerminaClient[]> => {
+        const response = await axiosInstance.get('/clients', {
+            params: { hermina: 2, per_page: -1, sort_by: 'kode', sort_order: 'asc' }
+        });
+        return response.data.data || response.data || [];
+    },
+
     getActionItems: async (): Promise<ActionItem[]> => {
         const response = await axiosInstance.get('/client/actions');
         // If API returns wrapped response { data: [...] }
