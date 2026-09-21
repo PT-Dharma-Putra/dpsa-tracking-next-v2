@@ -3243,13 +3243,13 @@ export default function PerencanaanDetailPage() {
         open={isItemQrDialogOpen}
         onOpenChange={setIsItemQrDialogOpen}
       >
-        <AlertDialogContent className='max-w-4xl'>
-          <AlertDialogHeader>
-            <AlertDialogTitle className='flex items-center gap-2 text-base'>
-              <Printer className='h-4 w-4 text-blue-600' />
-              Label Packing -— {qrItem?.item}
+        <AlertDialogContent className='sm:max-w-3xl max-w-3xl max-h-[90vh] overflow-y-auto p-4 sm:p-6'>
+          <AlertDialogHeader className="pb-2 border-b border-neutral-100">
+            <AlertDialogTitle className='flex items-center gap-2 text-base font-semibold text-neutral-900'>
+              <Printer className='h-5 w-5 text-blue-600 shrink-0' />
+              <span className="truncate">Label Packing — {qrItem?.item}</span>
             </AlertDialogTitle>
-            <AlertDialogDescription className='text-xs'>
+            <AlertDialogDescription className='text-xs text-neutral-500'>
               Preview label cetak. Klik <strong>Print Label</strong> untuk
               mencetak.
             </AlertDialogDescription>

@@ -471,6 +471,68 @@ export default function PerencanaanDetailPage() {
     });
   };
 
+  // Order Gambar Kerja V2 State
+  const [isOrderGkV2DialogOpen, setIsOrderGkV2DialogOpen] = React.useState(false);
+  const [orderGkV2NoOrder, setOrderGkV2NoOrder] = React.useState<string>('');
+  const [orderGkV2PakaiGambar, setOrderGkV2PakaiGambar] = React.useState<boolean>(true);
+  const [orderGkV2Target, setOrderGkV2Target] = React.useState<string>('');
+  const [orderGkV2Prioritas, setOrderGkV2Prioritas] = React.useState<'1' | '2'>('1');
+  const [orderGkV2Detail, setOrderGkV2Detail] = React.useState<string>('');
+  const [orderGkV2Catatan, setOrderGkV2Catatan] = React.useState<string>('');
+
+  const handleOpenOrderGkV2Dialog = () => {
+    const todayStr = format(new Date(), 'yyyyMMdd');
+    const existingCount = (project?.order_gambar_kerja?.length || 0) + 1;
+    const defaultNo = `OGK/${todayStr}/${projectId}/${String(existingCount).padStart(2, '0')}`;
+    setOrderGkV2NoOrder(defaultNo);
+    setOrderGkV2PakaiGambar(true);
+    setOrderGkV2Target('');
+    setOrderGkV2Prioritas('1');
+    setOrderGkV2Detail('');
+    setOrderGkV2Catatan('');
+    setIsOrderGkV2DialogOpen(true);
+  };
+
+  const uploadOrderGkV2Mutation = useMutation({
+    mutationFn: (payload: {
+      file?: File | null;
+      target_selesai?: string | null;
+      pakai_gambar: number;
+      no_order?: string | null;
+      detail_pekerjaan?: string | null;
+      prioritas?: string | null;
+      catatan_pengirim?: string | null;
+    }) =>
+      projectV2Service.uploadOrderGambarKerjaV2(projectId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects-v2', projectId] });
+      toast.success('Order Gambar Kerja V2 berhasil disimpan');
+      setIsOrderGkV2DialogOpen(false);
+      setOrderGkV2Target('');
+      setOrderGkV2Detail('');
+      setOrderGkV2Catatan('');
+    },
+    onError: () => {
+      toast.error('Gagal membuat Order Gambar Kerja V2');
+    },
+  });
+
+  const handleOrderGkV2Submit = () => {
+    if (orderGkV2PakaiGambar && !orderGkV2NoOrder.trim()) {
+      toast.error('Nomor Order wajib diisi');
+      return;
+    }
+    uploadOrderGkV2Mutation.mutate({
+      file: null,
+      target_selesai: orderGkV2PakaiGambar ? (orderGkV2Target || null) : null,
+      pakai_gambar: orderGkV2PakaiGambar ? 1 : 0,
+      no_order: orderGkV2PakaiGambar ? orderGkV2NoOrder.trim() : null,
+      detail_pekerjaan: orderGkV2PakaiGambar ? (orderGkV2Detail.trim() || null) : null,
+      prioritas: orderGkV2PakaiGambar ? orderGkV2Prioritas : '1',
+      catatan_pengirim: orderGkV2PakaiGambar ? (orderGkV2Catatan.trim() || null) : null,
+    });
+  };
+
   // Order Produksi State
   const [isOrderProduksiDialogOpen, setIsOrderProduksiDialogOpen] = React.useState(false);
   const [orderProduksiFile, setOrderProduksiFile] = React.useState<File | null>(null);
@@ -1257,16 +1319,32 @@ export default function PerencanaanDetailPage() {
                   
                   <div className='pt-2 space-y-2 border-t border-neutral-100 mt-2'>
                     {project.order_gambar_kerja && project.order_gambar_kerja.length > 0 ? (
-                      <div className='space-y-1.5 max-h-[80px] overflow-y-auto pr-1'>
+                      <div className='space-y-1.5 max-h-[100px] overflow-y-auto pr-1'>
                         {project.order_gambar_kerja.map((order, idx) => (
-                          <div key={idx} className='flex items-center justify-between text-[9px] bg-neutral-50 p-1.5 rounded border border-neutral-100'>
-                            <div className='flex flex-col gap-0.5'>
-                              <span className='font-bold text-neutral-700'>
-                                Target: {order.target_selesai ? format(new Date(order.target_selesai), 'dd MMM') : '-'}
+                          <div key={idx} className='flex items-center justify-between text-[9px] bg-neutral-50 p-1.5 rounded border border-neutral-100 gap-1.5'>
+                            <div className='flex flex-col gap-0.5 min-w-0 flex-1'>
+                              {order.no_order && (
+                                <div className='flex items-center gap-1 min-w-0'>
+                                  <span className='font-bold text-neutral-800 truncate text-[9px]'>
+                                    {order.no_order}
+                                  </span>
+                                  {order.prioritas === '2' ? (
+                                    <span className='text-[7px] bg-red-100 text-red-700 font-bold px-1 rounded shrink-0'>
+                                      Mendesak
+                                    </span>
+                                  ) : order.prioritas === '1' ? (
+                                    <span className='text-[7px] bg-blue-100 text-blue-700 font-bold px-1 rounded shrink-0'>
+                                      Biasa
+                                    </span>
+                                  ) : null}
+                                </div>
+                              )}
+                              <span className='text-neutral-500 text-[8px]'>
+                                Target: {order.target_selesai ? format(new Date(order.target_selesai), 'dd MMM yyyy') : '-'}
                               </span>
                             </div>
                             <span className={cn(
-                              'text-[8px] font-extrabold px-1 rounded',
+                              'text-[8px] font-extrabold px-1 rounded shrink-0',
                               order.pakai_gambar === 0 
                                 ? 'bg-neutral-100 text-neutral-600 border border-neutral-200' 
                                 : 'bg-orange-50 text-orange-600 border border-orange-100'
@@ -1313,15 +1391,26 @@ export default function PerencanaanDetailPage() {
                       ) : null
                     )}
 
-                    <Button 
-                      variant='outline' 
-                      size='sm' 
-                      className='h-7 w-full text-[10px] border-orange-200 text-orange-600 hover:bg-orange-50 gap-1.5 bg-orange-50/30 font-bold'
-                      onClick={() => setIsOrderGkDialogOpen(true)}
-                    >
-                      <Upload className='h-3 w-3' />
-                      Order Gambar
-                    </Button>
+                    <div className='grid grid-cols-2 gap-1.5 pt-1'>
+                      <Button 
+                        variant='outline' 
+                        size='sm' 
+                        className='h-7 w-full text-[10px] border-orange-200 text-orange-600 hover:bg-orange-50 gap-1 bg-orange-50/30 font-bold px-1.5 truncate'
+                        onClick={() => setIsOrderGkDialogOpen(true)}
+                      >
+                        <Upload className='h-3 w-3 shrink-0' />
+                        <span className='truncate'>Order Gambar</span>
+                      </Button>
+                      <Button 
+                        variant='default' 
+                        size='sm' 
+                        className='h-7 w-full text-[10px] bg-orange-600 hover:bg-orange-700 text-white gap-1 font-bold shadow-xs px-1.5 truncate'
+                        onClick={handleOpenOrderGkV2Dialog}
+                      >
+                        <Plus className='h-3 w-3 shrink-0' />
+                        <span className='truncate'>Order Gambar V2</span>
+                      </Button>
+                    </div>
                   </div>
                </CardContent>
           )}
@@ -3131,6 +3220,149 @@ export default function PerencanaanDetailPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Order Gambar Kerja V2 Dialog */}
+      <AlertDialog open={isOrderGkV2DialogOpen} onOpenChange={setIsOrderGkV2DialogOpen}>
+        <AlertDialogContent className='max-w-xl max-h-[90vh] overflow-y-auto'>
+          <AlertDialogHeader>
+            <div className='flex items-center justify-between'>
+              <AlertDialogTitle className='flex items-center gap-2 text-base'>
+                <ImageIcon className='h-5 w-5 text-orange-500' />
+                Order Gambar Kerja V2
+              </AlertDialogTitle>
+              <span className='text-[10px] font-bold bg-orange-100 text-orange-800 px-2.5 py-0.5 rounded-full border border-orange-200'>
+                Jenis Order: Gambar Kerja
+              </span>
+            </div>
+            <AlertDialogDescription className='text-xs'>
+              Lengkapi form order gambar kerja berikut untuk dikirimkan ke tim drafter/engineer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <div className='grid gap-3.5 py-2 text-xs'>
+            {/* 1. Metode Order Toggle (Diposisikan Pertama) */}
+            <div className="flex items-center justify-between p-2.5 rounded-lg border border-neutral-200 bg-neutral-50/50">
+              <div className="space-y-0.5">
+                <Label className="text-xs font-bold text-neutral-800">Metode Order</Label>
+                <p className="text-[10px] text-muted-foreground">
+                  {orderGkV2PakaiGambar ? 'Melakukan order berkas gambar kerja' : 'Tanpa melampirkan berkas gambar'}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className={cn("text-[10px] font-bold transition-colors", !orderGkV2PakaiGambar ? "text-orange-600" : "text-neutral-400")}>Tanpa Gambar</span>
+                <Switch
+                  checked={orderGkV2PakaiGambar}
+                  onCheckedChange={setOrderGkV2PakaiGambar}
+                />
+                <span className={cn("text-[10px] font-bold transition-colors", orderGkV2PakaiGambar ? "text-orange-600" : "text-neutral-400")}>Pakai Gambar</span>
+              </div>
+            </div>
+
+            {/* Jika Tanpa Gambar, seluruh inputan di-hide */}
+            {!orderGkV2PakaiGambar && (
+              <div className='p-3 rounded-lg bg-orange-50 border border-orange-200 text-orange-800 text-xs flex items-center gap-2 animate-in fade-in duration-200'>
+                <Info className='h-4 w-4 shrink-0 text-orange-600' />
+                <span>Project akan ditandai <strong>Tanpa Gambar</strong> tanpa perlu mengisi detail gambar kerja.</span>
+              </div>
+            )}
+
+            {/* Jika Pakai Gambar, tampilkan seluruh inputan */}
+            {orderGkV2PakaiGambar && (
+              <div className='space-y-3.5 animate-in fade-in duration-200'>
+                {/* 2. Nomor Order (Setelah Metode Order) */}
+                <div className='space-y-1.5'>
+                  <Label className='text-xs font-semibold text-neutral-700'>
+                    Nomor Order <span className='text-red-500'>*</span>
+                  </Label>
+                  <Input
+                    type='text'
+                    placeholder='Masukkan nomor order...'
+                    value={orderGkV2NoOrder}
+                    onChange={(e) => setOrderGkV2NoOrder(e.target.value)}
+                    className='h-8 text-xs'
+                  />
+                </div>
+
+                {/* 3. Target Selesai */}
+                <div className='space-y-1.5'>
+                  <Label className='text-xs font-semibold text-neutral-700'>Target Penyelesaian</Label>
+                  <Input
+                    type='date'
+                    value={orderGkV2Target}
+                    onChange={(e) => setOrderGkV2Target(e.target.value)}
+                    className='h-8 text-xs'
+                  />
+                </div>
+
+                {/* 4. Prioritas Switch */}
+                <div className="flex items-center justify-between p-2.5 rounded-lg border border-neutral-200 bg-neutral-50/50">
+                  <div className="space-y-0.5">
+                    <Label className="text-xs font-bold text-neutral-800">Prioritas</Label>
+                    <p className="text-[10px] text-muted-foreground">
+                      {orderGkV2Prioritas === '2' ? 'Prioritas pengerjaan mendesak / urgent' : 'Prioritas pengerjaan standar / biasa'}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={cn("text-[10px] font-bold transition-colors", orderGkV2Prioritas === '1' ? "text-blue-600" : "text-neutral-400")}>
+                      Biasa
+                    </span>
+                    <Switch
+                      checked={orderGkV2Prioritas === '2'}
+                      onCheckedChange={(checked) => setOrderGkV2Prioritas(checked ? '2' : '1')}
+                    />
+                    <span className={cn("text-[10px] font-bold transition-colors", orderGkV2Prioritas === '2' ? "text-red-600" : "text-neutral-400")}>
+                      Mendesak
+                    </span>
+                  </div>
+                </div>
+
+                {/* 5. Detail Permintaan */}
+                <div className='space-y-1.5'>
+                  <Label className='text-xs font-semibold text-neutral-700'>Detail Permintaan</Label>
+                  <Textarea
+                    rows={3}
+                    placeholder='Tuliskan rincian kebutuhan atau lingkup pekerjaan gambar kerja...'
+                    value={orderGkV2Detail}
+                    onChange={(e) => setOrderGkV2Detail(e.target.value)}
+                    className='text-xs resize-none'
+                  />
+                </div>
+
+                {/* 6. Catatan dari PPIC */}
+                <div className='space-y-1.5'>
+                  <Label className='text-xs font-semibold text-neutral-700'>Catatan dari PPIC</Label>
+                  <Textarea
+                    rows={2}
+                    placeholder='Catatan khusus dari PPIC untuk drafter/engineer...'
+                    value={orderGkV2Catatan}
+                    onChange={(e) => setOrderGkV2Catatan(e.target.value)}
+                    className='text-xs resize-none'
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          <AlertDialogFooter className='pt-2'>
+            <AlertDialogCancel onClick={() => setIsOrderGkV2DialogOpen(false)}>
+              Batal
+            </AlertDialogCancel>
+            <Button
+              className='bg-orange-600 hover:bg-orange-700 text-white'
+              onClick={handleOrderGkV2Submit}
+              disabled={uploadOrderGkV2Mutation.isPending || (orderGkV2PakaiGambar && !orderGkV2NoOrder.trim())}
+            >
+              {uploadOrderGkV2Mutation.isPending ? (
+                <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+              ) : (
+                <Upload className='mr-2 h-4 w-4' />
+              )}
+              Submit Order V2
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Order Produksi Dialog */}
       <AlertDialog open={isOrderProduksiDialogOpen} onOpenChange={setIsOrderProduksiDialogOpen}>
         <AlertDialogContent className='max-w-md'>

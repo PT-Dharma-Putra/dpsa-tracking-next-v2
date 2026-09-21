@@ -55,10 +55,18 @@ import {
   Produksi,
   BarangSupplier,
 } from '@/features/projects/services/project-v2-service';
+import { kopSuratService } from '@/features/master-data/services/kop-surat-service';
 import { QRCodeSVG } from 'qrcode.react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 export default function ProduksiDetailPage() {
   const params = useParams();
@@ -76,6 +84,80 @@ export default function ProduksiDetailPage() {
     queryKey: ['project-v2-items', projectId],
     queryFn: () => projectV2Service.getProjectItems(projectId),
   });
+
+  const { data: teamData } = useQuery({
+    queryKey: ['project-team', projectId],
+    queryFn: () => projectV2Service.getProjectTeam(projectId),
+  });
+
+  const { data: kopSuratList } = useQuery({
+    queryKey: ['kop-surat-list'],
+    queryFn: () => kopSuratService.getKopSuratList(),
+  });
+
+  const { data: kopSuratActive } = useQuery({
+    queryKey: ['kop-surat-active'],
+    queryFn: () => kopSuratService.getActiveKopSurat(),
+  });
+
+  const [selectedKopId, setSelectedKopId] = React.useState<number | null>(null);
+
+  const projectDivisiIds = React.useMemo(() => {
+    const raw = teamData?.divisi_id || (project as any)?.project_team?.divisi_id || '';
+    if (!raw) return [];
+    return String(raw)
+      .split(',')
+      .map((s) => parseInt(s.trim(), 10))
+      .filter((n) => !isNaN(n));
+  }, [teamData, project]);
+
+  React.useEffect(() => {
+    if (selectedKopId !== null || !kopSuratList || kopSuratList.length === 0) return;
+
+    if (projectDivisiIds.length > 0) {
+      const match = kopSuratList.find(
+        (k) => k.divisi_id !== null && k.divisi_id !== undefined && projectDivisiIds.includes(Number(k.divisi_id))
+      );
+      if (match) {
+        setSelectedKopId(match.id);
+        return;
+      }
+    }
+
+    if (kopSuratActive) {
+      setSelectedKopId(kopSuratActive.id);
+      return;
+    }
+
+    if (kopSuratList[0]) {
+      setSelectedKopId(kopSuratList[0].id);
+    }
+  }, [kopSuratList, kopSuratActive, projectDivisiIds, selectedKopId]);
+
+  const selectedKop = React.useMemo(() => {
+    if (selectedKopId) {
+      const found = kopSuratList?.find((k) => k.id === selectedKopId);
+      if (found) return found;
+    }
+    return kopSuratActive || kopSuratList?.[0] || null;
+  }, [selectedKopId, kopSuratList, kopSuratActive]);
+
+  const kopData = React.useMemo(() => {
+    return {
+      logo: selectedKop?.logo || '/Logo.png',
+      nama_perusahaan: selectedKop?.nama_perusahaan || 'PT DHARMA PUTERA SEJAHTERA ABADI',
+      jenis_usaha: selectedKop?.jenis_usaha || 'Interior & Furniture Manufaktur',
+      alamat: selectedKop?.alamat || 'Jl. Matraman No. 88, Ringinsari, Maguwoharjo, Depok, Sleman, Yogyakarta',
+      telepon: selectedKop?.telepon || '(0274) 2800089',
+      fax: selectedKop?.fax || '(0274) 433 2248',
+      email: selectedKop?.email || 'piutang.dpsa@gmail.com',
+      website: selectedKop?.website || 'www.dpm-jogja.com',
+      nama_identitas_iso: selectedKop?.nama_identitas_iso || 'PROD',
+      nomor_identitas_iso: selectedKop?.nomor_identitas_iso || '003',
+      revisi_ke: selectedKop?.revisi_ke || '00',
+      terbit: selectedKop?.terbit || '08/25',
+    };
+  }, [selectedKop]);
 
   // Produksi State
   const [isProduksiDialogOpen, setIsProduksiDialogOpen] = React.useState(false);
@@ -847,20 +929,24 @@ export default function ProduksiDetailPage() {
           ['NO. SPK/TAHUN', spkValue]
         );
 
+        const logoUrl = kopData.logo.startsWith('/')
+          ? `${window.location.origin}${kopData.logo}`
+          : kopData.logo;
+
         return `
           <div class="label">
             <div class="hdr">
-              <div class="logo"><img src="${window.location.origin}/Logo.png" alt="Logo"/></div>
+              <div class="logo"><img src="${logoUrl}" alt="Logo"/></div>
               <div class="co">
-                <p class="n">PT DHARMA PUTERA SEJAHTERA ABADI</p>
-                <p class="it">Interior &amp; Furniture Manufaktur</p>
-                <p>Jl. Matraman No. 88, Ringinsari, Maguwoharjo, Depok, Sleman, Yogyakarta</p>
-                <p>Telepon : (0274) 2800089&nbsp;&nbsp;Fax : (0274) 433 2248</p>
-                <p>E-mail : piutang.dpsa@gmail.com&nbsp;Website : www.dpm-jogja.com</p>
+                <p class="n">${kopData.nama_perusahaan}</p>
+                ${kopData.jenis_usaha ? `<p class="it">${kopData.jenis_usaha}</p>` : ''}
+                ${kopData.alamat ? `<p>${kopData.alamat}</p>` : ''}
+                <p>Telepon : ${kopData.telepon || '-'}&nbsp;&nbsp;Fax : ${kopData.fax || '-'}</p>
+                <p>E-mail : ${kopData.email || '-'}&nbsp;Website : ${kopData.website || '-'}</p>
               </div>
               <div class="dc">
-                <div class="dr">PROD</div><div class="dr b">003</div>
-                <div class="db"><span>Rev:00</span><span>Terbit:<br>08/25</span></div>
+                <div class="dr">${kopData.nama_identitas_iso || 'PROD'}</div><div class="dr b">${kopData.nomor_identitas_iso || '003'}</div>
+                <div class="db"><span>Rev:${kopData.revisi_ke || '00'}</span><span>Terbit:<br>${kopData.terbit || '08/25'}</span></div>
               </div>
             </div>
             <div class="bd">
@@ -1006,22 +1092,24 @@ export default function ProduksiDetailPage() {
         ['NO. SPK/TAHUN', spkValue]
       );
 
+      const logoUrl = kopData.logo.startsWith('/')
+        ? `${window.location.origin}${kopData.logo}`
+        : kopData.logo;
+
       return `
         <div class="label">
           <div class="hdr">
-            <div class="logo"><img src="${
-              window.location.origin
-            }/Logo.png" alt="Logo"/></div>
+            <div class="logo"><img src="${logoUrl}" alt="Logo"/></div>
             <div class="co">
-              <p class="n">PT DHARMA PUTERA SEJAHTERA ABADI</p>
-              <p class="it">Interior &amp; Furniture Manufaktur</p>
-              <p>Jl. Matraman No. 88, Ringinsari, Maguwoharjo, Depok, Sleman, Yogyakarta</p>
-              <p>Telepon : (0274) 2800089&nbsp;&nbsp;Fax : (0274) 433 2248</p>
-              <p>E-mail : piutang.dpsa@gmail.com&nbsp;Website : www.dpm-jogja.com</p>
+              <p class="n">${kopData.nama_perusahaan}</p>
+              ${kopData.jenis_usaha ? `<p class="it">${kopData.jenis_usaha}</p>` : ''}
+              ${kopData.alamat ? `<p>${kopData.alamat}</p>` : ''}
+              <p>Telepon : ${kopData.telepon || '-'}&nbsp;&nbsp;Fax : ${kopData.fax || '-'}</p>
+              <p>E-mail : ${kopData.email || '-'}&nbsp;Website : ${kopData.website || '-'}</p>
             </div>
             <div class="dc">
-              <div class="dr">PROD</div><div class="dr b">003</div>
-              <div class="db"><span>Rev:00</span><span>Terbit:<br>08/25</span></div>
+              <div class="dr">${kopData.nama_identitas_iso || 'PROD'}</div><div class="dr b">${kopData.nomor_identitas_iso || '003'}</div>
+              <div class="db"><span>Rev:${kopData.revisi_ke || '00'}</span><span>Terbit:<br>${kopData.terbit || '08/25'}</span></div>
             </div>
           </div>
           <div class="bd">
@@ -3472,7 +3560,7 @@ export default function ProduksiDetailPage() {
         open={isMassQrDialogOpen}
         onOpenChange={setIsMassQrDialogOpen}
       >
-        <AlertDialogContent className='max-w-2xl'>
+        <AlertDialogContent className='sm:max-w-2xl max-w-2xl'>
           <AlertDialogHeader>
             <AlertDialogTitle className='flex items-center gap-2 text-base'>
               <Printer className='h-4 w-4 text-blue-600' />
@@ -3482,6 +3570,40 @@ export default function ProduksiDetailPage() {
               Atur bagian per item untuk <strong>{selectedQrItemIds.length}</strong> item yang dipilih.
             </AlertDialogDescription>
           </AlertDialogHeader>
+
+          {/* Kop Surat Selector */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-neutral-50 rounded-lg border border-neutral-200 mt-2">
+            <div className="flex items-center gap-2">
+              <Building2 className="h-4 w-4 text-neutral-500 shrink-0" />
+              <Label className="text-xs font-semibold text-neutral-700 whitespace-nowrap">Kop Surat Produksi:</Label>
+              <Select
+                value={selectedKop?.id ? String(selectedKop.id) : ''}
+                onValueChange={(val) => setSelectedKopId(parseInt(val, 10))}
+              >
+                <SelectTrigger className="h-8 text-xs w-[280px] bg-white border-neutral-300">
+                  <SelectValue placeholder="Pilih Kop Surat" />
+                </SelectTrigger>
+                <SelectContent>
+                  {kopSuratList?.map((kop) => {
+                    const isDivisiMatch = kop.divisi_id && projectDivisiIds.includes(Number(kop.divisi_id));
+                    return (
+                      <SelectItem key={kop.id} value={String(kop.id)} className="text-xs">
+                        <span className="font-medium">{kop.nama_kop}</span>
+                        {isDivisiMatch && (
+                          <span className="ml-1 text-[10px] text-blue-600 font-semibold">(Sesuai Divisi Team)</span>
+                        )}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+            {selectedKop?.divisi?.nama && (
+              <Badge variant="outline" className="text-[10px] text-blue-700 bg-blue-50 border-blue-200">
+                Divisi: {selectedKop.divisi.nama}
+              </Badge>
+            )}
+          </div>
 
           <div className='max-h-[60vh] overflow-y-auto border border-neutral-200 rounded-md mt-2'>
             <Table>
@@ -3558,173 +3680,208 @@ export default function ProduksiDetailPage() {
         open={isItemQrDialogOpen}
         onOpenChange={setIsItemQrDialogOpen}
       >
-        <AlertDialogContent className='max-w-4xl'>
-          <AlertDialogHeader>
-            <AlertDialogTitle className='flex items-center gap-2 text-base'>
-              <QrCode className='h-4 w-4 text-blue-600' />
-              Label Produksi — {qrItem?.item}
+        <AlertDialogContent className='sm:max-w-3xl max-w-3xl max-h-[90vh] overflow-y-auto p-4 sm:p-6'>
+          <AlertDialogHeader className="pb-2 border-b border-neutral-100">
+            <AlertDialogTitle className='flex items-center gap-2 text-base font-semibold text-neutral-900'>
+              <QrCode className='h-5 w-5 text-blue-600 shrink-0' />
+              <span className="truncate">Label Produksi — {qrItem?.item}</span>
             </AlertDialogTitle>
-            <AlertDialogDescription className='text-xs'>
-              Preview label cetak. Klik <strong>Print Label</strong> untuk
-              mencetak.
+            <AlertDialogDescription className='text-xs text-neutral-500'>
+              Preview label cetak. Klik <strong>Print Label</strong> untuk mencetak.
             </AlertDialogDescription>
           </AlertDialogHeader>
 
-          {/* Label Preview */}
-          <div
-            id='qr-item-print-area'
-            className='border border-black font-sans text-neutral-900 bg-white text-[11px] mt-2'
-          >
-            {/* ── Header ── */}
-            <div className='flex border-b border-black'>
-              {/* Logo */}
-              <div className='flex items-center justify-center p-2 border-r border-black w-20 shrink-0'>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src='/Logo.png'
-                  alt='Logo DPM'
-                  className='w-14 h-14 object-contain'
-                />
-              </div>
-
-              {/* Company Info */}
-              <div className='flex-1 text-center py-2 px-4 border-r border-black'>
-                <p className='font-extrabold text-blue-700 text-[13px] tracking-wide uppercase leading-tight'>
-                  PT DHARMA PUTERA SEJAHTERA ABADI
-                </p>
-                <p className='italic text-[10px] text-neutral-600 mt-0.5'>
-                  Interior &amp; Furniture Manufaktur
-                </p>
-                <p className='text-[10px] text-neutral-600 mt-0.5'>
-                  Jl. Matraman No. 88, Ringinsari, Maguwoharjo, Depok, Sleman,
-                  Yogyakarta
-                </p>
-                <p className='text-[10px] text-neutral-600'>
-                  Telepon : (0274) 2800089&nbsp;&nbsp;&nbsp;Fax : (0274) 433
-                  2248
-                </p>
-                <p className='text-[10px] text-neutral-600'>
-                  E-mail : piutang.dpsa@gmail.com&nbsp;&nbsp;Website :
-                  www.dpm-jogja.com
-                </p>
-              </div>
-
-              {/* Doc Code Box */}
-              <div className='w-24 shrink-0 flex flex-col text-[10px] text-center'>
-                <div className='border-b border-black py-0.5 px-1 font-bold'>
-                  PROD
-                </div>
-                <div className='border-b border-black py-0.5 px-1 font-bold text-[13px]'>
-                  003
-                </div>
-                <div className='flex flex-1'>
-                  <div className='flex-1 border-r border-black py-0.5 px-1'>
-                    Rev:00
-                  </div>
-                  <div className='flex-1 py-0.5 px-1 leading-tight'>
-                    Terbit:
-                    <br />
-                    08/25
-                  </div>
-                </div>
-              </div>
+          {/* Kop Surat Selector */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-neutral-50 rounded-lg border border-neutral-200 mt-2">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <Building2 className="h-4 w-4 text-neutral-500 shrink-0" />
+              <Label className="text-xs font-semibold text-neutral-700 whitespace-nowrap">Kop Surat Produksi:</Label>
+              <Select
+                value={selectedKop?.id ? String(selectedKop.id) : ''}
+                onValueChange={(val) => setSelectedKopId(parseInt(val, 10))}
+              >
+                <SelectTrigger className="h-8 text-xs w-full sm:w-[280px] bg-white border-neutral-300">
+                  <SelectValue placeholder="Pilih Kop Surat" />
+                </SelectTrigger>
+                <SelectContent>
+                  {kopSuratList?.map((kop) => {
+                    const isDivisiMatch = kop.divisi_id && projectDivisiIds.includes(Number(kop.divisi_id));
+                    return (
+                      <SelectItem key={kop.id} value={String(kop.id)} className="text-xs">
+                        <span className="font-medium">{kop.nama_kop}</span>
+                        {isDivisiMatch && (
+                          <span className="ml-1 text-[10px] text-blue-600 font-semibold">(Sesuai Divisi Team)</span>
+                        )}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
             </div>
+            {selectedKop?.divisi?.nama && (
+              <Badge variant="outline" className="text-[10px] text-blue-700 bg-blue-50 border-blue-200 shrink-0 self-start sm:self-center">
+                Divisi: {selectedKop.divisi.nama}
+              </Badge>
+            )}
+          </div>
 
-            {/* ── Info Fields + QR ── */}
-            <div className='flex'>
-              {/* Left: info rows */}
-              <div className='flex-1 border-r border-black'>
-                {[
-                  {
-                    label: 'NAMA ITEM',
-                    value: qrItem?.item || '-',
-                  },
-                  {
-                    label: 'UKURAN',
-                    value: `${qrItem?.panjang || '-'} x ${
-                      qrItem?.lebar || '-'
-                    } x ${qrItem?.tinggi || '-'}`,
-                  },
-                  {
-                    label: 'JUMLAH',
-                    value: qrItem?.jumlah
-                      ? `${qrItem.jumlah} ${qrItem.satuan || ''}`.trim()
-                      : '-',
-                  },
-                  ...(qrParts > 1 ? [{
-                    label: 'BAGIAN',
-                    value: `1/${qrParts}`,
-                  }] : []),
-                  {
-                    label: 'RUANG',
-                    value: qrItem?.ruang || '-',
-                  },
-                  {
-                    label: 'RUMAH SAKIT',
-                    value: project?.client?.name || '-',
-                  },
-                  {
-                    label: 'NO. SPK/TAHUN',
-                    value: project?.spk?.nomor_spk || '-',
-                  },
-                ].map((row) => (
-                  <div
-                    key={row.label}
-                    className='flex border-b border-black last:border-b-0'
-                  >
-                    <div className='w-36 font-bold py-2 px-2 border-r border-black shrink-0'>
-                      {row.label}
-                    </div>
-                    <div className='w-5 text-center py-2 border-r border-black shrink-0'>
-                      :
-                    </div>
-                    <div className='flex-1 py-2 px-2'>{row.value}</div>
+          {/* Label Preview */}
+          <div className="overflow-x-auto p-1">
+            <div
+              id='qr-item-print-area'
+              className='border border-black font-sans text-neutral-900 bg-white text-[11px] mt-2 max-w-[650px] mx-auto shadow-xs'
+            >
+              {/* ── Header ── */}
+              <div className='flex border-b border-black'>
+                {/* Logo */}
+                <div className='flex items-center justify-center p-2 border-r border-black w-20 shrink-0'>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={kopData.logo}
+                    alt='Logo DPM'
+                    className='w-14 h-14 object-contain'
+                  />
+                </div>
+
+                {/* Company Info */}
+                <div className='flex-1 text-center py-2 px-3 border-r border-black flex flex-col justify-center'>
+                  <p className='font-extrabold text-blue-700 text-[13px] tracking-wide uppercase leading-tight'>
+                    {kopData.nama_perusahaan}
+                  </p>
+                  {kopData.jenis_usaha && (
+                    <p className='italic text-[10px] text-neutral-600 mt-0.5 leading-tight'>
+                      {kopData.jenis_usaha}
+                    </p>
+                  )}
+                  {kopData.alamat && (
+                    <p className='text-[10px] text-neutral-600 mt-0.5 leading-tight'>
+                      {kopData.alamat}
+                    </p>
+                  )}
+                  <p className='text-[10px] text-neutral-600 leading-tight mt-0.5'>
+                    Telepon : {kopData.telepon || '-'}&nbsp;&nbsp;&nbsp;Fax : {kopData.fax || '-'}
+                  </p>
+                  <p className='text-[10px] text-neutral-600 leading-tight'>
+                    E-mail : {kopData.email || '-'}&nbsp;&nbsp;Website : {kopData.website || '-'}
+                  </p>
+                </div>
+
+                {/* Doc Code Box */}
+                <div className='w-24 shrink-0 flex flex-col text-[10px] text-center'>
+                  <div className='border-b border-black py-0.5 px-1 font-bold bg-neutral-50/50'>
+                    {kopData.nama_identitas_iso || 'PROD'}
                   </div>
-                ))}
+                  <div className='border-b border-black py-0.5 px-1 font-bold text-[13px] bg-neutral-50/50'>
+                    {kopData.nomor_identitas_iso || '003'}
+                  </div>
+                  <div className='flex flex-1'>
+                    <div className='flex-1 border-r border-black py-0.5 px-1 flex items-center justify-center'>
+                      Rev:{kopData.revisi_ke || '00'}
+                    </div>
+                    <div className='flex-1 py-0.5 px-1 leading-tight flex flex-col justify-center'>
+                      <span>Terbit:</span>
+                      <span>{kopData.terbit || '08/25'}</span>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              {/* Right: QR code */}
-              {/* <div className='w-48 shrink-0 flex flex-col items-center justify-center gap-2 p-4'>
-                {qrItem?.mdl_item?.kode_barang ? (
-                  <>
-                    <QRCodeSVG
-                      value={qrItem.mdl_item.kode_barang}
-                      size={140}
-                      bgColor='#ffffff'
-                      fgColor='#000000'
-                      level='M'
-                    />
-                    <p className='font-mono font-bold text-center break-all leading-tight text-[10px]'>
-                      {qrItem.mdl_item.kode_barang}
+              {/* ── Info Fields + QR ── */}
+              <div className='flex'>
+                {/* Left: info rows */}
+                <div className='flex-1 border-r border-black'>
+                  {[
+                    {
+                      label: 'NAMA ITEM',
+                      value: qrItem?.item || '-',
+                    },
+                    {
+                      label: 'UKURAN',
+                      value: `${qrItem?.panjang || '-'} x ${
+                        qrItem?.lebar || '-'
+                      } x ${qrItem?.tinggi || '-'}`,
+                    },
+                    {
+                      label: 'JUMLAH',
+                      value: qrItem?.jumlah
+                        ? `${qrItem.jumlah} ${qrItem.satuan || ''}`.trim()
+                        : '-',
+                    },
+                    ...(qrParts > 1 ? [{
+                      label: 'BAGIAN',
+                      value: `1/${qrParts}`,
+                    }] : []),
+                    {
+                      label: 'RUANG',
+                      value: qrItem?.ruang || '-',
+                    },
+                    {
+                      label: 'RUMAH SAKIT',
+                      value: project?.client?.name || '-',
+                    },
+                    {
+                      label: 'NO. SPK/TAHUN',
+                      value: project?.spk?.nomor_spk || '-',
+                    },
+                  ].map((row) => (
+                    <div
+                      key={row.label}
+                      className='flex border-b border-black last:border-b-0'
+                    >
+                      <div className='w-32 font-bold py-1.5 px-2 border-r border-black shrink-0 text-[11px]'>
+                        {row.label}
+                      </div>
+                      <div className='w-5 text-center py-1.5 border-r border-black shrink-0 text-[11px]'>
+                        :
+                      </div>
+                      <div className='flex-1 py-1.5 px-2 font-medium text-[11px] break-words'>{row.value}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Right: QR code preview */}
+                <div className='w-32 shrink-0 flex flex-col items-center justify-center gap-1 p-2 bg-white'>
+                  {qrItem?.id ? (
+                    <>
+                      <QRCodeSVG
+                        value={String(qrItem.id)}
+                        size={88}
+                        bgColor='#ffffff'
+                        fgColor='#000000'
+                        level='M'
+                      />
+                      <p className='font-mono font-bold text-center break-all leading-tight text-[10px] text-neutral-800 mt-0.5'>
+                        {qrItem.id}
+                      </p>
+                    </>
+                  ) : (
+                    <p className='text-neutral-400 italic text-center text-[10px]'>
+                      Kode tidak tersedia
                     </p>
-                  </>
-                ) : (
-                  <p className='text-neutral-400 italic text-center'>
-                    Kode tidak tersedia
-                  </p>
-                )}
-              </div> */}
+                  )}
+                </div>
+              </div>
             </div>
           </div>
 
-          <AlertDialogFooter className='mt-4 flex-col sm:flex-row items-start sm:items-center gap-2'>
+          <AlertDialogFooter className='mt-4 flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-3 border-t border-neutral-100'>
             <div className='flex items-center gap-2'>
-              <Label className='text-xs'>Bagian per Qty:</Label>
+              <Label className='text-xs whitespace-nowrap font-medium text-neutral-700'>Bagian per Qty:</Label>
               <Input
                 type='number'
                 min={1}
                 value={qrParts}
                 onChange={(e) => setQrParts(Math.max(1, parseInt(e.target.value) || 1))}
-                className='h-8 w-16 text-xs'
+                className='h-8 w-16 text-xs text-center'
               />
             </div>
             {qrItem?.jumlah && (
-              <p className='text-xs text-muted-foreground flex-1 ml-2'>
-                Akan mencetak <strong>{qrItem.jumlah * qrParts} label</strong> 
+              <p className='text-xs text-muted-foreground flex-1'>
+                Akan mencetak <strong>{qrItem.jumlah * qrParts} label</strong>{' '}
                 ({qrItem.jumlah} Qty × {qrParts} Bagian)
               </p>
             )}
-            <div className='flex gap-2 ml-auto'>
+            <div className='flex gap-2 justify-end sm:ml-auto'>
               <AlertDialogCancel onClick={() => setIsItemQrDialogOpen(false)}>
                 Tutup
               </AlertDialogCancel>

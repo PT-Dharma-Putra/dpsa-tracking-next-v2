@@ -432,6 +432,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               </svg>
             ),
           },
+          {
+            title: 'Rekap Order Gambar',
+            url: '/dashboard/projects-v2/rekap-order-gambar',
+          },
         ],
       },
       {
@@ -442,6 +446,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           {
             title: 'Project V2 | PPIC',
             url: '/dashboard/projects-v2/perencanaan',
+          },
+          {
+            title: 'Rekap Order Gambar',
+            url: '/dashboard/projects-v2/rekap-order-gambar',
           },
           {
             title: 'Project V2 | Pengiriman V2',
