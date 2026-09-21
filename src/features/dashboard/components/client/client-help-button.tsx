@@ -12,14 +12,19 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { ClientTaskDialog } from "./client-task-dialog"
+import { useAuthStore } from "@/lib/auth-store"
+import { isHerminaPusatUser } from "@/lib/get-user-role"
 
 export function ClientHelpButton() {
     const router = useRouter()
+    const { user } = useAuthStore()
+    const isHerminaPusat = isHerminaPusatUser(user)
+
     const [dialogOpen, setDialogOpen] = React.useState(false)
     const [dialogTipe, setDialogTipe] = React.useState<"Request Fitur" | "Lapor Kendala">("Lapor Kendala")
 
     const handleOpenModal = (tipe: "Request Fitur" | "Lapor Kendala") => {
-        setDialogTipe(tipe)
+        setDialogTipe(isHerminaPusat ? tipe : "Lapor Kendala")
         setDialogOpen(true)
     }
 
@@ -40,13 +45,19 @@ export function ClientHelpButton() {
                                     <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500" />
                                 </span>
                             </div>
-                            <span className="text-xs font-bold tracking-wide pr-1">Bantuan & Request</span>
+                            <span className="text-xs font-bold tracking-wide pr-1">
+                                {isHerminaPusat ? "Bantuan & Request" : "Lapor Kendala"}
+                            </span>
                         </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" side="top" className="w-64 p-2 rounded-2xl shadow-2xl border-neutral-200 mb-2">
                         <DropdownMenuLabel className="px-3 py-2">
                             <p className="text-xs font-bold text-neutral-900 leading-tight">Pusat Dukungan IT</p>
-                            <p className="text-[11px] text-neutral-500 font-normal mt-0.5">Lapor kendala sistem atau ajukan fitur baru</p>
+                            <p className="text-[11px] text-neutral-500 font-normal mt-0.5">
+                                {isHerminaPusat
+                                    ? "Lapor kendala sistem atau ajukan fitur baru"
+                                    : "Lapor kendala sistem atau temuan error"}
+                            </p>
                         </DropdownMenuLabel>
                         <DropdownMenuSeparator />
 
@@ -63,18 +74,20 @@ export function ClientHelpButton() {
                             </div>
                         </DropdownMenuItem>
 
-                        <DropdownMenuItem
-                            onClick={() => handleOpenModal("Request Fitur")}
-                            className="flex items-start gap-2.5 p-2.5 rounded-xl cursor-pointer hover:bg-purple-50 focus:bg-purple-50 transition-colors"
-                        >
-                            <div className="h-8 w-8 rounded-lg bg-purple-100 flex items-center justify-center text-purple-600 shrink-0 mt-0.5">
-                                <Sparkles className="h-4 w-4" />
-                            </div>
-                            <div>
-                                <p className="text-xs font-bold text-neutral-800">Request Fitur Baru</p>
-                                <p className="text-[10px] text-neutral-500">Usulkan ide atau penambahan fitur sistem</p>
-                            </div>
-                        </DropdownMenuItem>
+                        {isHerminaPusat && (
+                            <DropdownMenuItem
+                                onClick={() => handleOpenModal("Request Fitur")}
+                                className="flex items-start gap-2.5 p-2.5 rounded-xl cursor-pointer hover:bg-purple-50 focus:bg-purple-50 transition-colors"
+                            >
+                                <div className="h-8 w-8 rounded-lg bg-purple-100 flex items-center justify-center text-purple-600 shrink-0 mt-0.5">
+                                    <Sparkles className="h-4 w-4" />
+                                </div>
+                                <div>
+                                    <p className="text-xs font-bold text-neutral-800">Request Fitur Baru</p>
+                                    <p className="text-[10px] text-neutral-500">Usulkan ide atau penambahan fitur sistem</p>
+                                </div>
+                            </DropdownMenuItem>
+                        )}
 
                         <DropdownMenuSeparator />
 
