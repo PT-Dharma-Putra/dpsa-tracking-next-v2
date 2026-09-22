@@ -103,11 +103,34 @@ export default function ClientDashboardPage() {
     const handleSwitchTab = (tab: "hermina" | "managed") => {
         setClientTab(tab)
         setCurrentPage(1)
+        setSelectedClientId(null)
         if (typeof window !== "undefined") {
             sessionStorage.setItem("external_client_tab", tab)
             sessionStorage.setItem("external_hermina_page", "1")
+            sessionStorage.removeItem("external_selected_client_id")
         }
+        router.replace('/dashboard/external', { scroll: false })
     }
+
+    // Fast lookup sets for client categories
+    const herminaClientIds = React.useMemo(() => new Set(herminaClients.map(c => c.id)), [herminaClients])
+    const managedClientIds = React.useMemo(() => new Set(managedClients.map(c => c.id)), [managedClients])
+
+    // Sync clientTab if selectedClientId is initialized or loaded
+    React.useEffect(() => {
+        if (!selectedClientId) return
+        if (managedClients.some(c => c.id === selectedClientId)) {
+            setClientTab("managed")
+            if (typeof window !== "undefined") {
+                sessionStorage.setItem("external_client_tab", "managed")
+            }
+        } else if (herminaClients.some(c => c.id === selectedClientId)) {
+            setClientTab("hermina")
+            if (typeof window !== "undefined") {
+                sessionStorage.setItem("external_client_tab", "hermina")
+            }
+        }
+    }, [selectedClientId, herminaClients, managedClients])
 
     // Sort clients by "kode" ascending (nulls last) & filter by search query
     const sortedAndFilteredClients = React.useMemo(() => {
@@ -198,11 +221,26 @@ export default function ClientDashboardPage() {
         return sortedAndFilteredClients.slice(start, start + ITEMS_PER_PAGE)
     }, [sortedAndFilteredClients, currentPage])
 
-    // Filter projects based on selected client (if selected by Hermina Pusat user)
+    // Filter projects based on selected client or selected category (Cabang Hermina vs Managed by Hermina)
     const clientProjects = React.useMemo(() => {
-        if (selectedClientId === null) return projects
-        return projects.filter(p => p.client_id === selectedClientId)
-    }, [projects, selectedClientId])
+        if (!isHerminaPusat) {
+            if (selectedClientId === null) return projects
+            return projects.filter(p => p.client_id === selectedClientId)
+        }
+
+        // If a specific client is selected by Hermina Pusat user
+        if (selectedClientId !== null) {
+            return projects.filter(p => p.client_id === selectedClientId)
+        }
+
+        // Filter projects by active client category tab (hermina vs managed)
+        return projects.filter(p => {
+            if (p.client_hermina !== undefined && p.client_hermina !== null) {
+                return clientTab === "hermina" ? p.client_hermina === 1 : p.client_hermina === 2
+            }
+            return p.client_id ? (clientTab === "hermina" ? herminaClientIds.has(p.client_id) : managedClientIds.has(p.client_id)) : false
+        })
+    }, [isHerminaPusat, selectedClientId, projects, clientTab, herminaClientIds, managedClientIds])
 
     // Filter projects based on SPK number search query
     const displayProjects = React.useMemo(() => {
@@ -220,7 +258,7 @@ export default function ClientDashboardPage() {
         return allKnownClients.find(c => c.id === selectedClientId)
     }, [allKnownClients, selectedClientId])
 
-    // Calculate Stats
+    // Calculate Stats (counts only active projects for the selected client or category)
     const activeProjects = clientProjects.filter(p => !['done', 'cancelled', 'deleted'].includes(p.status.toLowerCase())).length
 
     const handlePageChange = (page: number) => {
@@ -231,6 +269,14 @@ export default function ClientDashboardPage() {
     }
 
     const handleSelectClient = (clientId: number) => {
+        const isManaged = managedClients.some(c => c.id === clientId)
+        const targetTab = isManaged ? "managed" : "hermina"
+        if (clientTab !== targetTab) {
+            setClientTab(targetTab)
+            if (typeof window !== "undefined") {
+                sessionStorage.setItem("external_client_tab", targetTab)
+            }
+        }
         setSelectedClientId(clientId)
         if (typeof window !== "undefined") {
             sessionStorage.setItem("external_selected_client_id", clientId.toString())
@@ -277,7 +323,9 @@ export default function ClientDashboardPage() {
                     </h2>
                     <p className="text-neutral-500">
                         {isHerminaPusat
-                            ? "Pantau dan kelola seluruh projek cabang RS Hermina secara terpusat."
+                            ? clientTab === "managed"
+                                ? "Pantau dan kelola seluruh projek rumah sakit mitra (Managed by Hermina)."
+                                : "Pantau dan kelola seluruh projek cabang RS Hermina secara terpusat."
                             : "Here is the latest progress on your interior projects."}
                     </p>
                 </div>
@@ -286,7 +334,13 @@ export default function ClientDashboardPage() {
                     <div className="text-center">
                         <div className="text-3xl font-bold text-neutral-900 tracking-tight">{activeProjects}</div>
                         <div className="text-xs text-neutral-400 uppercase tracking-widest font-medium mt-1">
-                            {selectedClientId ? "Filtered Projects" : "Active Projects"}
+                            {selectedClientId
+                                ? "Filtered Projects"
+                                : isHerminaPusat
+                                ? clientTab === "managed"
+                                    ? "Active Managed"
+                                    : "Active Cabang"
+                                : "Active Projects"}
                         </div>
                     </div>
                 </div>
@@ -549,7 +603,7 @@ export default function ClientDashboardPage() {
                                 {activeProjects} Ongoing
                             </Badge>
                         </h3>
-                        {selectedClientObj && (
+                        {selectedClientObj ? (
                             <div className="flex items-center gap-2 mt-1 flex-wrap">
                                 <span className="text-xs text-neutral-500">Menampilkan projek untuk:</span>
                                 <Badge className="bg-orange-100 text-orange-800 border-orange-200 text-xs font-semibold flex items-center gap-1">
@@ -570,10 +624,24 @@ export default function ClientDashboardPage() {
                                     onClick={handleResetFilter}
                                     className="text-xs text-neutral-400 hover:text-neutral-700 underline ml-1 cursor-pointer"
                                 >
-                                    Tampilkan Semua
+                                    Tampilkan Semua {clientTab === "managed" ? "Managed by Hermina" : "Cabang Hermina"}
                                 </button>
                             </div>
-                        )}
+                        ) : isHerminaPusat ? (
+                            <div className="flex items-center gap-2 mt-1">
+                                <span className="text-xs text-neutral-500">Kategori:</span>
+                                <Badge
+                                    variant="outline"
+                                    className={`text-[11px] font-medium ${
+                                        clientTab === "managed"
+                                            ? "bg-indigo-50 text-indigo-700 border-indigo-200"
+                                            : "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                    }`}
+                                >
+                                    {clientTab === "managed" ? "Managed by Hermina" : "Cabang Hermina"}
+                                </Badge>
+                            </div>
+                        ) : null}
                     </div>
 
                     {/* Search Input by SPK Number placed on the right */}
@@ -605,6 +673,10 @@ export default function ClientDashboardPage() {
                                 ? `Tidak ada projek dengan nomor SPK "${spkSearchQuery}".`
                                 : selectedClientObj
                                 ? `Tidak ada projek aktif ditemukan untuk ${selectedClientObj.name}.`
+                                : isHerminaPusat
+                                ? clientTab === "managed"
+                                    ? "Tidak ada projek aktif ditemukan untuk Managed by Hermina."
+                                    : "Tidak ada projek aktif ditemukan untuk Cabang Hermina."
                                 : "No active projects found."}
                         </p>
                         {spkSearchQuery ? (
@@ -621,7 +693,7 @@ export default function ClientDashboardPage() {
                                 onClick={handleResetFilter}
                                 className="mt-2 text-xs text-orange-600"
                             >
-                                Lihat semua projek cabang Hermina
+                                Lihat semua projek {clientTab === "managed" ? "Managed by Hermina" : "Cabang Hermina"}
                             </Button>
                         ) : null}
                     </div>

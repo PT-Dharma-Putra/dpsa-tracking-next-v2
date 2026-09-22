@@ -4171,7 +4171,12 @@ export function ProjectsV2Table({
                           )}
                         </div>
                       </TableHead>
-                      <TableHead>PROGRES AKHIR</TableHead>
+                      <TableHead>
+                        <div className="flex flex-col items-center">
+                          <span>PROGRES</span>
+                          <span>AKHIR</span>
+                        </div>
+                      </TableHead>
                     </>
                   )}
                   {!showAllDashboard && showSPD && (

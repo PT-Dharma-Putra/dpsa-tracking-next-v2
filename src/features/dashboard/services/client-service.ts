@@ -5,6 +5,7 @@ export interface ClientProject {
     name: string;
     client_id?: number;
     client_name?: string | null;
+    client_hermina?: number | null;
     status: string;
     progress: number;
     description: string;
