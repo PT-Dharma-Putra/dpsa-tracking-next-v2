@@ -1442,6 +1442,20 @@ export function ProjectsV2Table({
         const spkNomor = project.spk?.nomor_spk || project.spk_number || '-';
         const clientName = project.client?.name || '-';
         const projectName = project.name || '-';
+        const rawJadwal =
+          project.jadwal_pengiriman?.tanggal_pengiriman?.tanggal ||
+          (project as any).jadwal_pengiriman?.tanggal;
+        let jadwalKirimStr = '-';
+        if (rawJadwal) {
+          try {
+            const d = new Date(rawJadwal);
+            if (!isNaN(d.getTime())) {
+              jadwalKirimStr = format(d, 'dd MMM yyyy');
+            }
+          } catch {
+            jadwalKirimStr = String(rawJadwal);
+          }
+        }
 
         if (projIdx > 0) {
           ws1Data.push([]);
@@ -1449,7 +1463,7 @@ export function ProjectsV2Table({
         }
 
         const projBannerRowIdx = ws1Data.length;
-        const bannerText = `PROYEK ${projIdx + 1}: ${projectName} | CLIENT: ${clientName} | NO. SPK: ${spkNomor}`;
+        const bannerText = `PROYEK ${projIdx + 1}: ${projectName} | CLIENT: ${clientName} | NO. SPK: ${spkNomor} | JADWAL KIRIM: ${jadwalKirimStr}`;
         const totalColsForProj = 10 + shipments.length * 2 + 3;
         if (totalColsForProj > maxColsWs1) maxColsWs1 = totalColsForProj;
 
@@ -1699,6 +1713,20 @@ export function ProjectsV2Table({
         const spkNomor = project.spk?.nomor_spk || project.spk_number || '-';
         const clientName = project.client?.name || '-';
         const projectName = project.name || '-';
+        const rawJadwal =
+          project.jadwal_pengiriman?.tanggal_pengiriman?.tanggal ||
+          (project as any).jadwal_pengiriman?.tanggal;
+        let jadwalKirimStr = '-';
+        if (rawJadwal) {
+          try {
+            const d = new Date(rawJadwal);
+            if (!isNaN(d.getTime())) {
+              jadwalKirimStr = format(d, 'dd MMM yyyy');
+            }
+          } catch {
+            jadwalKirimStr = String(rawJadwal);
+          }
+        }
 
         if (projIdx > 0) {
           ws2Data.push([]);
@@ -1706,7 +1734,7 @@ export function ProjectsV2Table({
         }
 
         const projBannerRowIdx = ws2Data.length;
-        const bannerText = `PROYEK ${projIdx + 1}: ${projectName} | CLIENT: ${clientName} | NO. SPK: ${spkNomor}`;
+        const bannerText = `PROYEK ${projIdx + 1}: ${projectName} | CLIENT: ${clientName} | NO. SPK: ${spkNomor} | JADWAL KIRIM: ${jadwalKirimStr}`;
         ws2Data.push([
           { v: bannerText, t: 's', s: projectBannerStyle },
           '', '', '', '', '', '', '', '',

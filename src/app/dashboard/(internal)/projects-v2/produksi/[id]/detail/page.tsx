@@ -2627,22 +2627,55 @@ export default function ProduksiDetailPage() {
 
           {/* Body */}
           <div className='flex-1 overflow-y-auto p-6 md:p-8 space-y-6'>
-            {/* Jumlah Order - Top Center */}
+            {/* Top Center: Jumlah Order, Menggunakan Stok & Persen (%) */}
             <div className='flex justify-center'>
-              <div className='w-1/2 sm:w-1/3 space-y-2 text-center'>
-                <Label className='text-sm font-bold'>Jumlah Order</Label>
-                <Input
-                  type='number'
-                  value={produksiData.jumlah_order || 0}
-                  onChange={(e) =>
-                    setProduksiData({
-                      ...produksiData,
-                      jumlah_order: parseInt(e.target.value),
-                    })
-                  }
-                  disabled
-                  className='bg-neutral-50 font-bold text-center text-lg h-12'
-                />
+              <div className='grid grid-cols-1 sm:grid-cols-3 gap-4 w-full sm:max-w-xl'>
+                <div className='space-y-2 text-center'>
+                  <Label className='text-sm font-bold'>Jumlah Order</Label>
+                  <Input
+                    type='number'
+                    value={produksiData.jumlah_order || 0}
+                    disabled
+                    className='bg-neutral-50 font-bold text-center text-lg h-12 disabled:opacity-100'
+                  />
+                </div>
+                <div className='space-y-2 text-center'>
+                  <Label className='text-sm font-bold'>Menggunakan Stok</Label>
+                  <Input
+                    type='number'
+                    min={0}
+                    max={produksiData.jumlah_order}
+                    onFocus={(e) => e.target.select()}
+                    value={
+                      produksiData.menggunakan_stok === 0
+                        ? ''
+                        : produksiData.menggunakan_stok || ''
+                    }
+                    onChange={(e) =>
+                      setProduksiData({
+                        ...produksiData,
+                        menggunakan_stok: Math.min(
+                          Math.max(parseInt(e.target.value) || 0, 0),
+                          produksiData.jumlah_order ?? 0
+                        ),
+                      })
+                    }
+                    className='font-bold text-center text-lg h-12'
+                  />
+                </div>
+                <div className='space-y-2 text-center'>
+                  <Label className='text-sm font-bold'>Persen (%)</Label>
+                  <Input
+                    type='text'
+                    value={
+                      typeof produksiData.persen === 'number'
+                        ? `${produksiData.persen.toFixed(2)}%`
+                        : `${(Number(produksiData.persen) || 0).toFixed(2)}%`
+                    }
+                    disabled
+                    className='bg-orange-50 font-bold text-orange-700 text-center text-lg h-12 disabled:opacity-100'
+                  />
+                </div>
               </div>
             </div>
 
@@ -2889,47 +2922,6 @@ export default function ProduksiDetailPage() {
                     </div>
                   </div>
                 ))}
-              </div>
-            </div>
-
-            {/* Menggunakan Stok & Persen Section */}
-            <div className='pt-4 border-t flex flex-col sm:flex-row justify-center gap-4 sm:gap-8'>
-              <div className='space-y-2 w-full sm:w-[200px] text-center'>
-                <Label className='text-sm font-bold'>Menggunakan Stok</Label>
-                <Input
-                  type='number'
-                  min={0}
-                  max={produksiData.jumlah_order}
-                  onFocus={(e) => e.target.select()}
-                  value={
-                    produksiData.menggunakan_stok === 0
-                      ? ''
-                      : produksiData.menggunakan_stok || ''
-                  }
-                  onChange={(e) =>
-                    setProduksiData({
-                      ...produksiData,
-                      menggunakan_stok: Math.min(
-                        Math.max(parseInt(e.target.value) || 0, 0),
-                        produksiData.jumlah_order ?? 0
-                      ),
-                    })
-                  }
-                  className='font-bold text-center text-lg h-12'
-                />
-              </div>
-              <div className='space-y-2 w-full sm:w-[200px] text-center'>
-                <Label className='text-sm font-bold'>Persen (%)</Label>
-                <Input
-                  type='text'
-                  value={
-                    typeof produksiData.persen === 'number'
-                      ? produksiData.persen.toFixed(2)
-                      : (Number(produksiData.persen) || 0).toFixed(2)
-                  }
-                  disabled
-                  className='bg-orange-50 font-bold text-orange-700 text-center text-lg h-12 disabled:opacity-100'
-                />
               </div>
             </div>
           </div>
