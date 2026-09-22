@@ -1446,6 +1446,20 @@ export default function PerencanaanDetailPage() {
     const spkNomor = project?.spk?.nomor_spk || project?.spk_number || '-';
     const clientName = project?.client?.name || '-';
     const projectName = project?.name || '-';
+    const rawJadwal =
+      project?.jadwal_pengiriman?.tanggal_pengiriman?.tanggal ||
+      (project as any)?.jadwal_pengiriman?.tanggal;
+    let jadwalKirimStr = '-';
+    if (rawJadwal) {
+      try {
+        const d = new Date(rawJadwal);
+        if (!isNaN(d.getTime())) {
+          jadwalKirimStr = format(d, 'dd MMM yyyy');
+        }
+      } catch {
+        jadwalKirimStr = String(rawJadwal);
+      }
+    }
 
     // ==========================================
     // SHEET 1: REKAP REALISASI (MATRIKS)
@@ -1467,6 +1481,9 @@ export default function PerencanaanDetailPage() {
     ws1Data.push([
       { v: 'NO. SPK', t: 's', s: metaLabelStyle },
       { v: `: ${spkNomor}`, t: 's', s: metaValStyle },
+      '',
+      { v: 'JADWAL KIRIM', t: 's', s: metaLabelStyle },
+      { v: `: ${jadwalKirimStr}`, t: 's', s: metaValStyle },
     ]);
     ws1Data.push([
       { v: 'TANGGAL EXPORT', t: 's', s: metaLabelStyle },
@@ -1710,6 +1727,9 @@ export default function PerencanaanDetailPage() {
     ws2Data.push([
       { v: 'NO. SPK', t: 's', s: metaLabelStyle },
       { v: `: ${spkNomor}`, t: 's', s: metaValStyle },
+      '',
+      { v: 'JADWAL KIRIM', t: 's', s: metaLabelStyle },
+      { v: `: ${jadwalKirimStr}`, t: 's', s: metaValStyle },
     ]);
     ws2Data.push([]);
 
