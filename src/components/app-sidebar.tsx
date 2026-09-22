@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import Image from 'next/image';
 import { ChevronRight } from 'lucide-react';
 import {
   SquareTerminal,
@@ -12,7 +13,6 @@ import {
   Settings,
   User as UserIcon,
   ChevronsUpDown,
-  Building2,
   FileText,
 } from 'lucide-react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
@@ -625,15 +625,22 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               size='lg'
               className='data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground'
             >
-              <div className='flex aspect-square size-8 items-center justify-center rounded-lg bg-orange-600 text-sidebar-primary-foreground'>
-                <Building2 className='size-4' />
+              <div className='flex aspect-square size-8 items-center justify-center rounded-lg overflow-hidden'>
+                <Image
+                  src='/Logo.png'
+                  alt='DPSA Logo'
+                  width={32}
+                  height={32}
+                  className='size-8 object-contain'
+                  priority
+                />
               </div>
               <div className='grid flex-1 text-left text-sm leading-tight'>
                 <span className='truncate font-semibold uppercase'>
                   DPSA System
                 </span>
                 <span className='truncate text-xs text-muted-foreground'>
-                  Internal Ops
+                  Internal Portal
                 </span>
               </div>
             </SidebarMenuButton>
