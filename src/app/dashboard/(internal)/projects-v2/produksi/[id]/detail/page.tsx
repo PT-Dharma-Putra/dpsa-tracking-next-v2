@@ -349,6 +349,26 @@ export default function ProduksiDetailPage() {
     packing: 0,
   });
 
+  // Bulk Production Dates
+  const [bulkProduksiDates, setBulkProduksiDates] = React.useState<Record<string, string | null>>({
+    tanggal_mulai_cold_press: null,
+    tanggal_selesai_cold_press: null,
+    tanggal_mulai_running_saw: null,
+    tanggal_selesai_running_saw: null,
+    tanggal_mulai_edging: null,
+    tanggal_selesai_edging: null,
+    tanggal_mulai_cnc: null,
+    tanggal_selesai_cnc: null,
+    tanggal_mulai_tukang_kayu: null,
+    tanggal_selesai_tukang_kayu: null,
+    tanggal_mulai_tukang_jok: null,
+    tanggal_selesai_tukang_jok: null,
+    tanggal_mulai_rakit: null,
+    tanggal_selesai_rakit: null,
+    tanggal_mulai_finishing: null,
+    tanggal_selesai_finishing: null,
+  });
+
   // Bulk Supplier Dates
   const [bulkSupplierDates, setBulkSupplierDates] = React.useState<Record<string, string | null>>({
     tanggal_barang_dipesan: null,
@@ -438,6 +458,62 @@ export default function ProduksiDetailPage() {
       }
     });
 
+    const initialProduksiDates: Record<string, string | null> = {
+      tanggal_mulai_cold_press: null,
+      tanggal_selesai_cold_press: null,
+      tanggal_mulai_running_saw: null,
+      tanggal_selesai_running_saw: null,
+      tanggal_mulai_edging: null,
+      tanggal_selesai_edging: null,
+      tanggal_mulai_cnc: null,
+      tanggal_selesai_cnc: null,
+      tanggal_mulai_tukang_kayu: null,
+      tanggal_selesai_tukang_kayu: null,
+      tanggal_mulai_tukang_jok: null,
+      tanggal_selesai_tukang_jok: null,
+      tanggal_mulai_rakit: null,
+      tanggal_selesai_rakit: null,
+      tanggal_mulai_finishing: null,
+      tanggal_selesai_finishing: null,
+    };
+
+    const regularItems = selectedItems.filter((i) => i.produksi && !i.produksi.is_supplier);
+    if (regularItems.length > 0) {
+      const prodDateKeys = [
+        'tanggal_mulai_cold_press',
+        'tanggal_selesai_cold_press',
+        'tanggal_mulai_running_saw',
+        'tanggal_selesai_running_saw',
+        'tanggal_mulai_edging',
+        'tanggal_selesai_edging',
+        'tanggal_mulai_cnc',
+        'tanggal_selesai_cnc',
+        'tanggal_mulai_tukang_kayu',
+        'tanggal_selesai_tukang_kayu',
+        'tanggal_mulai_tukang_jok',
+        'tanggal_selesai_tukang_jok',
+        'tanggal_mulai_rakit',
+        'tanggal_selesai_rakit',
+        'tanggal_mulai_finishing',
+        'tanggal_selesai_finishing',
+      ] as const;
+
+      prodDateKeys.forEach((dKey) => {
+        const firstVal = regularItems[0].produksi?.[dKey]
+          ? String(regularItems[0].produksi[dKey]).slice(0, 10)
+          : null;
+        const allSame = regularItems.every((i) => {
+          const val = i.produksi?.[dKey]
+            ? String(i.produksi[dKey]).slice(0, 10)
+            : null;
+          return val === firstVal;
+        });
+        if (allSame && firstVal) {
+          initialProduksiDates[dKey] = firstVal;
+        }
+      });
+    }
+
     // 2. Initialize bulk supplier data with sums
     const initialSupplierData: Record<string, number> = {
       barang_dipesan: 0,
@@ -508,6 +584,7 @@ export default function ProduksiDetailPage() {
     }
 
     setBulkProduksiData(initialProduksiData);
+    setBulkProduksiDates(initialProduksiDates);
     setBulkSupplierData(initialSupplierData);
     setBulkSupplierDates(initialSupplierDates);
     setBulkSkippedFields(initialSkippedFields);
@@ -621,6 +698,44 @@ export default function ProduksiDetailPage() {
           const allocate = Math.min(remainingStok, update.capacity);
           update.data.menggunakan_stok = allocate;
           remainingStok -= allocate;
+        });
+
+        // Dates for produksi stages
+        const produksiDateMapping = [
+          { field: 'cold_press', mulaiKey: 'tanggal_mulai_cold_press', selesaiKey: 'tanggal_selesai_cold_press' },
+          { field: 'running_saw', mulaiKey: 'tanggal_mulai_running_saw', selesaiKey: 'tanggal_selesai_running_saw' },
+          { field: 'edging', mulaiKey: 'tanggal_mulai_edging', selesaiKey: 'tanggal_selesai_edging' },
+          { field: 'cnc', mulaiKey: 'tanggal_mulai_cnc', selesaiKey: 'tanggal_selesai_cnc' },
+          { field: 'tukang_kayu', mulaiKey: 'tanggal_mulai_tukang_kayu', selesaiKey: 'tanggal_selesai_tukang_kayu' },
+          { field: 'tukang_jok', mulaiKey: 'tanggal_mulai_tukang_jok', selesaiKey: 'tanggal_selesai_tukang_jok' },
+          { field: 'rakit', mulaiKey: 'tanggal_mulai_rakit', selesaiKey: 'tanggal_selesai_rakit' },
+          { field: 'finishing', mulaiKey: 'tanggal_mulai_finishing', selesaiKey: 'tanggal_selesai_finishing' },
+        ] as const;
+
+        updates.forEach((update) => {
+          const item = selectedItems.find((i) => i.id === update.id);
+          produksiDateMapping.forEach(({ field, mulaiKey, selesaiKey }) => {
+            if (skippedList.includes(field)) {
+              update.data[mulaiKey] = null;
+              update.data[selesaiKey] = null;
+            } else {
+              if (bulkProduksiDates[mulaiKey]) {
+                update.data[mulaiKey] = bulkProduksiDates[mulaiKey];
+              } else if (item?.produksi && (item.produksi as any)[mulaiKey]) {
+                update.data[mulaiKey] = (item.produksi as any)[mulaiKey];
+              } else {
+                update.data[mulaiKey] = null;
+              }
+
+              if (bulkProduksiDates[selesaiKey]) {
+                update.data[selesaiKey] = bulkProduksiDates[selesaiKey];
+              } else if (item?.produksi && (item.produksi as any)[selesaiKey]) {
+                update.data[selesaiKey] = (item.produksi as any)[selesaiKey];
+              } else {
+                update.data[selesaiKey] = null;
+              }
+            }
+          });
         });
 
         // Keep other fields (quality_control, packing)
@@ -1314,6 +1429,19 @@ export default function ProduksiDetailPage() {
       });
     });
 
+    const activeStageKeys = [
+      'cold_press', 'running_saw', 'edging', 'cnc',
+      'tukang_kayu', 'tukang_jok', 'rakit', 'finishing'
+    ];
+    skippedList.forEach(field => {
+      if (activeStageKeys.includes(field)) {
+        updates.forEach(update => {
+          (update.data as any)['tanggal_mulai_' + field] = null;
+          (update.data as any)['tanggal_selesai_' + field] = null;
+        });
+      }
+    });
+
     updateProduksiMutation.mutate({ items: updates.map(u => ({ id: u.id, data: u.data })) });
   };
 
@@ -1432,13 +1560,29 @@ export default function ProduksiDetailPage() {
         jumlah_order: item.jumlah,
         menggunakan_stok: 0,
         cold_press: 0,
+        tanggal_mulai_cold_press: null,
+        tanggal_selesai_cold_press: null,
         running_saw: 0,
+        tanggal_mulai_running_saw: null,
+        tanggal_selesai_running_saw: null,
         edging: 0,
+        tanggal_mulai_edging: null,
+        tanggal_selesai_edging: null,
         cnc: 0,
+        tanggal_mulai_cnc: null,
+        tanggal_selesai_cnc: null,
         tukang_kayu: 0,
+        tanggal_mulai_tukang_kayu: null,
+        tanggal_selesai_tukang_kayu: null,
         tukang_jok: 0,
+        tanggal_mulai_tukang_jok: null,
+        tanggal_selesai_tukang_jok: null,
         finishing: 0,
+        tanggal_mulai_finishing: null,
+        tanggal_selesai_finishing: null,
         rakit: 0,
+        tanggal_mulai_rakit: null,
+        tanggal_selesai_rakit: null,
         quality_control: 0,
         packing: 0,
         persen: 0,
@@ -2451,7 +2595,7 @@ export default function ProduksiDetailPage() {
         onOpenChange={setIsProduksiDialogOpen}
       >
         <AlertDialogContent 
-          className='mb-4 flex h-[90dvh] sm:h-[calc(70vh-2rem)] w-[95vw] sm:min-w-[calc(70vw-2rem)] sm:max-w-[calc(70vw-2rem)] flex-col justify-between gap-0 p-0'
+          className='mb-4 flex h-[90dvh] sm:h-[calc(80vh-2rem)] w-[95vw] sm:min-w-[calc(75vw-2rem)] sm:max-w-[calc(75vw-2rem)] flex-col justify-between gap-0 p-0'
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
               e.preventDefault();
@@ -2507,193 +2651,121 @@ export default function ProduksiDetailPage() {
               <h4 className='font-semibold text-sm text-neutral-500 uppercase tracking-wider border-b pb-2'>
                 Mesin
               </h4>
-              <div className='grid grid-cols-2 sm:grid-cols-4 gap-3'>
-                <div className='space-y-2'>
-                  <div className='flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between'>
-                    <Label>Cold Press</Label>
-                    <Button
-                      type='button'
-                      variant={skippedFields.cold_press ? 'default' : 'outline'}
-                      size='sm'
-                      className={`h-6 px-2 text-xs ${
-                        skippedFields.cold_press
-                          ? 'bg-neutral-500 hover:bg-neutral-600'
-                          : 'text-neutral-500'
-                      }`}
-                      onClick={() => toggleSkipField('cold_press')}
-                    >
-                      {skippedFields.cold_press ? 'Batalkan' : 'Lewati Proses'}
-                    </Button>
+              <div className='grid grid-cols-1 lg:grid-cols-2 gap-4'>
+                {(
+                  [
+                    { key: 'cold_press', label: 'Cold Press', mulaiKey: 'tanggal_mulai_cold_press', selesaiKey: 'tanggal_selesai_cold_press' },
+                    { key: 'running_saw', label: 'Running Saw', mulaiKey: 'tanggal_mulai_running_saw', selesaiKey: 'tanggal_selesai_running_saw' },
+                    { key: 'edging', label: 'Edging', mulaiKey: 'tanggal_mulai_edging', selesaiKey: 'tanggal_selesai_edging' },
+                    { key: 'cnc', label: 'CNC', mulaiKey: 'tanggal_mulai_cnc', selesaiKey: 'tanggal_selesai_cnc' },
+                  ] as const
+                ).map(({ key, label, mulaiKey, selesaiKey }) => (
+                  <div key={key} className='p-4 rounded-xl border border-neutral-200 bg-neutral-50/50 space-y-3 shadow-sm'>
+                    <div className='flex items-center justify-between pb-2 border-b border-neutral-200'>
+                      <Label className='font-bold text-sm text-neutral-800'>{label}</Label>
+                      <Button
+                        type='button'
+                        variant={skippedFields[key] ? 'default' : 'outline'}
+                        size='sm'
+                        className={`h-6 px-2 text-xs ${
+                          skippedFields[key]
+                            ? 'bg-neutral-500 hover:bg-neutral-600'
+                            : 'text-neutral-500'
+                        }`}
+                        onClick={() => toggleSkipField(key)}
+                      >
+                        {skippedFields[key] ? 'Batalkan' : 'Lewati Proses'}
+                      </Button>
+                    </div>
+
+                    <div className='grid grid-cols-1 sm:grid-cols-3 gap-3'>
+                      <div className='space-y-1.5'>
+                        <Label className='text-xs font-semibold text-neutral-600'>Jumlah</Label>
+                        <Input
+                          type='number'
+                          min={0}
+                          max={produksiData.jumlah_order}
+                          disabled={skippedFields[key]}
+                          placeholder='0'
+                          onFocus={(e) => e.target.select()}
+                          value={
+                            skippedFields[key]
+                              ? '-'
+                              : (produksiData as any)[key] === 0
+                              ? ''
+                              : (produksiData as any)[key] || ''
+                          }
+                          onChange={(e) =>
+                            setProduksiData((p) => ({
+                              ...p,
+                              [key]: Math.min(
+                                Math.max(parseInt(e.target.value) || 0, 0),
+                                p.jumlah_order ?? 0
+                              ),
+                            }))
+                          }
+                          className={`bg-white ${
+                            skippedFields[key]
+                              ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100'
+                              : ''
+                          }`}
+                        />
+                      </div>
+
+                      <div className='space-y-1.5'>
+                        <Label className='text-xs font-semibold text-neutral-600'>Tanggal Mulai</Label>
+                        <Input
+                          type='date'
+                          disabled={skippedFields[key]}
+                          value={
+                            skippedFields[key]
+                              ? ''
+                              : (produksiData as any)[mulaiKey]
+                              ? String((produksiData as any)[mulaiKey]).slice(0, 10)
+                              : ''
+                          }
+                          onChange={(e) =>
+                            setProduksiData((p) => ({
+                              ...p,
+                              [mulaiKey]: e.target.value || null,
+                            }))
+                          }
+                          className={`bg-white text-xs ${
+                            skippedFields[key]
+                              ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100'
+                              : ''
+                          }`}
+                        />
+                      </div>
+
+                      <div className='space-y-1.5'>
+                        <Label className='text-xs font-semibold text-neutral-600'>Tanggal Selesai</Label>
+                        <Input
+                          type='date'
+                          disabled={skippedFields[key]}
+                          value={
+                            skippedFields[key]
+                              ? ''
+                              : (produksiData as any)[selesaiKey]
+                              ? String((produksiData as any)[selesaiKey]).slice(0, 10)
+                              : ''
+                          }
+                          onChange={(e) =>
+                            setProduksiData((p) => ({
+                              ...p,
+                              [selesaiKey]: e.target.value || null,
+                            }))
+                          }
+                          className={`bg-white text-xs ${
+                            skippedFields[key]
+                              ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100'
+                              : ''
+                          }`}
+                        />
+                      </div>
+                    </div>
                   </div>
-                  <Input
-                    type='number'
-                    min={0}
-                    max={produksiData.jumlah_order}
-                    disabled={skippedFields.cold_press}
-                    onFocus={(e) => e.target.select()}
-                    value={
-                      skippedFields.cold_press
-                        ? '-'
-                        : produksiData.cold_press === 0
-                        ? ''
-                        : produksiData.cold_press || ''
-                    }
-                    onChange={(e) =>
-                      setProduksiData({
-                        ...produksiData,
-                        cold_press: Math.min(
-                          Math.max(parseInt(e.target.value) || 0, 0),
-                          produksiData.jumlah_order ?? 0
-                        ),
-                      })
-                    }
-                    className={
-                      skippedFields.cold_press
-                        ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100'
-                        : ''
-                    }
-                  />
-                </div>
-                <div className='space-y-2'>
-                  <div className='flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between'>
-                    <Label>Running Saw</Label>
-                    <Button
-                      type='button'
-                      variant={
-                        skippedFields.running_saw ? 'default' : 'outline'
-                      }
-                      size='sm'
-                      className={`h-6 px-2 text-xs ${
-                        skippedFields.running_saw
-                          ? 'bg-neutral-500 hover:bg-neutral-600'
-                          : 'text-neutral-500'
-                      }`}
-                      onClick={() => toggleSkipField('running_saw')}
-                    >
-                      {skippedFields.running_saw ? 'Batalkan' : 'Lewati Proses'}
-                    </Button>
-                  </div>
-                  <Input
-                    type='number'
-                    min={0}
-                    max={produksiData.jumlah_order}
-                    disabled={skippedFields.running_saw}
-                    onFocus={(e) => e.target.select()}
-                    value={
-                      skippedFields.running_saw
-                        ? '-'
-                        : produksiData.running_saw === 0
-                        ? ''
-                        : produksiData.running_saw || ''
-                    }
-                    onChange={(e) =>
-                      setProduksiData({
-                        ...produksiData,
-                        running_saw: Math.min(
-                          Math.max(parseInt(e.target.value) || 0, 0),
-                          produksiData.jumlah_order ?? 0
-                        ),
-                      })
-                    }
-                    className={
-                      skippedFields.running_saw
-                        ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100'
-                        : ''
-                    }
-                  />
-                </div>
-                <div className='space-y-2'>
-                  <div className='flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between'>
-                    <Label>Edging</Label>
-                    <Button
-                      type='button'
-                      variant={skippedFields.edging ? 'default' : 'outline'}
-                      size='sm'
-                      className={`h-6 px-2 text-xs ${
-                        skippedFields.edging
-                          ? 'bg-neutral-500 hover:bg-neutral-600'
-                          : 'text-neutral-500'
-                      }`}
-                      onClick={() => toggleSkipField('edging')}
-                    >
-                      {skippedFields.edging ? 'Batalkan' : 'Lewati Proses'}
-                    </Button>
-                  </div>
-                  <Input
-                    type='number'
-                    min={0}
-                    max={produksiData.jumlah_order}
-                    disabled={skippedFields.edging}
-                    onFocus={(e) => e.target.select()}
-                    value={
-                      skippedFields.edging
-                        ? '-'
-                        : produksiData.edging === 0
-                        ? ''
-                        : produksiData.edging || ''
-                    }
-                    onChange={(e) =>
-                      setProduksiData({
-                        ...produksiData,
-                        edging: Math.min(
-                          Math.max(parseInt(e.target.value) || 0, 0),
-                          produksiData.jumlah_order ?? 0
-                        ),
-                      })
-                    }
-                    className={
-                      skippedFields.edging
-                        ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100'
-                        : ''
-                    }
-                  />
-                </div>
-                <div className='space-y-2'>
-                  <div className='flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between'>
-                    <Label>CNC</Label>
-                    <Button
-                      type='button'
-                      variant={skippedFields.cnc ? 'default' : 'outline'}
-                      size='sm'
-                      className={`h-6 px-2 text-xs ${
-                        skippedFields.cnc
-                          ? 'bg-neutral-500 hover:bg-neutral-600'
-                          : 'text-neutral-500'
-                      }`}
-                      onClick={() => toggleSkipField('cnc')}
-                    >
-                      {skippedFields.cnc ? 'Batalkan' : 'Lewati Proses'}
-                    </Button>
-                  </div>
-                  <Input
-                    type='number'
-                    min={0}
-                    max={produksiData.jumlah_order}
-                    disabled={skippedFields.cnc}
-                    onFocus={(e) => e.target.select()}
-                    value={
-                      skippedFields.cnc
-                        ? '-'
-                        : produksiData.cnc === 0
-                        ? ''
-                        : produksiData.cnc || ''
-                    }
-                    onChange={(e) =>
-                      setProduksiData({
-                        ...produksiData,
-                        cnc: Math.min(
-                          Math.max(parseInt(e.target.value) || 0, 0),
-                          produksiData.jumlah_order ?? 0
-                        ),
-                      })
-                    }
-                    className={
-                      skippedFields.cnc
-                        ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100'
-                        : ''
-                    }
-                  />
-                </div>
+                ))}
               </div>
             </div>
 
@@ -2702,193 +2774,121 @@ export default function ProduksiDetailPage() {
               <h4 className='font-semibold text-sm text-neutral-500 uppercase tracking-wider border-b pb-2'>
                 Manual
               </h4>
-              <div className='grid grid-cols-2 sm:grid-cols-4 gap-3'>
-                <div className='space-y-2'>
-                  <div className='flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between'>
-                    <Label>Tukang Kayu</Label>
-                    <Button
-                      type='button'
-                      variant={
-                        skippedFields.tukang_kayu ? 'default' : 'outline'
-                      }
-                      size='sm'
-                      className={`h-6 px-2 text-xs ${
-                        skippedFields.tukang_kayu
-                          ? 'bg-neutral-500 hover:bg-neutral-600'
-                          : 'text-neutral-500'
-                      }`}
-                      onClick={() => toggleSkipField('tukang_kayu')}
-                    >
-                      {skippedFields.tukang_kayu ? 'Batalkan' : 'Lewati Proses'}
-                    </Button>
+              <div className='grid grid-cols-1 lg:grid-cols-2 gap-4'>
+                {(
+                  [
+                    { key: 'tukang_kayu', label: 'Tukang Kayu', mulaiKey: 'tanggal_mulai_tukang_kayu', selesaiKey: 'tanggal_selesai_tukang_kayu' },
+                    { key: 'tukang_jok', label: 'Tukang Jok', mulaiKey: 'tanggal_mulai_tukang_jok', selesaiKey: 'tanggal_selesai_tukang_jok' },
+                    { key: 'rakit', label: 'Rakit', mulaiKey: 'tanggal_mulai_rakit', selesaiKey: 'tanggal_selesai_rakit' },
+                    { key: 'finishing', label: 'Finishing', mulaiKey: 'tanggal_mulai_finishing', selesaiKey: 'tanggal_selesai_finishing' },
+                  ] as const
+                ).map(({ key, label, mulaiKey, selesaiKey }) => (
+                  <div key={key} className='p-4 rounded-xl border border-neutral-200 bg-neutral-50/50 space-y-3 shadow-sm'>
+                    <div className='flex items-center justify-between pb-2 border-b border-neutral-200'>
+                      <Label className='font-bold text-sm text-neutral-800'>{label}</Label>
+                      <Button
+                        type='button'
+                        variant={skippedFields[key] ? 'default' : 'outline'}
+                        size='sm'
+                        className={`h-6 px-2 text-xs ${
+                          skippedFields[key]
+                            ? 'bg-neutral-500 hover:bg-neutral-600'
+                            : 'text-neutral-500'
+                        }`}
+                        onClick={() => toggleSkipField(key)}
+                      >
+                        {skippedFields[key] ? 'Batalkan' : 'Lewati Proses'}
+                      </Button>
+                    </div>
+
+                    <div className='grid grid-cols-1 sm:grid-cols-3 gap-3'>
+                      <div className='space-y-1.5'>
+                        <Label className='text-xs font-semibold text-neutral-600'>Jumlah</Label>
+                        <Input
+                          type='number'
+                          min={0}
+                          max={produksiData.jumlah_order}
+                          disabled={skippedFields[key]}
+                          placeholder='0'
+                          onFocus={(e) => e.target.select()}
+                          value={
+                            skippedFields[key]
+                              ? '-'
+                              : (produksiData as any)[key] === 0
+                              ? ''
+                              : (produksiData as any)[key] || ''
+                          }
+                          onChange={(e) =>
+                            setProduksiData((p) => ({
+                              ...p,
+                              [key]: Math.min(
+                                Math.max(parseInt(e.target.value) || 0, 0),
+                                p.jumlah_order ?? 0
+                              ),
+                            }))
+                          }
+                          className={`bg-white ${
+                            skippedFields[key]
+                              ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100'
+                              : ''
+                          }`}
+                        />
+                      </div>
+
+                      <div className='space-y-1.5'>
+                        <Label className='text-xs font-semibold text-neutral-600'>Tanggal Mulai</Label>
+                        <Input
+                          type='date'
+                          disabled={skippedFields[key]}
+                          value={
+                            skippedFields[key]
+                              ? ''
+                              : (produksiData as any)[mulaiKey]
+                              ? String((produksiData as any)[mulaiKey]).slice(0, 10)
+                              : ''
+                          }
+                          onChange={(e) =>
+                            setProduksiData((p) => ({
+                              ...p,
+                              [mulaiKey]: e.target.value || null,
+                            }))
+                          }
+                          className={`bg-white text-xs ${
+                            skippedFields[key]
+                              ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100'
+                              : ''
+                          }`}
+                        />
+                      </div>
+
+                      <div className='space-y-1.5'>
+                        <Label className='text-xs font-semibold text-neutral-600'>Tanggal Selesai</Label>
+                        <Input
+                          type='date'
+                          disabled={skippedFields[key]}
+                          value={
+                            skippedFields[key]
+                              ? ''
+                              : (produksiData as any)[selesaiKey]
+                              ? String((produksiData as any)[selesaiKey]).slice(0, 10)
+                              : ''
+                          }
+                          onChange={(e) =>
+                            setProduksiData((p) => ({
+                              ...p,
+                              [selesaiKey]: e.target.value || null,
+                            }))
+                          }
+                          className={`bg-white text-xs ${
+                            skippedFields[key]
+                              ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100'
+                              : ''
+                          }`}
+                        />
+                      </div>
+                    </div>
                   </div>
-                  <Input
-                    type='number'
-                    min={0}
-                    max={produksiData.jumlah_order}
-                    disabled={skippedFields.tukang_kayu}
-                    onFocus={(e) => e.target.select()}
-                    value={
-                      skippedFields.tukang_kayu
-                        ? '-'
-                        : produksiData.tukang_kayu === 0
-                        ? ''
-                        : produksiData.tukang_kayu || ''
-                    }
-                    onChange={(e) =>
-                      setProduksiData({
-                        ...produksiData,
-                        tukang_kayu: Math.min(
-                          Math.max(parseInt(e.target.value) || 0, 0),
-                          produksiData.jumlah_order ?? 0
-                        ),
-                      })
-                    }
-                    className={
-                      skippedFields.tukang_kayu
-                        ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100'
-                        : ''
-                    }
-                  />
-                </div>
-                <div className='space-y-2'>
-                  <div className='flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between'>
-                    <Label>Tukang Jok</Label>
-                    <Button
-                      type='button'
-                      variant={skippedFields.tukang_jok ? 'default' : 'outline'}
-                      size='sm'
-                      className={`h-6 px-2 text-xs ${
-                        skippedFields.tukang_jok
-                          ? 'bg-neutral-500 hover:bg-neutral-600'
-                          : 'text-neutral-500'
-                      }`}
-                      onClick={() => toggleSkipField('tukang_jok')}
-                    >
-                      {skippedFields.tukang_jok ? 'Batalkan' : 'Lewati Proses'}
-                    </Button>
-                  </div>
-                  <Input
-                    type='number'
-                    min={0}
-                    max={produksiData.jumlah_order}
-                    disabled={skippedFields.tukang_jok}
-                    onFocus={(e) => e.target.select()}
-                    value={
-                      skippedFields.tukang_jok
-                        ? '-'
-                        : produksiData.tukang_jok === 0
-                        ? ''
-                        : produksiData.tukang_jok || ''
-                    }
-                    onChange={(e) =>
-                      setProduksiData({
-                        ...produksiData,
-                        tukang_jok: Math.min(
-                          Math.max(parseInt(e.target.value) || 0, 0),
-                          produksiData.jumlah_order ?? 0
-                        ),
-                      })
-                    }
-                    className={
-                      skippedFields.tukang_jok
-                        ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100'
-                        : ''
-                    }
-                  />
-                </div>
-                <div className='space-y-2'>
-                  <div className='flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between'>
-                    <Label>Rakit</Label>
-                    <Button
-                      type='button'
-                      variant={skippedFields.rakit ? 'default' : 'outline'}
-                      size='sm'
-                      className={`h-6 px-2 text-xs ${
-                        skippedFields.rakit
-                          ? 'bg-neutral-500 hover:bg-neutral-600'
-                          : 'text-neutral-500'
-                      }`}
-                      onClick={() => toggleSkipField('rakit')}
-                    >
-                      {skippedFields.rakit ? 'Batalkan' : 'Lewati Proses'}
-                    </Button>
-                  </div>
-                  <Input
-                    type='number'
-                    min={0}
-                    max={produksiData.jumlah_order}
-                    disabled={skippedFields.rakit}
-                    onFocus={(e) => e.target.select()}
-                    value={
-                      skippedFields.rakit
-                        ? '-'
-                        : produksiData.rakit === 0
-                        ? ''
-                        : produksiData.rakit || ''
-                    }
-                    onChange={(e) =>
-                      setProduksiData({
-                        ...produksiData,
-                        rakit: Math.min(
-                          Math.max(parseInt(e.target.value) || 0, 0),
-                          produksiData.jumlah_order ?? 0
-                        ),
-                      })
-                    }
-                    className={
-                      skippedFields.rakit
-                        ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100'
-                        : ''
-                    }
-                  />
-                </div>
-                <div className='space-y-2'>
-                  <div className='flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between'>
-                    <Label>Finishing</Label>
-                    <Button
-                      type='button'
-                      variant={skippedFields.finishing ? 'default' : 'outline'}
-                      size='sm'
-                      className={`h-6 px-2 text-xs ${
-                        skippedFields.finishing
-                          ? 'bg-neutral-500 hover:bg-neutral-600'
-                          : 'text-neutral-500'
-                      }`}
-                      onClick={() => toggleSkipField('finishing')}
-                    >
-                      {skippedFields.finishing ? 'Batalkan' : 'Lewati Proses'}
-                    </Button>
-                  </div>
-                  <Input
-                    type='number'
-                    min={0}
-                    max={produksiData.jumlah_order}
-                    disabled={skippedFields.finishing}
-                    onFocus={(e) => e.target.select()}
-                    value={
-                      skippedFields.finishing
-                        ? '-'
-                        : produksiData.finishing === 0
-                        ? ''
-                        : produksiData.finishing || ''
-                    }
-                    onChange={(e) =>
-                      setProduksiData({
-                        ...produksiData,
-                        finishing: Math.min(
-                          Math.max(parseInt(e.target.value) || 0, 0),
-                          produksiData.jumlah_order ?? 0
-                        ),
-                      })
-                    }
-                    className={
-                      skippedFields.finishing
-                        ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100'
-                        : ''
-                    }
-                  />
-                </div>
+                ))}
               </div>
             </div>
 
@@ -4390,58 +4390,110 @@ export default function ProduksiDetailPage() {
                   <h4 className="font-semibold text-sm text-neutral-500 uppercase tracking-wider border-b pb-2">
                     Mesin
                   </h4>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    {['cold_press', 'running_saw', 'edging', 'cnc'].map((field) => {
-                      const labelMap: Record<string, string> = {
-                        cold_press: 'Cold Press',
-                        running_saw: 'Running Saw',
-                        edging: 'Edging',
-                        cnc: 'CNC',
-                      };
-                      return (
-                        <div key={field} className="space-y-2">
-                          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                            <Label className="text-xs font-semibold">{labelMap[field]}</Label>
-                            <Button
-                              type="button"
-                              variant={bulkSkippedFields[field] ? 'default' : 'outline'}
-                              size="sm"
-                              className={`h-5 px-1.5 text-[10px] ${
-                                bulkSkippedFields[field] ? 'bg-neutral-500 hover:bg-neutral-600' : 'text-neutral-500'
-                              }`}
-                              onClick={() => toggleBulkSkipField(field)}
-                            >
-                              {bulkSkippedFields[field] ? 'Batalkan' : 'Lewati'}
-                            </Button>
-                          </div>
-                          <div>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    {(
+                      [
+                        { key: 'cold_press', label: 'Cold Press', mulaiKey: 'tanggal_mulai_cold_press', selesaiKey: 'tanggal_selesai_cold_press' },
+                        { key: 'running_saw', label: 'Running Saw', mulaiKey: 'tanggal_mulai_running_saw', selesaiKey: 'tanggal_selesai_running_saw' },
+                        { key: 'edging', label: 'Edging', mulaiKey: 'tanggal_mulai_edging', selesaiKey: 'tanggal_selesai_edging' },
+                        { key: 'cnc', label: 'CNC', mulaiKey: 'tanggal_mulai_cnc', selesaiKey: 'tanggal_selesai_cnc' },
+                      ] as const
+                    ).map(({ key, label, mulaiKey, selesaiKey }) => (
+                      <div key={key} className="p-4 rounded-xl border border-neutral-200 bg-neutral-50/50 space-y-3 shadow-sm">
+                        <div className="flex items-center justify-between pb-2 border-b border-neutral-200">
+                          <Label className="font-bold text-sm text-neutral-800">{label}</Label>
+                          <Button
+                            type="button"
+                            variant={bulkSkippedFields[key] ? 'default' : 'outline'}
+                            size="sm"
+                            className={`h-6 px-2 text-xs ${
+                              bulkSkippedFields[key] ? 'bg-neutral-500 hover:bg-neutral-600' : 'text-neutral-500'
+                            }`}
+                            onClick={() => toggleBulkSkipField(key)}
+                          >
+                            {bulkSkippedFields[key] ? 'Batalkan' : 'Lewati Proses'}
+                          </Button>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          <div className="space-y-1.5">
+                            <Label className="text-xs font-semibold text-neutral-600">Jumlah</Label>
                             <Input
                               type="number"
                               min={0}
                               max={totalQtySelected}
-                              disabled={bulkSkippedFields[field]}
+                              disabled={bulkSkippedFields[key]}
+                              placeholder="0"
                               value={
-                                bulkSkippedFields[field]
+                                bulkSkippedFields[key]
                                   ? '-'
-                                  : bulkProduksiData[field] === 0
+                                  : bulkProduksiData[key] === 0
                                   ? ''
-                                  : bulkProduksiData[field] || ''
+                                  : bulkProduksiData[key] || ''
                               }
                               onChange={(e) => {
                                 const val = Math.min(Math.max(parseInt(e.target.value) || 0, 0), totalQtySelected);
                                 setBulkProduksiData((prev) => ({
                                   ...prev,
-                                  [field]: val,
+                                  [key]: val,
                                 }));
                               }}
-                              className={`${
-                                bulkSkippedFields[field] ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100' : ''
-                              } text-sm`}
+                              className={`bg-white ${
+                                bulkSkippedFields[key] ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100' : ''
+                              }`}
+                            />
+                          </div>
+
+                          <div className="space-y-1.5">
+                            <Label className="text-xs font-semibold text-neutral-600">Tanggal Mulai</Label>
+                            <Input
+                              type="date"
+                              disabled={bulkSkippedFields[key]}
+                              value={
+                                bulkSkippedFields[key]
+                                  ? ''
+                                  : bulkProduksiDates[mulaiKey]
+                                  ? String(bulkProduksiDates[mulaiKey]).slice(0, 10)
+                                  : ''
+                              }
+                              onChange={(e) => {
+                                setBulkProduksiDates((prev) => ({
+                                  ...prev,
+                                  [mulaiKey]: e.target.value || null,
+                                }));
+                              }}
+                              className={`bg-white text-xs ${
+                                bulkSkippedFields[key] ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100' : ''
+                              }`}
+                            />
+                          </div>
+
+                          <div className="space-y-1.5">
+                            <Label className="text-xs font-semibold text-neutral-600">Tanggal Selesai</Label>
+                            <Input
+                              type="date"
+                              disabled={bulkSkippedFields[key]}
+                              value={
+                                bulkSkippedFields[key]
+                                  ? ''
+                                  : bulkProduksiDates[selesaiKey]
+                                  ? String(bulkProduksiDates[selesaiKey]).slice(0, 10)
+                                  : ''
+                              }
+                              onChange={(e) => {
+                                setBulkProduksiDates((prev) => ({
+                                  ...prev,
+                                  [selesaiKey]: e.target.value || null,
+                                }));
+                              }}
+                              className={`bg-white text-xs ${
+                                bulkSkippedFields[key] ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100' : ''
+                              }`}
                             />
                           </div>
                         </div>
-                      );
-                    })}
+                      </div>
+                    ))}
                   </div>
                 </div>
 
@@ -4450,58 +4502,110 @@ export default function ProduksiDetailPage() {
                   <h4 className="font-semibold text-sm text-neutral-500 uppercase tracking-wider border-b pb-2">
                     Manual
                   </h4>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    {['tukang_kayu', 'tukang_jok', 'rakit', 'finishing'].map((field) => {
-                      const labelMap: Record<string, string> = {
-                        tukang_kayu: 'Tukang Kayu',
-                        tukang_jok: 'Tukang Jok',
-                        rakit: 'Rakit',
-                        finishing: 'Finishing',
-                      };
-                      return (
-                        <div key={field} className="space-y-2">
-                          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                            <Label className="text-xs font-semibold">{labelMap[field]}</Label>
-                            <Button
-                              type="button"
-                              variant={bulkSkippedFields[field] ? 'default' : 'outline'}
-                              size="sm"
-                              className={`h-5 px-1.5 text-[10px] ${
-                                bulkSkippedFields[field] ? 'bg-neutral-500 hover:bg-neutral-600' : 'text-neutral-500'
-                              }`}
-                              onClick={() => toggleBulkSkipField(field)}
-                            >
-                              {bulkSkippedFields[field] ? 'Batalkan' : 'Lewati'}
-                            </Button>
-                          </div>
-                          <div>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    {(
+                      [
+                        { key: 'tukang_kayu', label: 'Tukang Kayu', mulaiKey: 'tanggal_mulai_tukang_kayu', selesaiKey: 'tanggal_selesai_tukang_kayu' },
+                        { key: 'tukang_jok', label: 'Tukang Jok', mulaiKey: 'tanggal_mulai_tukang_jok', selesaiKey: 'tanggal_selesai_tukang_jok' },
+                        { key: 'rakit', label: 'Rakit', mulaiKey: 'tanggal_mulai_rakit', selesaiKey: 'tanggal_selesai_rakit' },
+                        { key: 'finishing', label: 'Finishing', mulaiKey: 'tanggal_mulai_finishing', selesaiKey: 'tanggal_selesai_finishing' },
+                      ] as const
+                    ).map(({ key, label, mulaiKey, selesaiKey }) => (
+                      <div key={key} className="p-4 rounded-xl border border-neutral-200 bg-neutral-50/50 space-y-3 shadow-sm">
+                        <div className="flex items-center justify-between pb-2 border-b border-neutral-200">
+                          <Label className="font-bold text-sm text-neutral-800">{label}</Label>
+                          <Button
+                            type="button"
+                            variant={bulkSkippedFields[key] ? 'default' : 'outline'}
+                            size="sm"
+                            className={`h-6 px-2 text-xs ${
+                              bulkSkippedFields[key] ? 'bg-neutral-500 hover:bg-neutral-600' : 'text-neutral-500'
+                            }`}
+                            onClick={() => toggleBulkSkipField(key)}
+                          >
+                            {bulkSkippedFields[key] ? 'Batalkan' : 'Lewati Proses'}
+                          </Button>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          <div className="space-y-1.5">
+                            <Label className="text-xs font-semibold text-neutral-600">Jumlah</Label>
                             <Input
                               type="number"
                               min={0}
                               max={totalQtySelected}
-                              disabled={bulkSkippedFields[field]}
+                              disabled={bulkSkippedFields[key]}
+                              placeholder="0"
                               value={
-                                bulkSkippedFields[field]
+                                bulkSkippedFields[key]
                                   ? '-'
-                                  : bulkProduksiData[field] === 0
+                                  : bulkProduksiData[key] === 0
                                   ? ''
-                                  : bulkProduksiData[field] || ''
+                                  : bulkProduksiData[key] || ''
                               }
                               onChange={(e) => {
                                 const val = Math.min(Math.max(parseInt(e.target.value) || 0, 0), totalQtySelected);
                                 setBulkProduksiData((prev) => ({
                                   ...prev,
-                                  [field]: val,
+                                  [key]: val,
                                 }));
                               }}
-                              className={`${
-                                bulkSkippedFields[field] ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100' : ''
-                              } text-sm`}
+                              className={`bg-white ${
+                                bulkSkippedFields[key] ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100' : ''
+                              }`}
+                            />
+                          </div>
+
+                          <div className="space-y-1.5">
+                            <Label className="text-xs font-semibold text-neutral-600">Tanggal Mulai</Label>
+                            <Input
+                              type="date"
+                              disabled={bulkSkippedFields[key]}
+                              value={
+                                bulkSkippedFields[key]
+                                  ? ''
+                                  : bulkProduksiDates[mulaiKey]
+                                  ? String(bulkProduksiDates[mulaiKey]).slice(0, 10)
+                                  : ''
+                              }
+                              onChange={(e) => {
+                                setBulkProduksiDates((prev) => ({
+                                  ...prev,
+                                  [mulaiKey]: e.target.value || null,
+                                }));
+                              }}
+                              className={`bg-white text-xs ${
+                                bulkSkippedFields[key] ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100' : ''
+                              }`}
+                            />
+                          </div>
+
+                          <div className="space-y-1.5">
+                            <Label className="text-xs font-semibold text-neutral-600">Tanggal Selesai</Label>
+                            <Input
+                              type="date"
+                              disabled={bulkSkippedFields[key]}
+                              value={
+                                bulkSkippedFields[key]
+                                  ? ''
+                                  : bulkProduksiDates[selesaiKey]
+                                  ? String(bulkProduksiDates[selesaiKey]).slice(0, 10)
+                                  : ''
+                              }
+                              onChange={(e) => {
+                                setBulkProduksiDates((prev) => ({
+                                  ...prev,
+                                  [selesaiKey]: e.target.value || null,
+                                }));
+                              }}
+                              className={`bg-white text-xs ${
+                                bulkSkippedFields[key] ? 'bg-neutral-100 text-neutral-400 disabled:opacity-100' : ''
+                              }`}
                             />
                           </div>
                         </div>
-                      );
-                    })}
+                      </div>
+                    ))}
                   </div>
                 </div>
               </>

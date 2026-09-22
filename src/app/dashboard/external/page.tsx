@@ -20,6 +20,7 @@ export default function ClientDashboardPage() {
     const searchParams = useSearchParams()
 
     const [selectedClientId, setSelectedClientId] = React.useState<number | null>(null)
+    const [clientTab, setClientTab] = React.useState<"hermina" | "managed">("hermina")
     const [searchQuery, setSearchQuery] = React.useState("")
     const [spkSearchQuery, setSpkSearchQuery] = React.useState("")
     const [currentPage, setCurrentPage] = React.useState(1)
@@ -32,8 +33,13 @@ export default function ClientDashboardPage() {
 
         const paramClientId = searchParams.get("client_id")
         const storedClientId = sessionStorage.getItem("external_selected_client_id")
+        const storedTab = sessionStorage.getItem("external_client_tab")
         const storedSearch = sessionStorage.getItem("external_hermina_search")
         const storedPage = sessionStorage.getItem("external_hermina_page")
+
+        if (storedTab === "hermina" || storedTab === "managed") {
+            setClientTab(storedTab)
+        }
 
         if (paramClientId) {
             const parsed = Number(paramClientId)
@@ -81,15 +87,32 @@ export default function ClientDashboardPage() {
         enabled: isHerminaPusat,
     })
 
+    // Fetch Managed by Hermina Clients if user role is Hermina Pusat
+    const { data: managedClients = [], isLoading: isLoadingManaged } = useQuery({
+        queryKey: ["managed-hermina-clients"],
+        queryFn: ClientService.getManagedByHerminaClients,
+        enabled: isHerminaPusat,
+    })
+
     // Fetch Client Projects
     const { data: projects = [], isLoading } = useQuery({
         queryKey: ["client-projects"],
         queryFn: () => ClientService.getMyProjects()
     })
 
+    const handleSwitchTab = (tab: "hermina" | "managed") => {
+        setClientTab(tab)
+        setCurrentPage(1)
+        if (typeof window !== "undefined") {
+            sessionStorage.setItem("external_client_tab", tab)
+            sessionStorage.setItem("external_hermina_page", "1")
+        }
+    }
+
     // Sort clients by "kode" ascending (nulls last) & filter by search query
-    const sortedAndFilteredHerminaClients = React.useMemo(() => {
-        const withCounts = herminaClients.map(client => {
+    const sortedAndFilteredClients = React.useMemo(() => {
+        const sourceClients = clientTab === "hermina" ? herminaClients : managedClients
+        const withCounts = sourceClients.map(client => {
             const count = typeof client.projects_count === 'number' && client.projects_count > 0
                 ? client.projects_count
                 : projects.filter(p => p.client_id === client.id).length
@@ -131,7 +154,7 @@ export default function ClientDashboardPage() {
             client.director_name?.toLowerCase().includes(query) ||
             (client.kode !== null && client.kode !== undefined && String(client.kode).toLowerCase().includes(query))
         )
-    }, [herminaClients, projects, searchQuery])
+    }, [clientTab, herminaClients, managedClients, projects, searchQuery])
 
     // Save search & reset pagination to page 1 when search changes
     const handleSearchChange = (val: string) => {
@@ -154,7 +177,7 @@ export default function ClientDashboardPage() {
         }
     }, [searchQuery])
 
-    const totalItems = sortedAndFilteredHerminaClients.length
+    const totalItems = sortedAndFilteredClients.length
     const totalPages = Math.max(1, Math.ceil(totalItems / ITEMS_PER_PAGE))
 
     const visiblePageNumbers = React.useMemo(() => {
@@ -172,8 +195,8 @@ export default function ClientDashboardPage() {
 
     const paginatedClients = React.useMemo(() => {
         const start = (currentPage - 1) * ITEMS_PER_PAGE
-        return sortedAndFilteredHerminaClients.slice(start, start + ITEMS_PER_PAGE)
-    }, [sortedAndFilteredHerminaClients, currentPage])
+        return sortedAndFilteredClients.slice(start, start + ITEMS_PER_PAGE)
+    }, [sortedAndFilteredClients, currentPage])
 
     // Filter projects based on selected client (if selected by Hermina Pusat user)
     const clientProjects = React.useMemo(() => {
@@ -188,10 +211,14 @@ export default function ClientDashboardPage() {
         return clientProjects.filter(p => p.nomor_spk?.toLowerCase().includes(query))
     }, [clientProjects, spkSearchQuery])
 
+    const allKnownClients = React.useMemo(() => {
+        return [...herminaClients, ...managedClients]
+    }, [herminaClients, managedClients])
+
     const selectedClientObj = React.useMemo(() => {
         if (!selectedClientId) return null
-        return herminaClients.find(c => c.id === selectedClientId)
-    }, [herminaClients, selectedClientId])
+        return allKnownClients.find(c => c.id === selectedClientId)
+    }, [allKnownClients, selectedClientId])
 
     // Calculate Stats
     const activeProjects = clientProjects.filter(p => !['done', 'cancelled', 'deleted'].includes(p.status.toLowerCase())).length
@@ -222,7 +249,7 @@ export default function ClientDashboardPage() {
         router.replace('/dashboard/external', { scroll: false })
     }
 
-    if (isLoading || (isHerminaPusat && isLoadingHermina)) {
+    if (isLoading || (isHerminaPusat && (isLoadingHermina || isLoadingManaged))) {
         return (
             <div className="flex h-[50vh] items-center justify-center">
                 <Loader2 className="h-8 w-8 animate-spin text-orange-600" />
@@ -265,20 +292,52 @@ export default function ClientDashboardPage() {
                 </div>
             </div>
 
-            {/* SECTION: List Hermina (Displayed ONLY for role "Hermina Pusat", before Active Project) */}
+            {/* SECTION: List Hermina & Managed by Hermina (Displayed ONLY for role "Hermina Pusat", before Active Project) */}
             {isHerminaPusat && (
                 <div className="space-y-4 pt-2">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-4">
-                        <div>
-                            <h3 className="text-xl font-bold text-neutral-900 flex items-center gap-2">
-                                <Hospital className="h-5 w-5 text-emerald-600" />
-                                List Hermina
-                                <Badge variant="outline" className="ml-2 bg-emerald-50 text-emerald-700 border-emerald-200 font-semibold">
-                                    {herminaClients.length} Cabang
-                                </Badge>
-                            </h3>
-                            <p className="text-xs text-neutral-500 mt-1">
-                                Klik <span className="font-semibold text-neutral-700">"Lihat Projek"</span> pada cabang untuk menampilkan projek di section Active Project.
+                        <div className="space-y-2">
+                            {/* Tab Switcher Buttons */}
+                            <div className="inline-flex items-center p-1 bg-neutral-100/90 rounded-xl border border-neutral-200/80 gap-1">
+                                <button
+                                    type="button"
+                                    onClick={() => handleSwitchTab("hermina")}
+                                    className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer select-none ${
+                                        clientTab === "hermina"
+                                            ? "bg-white text-emerald-800 shadow-sm border border-neutral-200/60"
+                                            : "text-neutral-500 hover:text-neutral-900"
+                                    }`}
+                                >
+                                    <Hospital className={`h-4 w-4 ${clientTab === "hermina" ? "text-emerald-600" : "text-neutral-400"}`} />
+                                    <span>Cabang Hermina</span>
+                                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                                        clientTab === "hermina" ? "bg-emerald-50 text-emerald-700" : "bg-neutral-200/70 text-neutral-600"
+                                    }`}>
+                                        {herminaClients.length}
+                                    </span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => handleSwitchTab("managed")}
+                                    className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer select-none ${
+                                        clientTab === "managed"
+                                            ? "bg-white text-indigo-800 shadow-sm border border-neutral-200/60"
+                                            : "text-neutral-500 hover:text-neutral-900"
+                                    }`}
+                                >
+                                    <Building2 className={`h-4 w-4 ${clientTab === "managed" ? "text-indigo-600" : "text-neutral-400"}`} />
+                                    <span>Managed by Hermina</span>
+                                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                                        clientTab === "managed" ? "bg-indigo-50 text-indigo-700" : "bg-neutral-200/70 text-neutral-600"
+                                    }`}>
+                                        {managedClients.length}
+                                    </span>
+                                </button>
+                            </div>
+                            <p className="text-xs text-neutral-500">
+                                {clientTab === "hermina"
+                                    ? 'Daftar cabang resmi RS Hermina. Klik "Lihat Projek" pada cabang untuk menampilkan projek di section Active Project.'
+                                    : 'Daftar rumah sakit mitra yang dikelola oleh Hermina (Managed by Hermina). Klik "Lihat Projek" untuk menampilkan projek di section Active Project.'}
                             </p>
                         </div>
 
@@ -288,7 +347,7 @@ export default function ClientDashboardPage() {
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
                                 <Input
                                     type="text"
-                                    placeholder="Cari cabang Hermina..."
+                                    placeholder={clientTab === "hermina" ? "Cari cabang Hermina..." : "Cari RS Managed by Hermina..."}
                                     value={searchQuery}
                                     onChange={(e) => handleSearchChange(e.target.value)}
                                     className="pl-9 pr-8 h-9 text-xs border-neutral-200 focus-visible:ring-emerald-500 rounded-lg"
@@ -317,15 +376,18 @@ export default function ClientDashboardPage() {
                         </div>
                     </div>
 
-                    {sortedAndFilteredHerminaClients.length === 0 ? (
+                    {sortedAndFilteredClients.length === 0 ? (
                         <div className="text-center py-10 bg-neutral-50 rounded-xl border border-dashed text-neutral-400 text-sm">
-                            {searchQuery ? `Tidak ada cabang Hermina sesuai pencarian "${searchQuery}".` : "Tidak ada data cabang Hermina ditemukan."}
+                            {searchQuery
+                                ? `Tidak ada data ${clientTab === "hermina" ? "cabang Hermina" : "RS Managed by Hermina"} sesuai pencarian "${searchQuery}".`
+                                : `Tidak ada data ${clientTab === "hermina" ? "cabang Hermina" : "RS Managed by Hermina"} ditemukan.`}
                         </div>
                     ) : (
                         <>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                                 {paginatedClients.map(({ client, count }) => {
                                     const isSelected = selectedClientId === client.id
+                                    const isManaged = client.hermina === 2 || clientTab === "managed"
 
                                     return (
                                         <div
@@ -338,8 +400,10 @@ export default function ClientDashboardPage() {
                                         >
                                             <div className="space-y-3">
                                                 <div className="flex items-start justify-between gap-2">
-                                                    <div className="p-2 rounded-lg bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100 transition-colors shrink-0">
-                                                        <Building2 className="w-5 h-5" />
+                                                    <div className={`p-2 rounded-lg ${
+                                                        isManaged ? "bg-indigo-50 text-indigo-600 group-hover:bg-indigo-100" : "bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100"
+                                                    } transition-colors shrink-0`}>
+                                                        {isManaged ? <Building2 className="w-5 h-5" /> : <Hospital className="w-5 h-5" />}
                                                     </div>
                                                     <div className="flex items-center gap-1.5 flex-wrap justify-end">
                                                         {client.kode !== null && client.kode !== undefined && client.kode !== '' && (
@@ -347,12 +411,19 @@ export default function ClientDashboardPage() {
                                                                 Kode: {client.kode}
                                                             </span>
                                                         )}
+                                                        {isManaged && (
+                                                            <span className="text-[10px] font-bold text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200">
+                                                                Managed
+                                                            </span>
+                                                        )}
                                                         <Badge
                                                             variant="secondary"
                                                             className={`text-[10px] font-bold ${
                                                                 isSelected
                                                                     ? "bg-orange-600 text-white"
-                                                                    : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                                                    : isManaged
+                                                                        ? "bg-indigo-50 text-indigo-700 border border-indigo-200"
+                                                                        : "bg-emerald-50 text-emerald-700 border border-emerald-200"
                                                             }`}
                                                         >
                                                             {count} Projek
@@ -361,7 +432,9 @@ export default function ClientDashboardPage() {
                                                 </div>
 
                                                 <div>
-                                                    <h4 className="font-bold text-neutral-900 text-base leading-tight group-hover:text-emerald-700 transition-colors line-clamp-1">
+                                                    <h4 className={`font-bold text-neutral-900 text-base leading-tight ${
+                                                        isManaged ? "group-hover:text-indigo-700" : "group-hover:text-emerald-700"
+                                                    } transition-colors line-clamp-1`}>
                                                         {client.name}
                                                     </h4>
                                                     {client.address && (
@@ -380,6 +453,12 @@ export default function ClientDashboardPage() {
                                                                 <span className="truncate">Dir: {client.director_name}</span>
                                                             </div>
                                                         )}
+                                                        {client.general_affair_name && (
+                                                            <div className="truncate flex items-center gap-1">
+                                                                <User className="w-3 h-3 text-neutral-400 shrink-0" />
+                                                                <span className="truncate">GA: {client.general_affair_name}</span>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 )}
                                             </div>
@@ -392,7 +471,9 @@ export default function ClientDashboardPage() {
                                                     className={`w-full text-xs font-semibold h-9 ${
                                                         isSelected
                                                             ? "bg-orange-600 hover:bg-orange-700 text-white"
-                                                            : "border-neutral-300 text-neutral-700 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300"
+                                                            : isManaged
+                                                                ? "border-neutral-300 text-neutral-700 hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-300"
+                                                                : "border-neutral-300 text-neutral-700 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300"
                                                     }`}
                                                 >
                                                     <Eye className="w-3.5 h-3.5 mr-1.5" />
@@ -408,7 +489,7 @@ export default function ClientDashboardPage() {
                             {totalPages > 1 && (
                                 <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 text-xs text-neutral-500">
                                     <div>
-                                        Menampilkan <span className="font-semibold text-neutral-800">{(currentPage - 1) * ITEMS_PER_PAGE + 1}</span> - <span className="font-semibold text-neutral-800">{Math.min(currentPage * ITEMS_PER_PAGE, totalItems)}</span> dari <span className="font-semibold text-neutral-800">{totalItems}</span> cabang
+                                        Menampilkan <span className="font-semibold text-neutral-800">{(currentPage - 1) * ITEMS_PER_PAGE + 1}</span> - <span className="font-semibold text-neutral-800">{Math.min(currentPage * ITEMS_PER_PAGE, totalItems)}</span> dari <span className="font-semibold text-neutral-800">{totalItems}</span> {clientTab === "hermina" ? "cabang" : "mitra"}
                                     </div>
                                     <div className="flex items-center gap-1">
                                         <Button
@@ -429,7 +510,9 @@ export default function ClientDashboardPage() {
                                                     onClick={() => handlePageChange(page)}
                                                     className={`w-7 h-7 rounded-lg text-xs font-medium transition-colors ${
                                                         currentPage === page
-                                                            ? "bg-emerald-600 text-white font-bold"
+                                                            ? clientTab === "managed"
+                                                                ? "bg-indigo-600 text-white font-bold"
+                                                                : "bg-emerald-600 text-white font-bold"
                                                             : "hover:bg-neutral-100 text-neutral-600"
                                                     }`}
                                                 >
@@ -467,15 +550,25 @@ export default function ClientDashboardPage() {
                             </Badge>
                         </h3>
                         {selectedClientObj && (
-                            <div className="flex items-center gap-2 mt-1">
+                            <div className="flex items-center gap-2 mt-1 flex-wrap">
                                 <span className="text-xs text-neutral-500">Menampilkan projek untuk:</span>
                                 <Badge className="bg-orange-100 text-orange-800 border-orange-200 text-xs font-semibold flex items-center gap-1">
                                     <Building2 className="w-3 h-3" />
                                     {selectedClientObj.name}
                                 </Badge>
+                                <Badge
+                                    variant="outline"
+                                    className={`text-[10px] font-semibold ${
+                                        selectedClientObj.hermina === 2
+                                            ? "bg-indigo-50 text-indigo-700 border-indigo-200"
+                                            : "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                    }`}
+                                >
+                                    {selectedClientObj.hermina === 2 ? "Managed by Hermina" : "Cabang Hermina"}
+                                </Badge>
                                 <button
                                     onClick={handleResetFilter}
-                                    className="text-xs text-neutral-400 hover:text-neutral-700 underline ml-1"
+                                    className="text-xs text-neutral-400 hover:text-neutral-700 underline ml-1 cursor-pointer"
                                 >
                                     Tampilkan Semua
                                 </button>
