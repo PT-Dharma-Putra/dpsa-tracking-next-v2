@@ -3343,20 +3343,6 @@ export function ProjectsV2Table({
             </div>
 
             <div className='flex flex-wrap gap-1.5 mt-auto'>
-              {/* Urgent */}
-              <div
-                onClick={() => handleDashboardFilterClick('urgent')}
-                className={cn(
-                  'flex-1 min-w-[90px] flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
-                  dashboardFilter === 'urgent'
-                    ? 'border-indigo-500 bg-indigo-50 text-indigo-700 font-semibold'
-                    : 'border-indigo-100 bg-indigo-50/50 hover:border-indigo-300 text-indigo-700'
-                )}
-              >
-                <span className='mr-1 font-medium leading-tight'>Urgent</span>
-                <span className='font-bold shrink-0 ml-1'>{stats.urgent ?? 0}</span>
-              </div>
-
               {/* Deadline Dekat*/}
               <div
                 onClick={() => handleDashboardFilterClick('deadline_dekat')}
@@ -3692,23 +3678,6 @@ export function ProjectsV2Table({
                         <div className='flex items-center gap-1'>
                           SPK MASUK
                           {sortBy === 'spk_masuk' ? (
-                            sortOrder === 'asc' ? (
-                              <ArrowUp className='h-3 w-3' />
-                            ) : (
-                              <ArrowDown className='h-3 w-3' />
-                            )
-                          ) : (
-                            <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
-                          )}
-                        </div>
-                      </TableHead>
-                      <TableHead
-                        className='cursor-pointer hover:bg-neutral-100 transition-colors group'
-                        onClick={() => handleSortChange('prioritas')}
-                      >
-                        <div className='flex items-center gap-1'>
-                          PRIORITAS
-                          {sortBy === 'prioritas' ? (
                             sortOrder === 'asc' ? (
                               <ArrowUp className='h-3 w-3' />
                             ) : (
@@ -4310,7 +4279,7 @@ export function ProjectsV2Table({
                     <TableCell
                       colSpan={
                         showAllDashboard
-                          ? 13
+                          ? 15
                           : showEngineer
                           ? 18
                           : showPurchasing
@@ -4341,7 +4310,7 @@ export function ProjectsV2Table({
                     <TableCell
                       colSpan={
                         showAllDashboard
-                          ? 13
+                          ? 15
                           : showEngineer
                           ? 18
                           : showPurchasing
@@ -4702,24 +4671,6 @@ export function ProjectsV2Table({
                                   'dd MMM yyyy'
                                 )
                               : '-'}
-                          </TableCell>
-                          <TableCell>
-                            {project.prioritas === 'Urgent' ? (
-                              <Badge className='bg-red-100 text-red-700 border border-red-200 hover:bg-red-100 font-semibold text-[11px]'>
-                                Urgent
-                              </Badge>
-                            ) : project.prioritas === 'Normal' ? (
-                              <Badge
-                                variant='secondary'
-                                className='font-normal text-[11px]'
-                              >
-                                Normal
-                              </Badge>
-                            ) : (
-                              <span className='text-muted-foreground italic text-xs'>
-                                -
-                              </span>
-                            )}
                           </TableCell>
                           <TableCell>
                             {project.project_team?.divisi_id ? (
