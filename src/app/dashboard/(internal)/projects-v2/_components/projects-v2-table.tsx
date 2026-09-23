@@ -3661,14 +3661,33 @@ export function ProjectsV2Table({
                       />
                     </TableHead>
                   )}
-                  <TableHead className='w-[50px]'>#</TableHead>
-                  <TableHead className='w-[100px] text-left'>
+                  <TableHead
+                    className={cn(
+                      'w-[50px]',
+                      showAllDashboard &&
+                        'min-w-[50px] max-w-[50px] sticky left-0 bg-neutral-50 z-20'
+                    )}
+                  >
+                    #
+                  </TableHead>
+                  <TableHead
+                    className={cn(
+                      'text-left',
+                      showAllDashboard
+                        ? 'w-[90px] min-w-[90px] max-w-[90px] sticky left-[50px] bg-neutral-50 z-20'
+                        : 'w-[100px]'
+                    )}
+                  >
                     ACTION
                   </TableHead>
                   {showAllDashboard ? (
                     <>
-                      <TableHead>MKT</TableHead>
-                      <TableHead>CLIENT</TableHead>
+                      <TableHead className='w-[110px] min-w-[110px] max-w-[110px] sticky left-[140px] bg-neutral-50 z-20'>
+                        MKT
+                      </TableHead>
+                      <TableHead className='w-[160px] min-w-[160px] max-w-[160px] sticky left-[250px] bg-neutral-50 z-20 border-r border-neutral-200 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]'>
+                        CLIENT
+                      </TableHead>
                       <TableHead>NAMA PROJEK</TableHead>
                       <TableHead>NO SPK</TableHead>
                       <TableHead
@@ -4336,7 +4355,7 @@ export function ProjectsV2Table({
                   </TableRow>
                 ) : (
                   projects.map((project, index) => (
-                    <TableRow key={project.id}>
+                    <TableRow key={project.id} className='group'>
                       {(showProduksi || showPerencanaan || showPengirimanV2) && (
                         <TableCell className='w-[40px] px-3 text-center'>
                           <Checkbox
@@ -4349,11 +4368,17 @@ export function ProjectsV2Table({
                         </TableCell>
                       )}
 
-                      <TableCell className='font-medium text-muted-foreground'>
+                      <TableCell
+                        className={cn(
+                          'font-medium text-muted-foreground',
+                          showAllDashboard &&
+                            'w-[50px] min-w-[50px] max-w-[50px] sticky left-0 bg-white group-hover:bg-muted/50 z-10'
+                        )}
+                      >
                         {(page - 1) * 10 + index + 1}
                       </TableCell>
                       {showAllDashboard ? (
-                        <TableCell className='text-left'>
+                        <TableCell className='text-left w-[90px] min-w-[90px] max-w-[90px] sticky left-[50px] bg-white group-hover:bg-muted/50 z-10'>
                           <Button
                             variant='outline'
                             size='xs'
@@ -4649,8 +4674,18 @@ export function ProjectsV2Table({
                       )}
                       {showAllDashboard ? (
                         <>
-                          <TableCell>{project.marketing?.name || '-'}</TableCell>
-                          <TableCell>{project.client?.name || '-'}</TableCell>
+                          <TableCell
+                            className='w-[110px] min-w-[110px] max-w-[110px] sticky left-[140px] bg-white group-hover:bg-muted/50 z-10 truncate'
+                            title={project.marketing?.name || undefined}
+                          >
+                            {project.marketing?.name || '-'}
+                          </TableCell>
+                          <TableCell
+                            className='w-[160px] min-w-[160px] max-w-[160px] sticky left-[250px] bg-white group-hover:bg-muted/50 z-10 border-r border-neutral-200 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] truncate font-medium'
+                            title={project.client?.name || undefined}
+                          >
+                            {project.client?.name || '-'}
+                          </TableCell>
                           <TableCell className='max-w-[200px] truncate'>
                             {project.name || (
                               <span className='text-muted-foreground italic text-xs'>
