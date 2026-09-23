@@ -4356,8 +4356,8 @@ export function ProjectsV2Table({
                         <TableCell className='text-left'>
                           <Button
                             variant='outline'
-                            size='sm'
-                            className='h-8 px-3 text-blue-600 border-blue-200 hover:bg-blue-50 hover:text-blue-700'
+                            size='xs'
+                            className='text-blue-600 border-blue-200 hover:bg-blue-50 hover:text-blue-700'
                             onClick={() =>
                               router.push(
                                 `/dashboard/projects-v2/monitoring/${project.id}/detail`
@@ -4374,8 +4374,8 @@ export function ProjectsV2Table({
                               {showSPD && (
                                 <Button
                                   variant='outline'
-                                  size='sm'
-                                  className='h-8 px-3 text-orange-600 border-orange-200 hover:bg-orange-50 hover:text-orange-700'
+                                  size='xs'
+                                  className='text-orange-600 border-orange-200 hover:bg-orange-50 hover:text-orange-700'
                                   onClick={() =>
                                     router.push(
                                       showEngineer
@@ -4428,8 +4428,8 @@ export function ProjectsV2Table({
                               {showPengirimanV2 && (
                                 <Button
                                   variant='outline'
-                                  size='sm'
-                                  className='h-8 px-3 text-blue-600 border-blue-200 hover:bg-blue-50 hover:text-blue-700'
+                                  size='xs'
+                                  className='text-blue-600 border-blue-200 hover:bg-blue-50 hover:text-blue-700'
                                   onClick={() =>
                                     router.push(
                                       `/dashboard/projects-v2/pengiriman-v2/${project.id}/detail`
@@ -4442,8 +4442,8 @@ export function ProjectsV2Table({
                               {showProduksi && (
                                 <Button
                                   variant='outline'
-                                  size='sm'
-                                  className='h-8 px-3 text-emerald-600 border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700'
+                                  size='xs'
+                                  className='text-emerald-600 border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700'
                                   onClick={() =>
                                     router.push(
                                       `/dashboard/projects-v2/produksi/${project.id}/detail`
@@ -4456,8 +4456,8 @@ export function ProjectsV2Table({
                               {showPurchasing && (
                                 <Button
                                   variant='outline'
-                                  size='sm'
-                                  className='h-8 px-3 text-blue-600 border-blue-200 hover:bg-blue-50 hover:text-blue-700'
+                                  size='xs'
+                                  className='text-blue-600 border-blue-200 hover:bg-blue-50 hover:text-blue-700'
                                   onClick={() =>
                                     router.push(
                                       `/dashboard/projects-v2/purchasing/${project.id}/detail`
@@ -4470,8 +4470,8 @@ export function ProjectsV2Table({
                               {showQC && (
                                 <Button
                                   variant='outline'
-                                  size='sm'
-                                  className='h-8 px-3 text-orange-600 border-orange-200 hover:bg-orange-50 hover:text-orange-700'
+                                  size='xs'
+                                  className='text-orange-600 border-orange-200 hover:bg-orange-50 hover:text-orange-700'
                                   onClick={() =>
                                     router.push(
                                       `/dashboard/projects-v2/qc/${project.id}/detail`
@@ -4484,8 +4484,8 @@ export function ProjectsV2Table({
                               {showPiutang && (
                                 <Button
                                   variant='outline'
-                                  size='sm'
-                                  className='h-8 px-3 text-blue-600 border-blue-200 hover:bg-blue-50 hover:text-blue-700'
+                                  size='xs'
+                                  className='text-blue-600 border-blue-200 hover:bg-blue-50 hover:text-blue-700'
                                   onClick={() =>
                                     router.push(
                                       `/dashboard/projects-v2/piutang/${project.id}/detail`
