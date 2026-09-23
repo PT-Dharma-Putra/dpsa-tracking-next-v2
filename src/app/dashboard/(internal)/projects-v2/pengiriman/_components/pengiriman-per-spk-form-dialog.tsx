@@ -5,11 +5,18 @@ import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { CalendarIcon, Loader2, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
+import { CalendarIcon, Loader2, ArrowUpDown, ArrowUp, ArrowDown, Filter } from "lucide-react"
 import { format } from "date-fns"
 import { Label } from "@/components/ui/label"
 
 import { Button } from "@/components/ui/button"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import {
   Dialog,
   DialogContent,
@@ -108,6 +115,7 @@ export function PengirimanPerSpkFormDialog({
 
   const [selectedItems, setSelectedItems] = React.useState<SelectedItem[]>([])
   const [poDivisiSortOrder, setPoDivisiSortOrder] = React.useState<'asc' | 'desc' | null>(null)
+  const [filterPoDivisi, setFilterPoDivisi] = React.useState<string>("ALL")
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -143,6 +151,7 @@ export function PengirimanPerSpkFormDialog({
   React.useEffect(() => {
     if (open) {
       setPoDivisiSortOrder(null)
+      setFilterPoDivisi("ALL")
       if (effectivePengiriman) {
         form.reset({
           tanggal: new Date(effectivePengiriman.tanggal),
@@ -266,17 +275,54 @@ export function PengirimanPerSpkFormDialog({
     }))
   }
 
-  const isAllSelected = selectedItems.length > 0 && selectedItems.every(item => item.selected)
-  const isSomeSelected = selectedItems.length > 0 && selectedItems.some(item => item.selected) && !isAllSelected
+  const uniquePoDivisiList = React.useMemo(() => {
+    const set = new Set<string>()
+    selectedItems.forEach((item) => {
+      const div = (item.po_divisi || "").trim()
+      if (div && div !== "-") {
+        set.add(div)
+      }
+    })
+    return Array.from(set).sort((a, b) =>
+      a.localeCompare(b, "id", { numeric: true })
+    )
+  }, [selectedItems])
+
+  const displayedItems = React.useMemo(() => {
+    let items = selectedItems
+    if (filterPoDivisi && filterPoDivisi !== "ALL") {
+      if (filterPoDivisi === "TANPA_DIVISI") {
+        items = items.filter(
+          (item) => !item.po_divisi || item.po_divisi.trim() === "" || item.po_divisi === "-"
+        )
+      } else {
+        items = items.filter((item) => (item.po_divisi || "").trim() === filterPoDivisi)
+      }
+    }
+    if (!poDivisiSortOrder) return items
+    return [...items].sort((a, b) => {
+      const valA = (a.po_divisi || "").toString().trim()
+      const valB = (b.po_divisi || "").toString().trim()
+      const comp = valA.localeCompare(valB, "id", { numeric: true, sensitivity: "base" })
+      return poDivisiSortOrder === "asc" ? comp : -comp
+    })
+  }, [selectedItems, filterPoDivisi, poDivisiSortOrder])
+
+  const isAllSelected = displayedItems.length > 0 && displayedItems.every(item => item.selected)
+  const isSomeSelected = displayedItems.length > 0 && displayedItems.some(item => item.selected) && !isAllSelected
 
   const handleSelectAllToggle = () => {
     const nextSelected = !isAllSelected
-    setSelectedItems(prev => prev.map(item => ({
-      ...item,
-      selected: nextSelected,
-      jumlah_keluar: nextSelected ? (item.jumlah_keluar || Math.max(0, item.jumlah - item.jumlah_keluar_total)) : 0,
-      jumlah_tersetting: nextSelected ? item.jumlah_tersetting : 0,
-    })))
+    const displayedIds = new Set(displayedItems.map(item => item.project_item_id))
+    setSelectedItems(prev => prev.map(item => {
+      if (!displayedIds.has(item.project_item_id)) return item
+      return {
+        ...item,
+        selected: nextSelected,
+        jumlah_keluar: nextSelected ? (item.jumlah_keluar || Math.max(0, item.jumlah - item.jumlah_keluar_total)) : 0,
+        jumlah_tersetting: nextSelected ? item.jumlah_tersetting : 0,
+      }
+    }))
   }
 
   const handleTogglePoDivisiSort = () => {
@@ -286,16 +332,6 @@ export function PengirimanPerSpkFormDialog({
       return null
     })
   }
-
-  const displayedItems = React.useMemo(() => {
-    if (!poDivisiSortOrder) return selectedItems
-    return [...selectedItems].sort((a, b) => {
-      const valA = (a.po_divisi || "").toString().trim()
-      const valB = (b.po_divisi || "").toString().trim()
-      const comp = valA.localeCompare(valB, "id", { numeric: true, sensitivity: "base" })
-      return poDivisiSortOrder === "asc" ? comp : -comp
-    })
-  }, [selectedItems, poDivisiSortOrder])
 
   const saveMutation = useMutation({
     mutationFn: async (values: FormValues) => {
@@ -517,7 +553,7 @@ export function PengirimanPerSpkFormDialog({
 
             {/* Item Selection Section */}
             <div className="flex-1 min-h-0 flex flex-col space-y-2 overflow-hidden">
-              <div className="shrink-0 flex items-end justify-between">
+              <div className="shrink-0 flex flex-wrap items-end justify-between gap-3">
                 <div>
                   <Label className="text-sm font-semibold">Pilih Item Proyek yang Dikirim</Label>
                   <p className="text-xs text-muted-foreground">
@@ -525,11 +561,40 @@ export function PengirimanPerSpkFormDialog({
                   </p>
                 </div>
                 {selectedItems.length > 0 && (
-                  <div className="flex items-center gap-1.5 bg-neutral-100 px-3 py-1.5 rounded-md border text-xs shrink-0">
-                    <span className="text-muted-foreground font-medium">No. SPK:</span>
-                    <span className="font-bold text-neutral-900">
-                      {selectedItems.find(i => i.spk_number && i.spk_number !== "-")?.spk_number || "—"}
-                    </span>
+                  <div className="flex items-center gap-2.5 shrink-0">
+                    {/* Filter PO Divisi */}
+                    <div className="flex items-center gap-1.5">
+                      <Filter className="h-3.5 w-3.5 text-muted-foreground" />
+                      <Select value={filterPoDivisi} onValueChange={setFilterPoDivisi}>
+                        <SelectTrigger className="h-8 text-xs w-[190px] bg-white">
+                          <SelectValue placeholder="Semua PO Divisi" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="ALL">Semua PO Divisi ({selectedItems.length})</SelectItem>
+                          {uniquePoDivisiList.map((divisi) => {
+                            const count = selectedItems.filter(i => (i.po_divisi || "").trim() === divisi).length
+                            return (
+                              <SelectItem key={divisi} value={divisi}>
+                                {divisi} ({count})
+                              </SelectItem>
+                            )
+                          })}
+                          {selectedItems.some((i) => !i.po_divisi || i.po_divisi === "-") && (
+                            <SelectItem value="TANPA_DIVISI">
+                              Tanpa Divisi ({selectedItems.filter((i) => !i.po_divisi || i.po_divisi === "-").length})
+                            </SelectItem>
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Badge No. SPK */}
+                    <div className="flex items-center gap-1.5 bg-neutral-100 px-3 py-1.5 rounded-md border text-xs">
+                      <span className="text-muted-foreground font-medium">No. SPK:</span>
+                      <span className="font-bold text-neutral-900">
+                        {selectedItems.find(i => i.spk_number && i.spk_number !== "-")?.spk_number || "—"}
+                      </span>
+                    </div>
                   </div>
                 )}
               </div>
@@ -543,6 +608,19 @@ export function PengirimanPerSpkFormDialog({
                 ) : selectedItems.length === 0 ? (
                   <div className="border border-dashed rounded-lg p-12 text-center text-muted-foreground text-sm">
                     Tidak ada item pada SPK proyek ini.
+                  </div>
+                ) : displayedItems.length === 0 ? (
+                  <div className="border border-dashed rounded-lg p-12 text-center text-muted-foreground text-sm space-y-2">
+                    <p>Tidak ada item untuk filter PO Divisi "{filterPoDivisi}".</p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setFilterPoDivisi("ALL")}
+                      className="text-xs h-7"
+                    >
+                      Reset Filter
+                    </Button>
                   </div>
                 ) : (
                   <table className="w-full text-sm text-left border-collapse">
@@ -572,6 +650,9 @@ export function PengirimanPerSpkFormDialog({
                         >
                           <div className="flex items-center gap-1.5">
                             <span>PO Divisi</span>
+                            {filterPoDivisi !== "ALL" && (
+                              <span className="inline-block w-2 h-2 rounded-full bg-blue-600" title={`Filter aktif: ${filterPoDivisi}`} />
+                            )}
                             {poDivisiSortOrder === "asc" ? (
                               <ArrowUp className="h-3.5 w-3.5 text-primary" />
                             ) : poDivisiSortOrder === "desc" ? (
@@ -581,10 +662,8 @@ export function PengirimanPerSpkFormDialog({
                             )}
                           </div>
                         </th>
-                        <th className="p-3">Lantai</th>
-                        <th className="p-3">Ruang</th>
-                        <th className="p-3">Item Proyek</th>
-                        <th className="p-3">Deskripsi</th>
+                        <th className="p-3 text-[12px] uppercase font-bold text-neutral-500">Lantai | Ruang</th>
+                        <th className="p-3 text-[12px] uppercase font-bold text-neutral-500">Item | Deskripsi</th>
                         <th className="p-3 text-center">Panjang</th>
                         <th className="p-3 text-center">Lebar</th>
                         <th className="p-3 text-center">Tinggi</th>
@@ -609,12 +688,18 @@ export function PengirimanPerSpkFormDialog({
                               />
                             </td>
                             <td className="p-3 text-xs font-medium text-neutral-700">{item.po_divisi || "-"}</td>
-                            <td className="p-3 text-xs">{item.lantai || "-"}</td>
-                            <td className="p-3 text-xs">{item.ruang || "-"}</td>
-                            <td className="p-3 max-w-87.5 truncate">
-                              <span className="font-semibold">{item.item_name}</span>
+                            <td className="p-3 text-xs max-w-[300px] break-words">
+                              <div className="flex flex-col gap-1.5">
+                                <span>{item.lantai || "-"}</span>
+                                {item.ruang && <span>{item.ruang}</span>}
+                              </div>
                             </td>
-                            <td className="p-3 text-xs max-w-50 truncate text-muted-foreground">{item.deskripsi || "-"}</td>
+                            <td className="p-3 max-w-[300px] break-words" >
+                              <div className="flex flex-col gap-1.5">
+                                <span className="font-semibold">{item.item_name}</span>
+                                <span>{item.deskripsi || "-"}</span>
+                              </div>
+                            </td>
                             <td className="p-3 text-center text-xs">{item.panjang ?? "-"}</td>
                             <td className="p-3 text-center text-xs">{item.lebar ?? "-"}</td>
                             <td className="p-3 text-center text-xs">{item.tinggi ?? "-"}</td>
