@@ -583,7 +583,11 @@ export default function PrintSuratJalanPage() {
           .text-xs { font-size: 10px; }
           .uppercase { text-transform: uppercase; }
           .space-y-1 > div { margin-bottom: 3px; }
-          .font-mono { font-family: Courier, monospace; }
+          .text-mono { font-family: Courier, monospace; }
+          @page {
+            size: A4 portrait;
+            margin: 4cm 1.5cm 1.2cm 1.5cm;
+          }
         </style>
       </head>
       <body>
@@ -729,7 +733,10 @@ export default function PrintSuratJalanPage() {
         }
         @page {
           size: A4 portrait;
-          margin: 12mm 15mm;
+          margin-top: 4cm;
+          margin-bottom: 12mm;
+          margin-left: 15mm;
+          margin-right: 15mm;
         }
       `,
         }}
@@ -754,7 +761,9 @@ export default function PrintSuratJalanPage() {
               : `Pratinjau Setrim (${shipmentsList.length} Pengiriman Gabungan — ${combinedDetails.length} Item — ${pagedDetails.length} Halaman)`}
           </h2>
           <p className='text-xs text-neutral-500'>
-            Halaman ini diformat untuk cetak A4. Tanda tangan otomatis disertakan di setiap halaman cetak.
+            {activeTab === 'surat-jalan'
+              ? 'Halaman ini diformat untuk cetak A4. Tanda tangan otomatis disertakan di setiap halaman cetak.'
+              : 'Halaman ini diformat untuk cetak A4. Tanda tangan disertakan pada halaman terakhir cetak.'}
           </p>
         </div>
         <div className='flex items-center gap-3'>
@@ -802,7 +811,7 @@ export default function PrintSuratJalanPage() {
             return (
               <div
                 key={`sj-page-${pageIdx}`}
-                className={`print-page bg-white shadow-md border border-neutral-300 rounded-sm mb-8 p-6 print:p-0 print:border-none print:shadow-none print:rounded-none print:mb-0 ${
+                className={`print-page bg-white shadow-md border border-neutral-300 rounded-sm mb-8 p-6 pt-10 print:p-0 print:border-none print:shadow-none print:rounded-none print:mb-0 ${
                   pageIdx === pagedDetails.length - 1 ? 'last-page' : ''
                 }`}
               >
@@ -999,90 +1008,103 @@ export default function PrintSuratJalanPage() {
             const pageStartIndex = pagedDetails
               .slice(0, pageIdx)
               .reduce((acc, p) => acc + p.length, 0);
+            const isLastPage = pageIdx === pagedDetails.length - 1;
 
             return (
               <div
                 key={`setrim-page-${pageIdx}`}
-                className={`print-page bg-white shadow-md border border-neutral-300 rounded-sm mb-8 p-6 print:p-0 print:border-none print:shadow-none print:rounded-none print:mb-0 relative font-sans text-black ${
-                  pageIdx === pagedDetails.length - 1 ? 'last-page' : ''
+                className={`print-page bg-white shadow-md border border-neutral-300 rounded-sm mb-8 p-6 pt-10 print:p-0 print:border-none print:shadow-none print:rounded-none print:mb-0 relative font-sans text-black ${
+                  isLastPage ? 'last-page' : ''
                 }`}
               >
-                {/* SETRIM Header */}
-                <div className='flex justify-between items-center mb-4 print:mb-2 pt-2 relative print:pt-0'>
-                  <div className='w-24 no-print'></div>
-                  <div className='flex-1 text-center'>
-                    <h2 className='text-sm font-bold inline-block border-b border-black pb-0.5 print:mt-0 print:pt-0'>
-                      SURAT SERAH TERIMA BARANG
-                    </h2>
-                  </div>
-                  <div className='w-24 text-right text-[11px] font-semibold text-neutral-600'>
-                    {pagedDetails.length > 1 && `Hal. ${pageIdx + 1} / ${pagedDetails.length}`}
-                  </div>
-                </div>
-
-                {/* SETRIM Metadata */}
-                <div className='space-y-2.5 text-[11px] mb-4 print:mb-2 px-2 print:px-0'>
-                  <div className='flex items-start justify-between'>
-                    <div className='flex items-center'>
-                      <span className='w-36 font-semibold'>Nomor Surat</span>
-                      <span className='mr-2'>:</span>
-                      <div className='border border-black px-2 py-0.5 w-48 min-h-[22px] flex items-center group relative focus-within:ring-1 focus-within:ring-black'>
-                        <input
-                          type='text'
-                          value={editedSetrimNo !== null ? editedSetrimNo : combinedMeta.setrimNo}
-                          onChange={(e) => setEditedSetrimNo(e.target.value)}
-                          className='bg-transparent border-none outline-none w-full p-0 m-0 text-[11px] font-sans text-black'
-                          title='Klik untuk mengedit nomor surat'
-                        />
-                        <Pencil className='w-3 h-3 absolute right-2 text-neutral-400 opacity-0 group-hover:opacity-100 transition-opacity no-print pointer-events-none' />
+                {/* SETRIM Header & Metadata (Hanya Tampil di Halaman Pertama) */}
+                {pageIdx === 0 ? (
+                  <>
+                    {/* SETRIM Header */}
+                    <div className='flex justify-between items-center mb-4 print:mb-2 pt-2 relative print:pt-0'>
+                      <div className='w-24 no-print'></div>
+                      <div className='flex-1 text-center'>
+                        <h2 className='text-sm font-bold inline-block border-b border-black pb-0.5 print:mt-0 print:pt-0'>
+                          SURAT SERAH TERIMA BARANG
+                        </h2>
+                      </div>
+                      <div className='w-24 text-right text-[11px] font-semibold text-neutral-600'>
+                        {pagedDetails.length > 1 && `Hal. ${pageIdx + 1} / ${pagedDetails.length}`}
                       </div>
                     </div>
 
-                    <div className='w-40 border border-black text-[10px] grid grid-cols-2 text-center bg-white -mt-2'>
-                      <div className='border-r border-b border-black py-0.5 font-semibold'>
-                        PPIC
-                      </div>
-                      <div className='border-b border-black py-0.5'>Rev : 00</div>
-                      <div className='border-r border-black py-0.5 font-semibold'>
-                        005
-                      </div>
-                      <div className='py-0.5'>Terbit : 8/25</div>
-                    </div>
-                  </div>
+                    {/* SETRIM Metadata */}
+                    <div className='space-y-2.5 text-[11px] mb-4 print:mb-2 px-2 print:px-0'>
+                      <div className='flex items-start justify-between'>
+                        <div className='flex items-center'>
+                          <span className='w-36 font-semibold'>Nomor Surat</span>
+                          <span className='mr-2'>:</span>
+                          <div className='border border-black px-2 py-0.5 w-48 min-h-[22px] flex items-center group relative focus-within:ring-1 focus-within:ring-black'>
+                            <input
+                              type='text'
+                              value={editedSetrimNo !== null ? editedSetrimNo : combinedMeta.setrimNo}
+                              onChange={(e) => setEditedSetrimNo(e.target.value)}
+                              className='bg-transparent border-none outline-none w-full p-0 m-0 text-[11px] font-sans text-black'
+                              title='Klik untuk mengedit nomor surat'
+                            />
+                            <Pencil className='w-3 h-3 absolute right-2 text-neutral-400 opacity-0 group-hover:opacity-100 transition-opacity no-print pointer-events-none' />
+                          </div>
+                        </div>
 
-                  <div className='flex items-center'>
-                    <span className='w-36 font-semibold shrink-0'>
-                      Tujuan Pengiriman/Penerima
-                    </span>
-                    <span className='mr-2 shrink-0'>:</span>
-                    <div className='border border-black px-2 py-0.5 min-w-[192px] max-w-md w-auto min-h-[22px] font-bold uppercase flex items-center text-[11px] leading-tight break-words'>
-                      {combinedMeta.clientName}
-                    </div>
-                  </div>
-                  <div className='flex items-center justify-between gap-4'>
-                    <div className='flex items-center shrink-0'>
-                      <span className='w-36 font-semibold shrink-0'>
-                        Tanggal Terima Barang*)
-                      </span>
-                      <span className='mr-2 shrink-0'>:</span>
-                      <div className='border border-black px-2 py-0.5 w-48 min-h-[22px] shrink-0'></div>
-                    </div>
-                    <div className='flex items-center flex-1 justify-end min-w-0'>
-                      <span className='font-semibold mr-2 text-[10px] whitespace-nowrap shrink-0'>
-                        No. SPK/SPH
-                      </span>
-                      <span className='mr-2 font-semibold text-[10px] shrink-0'>:</span>
-                      <div className='border border-black px-2 py-0.5 flex-1 min-h-[22px] flex items-center font-bold text-[10px] leading-tight break-all'>
-                        {combinedMeta.spkNumberStr}
+                        <div className='w-40 border border-black text-[10px] grid grid-cols-2 text-center bg-white -mt-2'>
+                          <div className='border-r border-b border-black py-0.5 font-semibold'>
+                            PPIC
+                          </div>
+                          <div className='border-b border-black py-0.5'>Rev : 00</div>
+                          <div className='border-r border-black py-0.5 font-semibold'>
+                            005
+                          </div>
+                          <div className='py-0.5'>Terbit : 8/25</div>
+                        </div>
+                      </div>
+
+                      <div className='flex items-center'>
+                        <span className='w-36 font-semibold shrink-0'>
+                          Tujuan Pengiriman/Penerima
+                        </span>
+                        <span className='mr-2 shrink-0'>:</span>
+                        <div className='border border-black px-2 py-0.5 min-w-[192px] max-w-md w-auto min-h-[22px] font-bold uppercase flex items-center text-[11px] leading-tight break-words'>
+                          {combinedMeta.clientName}
+                        </div>
+                      </div>
+                      <div className='flex items-center justify-between gap-4'>
+                        <div className='flex items-center shrink-0'>
+                          <span className='w-36 font-semibold shrink-0'>
+                            Tanggal Terima Barang*)
+                          </span>
+                          <span className='mr-2 shrink-0'>:</span>
+                          <div className='border border-black px-2 py-0.5 w-48 min-h-[22px] shrink-0'></div>
+                        </div>
+                        <div className='flex items-center flex-1 justify-end min-w-0'>
+                          <span className='font-semibold mr-2 text-[10px] whitespace-nowrap shrink-0'>
+                            No. SPK/SPH
+                          </span>
+                          <span className='mr-2 font-semibold text-[10px] shrink-0'>:</span>
+                          <div className='border border-black px-2 py-0.5 flex-1 min-h-[22px] flex items-center font-bold text-[10px] leading-tight break-all'>
+                            {combinedMeta.spkNumberStr}
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </div>
 
-                <div className='mb-2 text-[11px] font-semibold px-2 print:px-0'>
-                  Telah diterima barang - barang pesanan dari PT DHARMA PUTRA
-                  SEJAHTERA ABADI, berupa:
-                </div>
+                    <div className='mb-2 text-[11px] font-semibold px-2 print:px-0'>
+                      Telah diterima barang - barang pesanan dari PT DHARMA PUTRA
+                      SEJAHTERA ABADI, berupa:
+                    </div>
+                  </>
+                ) : (
+                  /* Header ringkas di halaman lanjutan hanya memuat nomor halaman */
+                  <div className='flex justify-end items-center mb-3 print:mb-2 pt-2 print:pt-0'>
+                    <div className='text-right text-[11px] font-semibold text-neutral-600'>
+                      {pagedDetails.length > 1 && `Hal. ${pageIdx + 1} / ${pagedDetails.length}`}
+                    </div>
+                  </div>
+                )}
 
                 {/* SETRIM Table */}
                 <div className='px-2 print:px-0'>
@@ -1168,77 +1190,82 @@ export default function PrintSuratJalanPage() {
                   </table>
                 </div>
 
-                {/* SETRIM Note */}
-                <div className='flex flex-row gap-1 text-[10px] text-left mb-5 print:mb-2 px-2 print:px-0 print:break-inside-avoid'>
-                  <div>
-                    <p>
-                      <i>Note: </i>
-                    </p>
-                  </div>
-                  <div className='flex-1'>
-                    <p className='leading-tight'>
-                      <i>
-                        **) Item / perabot yang ditulis harus sama dengan yang
-                        tertulis di SPK/SPH jika barang yang dikirim tidak dalam
-                        satu SPK/SP/RAB, harus dibuatkan di lembar yang berbeda
-                        (sesuai SPK/SPH) Rangkap 2 : (Asli untuk konsumen)(lembar ke
-                        2 setelah di ttd konsumen kemudian diserahkan ke Keuangan)
-                        Untuk setiap barang yang sudah dikirim harus
-                        diserahterimakan dan ditandatangani oleh pihak jangum
-                        Apabila surat sudah ditandatangani mohon difoto sebagai
-                        bukti dan dikirim ke nomor (wa)085712330344
-                      </i>
-                    </p>
-                  </div>
-                </div>
-
-                {/* SETRIM Footer */}
-                <div className='grid grid-cols-3 gap-4 text-[11px] text-center mt-6 mb-4 px-12 print:mt-3 print:mb-0 print:px-4 print:break-inside-avoid'>
-                  <div className='flex flex-col items-center'>
-                    <span className='font-semibold mb-12 print:mb-8'>Disiapkan oleh,</span>
-                    <div className='w-32 border-b border-black mb-1 relative group focus-within:ring-1 focus-within:ring-black'>
-                      <input
-                        type='text'
-                        value={preparedByName}
-                        onChange={(e) => setPreparedByName(e.target.value)}
-                        className='bg-transparent border-none outline-none w-full p-0 m-0 text-[11px] font-sans text-black text-center'
-                        placeholder='Nama'
-                      />
-                      <Pencil className='w-3 h-3 absolute -right-5 bottom-0.5 text-neutral-400 opacity-0 group-hover:opacity-100 transition-opacity no-print pointer-events-none' />
-                    </div>
-                    <div className='flex w-32 text-left mt-1 items-end'>
-                      <span className='font-semibold mr-1 text-[10px] mb-0.5'>
-                        Tgl.
-                      </span>
-                      <div className='flex-1 border-b border-black border-dashed relative group focus-within:ring-1 focus-within:ring-black'>
-                        <input
-                          type='text'
-                          value={preparedByDate}
-                          onChange={(e) => setPreparedByDate(e.target.value)}
-                          className='bg-transparent border-none outline-none w-full p-0 m-0 text-[10px] font-sans text-black text-center'
-                          placeholder='DD/MM/YY'
-                        />
-                        <Pencil className='w-3 h-3 absolute -right-5 bottom-0.5 text-neutral-400 opacity-0 group-hover:opacity-100 transition-opacity no-print pointer-events-none' />
+                {/* SETRIM Note & Footer (Hanya di Halaman Terakhir) */}
+                {isLastPage && (
+                  <>
+                    {/* SETRIM Note */}
+                    <div className='flex flex-row gap-1 text-[10px] text-left mb-5 print:mb-2 px-2 print:px-0 print:break-inside-avoid'>
+                      <div>
+                        <p>
+                          <i>Note: </i>
+                        </p>
+                      </div>
+                      <div className='flex-1'>
+                        <p className='leading-tight'>
+                          <i>
+                            **) Item / perabot yang ditulis harus sama dengan yang
+                            tertulis di SPK/SPH jika barang yang dikirim tidak dalam
+                            satu SPK/SP/RAB, harus dibuatkan di lembar yang berbeda
+                            (sesuai SPK/SPH) Rangkap 2 : (Asli untuk konsumen)(lembar ke
+                            2 setelah di ttd konsumen kemudian diserahkan ke Keuangan)
+                            Untuk setiap barang yang sudah dikirim harus
+                            diserahterimakan dan ditandatangani oleh pihak jangum
+                            Apabila surat sudah ditandatangani mohon difoto sebagai
+                            bukti dan dikirim ke nomor (wa)085712330344
+                          </i>
+                        </p>
                       </div>
                     </div>
-                  </div>
-                  <div className='flex flex-col items-center'>
-                    <span className='font-semibold mb-16 print:mb-8'>Diserahkan oleh,</span>
-                    <div className='w-32 border-b border-black mb-1 relative'></div>
-                    <div className='flex w-32 text-left mt-1'>
-                      <span className='font-semibold mr-1 text-[10px]'>Tgl.</span>
-                      <span className='flex-1 border-b border-black border-dashed'></span>
+
+                    {/* SETRIM Footer */}
+                    <div className='grid grid-cols-3 gap-4 text-[11px] text-center mt-6 mb-4 px-12 print:mt-3 print:mb-0 print:px-4 print:break-inside-avoid'>
+                      <div className='flex flex-col items-center'>
+                        <span className='font-semibold mb-12 print:mb-8'>Disiapkan oleh,</span>
+                        <div className='w-32 border-b border-black mb-1 relative group focus-within:ring-1 focus-within:ring-black'>
+                          <input
+                            type='text'
+                            value={preparedByName}
+                            onChange={(e) => setPreparedByName(e.target.value)}
+                            className='bg-transparent border-none outline-none w-full p-0 m-0 text-[11px] font-sans text-black text-center'
+                            placeholder='Nama'
+                          />
+                          <Pencil className='w-3 h-3 absolute -right-5 bottom-0.5 text-neutral-400 opacity-0 group-hover:opacity-100 transition-opacity no-print pointer-events-none' />
+                        </div>
+                        <div className='flex w-32 text-left mt-1 items-end'>
+                          <span className='font-semibold mr-1 text-[10px] mb-0.5'>
+                            Tgl.
+                          </span>
+                          <div className='flex-1 border-b border-black border-dashed relative group focus-within:ring-1 focus-within:ring-black'>
+                            <input
+                              type='text'
+                              value={preparedByDate}
+                              onChange={(e) => setPreparedByDate(e.target.value)}
+                              className='bg-transparent border-none outline-none w-full p-0 m-0 text-[10px] font-sans text-black text-center'
+                              placeholder='DD/MM/YY'
+                            />
+                            <Pencil className='w-3 h-3 absolute -right-5 bottom-0.5 text-neutral-400 opacity-0 group-hover:opacity-100 transition-opacity no-print pointer-events-none' />
+                          </div>
+                        </div>
+                      </div>
+                      <div className='flex flex-col items-center'>
+                        <span className='font-semibold mb-16 print:mb-8'>Diserahkan oleh,</span>
+                        <div className='w-32 border-b border-black mb-1 relative'></div>
+                        <div className='flex w-32 text-left mt-1'>
+                          <span className='font-semibold mr-1 text-[10px]'>Tgl.</span>
+                          <span className='flex-1 border-b border-black border-dashed'></span>
+                        </div>
+                      </div>
+                      <div className='flex flex-col items-center'>
+                        <span className='font-semibold mb-16 print:mb-8'>Diterima oleh,</span>
+                        <div className='w-32 border-b border-black mb-1 relative'></div>
+                        <div className='flex w-32 text-left mt-1'>
+                          <span className='font-semibold mr-1 text-[10px]'>Tgl.</span>
+                          <span className='flex-1 border-b border-black border-dashed'></span>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                  <div className='flex flex-col items-center'>
-                    <span className='font-semibold mb-16 print:mb-8'>Diterima oleh,</span>
-                    <div className='w-32 border-b border-black mb-1 relative'></div>
-                    <div className='flex w-32 text-left mt-1'>
-                      <span className='font-semibold mr-1 text-[10px]'>Tgl.</span>
-                      <span className='flex-1 border-b border-black border-dashed'></span>
-                    </div>
-                  </div>
-                </div>
+                  </>
+                )}
               </div>
             );
           })
