@@ -27,6 +27,7 @@ export default function PrintSuratJalanPage() {
   );
   const [preparedByName, setPreparedByName] = React.useState<string>('');
   const [preparedByDate, setPreparedByDate] = React.useState<string>('');
+  const [itemsPerPageSetting, setItemsPerPageSetting] = React.useState<number | 'auto'>('auto');
 
   // Fetch all requested shipments in parallel
   const { data: shipmentsList = [], isLoading } = useQuery({
@@ -88,6 +89,24 @@ export default function PrintSuratJalanPage() {
       setrimNo,
     };
   }, [shipmentsList, combinedDetails]);
+
+  // Split details into pages (auto-balanced, max 14 items per page by default)
+  const pagedDetails = React.useMemo(() => {
+    if (combinedDetails.length === 0) return [[]];
+    const maxPerPage = itemsPerPageSetting === 'auto' ? 14 : itemsPerPageSetting;
+    if (combinedDetails.length <= maxPerPage) {
+      return [combinedDetails];
+    }
+    const totalItems = combinedDetails.length;
+    const numPages = Math.ceil(totalItems / maxPerPage);
+    const itemsPerPage = Math.ceil(totalItems / numPages);
+
+    const pages: DetailPengiriman[][] = [];
+    for (let i = 0; i < totalItems; i += itemsPerPage) {
+      pages.push(combinedDetails.slice(i, i + itemsPerPage));
+    }
+    return pages;
+  }, [combinedDetails, itemsPerPageSetting]);
 
   // Trigger browser print dialog when data is loaded
   React.useEffect(() => {
@@ -609,66 +628,115 @@ export default function PrintSuratJalanPage() {
   }
 
   return (
-    <div className='bg-white min-h-screen print:min-h-0 p-4 print:p-0 text-black font-sans'>
+    <div className='bg-white min-h-screen print:min-h-0 print:h-auto p-4 print:p-0 print:m-0 text-black font-sans'>
       {/* CSS overrides to hide everything else on print */}
       <style
         dangerouslySetInnerHTML={{
           __html: `
         @media print {
+          /* 1. Hide non-printable elements completely from document flow */
+          header,
+          aside,
+          nav,
+          [data-slot="sidebar"],
+          [data-slot="sidebar-gap"],
+          [data-slot="sidebar-container"],
+          [data-sidebar="sidebar"],
+          [data-slot="sidebar-wrapper"] > aside,
+          .no-print,
+          [data-sonner-toaster] {
+            display: none !important;
+          }
+
+          /* 2. Reset html, body and layout ancestors */
           html, body {
             height: auto !important;
-            min-height: auto !important;
+            min-height: 0 !important;
             overflow: visible !important;
             padding: 0 !important;
             margin: 0 !important;
             background: #fff !important;
           }
-          body * {
-            visibility: hidden;
-            background-color: transparent !important;
-            color: black !important;
-          }
-          #print-area, #print-area * {
-            visibility: visible;
-          }
-          #print-area {
-            position: relative !important;
-            left: 0 !important;
-            top: 0 !important;
+
+          [data-slot="sidebar-wrapper"],
+          [data-slot="sidebar-inset"],
+          main,
+          body > div {
+            display: block !important;
+            height: auto !important;
+            min-height: 0 !important;
+            max-height: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            border: none !important;
+            box-shadow: none !important;
+            overflow: visible !important;
+            background: transparent !important;
             width: 100% !important;
+          }
+
+          /* 3. Print area container */
+          #print-area {
+            display: block !important;
+            width: 100% !important;
+            max-width: 100% !important;
             margin: 0 !important;
             padding: 0 !important;
-            max-width: 100% !important;
             height: auto !important;
             overflow: visible !important;
           }
-          .no-print {
-            display: none !important;
+
+          /* 4. Page break handling */
+          .print-page {
+            page-break-after: always !important;
+            break-after: page !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            border: none !important;
+            box-shadow: none !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            break-before: auto !important;
+            page-break-before: auto !important;
           }
+
+          .print-page:first-child,
+          .print-page:first-of-type {
+            break-before: avoid !important;
+            page-break-before: avoid !important;
+          }
+
+          .print-page.last-page,
+          .print-page:last-child {
+            page-break-after: avoid !important;
+            break-after: avoid !important;
+          }
+
           table {
-            page-break-inside: auto;
+            page-break-inside: avoid;
           }
+
           tr {
             page-break-inside: avoid;
             page-break-after: auto;
           }
+
           thead {
             display: table-header-group;
           }
         }
         @page {
-          size: A4;
-          margin-top: 25mm;
-          margin-bottom: 20mm;
-          margin-left: 15mm;
-          margin-right: 15mm;
+          size: A4 portrait;
+          margin: 12mm 15mm;
         }
       `,
         }}
       />
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className='w-full'>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className='w-full no-print'>
         <div className='no-print mb-4'>
           <TabsList>
             <TabsTrigger value='surat-jalan'>Surat Jalan</TabsTrigger>
@@ -682,24 +750,41 @@ export default function PrintSuratJalanPage() {
         <div>
           <h2 className='font-semibold text-neutral-800 text-sm'>
             {activeTab === 'surat-jalan'
-              ? `Pratinjau Surat Jalan (${shipmentsList.length} Pengiriman Gabungan)`
-              : `Pratinjau Setrim (${shipmentsList.length} Pengiriman Gabungan)`}
+              ? `Pratinjau Surat Jalan (${shipmentsList.length} Pengiriman Gabungan — ${combinedDetails.length} Item — ${pagedDetails.length} Halaman)`
+              : `Pratinjau Setrim (${shipmentsList.length} Pengiriman Gabungan — ${combinedDetails.length} Item — ${pagedDetails.length} Halaman)`}
           </h2>
           <p className='text-xs text-neutral-500'>
-            Halaman ini diformat untuk cetak A4. Klik tombol di kanan jika
-            dialog print tidak muncul otomatis.
+            Halaman ini diformat untuk cetak A4. Tanda tangan otomatis disertakan di setiap halaman cetak.
           </p>
         </div>
-        <div className='flex gap-2'>
+        <div className='flex items-center gap-3'>
+          <div className='flex items-center gap-1.5 text-xs text-neutral-700 bg-white px-2.5 py-1.5 rounded border border-neutral-300'>
+            <span className='font-medium text-neutral-600'>Baris/Hal:</span>
+            <select
+              value={itemsPerPageSetting}
+              onChange={(e) =>
+                setItemsPerPageSetting(
+                  e.target.value === 'auto' ? 'auto' : parseInt(e.target.value)
+                )
+              }
+              className='bg-transparent text-xs font-semibold outline-none cursor-pointer'
+            >
+              <option value='auto'>Otomatis ({pagedDetails[0]?.length || 14})</option>
+              <option value='10'>10 Baris</option>
+              <option value='12'>12 Baris</option>
+              <option value='14'>14 Baris</option>
+              <option value='16'>16 Baris</option>
+            </select>
+          </div>
           <button
             onClick={downloadExcel}
-            className='px-4 py-2 bg-emerald-600 text-white rounded text-sm font-medium hover:bg-emerald-700 transition-colors'
+            className='px-4 py-2 bg-emerald-600 text-white rounded text-sm font-medium hover:bg-emerald-700 transition-colors shadow-xs'
           >
             Download Excel
           </button>
           <button
             onClick={() => window.print()}
-            className='px-4 py-2 bg-neutral-800 text-white rounded text-sm font-medium hover:bg-neutral-900 transition-colors'
+            className='px-4 py-2 bg-neutral-800 text-white rounded text-sm font-medium hover:bg-neutral-900 transition-colors shadow-xs'
           >
             Cetak Manual
           </button>
@@ -707,422 +792,456 @@ export default function PrintSuratJalanPage() {
       </div>
 
       {/* Print Content Area */}
-      <div id='print-area' className='max-w-[800px] mx-auto bg-white text-black font-sans'>
+      <div id='print-area' className='max-w-[800px] mx-auto text-black font-sans print:max-w-none print:m-0 print:p-0'>
         {activeTab === 'surat-jalan' ? (
-          <div className='p-4 bg-white pt-10 pb-8 min-h-screen print:min-h-0 print:p-0 print:pt-0'>
-            {/* Header (SURAT JALAN Title & No only) */}
-            <div className='flex justify-center mb-6 pt-4 print:pt-0 print:mt-0 print:mb-4'>
-              <div className='text-center'>
-                <h2 className='text-lg font-bold pb-1 mb-1 uppercase print:mt-0 print:pt-0'>
-                  SURAT JALAN
-                </h2>
-              </div>
-            </div>
+          pagedDetails.map((pageItems, pageIdx) => {
+            const pageStartIndex = pagedDetails
+              .slice(0, pageIdx)
+              .reduce((acc, p) => acc + p.length, 0);
 
-            {/* Metadata Section */}
-            <div className='flex justify-between items-start mb-6 text-sm'>
-              <div className='w-40 border border-black text-[10px] grid grid-cols-2 text-center bg-white'>
-                <div className='border-r border-b border-black py-0.5 font-semibold'>
-                  PPIC
+            return (
+              <div
+                key={`sj-page-${pageIdx}`}
+                className={`print-page bg-white shadow-md border border-neutral-300 rounded-sm mb-8 p-6 print:p-0 print:border-none print:shadow-none print:rounded-none print:mb-0 ${
+                  pageIdx === pagedDetails.length - 1 ? 'last-page' : ''
+                }`}
+              >
+                {/* Header (SURAT JALAN Title & No only) */}
+                <div className='flex justify-between items-center mb-4 print:mb-2 pt-2 print:pt-0'>
+                  <div className='w-24 no-print'></div>
+                  <div className='flex-1 text-center'>
+                    <h2 className='text-lg font-bold pb-0.5 mb-0.5 uppercase print:mt-0 print:pt-0'>
+                      SURAT JALAN
+                    </h2>
+                  </div>
+                  <div className='w-24 text-right text-[11px] font-semibold text-neutral-600'>
+                    {pagedDetails.length > 1 && `Hal. ${pageIdx + 1} / ${pagedDetails.length}`}
+                  </div>
                 </div>
-                <div className='border-b border-black py-0.5'>Rev : 00</div>
-                <div className='border-r border-black py-0.5 font-semibold'>
-                  004
-                </div>
-                <div className='py-0.5'>Terbit : 8/25</div>
-              </div>
 
-              {/* Pengiriman Info */}
-              <div className='space-y-1 text-xs w-72'>
-                <div className='grid grid-cols-3 gap-2'>
-                  <span className='text-neutral-500'>Tujuan</span>
-                  <span className='col-span-2 font-semibold'>
-                    : {combinedMeta.clientName}
-                  </span>
-                </div>
-                <div className='grid grid-cols-3 gap-2'>
-                  <span className='text-neutral-500'>No. Kendaraan</span>
-                  <span className='col-span-2'>
-                    : {combinedMeta.noKendaraan}
-                  </span>
-                </div>
-                <div className='grid grid-cols-3 gap-2'>
-                  <span className='text-neutral-500'>Nama Sopir</span>
-                  <span className='col-span-2'>: {combinedMeta.supir}</span>
-                </div>
-                <div className='grid grid-cols-3 gap-2'>
-                  <span className='text-neutral-500'>No. Telepon</span>
-                  <span className='col-span-2'>: {combinedMeta.noHp}</span>
-                </div>
-              </div>
-            </div>
+                {/* Metadata Section */}
+                <div className='flex justify-between items-start mb-5 print:mb-3 text-sm'>
+                  <div className='w-40 border border-black text-[10px] grid grid-cols-2 text-center bg-white'>
+                    <div className='border-r border-b border-black py-0.5 font-semibold'>
+                      PPIC
+                    </div>
+                    <div className='border-b border-black py-0.5'>Rev : 00</div>
+                    <div className='border-r border-black py-0.5 font-semibold'>
+                      004
+                    </div>
+                    <div className='py-0.5'>Terbit : 8/25</div>
+                  </div>
 
-            {/* Table of Items */}
-            <table className='w-full text-[11px] text-left border border-black mb-8 border-collapse'>
-              <thead>
-                <tr className='bg-neutral-100 border-b border-black'>
-                  <th className='p-2 border-r border-black font-semibold text-center w-10' rowSpan={2}>
-                    NO
-                  </th>
-                  <th className='p-2 border-r border-black font-semibold w-20' rowSpan={2}>
-                    NO. SPK
-                  </th>
-                  <th className='p-2 border-r border-black font-semibold w-24' rowSpan={2}>
-                    RUANG
-                  </th>
-                  <th className='p-2 border-r border-black font-semibold' rowSpan={2}>
-                    ITEM/PERABOT
-                  </th>
-                  <th className='p-2 border-r border-black font-semibold w-24 text-center' colSpan={3}>
-                    DIMENSI (METER)
-                  </th>
-                  <th className='p-2 border-r border-black font-semibold w-16 text-center' rowSpan={2}>
-                    VOL
-                  </th>
-                  <th className='p-2 border-r border-black font-semibold w-16 text-center' rowSpan={2}>
-                    SAT
-                  </th>
-                  <th className='p-2 border-r border-black font-semibold text-center w-20' rowSpan={2}>
-                    JML
-                  </th>
-                  <th className='p-2 font-semibold text-center w-24' rowSpan={2}>
-                    KET
-                  </th>
-                </tr>
-                <tr className='bg-neutral-100 border-b border-black'>
-                  <th className='p-2 border-r border-black font-semibold w-24 text-center'>
-                    P
-                  </th>
-                  <th className='p-2 border-r border-black font-semibold w-16 text-center'>
-                    L
-                  </th>
-                  <th className='p-2 border-r border-black font-semibold text-center w-20'>
-                    T
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {combinedDetails.map((detail, index) => {
-                  return (
-                    <tr key={detail.id || index} className='border-b border-black last:border-b-0'>
-                      <td className='p-2 border-r border-black text-center'>
-                        {index + 1}
-                      </td>
-                      <td className='p-2 border-r border-black font-medium'>
-                        {detail.project_item?.project?.spk_number || '-'}
-                      </td>
-                      <td className='p-2 border-r border-black'>
-                        {detail.project_item?.ruang || '-'}
-                      </td>
-                      <td className='p-2 border-r border-black'>
-                        {detail.project_item?.item || '-'}
-                      </td>
-                      <td className='p-2 border-r border-black'>
-                        {detail.project_item?.panjang || '-'}
-                      </td>
-                      <td className='p-2 border-r border-black'>
-                        {detail.project_item?.lebar || '-'}
-                      </td>
-                      <td className='p-2 border-r border-black'>
-                        {detail.project_item?.tinggi || '-'}
-                      </td>
-                      <td className='p-2 border-r border-black text-center'>
-                        {detail.project_item?.volume ?? '-'}
-                      </td>
-                      <td className='p-2 border-r border-black text-center'>
-                        {detail.project_item?.satuan || '-'}
-                      </td>
-                      <td className='p-2 border-r border-black text-center font-bold text-xs'>
-                        {detail.jumlah_keluar}
-                      </td>
-                      <td className='p-2 text-center text-xs'>
-                        {detail.keterangan || '-'}
-                      </td>
+                  {/* Pengiriman Info */}
+                  <div className='space-y-1 text-xs w-72'>
+                    <div className='grid grid-cols-3 gap-2'>
+                      <span className='text-neutral-500'>Tujuan</span>
+                      <span className='col-span-2 font-semibold'>
+                        : {combinedMeta.clientName}
+                      </span>
+                    </div>
+                    <div className='grid grid-cols-3 gap-2'>
+                      <span className='text-neutral-500'>No. Kendaraan</span>
+                      <span className='col-span-2'>
+                        : {combinedMeta.noKendaraan}
+                      </span>
+                    </div>
+                    <div className='grid grid-cols-3 gap-2'>
+                      <span className='text-neutral-500'>Nama Sopir</span>
+                      <span className='col-span-2'>: {combinedMeta.supir}</span>
+                    </div>
+                    <div className='grid grid-cols-3 gap-2'>
+                      <span className='text-neutral-500'>No. Telepon</span>
+                      <span className='col-span-2'>: {combinedMeta.noHp}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Table of Items */}
+                <table className='w-full text-[11px] text-left border border-black mb-6 print:mb-3 border-collapse'>
+                  <thead>
+                    <tr className='bg-neutral-100 border-b border-black'>
+                      <th className='p-1.5 border-r border-black font-semibold text-center w-10' rowSpan={2}>
+                        NO
+                      </th>
+                      <th className='p-1.5 border-r border-black font-semibold w-20' rowSpan={2}>
+                        NO. SPK
+                      </th>
+                      <th className='p-1.5 border-r border-black font-semibold w-24' rowSpan={2}>
+                        RUANG
+                      </th>
+                      <th className='p-1.5 border-r border-black font-semibold' rowSpan={2}>
+                        ITEM/PERABOT
+                      </th>
+                      <th className='p-1.5 border-r border-black font-semibold w-24 text-center' colSpan={3}>
+                        DIMENSI (METER)
+                      </th>
+                      <th className='p-1.5 border-r border-black font-semibold w-16 text-center' rowSpan={2}>
+                        VOL
+                      </th>
+                      <th className='p-1.5 border-r border-black font-semibold w-16 text-center' rowSpan={2}>
+                        SAT
+                      </th>
+                      <th className='p-1.5 border-r border-black font-semibold text-center w-20' rowSpan={2}>
+                        JML
+                      </th>
+                      <th className='p-1.5 font-semibold text-center w-24' rowSpan={2}>
+                        KET
+                      </th>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                    <tr className='bg-neutral-100 border-b border-black'>
+                      <th className='p-1 border-r border-black font-semibold w-8 text-center'>
+                        P
+                      </th>
+                      <th className='p-1 border-r border-black font-semibold w-8 text-center'>
+                        L
+                      </th>
+                      <th className='p-1 border-r border-black font-semibold text-center w-8'>
+                        T
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pageItems.map((detail, index) => {
+                      const globalIdx = pageStartIndex + index + 1;
+                      return (
+                        <tr key={detail.id || globalIdx} className='border-b border-black last:border-b-0'>
+                          <td className='p-1.5 border-r border-black text-center'>
+                            {globalIdx}
+                          </td>
+                          <td className='p-1.5 border-r border-black font-medium'>
+                            {detail.project_item?.project?.spk_number || '-'}
+                          </td>
+                          <td className='p-1.5 border-r border-black'>
+                            {detail.project_item?.ruang || '-'}
+                          </td>
+                          <td className='p-1.5 border-r border-black font-medium'>
+                            {detail.project_item?.item || '-'}
+                          </td>
+                          <td className='p-1.5 border-r border-black text-center'>
+                            {detail.project_item?.panjang || '-'}
+                          </td>
+                          <td className='p-1.5 border-r border-black text-center'>
+                            {detail.project_item?.lebar || '-'}
+                          </td>
+                          <td className='p-1.5 border-r border-black text-center'>
+                            {detail.project_item?.tinggi || '-'}
+                          </td>
+                          <td className='p-1.5 border-r border-black text-center'>
+                            {detail.project_item?.volume ?? '-'}
+                          </td>
+                          <td className='p-1.5 border-r border-black text-center'>
+                            {detail.project_item?.satuan || '-'}
+                          </td>
+                          <td className='p-1.5 border-r border-black text-center font-bold text-xs'>
+                            {detail.jumlah_keluar}
+                          </td>
+                          <td className='p-1.5 text-center text-xs'>
+                            {detail.keterangan || '-'}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
 
-            {/* Date and Signature Blocks */}
-            <div className='mt-8 print:mt-6 print:break-inside-avoid'>
-              <div className='text-xs font-semibold mb-4 text-left'>
-                Yogyakarta,{' '}
-                {format(new Date(), 'dd MMMM yyyy', { locale: idLocale })}
-              </div>
+                {/* Date and Signature Blocks */}
+                <div className='mt-6 print:mt-3 print:break-inside-avoid'>
+                  <div className='text-xs font-semibold mb-3 print:mb-2 text-left'>
+                    Yogyakarta,{' '}
+                    {format(new Date(), 'dd MMMM yyyy', { locale: idLocale })}
+                  </div>
 
-              <div className='grid grid-cols-4 gap-4 text-xs text-center'>
-                <div className='flex flex-col justify-between h-24'>
-                  <span>
-                    Diserahkan Oleh:<br />
-                    <span className='font-semibold'>Petugas Gudang</span>
-                  </span>
-                  <span className='pt-1 w-3/4 mx-auto'>
-                    ( ............................ )
-                  </span>
-                </div>
-                <div className='flex flex-col justify-between h-24'>
-                  <span>
-                    Diterima Oleh:<br />
-                    <span className='font-semibold'>Petugas Pengiriman</span>
-                  </span>
-                  <span className='pt-1 w-3/4 mx-auto'>
-                    ( ............................ )
-                  </span>
-                </div>
-                <div className='flex flex-col justify-between h-24'>
-                  <span>
-                    Mengetahui:<br />
-                    <span className='font-semibold'>Security DPSA</span>
-                  </span>
-                  <span className='pt-1 w-3/4 mx-auto'>
-                    ( ............................ )
-                  </span>
-                </div>
-                <div className='flex flex-col justify-between h-24'>
-                  <span>
-                    Diterima Oleh:<br />
-                    <span className='font-semibold'>Konsumen</span>
-                  </span>
-                  <span className='pt-1 w-3/4 mx-auto'>
-                    ( ............................ )
-                  </span>
+                  <div className='grid grid-cols-4 gap-4 text-xs text-center'>
+                    <div className='flex flex-col justify-between h-20'>
+                      <span>
+                        Diserahkan Oleh:<br />
+                        <span className='font-semibold'>Petugas Gudang</span>
+                      </span>
+                      <span className='pt-1 w-3/4 mx-auto'>
+                        ( ............................ )
+                      </span>
+                    </div>
+                    <div className='flex flex-col justify-between h-20'>
+                      <span>
+                        Diterima Oleh:<br />
+                        <span className='font-semibold'>Petugas Pengiriman</span>
+                      </span>
+                      <span className='pt-1 w-3/4 mx-auto'>
+                        ( ............................ )
+                      </span>
+                    </div>
+                    <div className='flex flex-col justify-between h-20'>
+                      <span>
+                        Mengetahui:<br />
+                        <span className='font-semibold'>Security DPSA</span>
+                      </span>
+                      <span className='pt-1 w-3/4 mx-auto'>
+                        ( ............................ )
+                      </span>
+                    </div>
+                    <div className='flex flex-col justify-between h-20'>
+                      <span>
+                        Diterima Oleh:<br />
+                        <span className='font-semibold'>Konsumen</span>
+                      </span>
+                      <span className='pt-1 w-3/4 mx-auto'>
+                        ( ............................ )
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
+            );
+          })
         ) : (
-          <div className='p-4 bg-white pt-10 relative font-sans text-black pb-8 min-h-screen print:min-h-0 print:p-0 print:pt-0'>
-            {/* SETRIM Header */}
-            <div className='flex justify-between items-start mb-4 pt-4 relative print:pt-0 print:mt-0 print:mb-4'>
-              <div className='flex-1 text-center'>
-                <h2 className='text-sm font-bold inline-block border-b border-black pb-0.5 mt-4 print:mt-0 print:pt-0'>
-                  SURAT SERAH TERIMA BARANG
-                </h2>
-              </div>
-            </div>
+          pagedDetails.map((pageItems, pageIdx) => {
+            const pageStartIndex = pagedDetails
+              .slice(0, pageIdx)
+              .reduce((acc, p) => acc + p.length, 0);
 
-            {/* SETRIM Metadata */}
-            <div className='space-y-3 text-[11px] mb-6 px-4'>
-              <div className='flex items-start justify-between'>
-                <div className='flex items-center'>
-                  <span className='w-36 font-semibold'>Nomor Surat</span>
-                  <span className='mr-2'>:</span>
-                  <div className='border border-black px-2 py-0.5 w-48 min-h-[22px] flex items-center group relative focus-within:ring-1 focus-within:ring-black'>
-                    <input
-                      type='text'
-                      value={editedSetrimNo !== null ? editedSetrimNo : combinedMeta.setrimNo}
-                      onChange={(e) => setEditedSetrimNo(e.target.value)}
-                      className='bg-transparent border-none outline-none w-full p-0 m-0 text-[11px] font-sans text-black'
-                      title='Klik untuk mengedit nomor surat'
-                    />
-                    <Pencil className='w-3 h-3 absolute right-2 text-neutral-400 opacity-0 group-hover:opacity-100 transition-opacity no-print pointer-events-none' />
+            return (
+              <div
+                key={`setrim-page-${pageIdx}`}
+                className={`print-page bg-white shadow-md border border-neutral-300 rounded-sm mb-8 p-6 print:p-0 print:border-none print:shadow-none print:rounded-none print:mb-0 relative font-sans text-black ${
+                  pageIdx === pagedDetails.length - 1 ? 'last-page' : ''
+                }`}
+              >
+                {/* SETRIM Header */}
+                <div className='flex justify-between items-center mb-4 print:mb-2 pt-2 relative print:pt-0'>
+                  <div className='w-24 no-print'></div>
+                  <div className='flex-1 text-center'>
+                    <h2 className='text-sm font-bold inline-block border-b border-black pb-0.5 print:mt-0 print:pt-0'>
+                      SURAT SERAH TERIMA BARANG
+                    </h2>
+                  </div>
+                  <div className='w-24 text-right text-[11px] font-semibold text-neutral-600'>
+                    {pagedDetails.length > 1 && `Hal. ${pageIdx + 1} / ${pagedDetails.length}`}
                   </div>
                 </div>
 
-                <div className='w-40 border border-black text-[10px] grid grid-cols-2 text-center bg-white -mt-2'>
-                  <div className='border-r border-b border-black py-0.5 font-semibold'>
-                    PPIC
+                {/* SETRIM Metadata */}
+                <div className='space-y-2.5 text-[11px] mb-4 print:mb-2 px-2 print:px-0'>
+                  <div className='flex items-start justify-between'>
+                    <div className='flex items-center'>
+                      <span className='w-36 font-semibold'>Nomor Surat</span>
+                      <span className='mr-2'>:</span>
+                      <div className='border border-black px-2 py-0.5 w-48 min-h-[22px] flex items-center group relative focus-within:ring-1 focus-within:ring-black'>
+                        <input
+                          type='text'
+                          value={editedSetrimNo !== null ? editedSetrimNo : combinedMeta.setrimNo}
+                          onChange={(e) => setEditedSetrimNo(e.target.value)}
+                          className='bg-transparent border-none outline-none w-full p-0 m-0 text-[11px] font-sans text-black'
+                          title='Klik untuk mengedit nomor surat'
+                        />
+                        <Pencil className='w-3 h-3 absolute right-2 text-neutral-400 opacity-0 group-hover:opacity-100 transition-opacity no-print pointer-events-none' />
+                      </div>
+                    </div>
+
+                    <div className='w-40 border border-black text-[10px] grid grid-cols-2 text-center bg-white -mt-2'>
+                      <div className='border-r border-b border-black py-0.5 font-semibold'>
+                        PPIC
+                      </div>
+                      <div className='border-b border-black py-0.5'>Rev : 00</div>
+                      <div className='border-r border-black py-0.5 font-semibold'>
+                        005
+                      </div>
+                      <div className='py-0.5'>Terbit : 8/25</div>
+                    </div>
                   </div>
-                  <div className='border-b border-black py-0.5'>Rev : 00</div>
-                  <div className='border-r border-black py-0.5 font-semibold'>
-                    005
+
+                  <div className='flex items-center'>
+                    <span className='w-36 font-semibold shrink-0'>
+                      Tujuan Pengiriman/Penerima
+                    </span>
+                    <span className='mr-2 shrink-0'>:</span>
+                    <div className='border border-black px-2 py-0.5 min-w-[192px] max-w-md w-auto min-h-[22px] font-bold uppercase flex items-center text-[11px] leading-tight break-words'>
+                      {combinedMeta.clientName}
+                    </div>
                   </div>
-                  <div className='py-0.5'>Terbit : 8/25</div>
-                </div>
-              </div>
-
-              <div className='flex items-center'>
-                <span className='w-36 font-semibold shrink-0'>
-                  Tujuan Pengiriman/Penerima
-                </span>
-                <span className='mr-2 shrink-0'>:</span>
-                <div className='border border-black px-2 py-0.5 min-w-[192px] max-w-md w-auto min-h-[22px] font-bold uppercase flex items-center text-[11px] leading-tight break-words'>
-                  {combinedMeta.clientName}
-                </div>
-              </div>
-              <div className='flex items-center justify-between gap-4'>
-                <div className='flex items-center shrink-0'>
-                  <span className='w-36 font-semibold shrink-0'>
-                    Tanggal Terima Barang*)
-                  </span>
-                  <span className='mr-2 shrink-0'>:</span>
-                  <div className='border border-black px-2 py-0.5 w-48 min-h-[22px] shrink-0'></div>
-                </div>
-                <div className='flex items-center flex-1 justify-end min-w-0'>
-                  <span className='font-semibold mr-2 text-[10px] whitespace-nowrap shrink-0'>
-                    No. SPK/SPH
-                  </span>
-                  <span className='mr-2 font-semibold text-[10px] shrink-0'>:</span>
-                  <div className='border border-black px-2 py-0.5 flex-1 min-h-[22px] flex items-center font-bold text-[10px] leading-tight break-all'>
-                    {combinedMeta.spkNumberStr}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className='mb-2 text-[11px] font-semibold px-4'>
-              Telah diterima barang - barang pesanan dari PT DHARMA PUTRA
-              SEJAHTERA ABADI, berupa:
-            </div>
-
-            {/* SETRIM Table */}
-            <div className='px-4'>
-              <table className='w-full text-[11px] text-left border border-black mb-8 border-collapse'>
-                <thead>
-                  <tr className='border-b border-black'>
-                    <th className='p-1.5 border-r border-black font-semibold text-center w-8' rowSpan={2}>
-                      NO.
-                    </th>
-                    <th className='p-1.5 border-r border-black font-semibold text-center w-30' rowSpan={2}>
-                      RUANG
-                    </th>
-                    <th className='p-1.5 border-r border-black font-semibold text-center' rowSpan={2}>
-                      ITEM/PERABOT**)
-                    </th>
-                    <th className='p-1.5 border-r border-black font-semibold text-center w-28' colSpan={3}>
-                      DIMENSI (METER)
-                    </th>
-                    <th className='p-1.5 border-r border-black font-semibold text-center w-12' rowSpan={2}>
-                      VOL
-                    </th>
-                    <th className='p-1.5 border-r border-black font-semibold text-center w-12' rowSpan={2}>
-                      SAT
-                    </th>
-                    <th className='p-1.5 border-r border-black font-semibold text-center w-12' rowSpan={2}>
-                      JML
-                    </th>
-                    <th className='p-1.5 font-semibold text-center w-16' rowSpan={2}>
-                      KET
-                    </th>
-                  </tr>
-                  <tr className='border-b border-black'>
-                    <th className='p-1.5 border-r border-black font-semibold text-center w-9'>
-                      P
-                    </th>
-                    <th className='p-1.5 border-r border-black font-semibold text-center w-9'>
-                      L
-                    </th>
-                    <th className='p-1.5 border-r border-black font-semibold text-center w-9'>
-                      T
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {combinedDetails.map((detail, index) => (
-                    <tr key={detail.id || index} className='border-b border-black h-6'>
-                      <td className='p-1.5 border-r border-black text-center'>
-                        {index + 1}
-                      </td>
-                      <td className='p-1.5 border-r border-black text-center'>
-                        {detail.project_item?.ruang || '-'}
-                      </td>
-                      <td className='p-1.5 border-r border-black uppercase font-medium pl-2'>
-                        {detail.project_item?.item || '-'}
-                      </td>
-                      <td className='p-1.5 border-r border-black text-center'>
-                        {detail.project_item?.panjang || '-'}
-                      </td>
-                      <td className='p-1.5 border-r border-black text-center'>
-                        {detail.project_item?.lebar || '-'}
-                      </td>
-                      <td className='p-1.5 border-r border-black text-center'>
-                        {detail.project_item?.tinggi || '-'}
-                      </td>
-                      <td className='p-1.5 border-r border-black text-center'>
-                        {detail.project_item?.volume ?? '-'}
-                      </td>
-                      <td className='p-1.5 border-r border-black text-center uppercase'>
-                        {detail.project_item?.satuan || '-'}
-                      </td>
-                      <td className='p-1.5 border-r border-black text-center'>
-                        {detail.jumlah_keluar}
-                      </td>
-                      <td className='p-1.5 text-center'>
-                        {detail.keterangan || ''}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* SETRIM Note */}
-            <div className='flex flex-row gap-1 text-[11px] text-left mb-8 px-4 print:px-0 print:break-inside-avoid'>
-              <div className='flex flex-col items-center'>
-                <div>
-                  <p>
-                    <i>Note: </i>
-                  </p>
-                </div>
-              </div>
-              <div className='flex flex-col items-center'>
-                <div>
-                  <p>
-                    <i>
-                      **) Item / perabot yang ditulis harus sama dengan yang
-                      tertulis di SPK/SPH jika barang yang dikirim tidak dalam
-                      satu SPK/SP/RAB, harus dibuatkan di lembar yang berbeda
-                      (sesuai SPK/SPH) Rangkap 2 : (Asli untuk konsumen)(lembar ke
-                      2 setelah di ttd konsumen kemudian diserahkan ke Keuangan)
-                      Untuk setiap barang yang sudah dikirim harus
-                      diserahterimakan dan ditandatangani oleh pihak jangum
-                      Apabila surat sudah ditandatangani mohon difoto sebagai
-                      bukti dan dikirim ke nomor (wa)085712330344
-                    </i>
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* SETRIM Footer */}
-            <div className='grid grid-cols-3 gap-4 text-[11px] text-center mt-12 mb-8 px-12 print:mt-6 print:mb-0 print:px-4 print:break-inside-avoid'>
-              <div className='flex flex-col items-center'>
-                <span className='font-semibold mb-12'>Disiapkan oleh,</span>
-                <div className='w-32 border-b border-black mb-1 relative group focus-within:ring-1 focus-within:ring-black'>
-                  <input
-                    type='text'
-                    value={preparedByName}
-                    onChange={(e) => setPreparedByName(e.target.value)}
-                    className='bg-transparent border-none outline-none w-full p-0 m-0 text-[11px] font-sans text-black text-center'
-                    placeholder='Nama'
-                  />
-                  <Pencil className='w-3 h-3 absolute -right-5 bottom-0.5 text-neutral-400 opacity-0 group-hover:opacity-100 transition-opacity no-print pointer-events-none' />
-                </div>
-                <div className='flex w-32 text-left mt-1 items-end'>
-                  <span className='font-semibold mr-1 text-[10px] mb-0.5'>
-                    Tgl.
-                  </span>
-                  <div className='flex-1 border-b border-black border-dashed relative group focus-within:ring-1 focus-within:ring-black'>
-                    <input
-                      type='text'
-                      value={preparedByDate}
-                      onChange={(e) => setPreparedByDate(e.target.value)}
-                      className='bg-transparent border-none outline-none w-full p-0 m-0 text-[10px] font-sans text-black text-center'
-                      placeholder='DD/MM/YY'
-                    />
-                    <Pencil className='w-3 h-3 absolute -right-5 bottom-0.5 text-neutral-400 opacity-0 group-hover:opacity-100 transition-opacity no-print pointer-events-none' />
+                  <div className='flex items-center justify-between gap-4'>
+                    <div className='flex items-center shrink-0'>
+                      <span className='w-36 font-semibold shrink-0'>
+                        Tanggal Terima Barang*)
+                      </span>
+                      <span className='mr-2 shrink-0'>:</span>
+                      <div className='border border-black px-2 py-0.5 w-48 min-h-[22px] shrink-0'></div>
+                    </div>
+                    <div className='flex items-center flex-1 justify-end min-w-0'>
+                      <span className='font-semibold mr-2 text-[10px] whitespace-nowrap shrink-0'>
+                        No. SPK/SPH
+                      </span>
+                      <span className='mr-2 font-semibold text-[10px] shrink-0'>:</span>
+                      <div className='border border-black px-2 py-0.5 flex-1 min-h-[22px] flex items-center font-bold text-[10px] leading-tight break-all'>
+                        {combinedMeta.spkNumberStr}
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div className='flex flex-col items-center'>
-                <span className='font-semibold mb-16'>Diserahkan oleh,</span>
-                <div className='w-32 border-b border-black mb-1 relative'></div>
-                <div className='flex w-32 text-left mt-1'>
-                  <span className='font-semibold mr-1 text-[10px]'>Tgl.</span>
-                  <span className='flex-1 border-b border-black border-dashed'></span>
+
+                <div className='mb-2 text-[11px] font-semibold px-2 print:px-0'>
+                  Telah diterima barang - barang pesanan dari PT DHARMA PUTRA
+                  SEJAHTERA ABADI, berupa:
+                </div>
+
+                {/* SETRIM Table */}
+                <div className='px-2 print:px-0'>
+                  <table className='w-full text-[11px] text-left border border-black mb-5 print:mb-3 border-collapse'>
+                    <thead>
+                      <tr className='border-b border-black'>
+                        <th className='p-1.5 border-r border-black font-semibold text-center w-8' rowSpan={2}>
+                          NO.
+                        </th>
+                        <th className='p-1.5 border-r border-black font-semibold text-center w-28' rowSpan={2}>
+                          RUANG
+                        </th>
+                        <th className='p-1.5 border-r border-black font-semibold text-center' rowSpan={2}>
+                          ITEM/PERABOT**)
+                        </th>
+                        <th className='p-1.5 border-r border-black font-semibold text-center w-24' colSpan={3}>
+                          DIMENSI (METER)
+                        </th>
+                        <th className='p-1.5 border-r border-black font-semibold text-center w-12' rowSpan={2}>
+                          VOL
+                        </th>
+                        <th className='p-1.5 border-r border-black font-semibold text-center w-12' rowSpan={2}>
+                          SAT
+                        </th>
+                        <th className='p-1.5 border-r border-black font-semibold text-center w-12' rowSpan={2}>
+                          JML
+                        </th>
+                        <th className='p-1.5 font-semibold text-center w-16' rowSpan={2}>
+                          KET
+                        </th>
+                      </tr>
+                      <tr className='border-b border-black'>
+                        <th className='p-1 border-r border-black font-semibold text-center w-8'>
+                          P
+                        </th>
+                        <th className='p-1 border-r border-black font-semibold text-center w-8'>
+                          L
+                        </th>
+                        <th className='p-1 border-r border-black font-semibold text-center w-8'>
+                          T
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pageItems.map((detail, index) => {
+                        const globalIdx = pageStartIndex + index + 1;
+                        return (
+                          <tr key={detail.id || globalIdx} className='border-b border-black h-6'>
+                            <td className='p-1.5 border-r border-black text-center'>
+                              {globalIdx}
+                            </td>
+                            <td className='p-1.5 border-r border-black text-center'>
+                              {detail.project_item?.ruang || '-'}
+                            </td>
+                            <td className='p-1.5 border-r border-black uppercase font-medium pl-2'>
+                              {detail.project_item?.item || '-'}
+                            </td>
+                            <td className='p-1.5 border-r border-black text-center'>
+                              {detail.project_item?.panjang || '-'}
+                            </td>
+                            <td className='p-1.5 border-r border-black text-center'>
+                              {detail.project_item?.lebar || '-'}
+                            </td>
+                            <td className='p-1.5 border-r border-black text-center'>
+                              {detail.project_item?.tinggi || '-'}
+                            </td>
+                            <td className='p-1.5 border-r border-black text-center'>
+                              {detail.project_item?.volume ?? '-'}
+                            </td>
+                            <td className='p-1.5 border-r border-black text-center uppercase'>
+                              {detail.project_item?.satuan || '-'}
+                            </td>
+                            <td className='p-1.5 border-r border-black text-center'>
+                              {detail.jumlah_keluar}
+                            </td>
+                            <td className='p-1.5 text-center'>
+                              {detail.keterangan || ''}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* SETRIM Note */}
+                <div className='flex flex-row gap-1 text-[10px] text-left mb-5 print:mb-2 px-2 print:px-0 print:break-inside-avoid'>
+                  <div>
+                    <p>
+                      <i>Note: </i>
+                    </p>
+                  </div>
+                  <div className='flex-1'>
+                    <p className='leading-tight'>
+                      <i>
+                        **) Item / perabot yang ditulis harus sama dengan yang
+                        tertulis di SPK/SPH jika barang yang dikirim tidak dalam
+                        satu SPK/SP/RAB, harus dibuatkan di lembar yang berbeda
+                        (sesuai SPK/SPH) Rangkap 2 : (Asli untuk konsumen)(lembar ke
+                        2 setelah di ttd konsumen kemudian diserahkan ke Keuangan)
+                        Untuk setiap barang yang sudah dikirim harus
+                        diserahterimakan dan ditandatangani oleh pihak jangum
+                        Apabila surat sudah ditandatangani mohon difoto sebagai
+                        bukti dan dikirim ke nomor (wa)085712330344
+                      </i>
+                    </p>
+                  </div>
+                </div>
+
+                {/* SETRIM Footer */}
+                <div className='grid grid-cols-3 gap-4 text-[11px] text-center mt-6 mb-4 px-12 print:mt-3 print:mb-0 print:px-4 print:break-inside-avoid'>
+                  <div className='flex flex-col items-center'>
+                    <span className='font-semibold mb-12 print:mb-8'>Disiapkan oleh,</span>
+                    <div className='w-32 border-b border-black mb-1 relative group focus-within:ring-1 focus-within:ring-black'>
+                      <input
+                        type='text'
+                        value={preparedByName}
+                        onChange={(e) => setPreparedByName(e.target.value)}
+                        className='bg-transparent border-none outline-none w-full p-0 m-0 text-[11px] font-sans text-black text-center'
+                        placeholder='Nama'
+                      />
+                      <Pencil className='w-3 h-3 absolute -right-5 bottom-0.5 text-neutral-400 opacity-0 group-hover:opacity-100 transition-opacity no-print pointer-events-none' />
+                    </div>
+                    <div className='flex w-32 text-left mt-1 items-end'>
+                      <span className='font-semibold mr-1 text-[10px] mb-0.5'>
+                        Tgl.
+                      </span>
+                      <div className='flex-1 border-b border-black border-dashed relative group focus-within:ring-1 focus-within:ring-black'>
+                        <input
+                          type='text'
+                          value={preparedByDate}
+                          onChange={(e) => setPreparedByDate(e.target.value)}
+                          className='bg-transparent border-none outline-none w-full p-0 m-0 text-[10px] font-sans text-black text-center'
+                          placeholder='DD/MM/YY'
+                        />
+                        <Pencil className='w-3 h-3 absolute -right-5 bottom-0.5 text-neutral-400 opacity-0 group-hover:opacity-100 transition-opacity no-print pointer-events-none' />
+                      </div>
+                    </div>
+                  </div>
+                  <div className='flex flex-col items-center'>
+                    <span className='font-semibold mb-16 print:mb-8'>Diserahkan oleh,</span>
+                    <div className='w-32 border-b border-black mb-1 relative'></div>
+                    <div className='flex w-32 text-left mt-1'>
+                      <span className='font-semibold mr-1 text-[10px]'>Tgl.</span>
+                      <span className='flex-1 border-b border-black border-dashed'></span>
+                    </div>
+                  </div>
+                  <div className='flex flex-col items-center'>
+                    <span className='font-semibold mb-16 print:mb-8'>Diterima oleh,</span>
+                    <div className='w-32 border-b border-black mb-1 relative'></div>
+                    <div className='flex w-32 text-left mt-1'>
+                      <span className='font-semibold mr-1 text-[10px]'>Tgl.</span>
+                      <span className='flex-1 border-b border-black border-dashed'></span>
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div className='flex flex-col items-center'>
-                <span className='font-semibold mb-16'>Diterima oleh,</span>
-                <div className='w-32 border-b border-black mb-1 relative'></div>
-                <div className='flex w-32 text-left mt-1'>
-                  <span className='font-semibold mr-1 text-[10px]'>Tgl.</span>
-                  <span className='flex-1 border-b border-black border-dashed'></span>
-                </div>
-              </div>
-            </div>
-          </div>
+            );
+          })
         )}
       </div>
     </div>

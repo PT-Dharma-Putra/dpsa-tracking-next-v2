@@ -64,10 +64,10 @@ export default function DashboardLayout({
     }
 
     return (
-        <SidebarProvider>
-            <AppSidebar />
-            <SidebarInset className="min-w-0 overflow-hidden">
-                <header className="flex h-16 shrink-0 items-center justify-between transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 border-b border-neutral-200 bg-white px-4">
+        <SidebarProvider className="print:block print:min-h-0 print:p-0 print:m-0 print:w-full">
+            <AppSidebar className="print:hidden" />
+            <SidebarInset className="min-w-0 overflow-hidden print:p-0 print:m-0 print:border-none print:overflow-visible print:w-full print:block print:min-h-0">
+                <header className="flex h-16 shrink-0 items-center justify-between transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 border-b border-neutral-200 bg-white px-4 print:hidden">
                     <div className="flex items-center gap-2">
                         <SidebarTrigger className="-ml-1" />
                         <Separator orientation="vertical" className="mr-2 h-4" />
@@ -77,7 +77,7 @@ export default function DashboardLayout({
                         <NotificationsPopover />
                     </div>
                 </header>
-                <div className="flex flex-1 flex-col gap-4 p-4 pt-0 bg-neutral-50/50 min-w-0 w-full overflow-hidden">
+                <div className="flex flex-1 flex-col gap-4 p-4 pt-0 bg-neutral-50/50 min-w-0 w-full overflow-hidden print:p-0 print:m-0 print:bg-white print:overflow-visible print:block print:min-h-0">
                     {children}
                 </div>
             </SidebarInset>
