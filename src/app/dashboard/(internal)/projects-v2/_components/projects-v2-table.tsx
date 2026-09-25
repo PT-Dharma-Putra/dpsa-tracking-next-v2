@@ -27,6 +27,7 @@ import {
   CheckCircle2,
   Activity,
   Clock,
+  TrendingUp,
   AlertTriangle,
   AlertCircle,
   Zap,
@@ -109,6 +110,7 @@ import { DeadlineDialog } from './deadline-dialog';
 import { SetTeamDialog } from './set-team-dialog';
 import { SiteReadinessViewDialog } from './site-readiness-view-dialog';
 import { CatatanKeterlambatanDialog } from './catatan-keterlambatan-dialog';
+import { MonthlyPerformanceDialog } from './monthly-performance-dialog';
 const formatRupiah = (value: string | number) => {
   if (value === null || value === undefined || value === '') return '';
 
@@ -300,6 +302,8 @@ export function ProjectsV2Table({
     | 'urgent'
     | 'po_supplier'
     | 'pakai_desain'
+    | 'tepat_waktu'
+    | 'terlambat'
     | null
   >(searchParams.get('dashboard_filter') as any || null);
 
@@ -320,6 +324,8 @@ export function ProjectsV2Table({
       | 'urgent'
       | 'po_supplier'
       | 'pakai_desain'
+      | 'tepat_waktu'
+      | 'terlambat'
       | null
   ) => {
     let newFilter = filter;
@@ -497,6 +503,8 @@ export function ProjectsV2Table({
   const [isCatatanDialogOpen, setIsCatatanDialogOpen] = React.useState(false);
   const [projectForCatatan, setProjectForCatatan] =
     React.useState<ProjectV2 | null>(null);
+
+  const [isTrendModalOpen, setIsTrendModalOpen] = React.useState(false);
 
   const { user } = useAuth();
   const userRole = (user?.role || '').toLowerCase();
@@ -2095,6 +2103,79 @@ export function ProjectsV2Table({
                 <span className='truncate mr-1'>Belum Lengkap</span>
                 <span className='font-bold'>
                   {stats.gambar_kerja_not_completed}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Ketepatan Waktu */}
+          <div className='flex flex-col gap-2 p-4 rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md'>
+            <div className='flex items-center gap-2 border-b border-slate-100 pb-2'>
+              <div className='h-6 w-6 rounded bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0'>
+                <Clock className='h-3.5 w-3.5' />
+              </div>
+              <p className='text-[10px] font-bold text-slate-500 uppercase tracking-wider'>
+                Ketepatan Waktu
+              </p>
+              <div className='ml-auto flex items-center gap-2'>
+                <span
+                  className={cn(
+                    'text-lg font-bold',
+                    (stats.on_time_percentage ?? 0) >= 80
+                      ? 'text-emerald-600'
+                      : (stats.on_time_percentage ?? 0) >= 60
+                      ? 'text-amber-600'
+                      : 'text-rose-600'
+                  )}
+                >
+                  {stats.on_time_percentage !== undefined && stats.on_time_percentage !== null
+                    ? `${stats.on_time_percentage}%`
+                    : '-'}
+                </span>
+                <button
+                  type='button'
+                  onClick={() => setIsTrendModalOpen(true)}
+                  className='text-[10px] text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-0.5 cursor-pointer font-medium'
+                  title='Lihat Tren Bulanan'
+                >
+                  <TrendingUp className='h-3 w-3' />
+                  <span>Tren</span>
+                </button>
+              </div>
+            </div>
+
+            <div className='flex flex-row gap-1.5 mt-auto'>
+              {/* Tepat Waktu */}
+              <div
+                onClick={() => handleDashboardFilterClick('tepat_waktu')}
+                className={cn(
+                  'flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  dashboardFilter === 'tepat_waktu'
+                    ? 'border-emerald-500 bg-emerald-50 text-emerald-700 font-semibold ring-1 ring-emerald-400'
+                    : 'border-emerald-100 bg-emerald-50/50 hover:border-emerald-300 text-emerald-700'
+                )}
+                title='Filter projek tepat waktu'
+              >
+                <span className='truncate mr-1'>Tepat Waktu</span>
+                <span className='font-bold shrink-0'>
+                  {stats.on_time_count ?? 0}
+                </span>
+              </div>
+
+              {/* Terlambat */}
+              <div
+                onClick={() => handleDashboardFilterClick('terlambat')}
+                className={cn(
+                  'flex-1 flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  dashboardFilter === 'terlambat'
+                    ? 'border-rose-500 bg-rose-50 text-rose-700 font-semibold ring-1 ring-rose-400'
+                    : 'border-rose-100 bg-rose-50/50 hover:border-rose-300 text-rose-700'
+                )}
+                title='Filter projek terlambat'
+              >
+                <span className='truncate mr-1'>Terlambat</span>
+                <span className='font-bold shrink-0'>
+                  {stats.late_count ?? 0}
                 </span>
               </div>
             </div>
@@ -6322,6 +6403,13 @@ export function ProjectsV2Table({
             project={projectForCatatan}
             canEdit={canEditCatatan}
             isViewOnlyAllDashboard={showAllDashboard}
+          />
+
+          <MonthlyPerformanceDialog
+            open={isTrendModalOpen}
+            onOpenChange={setIsTrendModalOpen}
+            data={stats?.monthly_performance}
+            year={selectedYear}
           />
 
           <AlertDialog

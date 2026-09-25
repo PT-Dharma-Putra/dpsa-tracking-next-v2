@@ -250,6 +250,19 @@ export interface ProjectV2Stats {
   qc_completed: number;
   qc_not_completed: number;
   pakai_desain: number;
+  on_time_count?: number;
+  late_count?: number;
+  no_submit_count?: number;
+  on_time_percentage?: number;
+  monthly_performance?: Array<{
+    month: number;
+    month_name: string;
+    total_project: number;
+    on_time: number;
+    late: number;
+    no_submit: number;
+    percentage: number;
+  }>;
 }
 
 interface GetProjectsV2Params {
