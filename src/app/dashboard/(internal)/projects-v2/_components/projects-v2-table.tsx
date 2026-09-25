@@ -6201,7 +6201,8 @@ export function ProjectsV2Table({
                                 );
 
                               const isOnTime =
-                                new Date(submit) <= new Date(target);
+                                startOfDay(new Date(submit)) <=
+                                startOfDay(new Date(target));
                               return (
                                 <Badge
                                   variant='outline'
