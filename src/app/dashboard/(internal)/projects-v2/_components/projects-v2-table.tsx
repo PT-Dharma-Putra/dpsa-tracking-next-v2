@@ -3583,7 +3583,7 @@ export function ProjectsV2Table({
             )}
           </div>
 
-          {(showProduksi || showPerencanaan || showPengirimanV2) && selectedProjectIds.length > 0 && (
+          {(showProduksi || showPerencanaan || showPengirimanV2 || showQC) && selectedProjectIds.length > 0 && (
             <div className='flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl border border-emerald-200 bg-emerald-50/70 text-emerald-900 shadow-sm animate-in fade-in slide-in-from-top-1 duration-200'>
               <div className='flex items-center gap-2 text-xs font-semibold'>
                 <CheckCircle2 className='h-4 w-4 text-emerald-600' />
@@ -3646,7 +3646,7 @@ export function ProjectsV2Table({
             <Table>
               <TableHeader className='bg-neutral-50'>
                 <TableRow>
-                  {(showProduksi || showPerencanaan || showPengirimanV2) && (
+                  {(showProduksi || showPerencanaan || showPengirimanV2 || showQC) && (
                     <TableHead className='w-[40px] px-3 text-center'>
                       <Checkbox
                         checked={
@@ -4315,6 +4315,8 @@ export function ProjectsV2Table({
                           ? 21
                           : showPengirimanV2
                           ? 19
+                          : showQC
+                          ? 15
                           : 18
                       }
                       className='h-32 text-center text-muted-foreground'
@@ -4346,6 +4348,8 @@ export function ProjectsV2Table({
                           ? 21
                           : showPengirimanV2
                           ? 19
+                          : showQC
+                          ? 15
                           : 18
                       }
                       className='h-32 text-center text-muted-foreground'
@@ -4356,7 +4360,7 @@ export function ProjectsV2Table({
                 ) : (
                   projects.map((project, index) => (
                     <TableRow key={project.id} className='group'>
-                      {(showProduksi || showPerencanaan || showPengirimanV2) && (
+                      {(showProduksi || showPerencanaan || showPengirimanV2 || showQC) && (
                         <TableCell className='w-[40px] px-3 text-center'>
                           <Checkbox
                             checked={selectedProjectIds.includes(project.id)}
@@ -4493,18 +4497,33 @@ export function ProjectsV2Table({
                                 </Button>
                               )}
                               {showQC && (
-                                <Button
-                                  variant='outline'
-                                  size='xs'
-                                  className='text-orange-600 border-orange-200 hover:bg-orange-50 hover:text-orange-700'
-                                  onClick={() =>
-                                    router.push(
-                                      `/dashboard/projects-v2/qc/${project.id}/detail`
-                                    )
-                                  }
-                                >
-                                  Detail
-                                </Button>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant='ghost' className='h-8 w-8 p-0'>
+                                      <span className='sr-only'>Open menu</span>
+                                      <MoreHorizontal className='h-4 w-4' />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align='start'>
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        router.push(
+                                          `/dashboard/projects-v2/qc/${project.id}/detail`
+                                        )
+                                      }
+                                    >
+                                      Detail
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        handleExportExcelSelected([project.id])
+                                      }
+                                    >
+                                      <FileSpreadsheet className='mr-2 h-4 w-4 text-emerald-600' />
+                                      Export Excel
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
                               )}
                               {showPiutang && (
                                 <Button
@@ -4585,16 +4604,26 @@ export function ProjectsV2Table({
                                   </>
                                 )}
                                 {showQC && (
-                                  <DropdownMenuItem
-                                    onClick={() =>
-                                      router.push(
-                                        `/dashboard/projects-v2/qc/${project.id}/detail`
-                                      )
-                                    }
-                                  >
-                                    <Plus className='mr-2 h-4 w-4' />
-                                    Detail
-                                  </DropdownMenuItem>
+                                  <>
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        router.push(
+                                          `/dashboard/projects-v2/qc/${project.id}/detail`
+                                        )
+                                      }
+                                    >
+                                      <Plus className='mr-2 h-4 w-4' />
+                                      Detail
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        handleExportExcelSelected([project.id])
+                                      }
+                                    >
+                                      <FileSpreadsheet className='mr-2 h-4 w-4 text-emerald-600' />
+                                      Export Excel
+                                    </DropdownMenuItem>
+                                  </>
                                 )}
                                 {showProduksi && (
                                   <DropdownMenuItem
