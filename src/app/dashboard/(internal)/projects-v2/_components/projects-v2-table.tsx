@@ -666,6 +666,18 @@ export function ProjectsV2Table({
     return map;
   }, [divisions]);
 
+  const { data: engineers = [] } = useQuery({
+    queryKey: ['engineers'],
+    queryFn: () => projectV2Service.getEngineers(),
+    enabled: showEngineer,
+  });
+
+  const engineersMap = React.useMemo(() => {
+    const map = new Map<number, string>();
+    engineers.forEach((e) => map.set(e.id, e.name));
+    return map;
+  }, [engineers]);
+
   const observerRef = React.useRef<IntersectionObserver>(null);
   const loadMoreRef = React.useCallback(
     (node: HTMLDivElement | null) => {
@@ -4011,6 +4023,7 @@ export function ProjectsV2Table({
                         </TableHead>
                       )}
                       {showEngineer && <TableHead>TEAM</TableHead>}
+                      {showEngineer && <TableHead>PIC</TableHead>}
                       {!showPiutang && (
                         <TableHead>NAMA PROJEK</TableHead>
                       )}
@@ -5352,6 +5365,35 @@ export function ProjectsV2Table({
                                       key={id}
                                       variant='outline'
                                       className='text-[11px] bg-blue-50 text-blue-700 border-blue-200 whitespace-nowrap'
+                                    >
+                                      {name}
+                                    </Badge>
+                                  );
+                                })}
+                            </div>
+                          ) : (
+                            <span className='text-muted-foreground italic text-xs'>
+                              -
+                            </span>
+                          )}
+                        </TableCell>
+                      )}
+
+                      {showEngineer && (
+                        <TableCell>
+                          {project.project_team?.pic_engineer_id ? (
+                            <div className='flex flex-wrap gap-1 max-w-[200px]'>
+                              {project.project_team.pic_engineer_id
+                                .split(',')
+                                .map((idStr) => {
+                                  const id = parseInt(idStr.trim(), 10);
+                                  const name = engineersMap.get(id);
+                                  if (!name) return null;
+                                  return (
+                                    <Badge
+                                      key={id}
+                                      variant='outline'
+                                      className='text-[11px] bg-indigo-50 text-indigo-700 border-indigo-200 whitespace-nowrap'
                                     >
                                       {name}
                                     </Badge>

@@ -149,6 +149,7 @@ export interface ProjectV2 {
     id: number;
     project_id: number;
     divisi_id: string | null;
+    pic_engineer_id?: string | null;
     created_at?: string;
     updated_at?: string;
   };
