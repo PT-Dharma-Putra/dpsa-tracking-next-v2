@@ -138,7 +138,7 @@ import {
 import { toast } from 'sonner';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
-import { usePermissions } from '@/hooks/use-permissions';
+import { useMenuPermission } from '@/hooks/use-menu-permission';
 
 const storageBase = (
   process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
@@ -146,10 +146,7 @@ const storageBase = (
 
 export default function RekapPenagihanPage() {
   const queryClient = useQueryClient();
-  const { can } = usePermissions();
-
-  const canUpdate = can('update projects-v2/rekap-penagihan') || can('update penagihan');
-  const canDelete = can('delete projects-v2/rekap-penagihan') || can('delete penagihan');
+  const { canUpdate, canDelete } = useMenuPermission();
 
   const [search, setSearch] = React.useState('');
   const [sortBy, setSortBy] = React.useState<'invoice' | 'aging'>('invoice');
