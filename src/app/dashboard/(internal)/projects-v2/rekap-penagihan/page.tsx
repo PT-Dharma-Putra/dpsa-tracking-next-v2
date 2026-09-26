@@ -138,6 +138,7 @@ import {
 import { toast } from 'sonner';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
+import { usePermissions } from '@/hooks/use-permissions';
 
 const storageBase = (
   process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
@@ -145,6 +146,10 @@ const storageBase = (
 
 export default function RekapPenagihanPage() {
   const queryClient = useQueryClient();
+  const { can } = usePermissions();
+
+  const canUpdate = can('update projects-v2/rekap-penagihan') || can('update penagihan');
+  const canDelete = can('delete projects-v2/rekap-penagihan') || can('delete penagihan');
 
   const [search, setSearch] = React.useState('');
   const [sortBy, setSortBy] = React.useState<'invoice' | 'aging'>('invoice');
@@ -337,6 +342,7 @@ export default function RekapPenagihanPage() {
   };
 
   const openEdit = (p: Penagihan) => {
+    if (!canUpdate) return;
     setEditingId(p.id);
     setForm({
       project_id: p.project_id,
@@ -748,7 +754,7 @@ export default function RekapPenagihanPage() {
                     {/* <TableHead>TERMIN</TableHead> */}
                     <TableHead>DESKRIPSI</TableHead>
                     <TableHead>STATUS</TableHead>
-                    <TableHead></TableHead>
+                    {canUpdate && <TableHead></TableHead>}
                     {/* <TableHead>PERSENTASE</TableHead> */}
                     <TableHead>NOMINAL</TableHead>
                     <TableHead>NO SPK</TableHead>
@@ -781,20 +787,20 @@ export default function RekapPenagihanPage() {
                       </div>
                     </TableHead>
                     <TableHead>FILE</TableHead>
-                    <TableHead className='text-right'>AKSI</TableHead>
+                    {canDelete && <TableHead className='text-right'>AKSI</TableHead>}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {isLoadingPenagihan ? (
                     <TableRow>
-                      <TableCell colSpan={12} className='h-32 text-center'>
+                      <TableCell colSpan={13 + (canUpdate ? 1 : 0) + (canDelete ? 1 : 0)} className='h-32 text-center'>
                         <Loader2 className='h-6 w-6 animate-spin mx-auto text-neutral-400' />
                       </TableCell>
                     </TableRow>
                   ) : filteredPenagihans.length === 0 ? (
                     <TableRow>
                       <TableCell
-                        colSpan={12}
+                        colSpan={13 + (canUpdate ? 1 : 0) + (canDelete ? 1 : 0)}
                         className='h-32 text-center text-muted-foreground'
                       >
                         Belum ada data penagihan.
@@ -851,16 +857,18 @@ export default function RekapPenagihanPage() {
                               </div>
                             )}
                         </TableCell>
-                        <TableCell>
-                          <Button
-                            variant='ghost'
-                            size='icon'
-                            className='h-8 w-8 text-neutral-500 hover:text-blue-600'
-                            onClick={() => openEdit(item)}
-                          >
-                            <Pencil className='h-3.5 w-3.5' />
-                          </Button>
-                        </TableCell>
+                        {canUpdate && (
+                          <TableCell>
+                            <Button
+                              variant='ghost'
+                              size='icon'
+                              className='h-8 w-8 text-neutral-500 hover:text-blue-600'
+                              onClick={() => openEdit(item)}
+                            >
+                              <Pencil className='h-3.5 w-3.5' />
+                            </Button>
+                          </TableCell>
+                        )}
                         {/* <TableCell className='font-bold text-blue-600'>
                       {item.persentase}%
                     </TableCell> */}
@@ -941,18 +949,20 @@ export default function RekapPenagihanPage() {
                             </span>
                           )}
                         </TableCell>
-                        <TableCell className='text-right'>
-                          <div className='flex justify-end gap-1'>
-                            <Button
-                              variant='ghost'
-                              size='icon'
-                              className='h-8 w-8 text-neutral-500 hover:text-red-600'
-                              onClick={() => setDeleteTarget(item)}
-                            >
-                              <Trash2 className='h-3.5 w-3.5' />
-                            </Button>
-                          </div>
-                        </TableCell>
+                        {canDelete && (
+                          <TableCell className='text-right'>
+                            <div className='flex justify-end gap-1'>
+                              <Button
+                                variant='ghost'
+                                size='icon'
+                                className='h-8 w-8 text-neutral-500 hover:text-red-600'
+                                onClick={() => setDeleteTarget(item)}
+                              >
+                                <Trash2 className='h-3.5 w-3.5' />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        )}
                       </TableRow>
                     ))
                   )}
