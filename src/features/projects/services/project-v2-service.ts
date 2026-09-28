@@ -1229,7 +1229,88 @@ export const projectV2Service = {
     );
     return data;
   },
+  getProduksiDocumentation: async (projectId: number | string): Promise<ProduksiDocumentationResponse> => {
+    const { data } = await apiClient.get<ProduksiDocumentationResponse>(
+      `/projects-v2/${projectId}/produksi-documentation`
+    );
+    return data;
+  },
+  createProduksiDocumentation: async (
+    projectId: number | string,
+    payload: {
+      persentase: number;
+      keterangan?: string;
+      photos?: File[];
+      videos?: File[];
+    }
+  ) => {
+    const formData = new FormData();
+    formData.append('persentase', payload.persentase.toString());
+    if (payload.keterangan) {
+      formData.append('keterangan', payload.keterangan);
+    }
+
+    if (payload.photos && payload.photos.length > 0) {
+      payload.photos.forEach((photo) => {
+        formData.append('photos[]', photo);
+      });
+    }
+
+    if (payload.videos && payload.videos.length > 0) {
+      payload.videos.forEach((video) => {
+        formData.append('videos[]', video);
+      });
+    }
+
+    const { data } = await apiClient.post(
+      `/projects-v2/${projectId}/produksi-documentation`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+    return data;
+  },
+  deleteProduksiDocumentation: async (id: number | string) => {
+    const { data } = await apiClient.delete(`/produksi-documentation/${id}`);
+    return data;
+  },
 };
+
+export interface ProduksiDocumentationMedia {
+  id: number;
+  documentation_id: number;
+  file_path: string;
+  file_type: 'image' | 'video';
+  file_name: string | null;
+  file_size: number | null;
+  url: string;
+  created_at: string;
+}
+
+export interface ProduksiDocumentation {
+  id: number;
+  project_id: number;
+  user_id: number | null;
+  persentase: number;
+  keterangan: string | null;
+  user?: {
+    id: number;
+    name: string;
+  };
+  media: ProduksiDocumentationMedia[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProduksiDocumentationResponse {
+  status: string;
+  project_id: number;
+  progres_produksi: number;
+  data: ProduksiDocumentation[];
+}
 
 export interface SiteReadinessMedia {
   id: number;

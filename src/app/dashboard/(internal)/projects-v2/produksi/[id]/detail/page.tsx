@@ -28,6 +28,7 @@ import {
   ZoomOut,
   RotateCcw,
   SlidersHorizontal,
+  Camera,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import * as XLSX from 'xlsx-js-style';
@@ -70,6 +71,7 @@ import {
   BarangSupplier,
 } from '@/features/projects/services/project-v2-service';
 import { kopSuratService } from '@/features/master-data/services/kop-surat-service';
+import { ProduksiDocumentationDialog } from '@/app/dashboard/(internal)/projects-v2/_components/produksi-documentation-dialog';
 import { QRCodeSVG } from 'qrcode.react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
@@ -112,6 +114,12 @@ export default function ProduksiDetailPage() {
   const { data: kopSuratActive } = useQuery({
     queryKey: ['kop-surat-active'],
     queryFn: () => kopSuratService.getActiveKopSurat(),
+  });
+
+  const { data: produksiDocs } = useQuery({
+    queryKey: ['produksi-documentation', projectId],
+    queryFn: () => projectV2Service.getProduksiDocumentation(projectId),
+    enabled: !!projectId,
   });
 
   const [selectedKopId, setSelectedKopId] = React.useState<number | null>(null);
@@ -184,6 +192,8 @@ export default function ProduksiDetailPage() {
   >({});
   const [isOrderCollapsed, setIsOrderCollapsed] = React.useState(false);
   const [isProgressCollapsed, setIsProgressCollapsed] = React.useState(false);
+  const [isDocCollapsed, setIsDocCollapsed] = React.useState(false);
+  const [isProduksiDocOpen, setIsProduksiDocOpen] = React.useState(false);
 
   // QC View State
   const [isQcViewOpen, setIsQcViewOpen] = React.useState(false);
@@ -1854,7 +1864,7 @@ export default function ProduksiDetailPage() {
       </div>
 
       {/* Document Section at Top */}
-      <div className='grid grid-cols-1 md:grid-cols-2 gap-4 w-full'>
+      <div className='grid grid-cols-1 md:grid-cols-3 gap-4 w-full'>
         {/* 1. ORDER PRODUKSI SECTION */}
         <Card
           className={`relative border shadow-sm transition-all duration-300 ${
@@ -2056,6 +2066,87 @@ export default function ProduksiDetailPage() {
                 <p className='text-[10px] font-bold text-blue-600'>
                   {Number(project.progres_produksi || 0).toFixed(2)}%
                 </p>
+              </div>
+            </CardContent>
+          )}
+        </Card>
+
+        {/* 3. DOKUMENTASI PROGRESS PRODUKSI SECTION */}
+        <Card
+          className={`relative border shadow-sm transition-all duration-300 ${
+            (produksiDocs?.data?.length || 0) > 0
+              ? 'border-purple-200 bg-white ring-1 ring-purple-100'
+              : 'border-orange-200 bg-white ring-1 ring-orange-100'
+          }`}
+        >
+          {(produksiDocs?.data?.length || 0) > 0 && (
+            <div className='absolute -top-1.5 -right-1.5 h-5 w-5 bg-emerald-500 rounded-full flex items-center justify-center shadow-sm z-10 animate-in zoom-in duration-300'>
+              <CheckCircle2 className='h-3 w-3 text-white' />
+            </div>
+          )}
+          <CardHeader className='pb-3 flex flex-row items-center justify-between gap-3'>
+            <button
+              className='flex items-center gap-3 flex-1 text-left'
+              onClick={() => setIsDocCollapsed((v) => !v)}
+            >
+              <div
+                className='h-8 w-8 rounded-full flex items-center justify-center font-bold bg-purple-100 text-purple-700'
+              >
+                3
+              </div>
+              <div className='flex-1'>
+                <CardTitle className='text-base text-neutral-800'>
+                  Dokumentasi Progress Produksi
+                </CardTitle>
+                <p className='text-[10px] text-muted-foreground uppercase tracking-wider'>
+                  Production Documentation
+                </p>
+              </div>
+              <ChevronDown
+                className={`h-4 w-4 text-neutral-400 transition-transform duration-200 mr-1 ${
+                  isDocCollapsed ? '-rotate-90' : ''
+                }`}
+              />
+            </button>
+            <Button
+              type='button'
+              size='icon'
+              variant='outline'
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsProduksiDocOpen(true);
+              }}
+              className='h-8 w-8 text-orange-600 hover:text-orange-700 hover:bg-orange-50 border-orange-200 shadow-xs shrink-0'
+              title='Buka Dokumentasi & Foto Progres'
+            >
+              <Camera className='h-4 w-4' />
+            </Button>
+          </CardHeader>
+          {!isDocCollapsed && (
+            <CardContent className='pt-0 space-y-3'>
+              <div className='p-2.5 rounded-lg bg-amber-50/80 border border-amber-200 text-amber-900 text-xs flex items-start gap-2'>
+                <Info className='h-4 w-4 text-amber-600 shrink-0 mt-0.5' />
+                <p className='text-[11px] leading-relaxed font-medium'>
+                  Untuk project gedung baru, silakan upload foto sample itemnya. Ketika progress produksi sudah 50% dan 80%
+                </p>
+              </div>
+
+              <div className='flex items-center justify-between gap-2 pt-0.5'>
+                <div className='text-[11px] text-muted-foreground flex items-center gap-1.5'>
+                  <span className='font-semibold text-neutral-700'>
+                    {produksiDocs?.data?.length || 0}
+                  </span>
+                  <span>dokumentasi diunggah</span>
+                </div>
+                <Button
+                  type='button'
+                  size='sm'
+                  onClick={() => setIsProduksiDocOpen(true)}
+                  className='h-8 px-3 text-xs gap-1.5 bg-orange-600 hover:bg-orange-700 text-white font-medium shadow-sm transition-all'
+                >
+                  <Camera className='h-3.5 w-3.5' />
+                  Dokumentasi Foto
+                </Button>
               </div>
             </CardContent>
           )}
@@ -4747,6 +4838,21 @@ export default function ProduksiDetailPage() {
           </div>
         </AlertDialogContent>
       </AlertDialog>
+
+      <ProduksiDocumentationDialog
+        projectId={projectId}
+        isOpen={isProduksiDocOpen}
+        onClose={() => setIsProduksiDocOpen(false)}
+        projectName={project?.name}
+        clientName={project?.client?.name}
+        spkNumber={
+          project?.spk_number ||
+          (project as any)?.spk?.nomor_spk ||
+          undefined
+        }
+        deadline={project?.deadline}
+        currentProgres={project?.progres_produksi ?? 0}
+      />
     </div>
   );
 }
