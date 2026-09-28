@@ -62,6 +62,7 @@ interface ProduksiDocumentationDialogProps {
   spkNumber?: string;
   deadline?: string | null;
   currentProgres?: number;
+  isViewOnly?: boolean;
 }
 
 export function ProduksiDocumentationDialog({
@@ -73,9 +74,12 @@ export function ProduksiDocumentationDialog({
   spkNumber,
   deadline,
   currentProgres = 0,
+  isViewOnly = false,
 }: ProduksiDocumentationDialogProps) {
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = React.useState<'upload' | 'history'>('upload');
+  const [activeTab, setActiveTab] = React.useState<'upload' | 'history'>(
+    isViewOnly ? 'history' : 'upload'
+  );
 
   // Form states
   const [persentase, setPersentase] = React.useState<number>(
@@ -96,12 +100,17 @@ export function ProduksiDocumentationDialog({
   // Delete Log Dialog state
   const [docToDelete, setDocToDelete] = React.useState<number | null>(null);
 
-  // Sync initial persentase when dialog opens (default 50% or 80%)
+  // Sync initial state when dialog opens
   React.useEffect(() => {
     if (isOpen) {
+      if (isViewOnly) {
+        setActiveTab('history');
+      } else {
+        setActiveTab('upload');
+      }
       setPersentase(currentProgres >= 80 ? 80 : 50);
     }
-  }, [isOpen, currentProgres]);
+  }, [isOpen, isViewOnly, currentProgres]);
 
   // Fetch documentation logs from Backend
   const { data: docResponse, isLoading: isLoadingDocs } = useQuery({
@@ -251,7 +260,9 @@ export function ProduksiDocumentationDialog({
                   </div>
                   <div>
                     <DialogTitle className='text-lg font-bold text-neutral-900'>
-                      Foto Progres Produksi
+                      {isViewOnly
+                        ? 'Riwayat Foto Dokumentasi Produksi'
+                        : 'Foto Progres Produksi'}
                     </DialogTitle>
                     <DialogDescription className='text-xs text-neutral-500 font-medium'>
                       {projectName || 'Detail Project'}
@@ -302,30 +313,39 @@ export function ProduksiDocumentationDialog({
             </div>
 
             {/* Navigation Tabs */}
-            <div className='pt-3'>
-              <Tabs
-                value={activeTab}
-                onValueChange={(val) => setActiveTab(val as 'upload' | 'history')}
-                className='w-full'
-              >
-                <TabsList className='grid grid-cols-2 w-full max-w-xs h-9 bg-neutral-200/60 p-0.5'>
-                  <TabsTrigger
-                    value='upload'
-                    className='text-xs font-semibold data-[state=active]:bg-white data-[state=active]:text-orange-600 data-[state=active]:shadow-xs'
-                  >
-                    <Plus className='h-3.5 w-3.5 mr-1.5' />
-                    Upload Baru
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value='history'
-                    className='text-xs font-semibold data-[state=active]:bg-white data-[state=active]:text-orange-600 data-[state=active]:shadow-xs'
-                  >
-                    <History className='h-3.5 w-3.5 mr-1.5' />
-                    Riwayat ({logs.length})
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
-            </div>
+            {!isViewOnly ? (
+              <div className='pt-3'>
+                <Tabs
+                  value={activeTab}
+                  onValueChange={(val) => setActiveTab(val as 'upload' | 'history')}
+                  className='w-full'
+                >
+                  <TabsList className='grid grid-cols-2 w-full max-w-xs h-9 bg-neutral-200/60 p-0.5'>
+                    <TabsTrigger
+                      value='upload'
+                      className='text-xs font-semibold data-[state=active]:bg-white data-[state=active]:text-orange-600 data-[state=active]:shadow-xs'
+                    >
+                      <Plus className='h-3.5 w-3.5 mr-1.5' />
+                      Upload Baru
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value='history'
+                      className='text-xs font-semibold data-[state=active]:bg-white data-[state=active]:text-orange-600 data-[state=active]:shadow-xs'
+                    >
+                      <History className='h-3.5 w-3.5 mr-1.5' />
+                      Riwayat ({logs.length})
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
+            ) : (
+              <div className='pt-3 flex items-center justify-between'>
+                <div className='inline-flex items-center gap-1.5 text-xs font-bold text-orange-800 bg-orange-50 border border-orange-200 px-3 py-1.5 rounded-lg'>
+                  <History className='h-3.5 w-3.5 text-orange-600' />
+                  <span>Riwayat Dokumentasi Progres ({logs.length})</span>
+                </div>
+              </div>
+            )}
           </DialogHeader>
 
           {/* Body Content */}
@@ -624,17 +644,21 @@ export function ProduksiDocumentationDialog({
                       Belum Ada Dokumentasi
                     </h5>
                     <p className='text-xs text-neutral-400 mt-0.5 max-w-sm mx-auto'>
-                      Belum ada foto atau video progres yang diunggah untuk project ini.
+                      {isViewOnly
+                        ? 'Belum ada foto dokumentasi progres produksi yang diunggah untuk project ini.'
+                        : 'Belum ada foto atau video progres yang diunggah untuk project ini.'}
                     </p>
-                    <Button
-                      variant='outline'
-                      size='sm'
-                      onClick={() => setActiveTab('upload')}
-                      className='mt-3 text-xs text-orange-600 border-orange-200'
-                    >
-                      <Plus className='h-3.5 w-3.5 mr-1' />
-                      Upload Sekarang
-                    </Button>
+                    {!isViewOnly && (
+                      <Button
+                        variant='outline'
+                        size='sm'
+                        onClick={() => setActiveTab('upload')}
+                        className='mt-3 text-xs text-orange-600 border-orange-200'
+                      >
+                        <Plus className='h-3.5 w-3.5 mr-1' />
+                        Upload Sekarang
+                      </Button>
+                    )}
                   </div>
                 ) : (
                   <div className='space-y-4'>
@@ -676,15 +700,17 @@ export function ProduksiDocumentationDialog({
                               </div>
                             </div>
 
-                            <Button
-                              variant='ghost'
-                              size='icon'
-                              onClick={() => setDocToDelete(log.id)}
-                              className='h-7 w-7 text-neutral-400 hover:text-rose-600 hover:bg-neutral-100 rounded-full'
-                              title='Hapus dokumentasi ini'
-                            >
-                              <Trash2 className='h-3.5 w-3.5' />
-                            </Button>
+                            {!isViewOnly && (
+                              <Button
+                                variant='ghost'
+                                size='icon'
+                                onClick={() => setDocToDelete(log.id)}
+                                className='h-7 w-7 text-neutral-400 hover:text-rose-600 hover:bg-neutral-100 rounded-full'
+                                title='Hapus dokumentasi ini'
+                              >
+                                <Trash2 className='h-3.5 w-3.5' />
+                              </Button>
+                            )}
                           </div>
 
                           <CardContent className='p-4 space-y-3'>
@@ -770,6 +796,14 @@ export function ProduksiDocumentationDialog({
         onOpenChange={() => setLightboxImage(null)}
       >
         <DialogContent className='max-w-4xl p-2 bg-black/95 border-none shadow-2xl overflow-hidden'>
+          <DialogHeader className='sr-only'>
+            <DialogTitle>
+              {lightboxTitle || 'Preview Foto Dokumentasi'}
+            </DialogTitle>
+            <DialogDescription>
+              Preview foto dokumentasi progres produksi
+            </DialogDescription>
+          </DialogHeader>
           <div className='relative flex flex-col items-center justify-center max-h-[85vh]'>
             <div className='absolute top-2 right-2 z-10'>
               <Button
