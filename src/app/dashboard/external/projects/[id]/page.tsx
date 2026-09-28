@@ -3,7 +3,7 @@
 import { use, useState, useRef } from "react"
 import Link from "next/link"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { ArrowLeft, Download, CheckCircle, CheckCircle2, AlertCircle, MessageSquare, PlusCircle, FileText, Eye, Upload, CalendarIcon, Lock, X, History, Clock, MapPin, Sparkles, Video, Image as ImageIcon, Loader2, AlertTriangle, Building2 } from "lucide-react"
+import { ArrowLeft, Download, CheckCircle, CheckCircle2, AlertCircle, MessageSquare, PlusCircle, FileText, Eye, Upload, CalendarIcon, Lock, X, History, Clock, MapPin, Sparkles, Video, Image as ImageIcon, Loader2, AlertTriangle, Building2, Camera } from "lucide-react"
 import { ProjectService } from "@/features/projects/services/project-service"
 import { projectV2Service, SiteReadiness } from "@/features/projects/services/project-v2-service"
 import { DesignService, Design } from "@/features/projects/services/design-service"
@@ -28,13 +28,40 @@ import { cn } from "@/lib/utils"
 
 import { useRouter } from "next/navigation"
 import { ClientTaskDialog } from "@/features/dashboard/components/client/client-task-dialog"
+import { useAuthStore } from "@/lib/auth-store"
+import { isHerminaPusatUser } from "@/lib/get-user-role"
+import { ProduksiDocumentationDialog } from "@/app/dashboard/(internal)/projects-v2/_components/produksi-documentation-dialog"
 
 export default function ClientProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
     const router = useRouter();
     const queryClient = useQueryClient();
+    const { user } = useAuthStore();
     const [ticketDialogOpen, setTicketDialogOpen] = useState(false);
+    const [isProduksiDocOpen, setIsProduksiDocOpen] = useState(false);
     const [activeTab, setActiveTab] = useState("tracking");
+
+    const userRoles = [
+        user?.role,
+        ...(user?.roles_list || []),
+        ...(user?.roles?.map((r: any) => typeof r === 'string' ? r : r.name) || [])
+    ].filter(Boolean) as string[];
+
+    const isHerminaPusat = isHerminaPusatUser(user) ||
+        userRoles.some((r: any) => r?.toLowerCase().includes('hermina pusat')) ||
+        user?.role_id === 19 ||
+        Boolean(
+            user?.name?.toLowerCase().includes('hermina pusat') ||
+            (user as any)?.username?.toLowerCase().includes('hermina pusat') ||
+            user?.email?.toLowerCase().includes('hermina')
+        );
+
+    // Fetch Dokumentasi Foto count if user is Hermina Pusat
+    const { data: produksiDocs } = useQuery({
+        queryKey: ["produksi-documentation", id],
+        queryFn: () => projectV2Service.getProduksiDocumentation(id),
+        enabled: isHerminaPusat && !!id,
+    });
 
     // Fetch Project Data
     const { data: project, isLoading } = useQuery({
@@ -92,6 +119,24 @@ export default function ClientProjectDetailPage({ params }: { params: Promise<{ 
                                         {format(new Date(project.tanggal_selesai), 'd MMMM yyyy', { locale: idLocale })}
                                     </span>
                                 </div>
+                            )}
+                            {isHerminaPusat && (
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setIsProduksiDocOpen(true)}
+                                    className="h-7 text-xs font-semibold rounded-md border-orange-200 text-orange-700 bg-orange-50/80 hover:bg-orange-100 hover:text-orange-800 hover:border-orange-300 transition-colors inline-flex items-center gap-1.5 shadow-xs"
+                                    title="Lihat Riwayat Dokumentasi Foto"
+                                >
+                                    <Camera className="h-3.5 w-3.5 text-orange-600" />
+                                    <span>Dokumentasi Foto</span>
+                                    {produksiDocs?.data && produksiDocs.data.length > 0 && (
+                                        <Badge className="ml-0.5 px-1.5 py-0 h-4 text-[10px] bg-orange-600 text-white font-bold border-none">
+                                            {produksiDocs.data.length}
+                                        </Badge>
+                                    )}
+                                </Button>
                             )}
                             <Button
                                 type="button"
@@ -151,6 +196,20 @@ export default function ClientProjectDetailPage({ params }: { params: Promise<{ 
                 defaultProjectName={project.name}
                 defaultTipe="Lapor Kendala"
             />
+
+            {isHerminaPusat && (
+                <ProduksiDocumentationDialog
+                    projectId={Number(id)}
+                    isOpen={isProduksiDocOpen}
+                    onClose={() => setIsProduksiDocOpen(false)}
+                    projectName={project.name}
+                    clientName={clientName}
+                    spkNumber={project.spk_number || (project as any).spk?.nomor_spk}
+                    deadline={project.tanggal_selesai || project.deadline}
+                    currentProgres={project.progres_produksi ?? 0}
+                    isViewOnly={true}
+                />
+            )}
         </div>
     )
 }
