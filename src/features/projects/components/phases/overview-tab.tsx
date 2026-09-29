@@ -43,9 +43,10 @@ import {
 
 interface OverviewTabProps {
     projectId: number
+    onNavigateTab?: (tab: string) => void
 }
 
-export function OverviewTab({ projectId }: OverviewTabProps) {
+export function OverviewTab({ projectId, onNavigateTab }: OverviewTabProps) {
     const [searchQuery, setSearchQuery] = useState("")
     const [isDelayNotesOpen, setIsDelayNotesOpen] = useState(true);
 
@@ -219,7 +220,9 @@ export function OverviewTab({ projectId }: OverviewTabProps) {
                             title="Pengiriman"
                             value={jadwalKirimFormatted}
                             icon={<Truck className="h-4 w-4 text-sky-500" />}
-                            desc="Jadwal Kirim"
+                            desc={onNavigateTab ? "Lihat Jadwal & Foto Dok →" : "Jadwal Kirim"}
+                            onClick={onNavigateTab ? () => onNavigateTab("pengiriman") : undefined}
+                            className={onNavigateTab ? "hover:border-orange-300 hover:shadow-xs cursor-pointer group" : ""}
                         />
                     </div>
                 );
@@ -666,9 +669,9 @@ export function OverviewTab({ projectId }: OverviewTabProps) {
     )
 }
 
-function StatsCard({ title, value, icon, desc, valueClassName }: any) {
+function StatsCard({ title, value, icon, desc, valueClassName, onClick, className }: any) {
     return (
-        <Card>
+        <Card className={cn(onClick && "cursor-pointer transition-all", className)} onClick={onClick}>
             <CardContent className="p-6">
                 <div className="flex items-center justify-between space-y-0 pb-2">
                     <p className="text-sm font-medium text-neutral-500">{title}</p>

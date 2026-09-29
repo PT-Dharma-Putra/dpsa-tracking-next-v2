@@ -3,7 +3,7 @@
 import { use, useState, useRef } from "react"
 import Link from "next/link"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { ArrowLeft, Download, CheckCircle, CheckCircle2, AlertCircle, MessageSquare, PlusCircle, FileText, Eye, Upload, CalendarIcon, Lock, X, History, Clock, MapPin, Sparkles, Video, Image as ImageIcon, Loader2, AlertTriangle, Building2, Camera } from "lucide-react"
+import { ArrowLeft, Download, CheckCircle, CheckCircle2, AlertCircle, MessageSquare, PlusCircle, FileText, Eye, Upload, CalendarIcon, Lock, X, History, Clock, MapPin, Sparkles, Video, Image as ImageIcon, Loader2, AlertTriangle, Building2, Camera, Truck } from "lucide-react"
 import { ProjectService } from "@/features/projects/services/project-service"
 import { projectV2Service, SiteReadiness } from "@/features/projects/services/project-v2-service"
 import { DesignService, Design } from "@/features/projects/services/design-service"
@@ -17,6 +17,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { OverviewTab } from "@/features/projects/components/phases/overview-tab"
+import { ClientPengirimanTab } from "@/features/projects/components/phases/client-pengiriman-tab"
 import { SPHViewerDialog } from "@/features/projects/components/sph/sph-viewer-dialog"
 import { SPKViewerDialog } from "@/features/projects/components/spk/spk-viewer-dialog"
 import { Separator } from "@/components/ui/separator"
@@ -142,6 +143,22 @@ export default function ClientProjectDetailPage({ params }: { params: Promise<{ 
                                 type="button"
                                 variant="outline"
                                 size="sm"
+                                onClick={() => setActiveTab("pengiriman")}
+                                className={cn(
+                                    "h-7 text-xs font-semibold rounded-md border-neutral-200 transition-colors inline-flex items-center gap-1.5 shadow-2xs",
+                                    activeTab === "pengiriman"
+                                        ? "bg-orange-50 border-orange-200 text-orange-700"
+                                        : "text-neutral-700 hover:text-orange-600 hover:bg-neutral-50"
+                                )}
+                                title="Lihat Status & Dokumentasi Pengiriman"
+                            >
+                                <Truck className="h-3.5 w-3.5 text-orange-600" />
+                                <span>Pengiriman & Dok</span>
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
                                 onClick={() => setTicketDialogOpen(true)}
                                 className="h-7 text-xs font-semibold rounded-md border-neutral-200 text-neutral-700 hover:text-red-600 hover:bg-red-50 hover:border-red-200 transition-colors inline-flex items-center gap-1.5"
                             >
@@ -160,8 +177,12 @@ export default function ClientProjectDetailPage({ params }: { params: Promise<{ 
 
             {/* Main Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="bg-neutral-100 p-1 mb-6">
+                <TabsList className="bg-neutral-100 p-1 mb-6 flex-wrap h-auto gap-1">
                     <TabsTrigger value="tracking" className="px-6 data-[state=active]:bg-white data-[state=active]:text-orange-600 data-[state=active]:shadow-sm">Tracking & Status</TabsTrigger>
+                    <TabsTrigger value="pengiriman" className="px-6 data-[state=active]:bg-white data-[state=active]:text-orange-600 data-[state=active]:shadow-sm flex items-center gap-1.5">
+                        <Truck className="h-4 w-4" />
+                        Pengiriman
+                    </TabsTrigger>
                     <TabsTrigger value="designs" className="px-6 data-[state=active]:bg-white data-[state=active]:text-orange-600 data-[state=active]:shadow-sm">Design Approvals</TabsTrigger>
                     <TabsTrigger value="docs" className="px-6 data-[state=active]:bg-white data-[state=active]:text-orange-600 data-[state=active]:shadow-sm">Documents</TabsTrigger>
                     <TabsTrigger value="kesiapan-lokasi" className="px-6 data-[state=active]:bg-white data-[state=active]:text-orange-600 data-[state=active]:shadow-sm">Kesiapan Lokasi</TabsTrigger>
@@ -169,7 +190,15 @@ export default function ClientProjectDetailPage({ params }: { params: Promise<{ 
                 </TabsList>
 
                 <TabsContent value="tracking" className="space-y-6">
-                    <OverviewTab projectId={Number(id)} />
+                    <OverviewTab projectId={Number(id)} onNavigateTab={setActiveTab} />
+                </TabsContent>
+
+                <TabsContent value="pengiriman" className="space-y-6">
+                    <ClientPengirimanTab
+                        projectId={Number(id)}
+                        clientName={clientName}
+                        spkId={project?.spk?.id || (project as any)?.spk_id}
+                    />
                 </TabsContent>
 
                 <TabsContent value="designs" className="space-y-6">

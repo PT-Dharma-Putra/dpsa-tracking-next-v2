@@ -347,6 +347,7 @@ export function PengirimanPerSpkFormDialog({
 
       const payload = {
         tanggal: format(values.tanggal, "yyyy-MM-dd"),
+        tanggal_unloading: isEdit ? (pengiriman?.tanggal_unloading ?? null) : null,
         client_id: parseInt(values.client_id),
         surat_jalan: isEdit ? (pengiriman?.surat_jalan ?? null) : null,
         setrim: isEdit ? (pengiriman?.setrim ?? null) : null,
