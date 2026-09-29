@@ -84,7 +84,7 @@ import {
   CommandList,
 } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
-import { Check, ChevronsUpDown, Plus, ClipboardList } from 'lucide-react';
+import { Check, ChevronsUpDown, Plus, ClipboardList, Camera } from 'lucide-react';
 import {
   projectV2Service,
   ProjectItemV2,
@@ -95,6 +95,7 @@ import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { PengirimanFormDialog } from '@/app/dashboard/(internal)/projects-v2/pengiriman/_components/pengiriman-form-dialog';
 import { PengirimanPerSpkFormDialog } from '@/app/dashboard/(internal)/projects-v2/pengiriman/_components/pengiriman-per-spk-form-dialog';
+import { DokumentasiPengirimanDialog } from '@/app/dashboard/(internal)/projects-v2/pengiriman/_components/dokumentasi-pengiriman-dialog';
 import {
   PengirimanService,
   Pengiriman,
@@ -1151,6 +1152,11 @@ export default function PerencanaanDetailPage() {
   const [editingPengirimanPerSpk, setEditingPengirimanPerSpk] =
     React.useState<Pengiriman | null>(null);
 
+  const [isDokumentasiDialogOpen, setIsDokumentasiDialogOpen] =
+    React.useState(false);
+  const [selectedPengirimanForDokumentasi, setSelectedPengirimanForDokumentasi] =
+    React.useState<Pengiriman | null>(null);
+
   const spkId = project?.spk?.id;
 
   const [suratJalanDialogOpen, setSuratJalanDialogOpen] = React.useState(false);
@@ -1211,6 +1217,16 @@ export default function PerencanaanDetailPage() {
       PengirimanService.getPengiriman({ spk_id: spkId, per_page: 100 }),
     enabled: !!spkId,
   });
+
+  const activePengirimanForDokumentasi = React.useMemo(() => {
+    if (!selectedPengirimanForDokumentasi) return null;
+    return (
+      pengirimanPerSpkData?.data?.find(
+        (p) => p.id === selectedPengirimanForDokumentasi.id
+      ) || selectedPengirimanForDokumentasi
+    );
+  }, [pengirimanPerSpkData, selectedPengirimanForDokumentasi]);
+
   const [isKeluarCollapsed, setIsKeluarCollapsed] = React.useState(true);
   const [isBelumSettingCollapsed, setIsBelumSettingCollapsed] =
     React.useState(true);
@@ -2448,15 +2464,30 @@ export default function PerencanaanDetailPage() {
                               key={p.id}
                               className='p-2 rounded-md bg-violet-50/60 border border-violet-100 space-y-1'
                             >
-                              <div className='flex items-center justify-between gap-1'>
+                              <div className='flex items-center justify-between gap-1 flex-wrap'>
                                 <span className='text-[10px] font-bold text-violet-800 truncate'>
-                                  {format(new Date(p.tanggal), 'dd MMM yyyy')}
+                                  Kirim: {format(new Date(p.tanggal), 'dd MMM yyyy')}
                                 </span>
+                                {p.tanggal_unloading ? (
+                                  <span className='text-[9px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded flex items-center gap-1'>
+                                    <span className='h-1.5 w-1.5 rounded-full bg-emerald-500' />
+                                    Tiba: {format(new Date(p.tanggal_unloading), 'dd MMM HH:mm')}
+                                  </span>
+                                ) : (
+                                  <span className='text-[9px] font-medium text-amber-600 bg-amber-50 border border-amber-200/60 px-1.5 py-0.5 rounded'>
+                                    Otw / Belum Tiba
+                                  </span>
+                                )}
                               </div>
                               <div className='flex items-center gap-2 text-[9px] text-neutral-600 font-medium'>
                                 {p.supir && (
                                   <span className='truncate'>
                                     Supir: {p.supir}
+                                  </span>
+                                )}
+                                {p.no_kendaraan && (
+                                  <span className='truncate uppercase'>
+                                    ({p.no_kendaraan})
                                   </span>
                                 )}
                               </div>
@@ -2526,6 +2557,36 @@ export default function PerencanaanDetailPage() {
                                     + Setrim
                                   </button>
                                 )}
+
+                                {/* Foto Dokumentasi Button */}
+                                {(() => {
+                                  const loadingCount =
+                                    p.dokumentasi?.filter((d) => d.kategori === 'loading').length ?? 0;
+                                  const unloadingCount =
+                                    p.dokumentasi?.filter((d) => d.kategori === 'unloading').length ?? 0;
+                                  const totalDok = loadingCount + unloadingCount;
+                                  return (
+                                    <button
+                                      type='button'
+                                      onClick={() => {
+                                        setSelectedPengirimanForDokumentasi(p);
+                                        setIsDokumentasiDialogOpen(true);
+                                      }}
+                                      className={`text-[9px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1 transition-colors ${
+                                        totalDok > 0
+                                          ? 'bg-purple-100 text-purple-700 hover:bg-purple-200 border border-purple-200'
+                                          : 'bg-neutral-50 text-neutral-600 hover:bg-neutral-100 border border-neutral-200'
+                                      }`}
+                                      title='Dokumentasi Foto Loading & Unloading'
+                                    >
+                                      <Camera className='h-2.5 w-2.5' />
+                                      {totalDok > 0
+                                        ? `Dok (${loadingCount}L / ${unloadingCount}U)`
+                                        : '+ Foto Dok'}
+                                    </button>
+                                  );
+                                })()}
+
                                 {totalTersetting > 0 && (
                                   <span className='text-[9px] font-bold bg-violet-100 text-violet-700 px-1.5 py-0.5 rounded'>
                                     Setting: {totalTersetting}
@@ -4540,6 +4601,18 @@ export default function PerencanaanDetailPage() {
             queryKey: ['project-v2-items', projectId],
           })
         }
+      />
+
+      {/* Dokumentasi Foto Loading & Unloading Dialog */}
+      <DokumentasiPengirimanDialog
+        open={isDokumentasiDialogOpen}
+        onOpenChange={setIsDokumentasiDialogOpen}
+        pengiriman={activePengirimanForDokumentasi}
+        onSuccess={() => {
+          queryClient.invalidateQueries({
+            queryKey: ['pengiriman-per-spk', spkId],
+          });
+        }}
       />
 
       {/* Preview Surat Jalan Dialog */}

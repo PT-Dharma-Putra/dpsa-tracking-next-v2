@@ -36,9 +36,27 @@ export interface DetailPengiriman {
   };
 }
 
+export interface PengirimanDokumentasi {
+  id: number;
+  pengiriman_id: number;
+  kategori: 'loading' | 'unloading';
+  file_path: string;
+  file_name?: string | null;
+  file_size?: number | null;
+  keterangan?: string | null;
+  user_id?: number | null;
+  created_at?: string;
+  url?: string;
+  user?: {
+    id: number;
+    name: string;
+  };
+}
+
 export interface Pengiriman {
   id: number;
   tanggal: string;
+  tanggal_unloading?: string | null;
   client_id: number;
   user_id?: number | null;
   surat_jalan?: string | null;
@@ -52,6 +70,7 @@ export interface Pengiriman {
   created_at?: string;
   details?: DetailPengiriman[];
   details_count?: number;
+  dokumentasi?: PengirimanDokumentasi[];
   client?: {
     id: number;
     name: string;
@@ -100,6 +119,7 @@ export const PengirimanService = {
     search?: string;
     client_id?: string;
     spk_id?: number | string;
+    project_id?: number | string;
     per_page?: number;
   }): Promise<{ data: Pengiriman[]; current_page: number; last_page: number; total: number }> => {
     const response = await apiClient.get("/pengiriman", { params });
@@ -146,6 +166,46 @@ export const PengirimanService = {
 
   getClientProjectItems: async (clientId: number): Promise<ProjectItemWithShipmentStats[]> => {
     const response = await apiClient.get(`/clients/${clientId}/project-items`);
+    return response.data;
+  },
+
+  uploadDokumentasi: async (
+    id: number,
+    data: {
+      kategori: 'loading' | 'unloading';
+      photos: File[];
+      keterangan?: string;
+      tanggal_unloading?: string;
+    }
+  ): Promise<{ status: string; message: string; data: PengirimanDokumentasi[]; pengiriman: Pengiriman }> => {
+    const formData = new FormData();
+    formData.append('kategori', data.kategori);
+    if (data.keterangan) formData.append('keterangan', data.keterangan);
+    if (data.tanggal_unloading) formData.append('tanggal_unloading', data.tanggal_unloading);
+    data.photos.forEach((photo) => {
+      formData.append('photos[]', photo);
+    });
+
+    const response = await apiClient.post(`/pengiriman/${id}/dokumentasi`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
+
+  updateTanggalUnloading: async (
+    id: number,
+    tanggal_unloading: string | null
+  ): Promise<{ status: string; message: string; pengiriman: Pengiriman }> => {
+    const response = await apiClient.put(`/pengiriman/${id}/tanggal-unloading`, {
+      tanggal_unloading,
+    });
+    return response.data;
+  },
+
+  deleteDokumentasi: async (
+    mediaId: number
+  ): Promise<{ status: string; message: string; pengiriman: Pengiriman }> => {
+    const response = await apiClient.delete(`/pengiriman/dokumentasi/${mediaId}`);
     return response.data;
   },
 };
