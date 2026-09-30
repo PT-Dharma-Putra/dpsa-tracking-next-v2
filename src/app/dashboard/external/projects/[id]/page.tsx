@@ -155,16 +155,6 @@ export default function ClientProjectDetailPage({ params }: { params: Promise<{ 
                                 <Truck className="h-3.5 w-3.5 text-orange-600" />
                                 <span>Pengiriman & Dok</span>
                             </Button>
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setTicketDialogOpen(true)}
-                                className="h-7 text-xs font-semibold rounded-md border-neutral-200 text-neutral-700 hover:text-red-600 hover:bg-red-50 hover:border-red-200 transition-colors inline-flex items-center gap-1.5"
-                            >
-                                <AlertCircle className="h-3.5 w-3.5 text-red-500" />
-                                <span>Lapor Kendala / Request</span>
-                            </Button>
                         </div>
                     </div>
                 </div>
@@ -179,10 +169,10 @@ export default function ClientProjectDetailPage({ params }: { params: Promise<{ 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList className="bg-neutral-100 p-1 mb-6 flex-wrap h-auto gap-1">
                     <TabsTrigger value="tracking" className="px-6 data-[state=active]:bg-white data-[state=active]:text-orange-600 data-[state=active]:shadow-sm">Tracking & Status</TabsTrigger>
-                    <TabsTrigger value="pengiriman" className="px-6 data-[state=active]:bg-white data-[state=active]:text-orange-600 data-[state=active]:shadow-sm flex items-center gap-1.5">
+                    {/* <TabsTrigger value="pengiriman" className="px-6 data-[state=active]:bg-white data-[state=active]:text-orange-600 data-[state=active]:shadow-sm flex items-center gap-1.5">
                         <Truck className="h-4 w-4" />
                         Pengiriman
-                    </TabsTrigger>
+                    </TabsTrigger> */}
                     <TabsTrigger value="designs" className="px-6 data-[state=active]:bg-white data-[state=active]:text-orange-600 data-[state=active]:shadow-sm">Design Approvals</TabsTrigger>
                     <TabsTrigger value="docs" className="px-6 data-[state=active]:bg-white data-[state=active]:text-orange-600 data-[state=active]:shadow-sm">Documents</TabsTrigger>
                     <TabsTrigger value="kesiapan-lokasi" className="px-6 data-[state=active]:bg-white data-[state=active]:text-orange-600 data-[state=active]:shadow-sm">Kesiapan Lokasi</TabsTrigger>
