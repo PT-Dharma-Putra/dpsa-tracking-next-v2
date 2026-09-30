@@ -1391,16 +1391,7 @@ export default function PerencanaanDetailPage() {
                       ) : null
                     )}
 
-                    <div className='grid grid-cols-2 gap-1.5 pt-1'>
-                      <Button 
-                        variant='outline' 
-                        size='sm' 
-                        className='h-7 w-full text-[10px] border-orange-200 text-orange-600 hover:bg-orange-50 gap-1 bg-orange-50/30 font-bold px-1.5 truncate'
-                        onClick={() => setIsOrderGkDialogOpen(true)}
-                      >
-                        <Upload className='h-3 w-3 shrink-0' />
-                        <span className='truncate'>Order Gambar</span>
-                      </Button>
+                    <div className='grid grid-cols-1'>
                       <Button 
                         variant='default' 
                         size='sm' 
@@ -2021,28 +2012,6 @@ export default function PerencanaanDetailPage() {
                         <span className='text-[9px] text-muted-foreground truncate max-w-[120px]'>{item.ruang || '-'}</span>
                       </div>
                     </TableCell>
-
-                    {/* <TableCell>
-                      {item.keterangan ? (
-                        <TooltipProvider delayDuration={200}>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div className='flex flex-col gap-0.5 cursor-help'>
-                                <span className='text-xs font-bold text-neutral-900 group-hover:text-blue-600 transition-colors'>{item.item}</span>
-                                 <span className='text-[14px] text-muted-foreground truncate max-w-[200px]'>{item.keterangan || '-'}</span>
-                              </div>
-                            </TooltipTrigger>
-                            <TooltipContent side="top" className="max-w-[300px] break-words">
-                              <p className="text-xs">{item.keterangan}</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      ) : (
-                        <div className='flex flex-col gap-0.5'>
-                          <span className='text-xs font-bold text-neutral-900 group-hover:text-blue-600 transition-colors'>{item.item}</span>
-                        </div>
-                      )}
-                    </TableCell> */}
 
                     <TableCell className="max-w-[300px] break-words">
                       <div className="flex flex-col gap-0.5">

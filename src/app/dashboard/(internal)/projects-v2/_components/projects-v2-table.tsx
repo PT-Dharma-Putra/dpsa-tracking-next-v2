@@ -40,6 +40,7 @@ import {
   Users,
   FileSpreadsheet,
   MapPin,
+  X,
 } from 'lucide-react';
 import { format, differenceInDays, startOfDay } from 'date-fns';
 import * as XLSX from 'xlsx-js-style';
@@ -234,6 +235,23 @@ export function ProjectsV2Table({
     params.set('sort_order', newOrder);
     params.delete('page');
     router.push(`${pathname}?${params.toString()}`, { scroll: false });
+  };
+
+  const handleSearchSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const urlSearch = searchParams.get('search') || '';
+    if (searchInput !== urlSearch) {
+      const params = new URLSearchParams(searchParams.toString());
+      if (searchInput) {
+        params.set('search', searchInput);
+      } else {
+        params.delete('search');
+      }
+      params.delete('page');
+      setSearch(searchInput);
+      setPage(1);
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    }
   };
 
   React.useEffect(() => {
@@ -535,16 +553,25 @@ export function ProjectsV2Table({
     !showQC &&
     !showAllDashboard;
 
-  // Debounce search
+  // Debounce search update to URL query params
   React.useEffect(() => {
     const timer = setTimeout(() => {
-      if (search !== searchInput) {
+      const urlSearch = searchParams.get('search') || '';
+      if (searchInput !== urlSearch) {
+        const params = new URLSearchParams(searchParams.toString());
+        if (searchInput) {
+          params.set('search', searchInput);
+        } else {
+          params.delete('search');
+        }
+        params.delete('page');
         setSearch(searchInput);
         setPage(1);
+        router.replace(`${pathname}?${params.toString()}`, { scroll: false });
       }
-    }, 500);
+    }, 400);
     return () => clearTimeout(timer);
-  }, [searchInput, search]);
+  }, [searchInput, searchParams, pathname, router]);
 
   const { data, isLoading } = useQuery({
     queryKey: [
@@ -3487,15 +3514,43 @@ export function ProjectsV2Table({
         <div className='flex flex-col gap-4 p-4 w-full max-w-full overflow-hidden'>
           <div className='flex flex-col sm:flex-row justify-between gap-4 items-start sm:items-center'>
             <div className='flex flex-1 gap-2 items-center w-full sm:max-w-2xl'>
-              <div className='relative flex-1 min-w-[200px] sm:min-w-[250px]'>
-                <Search className='absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground' />
+              <form
+                method='GET'
+                onSubmit={handleSearchSubmit}
+                className='relative flex-1 min-w-[200px] sm:min-w-[250px]'
+              >
+                <Search className='absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none' />
                 <Input
+                  name='search'
                   placeholder='Search projects...'
-                  className='pl-8'
+                  className={cn('pl-8', searchInput && 'pr-8')}
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleSearchSubmit();
+                    }
+                  }}
                 />
-              </div>
+                {searchInput && (
+                  <button
+                    type='button'
+                    onClick={() => {
+                      setSearchInput('');
+                      const params = new URLSearchParams(searchParams.toString());
+                      params.delete('search');
+                      params.delete('page');
+                      setSearch('');
+                      setPage(1);
+                      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+                    }}
+                    className='absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground'
+                  >
+                    <X className='h-4 w-4' />
+                  </button>
+                )}
+              </form>
               <Popover
                 open={clientPopoverOpen}
                 onOpenChange={setClientPopoverOpen}
