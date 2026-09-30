@@ -1063,12 +1063,24 @@ export function ProjectsV2Table({
           ? format(new Date(project.deadline), 'dd MMM yyyy')
           : '-';
 
-        const jadwalKirimStr = project.jadwal_pengiriman?.tanggal_pengiriman
-          ?.tanggal
-          ? format(
-              new Date(project.jadwal_pengiriman.tanggal_pengiriman.tanggal),
-              'dd MMM yyyy'
-            )
+        const schedules = Array.isArray(project.jadwal_pengiriman)
+          ? project.jadwal_pengiriman
+          : project.jadwal_pengiriman
+          ? [project.jadwal_pengiriman]
+          : [];
+        const jadwalKirimStr = schedules.length > 0
+          ? schedules
+              .map((s: any) => {
+                const raw = s.tanggal || s.tanggal_pengiriman?.tanggal;
+                if (!raw) return null;
+                try {
+                  return format(new Date(raw), 'dd MMM yyyy');
+                } catch {
+                  return String(raw);
+                }
+              })
+              .filter(Boolean)
+              .join(', ') || '-'
           : '-';
 
         if (items.length === 0) {
@@ -1494,18 +1506,27 @@ export function ProjectsV2Table({
         const spkNomor = project.spk?.nomor_spk || project.spk_number || '-';
         const clientName = project.client?.name || '-';
         const projectName = project.name || '-';
-        const rawJadwal =
-          project.jadwal_pengiriman?.tanggal_pengiriman?.tanggal ||
-          (project as any).jadwal_pengiriman?.tanggal;
+        const schedules = Array.isArray(project.jadwal_pengiriman)
+          ? project.jadwal_pengiriman
+          : project.jadwal_pengiriman
+          ? [project.jadwal_pengiriman]
+          : [];
         let jadwalKirimStr = '-';
-        if (rawJadwal) {
-          try {
-            const d = new Date(rawJadwal);
-            if (!isNaN(d.getTime())) {
-              jadwalKirimStr = format(d, 'dd MMM yyyy');
-            }
-          } catch {
-            jadwalKirimStr = String(rawJadwal);
+        if (schedules.length > 0) {
+          const dates = schedules
+            .map((s: any) => {
+              const raw = s.tanggal || s.tanggal_pengiriman?.tanggal;
+              if (!raw) return null;
+              try {
+                const d = new Date(raw);
+                return !isNaN(d.getTime()) ? format(d, 'dd MMM yyyy') : String(raw);
+              } catch {
+                return String(raw);
+              }
+            })
+            .filter(Boolean);
+          if (dates.length > 0) {
+            jadwalKirimStr = dates.join(', ');
           }
         }
 
@@ -1765,18 +1786,27 @@ export function ProjectsV2Table({
         const spkNomor = project.spk?.nomor_spk || project.spk_number || '-';
         const clientName = project.client?.name || '-';
         const projectName = project.name || '-';
-        const rawJadwal =
-          project.jadwal_pengiriman?.tanggal_pengiriman?.tanggal ||
-          (project as any).jadwal_pengiriman?.tanggal;
+        const schedules = Array.isArray(project.jadwal_pengiriman)
+          ? project.jadwal_pengiriman
+          : project.jadwal_pengiriman
+          ? [project.jadwal_pengiriman]
+          : [];
         let jadwalKirimStr = '-';
-        if (rawJadwal) {
-          try {
-            const d = new Date(rawJadwal);
-            if (!isNaN(d.getTime())) {
-              jadwalKirimStr = format(d, 'dd MMM yyyy');
-            }
-          } catch {
-            jadwalKirimStr = String(rawJadwal);
+        if (schedules.length > 0) {
+          const dates = schedules
+            .map((s: any) => {
+              const raw = s.tanggal || s.tanggal_pengiriman?.tanggal;
+              if (!raw) return null;
+              try {
+                const d = new Date(raw);
+                return !isNaN(d.getTime()) ? format(d, 'dd MMM yyyy') : String(raw);
+              } catch {
+                return String(raw);
+              }
+            })
+            .filter(Boolean);
+          if (dates.length > 0) {
+            jadwalKirimStr = dates.join(', ');
           }
         }
 
@@ -5083,22 +5113,42 @@ export function ProjectsV2Table({
                             </button>
                           </TableCell>
                           <TableCell>
-                            {project.jadwal_pengiriman ? (
-                              <div className='flex items-center gap-1.5 text-xs font-medium text-neutral-900'>
-                                <Truck className='h-3 w-3 text-orange-500' />
-                                {format(
-                                  new Date(
-                                    project.jadwal_pengiriman.tanggal_pengiriman
-                                      ?.tanggal || ''
-                                  ),
-                                  'MMM d, yyyy'
-                                )}
-                              </div>
-                            ) : (
-                              <span className='text-muted-foreground italic text-xs'>
-                                -
-                              </span>
-                            )}
+                            {(() => {
+                              const schedules = Array.isArray(project.jadwal_pengiriman)
+                                ? project.jadwal_pengiriman
+                                : project.jadwal_pengiriman
+                                ? [project.jadwal_pengiriman]
+                                : [];
+                              if (schedules.length === 0) {
+                                return (
+                                  <span className='text-muted-foreground italic text-xs'>
+                                    -
+                                  </span>
+                                );
+                              }
+                              const firstSchedule = schedules[0];
+                              const firstDate =
+                                firstSchedule.tanggal ||
+                                firstSchedule.tanggal_pengiriman?.tanggal;
+                              return (
+                                <div className='flex items-center gap-1.5 text-xs font-medium text-neutral-900'>
+                                  <Truck className='h-3 w-3 text-orange-500 shrink-0' />
+                                  <span>
+                                    {firstDate
+                                      ? format(new Date(firstDate), 'MMM d, yyyy')
+                                      : '-'}
+                                  </span>
+                                  {schedules.length > 1 && (
+                                    <Badge
+                                      variant='outline'
+                                      className='text-[10px] h-4 px-1 text-orange-700 bg-orange-50 border-orange-200 font-semibold'
+                                    >
+                                      +{schedules.length - 1} tahap
+                                    </Badge>
+                                  )}
+                                </div>
+                              );
+                            })()}
                           </TableCell>
                           <TableCell>
                             {project.progres_kerja ? (
@@ -5769,80 +5819,106 @@ export function ProjectsV2Table({
                         )}
                       {!showAllDashboard && !showSPD && !showPiutang && (
                         <TableCell>
-                          {project.jadwal_pengiriman ? (
-                            <div
-                              className={cn(
-                                'space-y-1 p-1 rounded-md',
-                                isJadwalEditable &&
-                                  'cursor-pointer hover:bg-neutral-50 transition-colors group'
-                              )}
-                              onClick={
-                                isJadwalEditable
-                                  ? () => handleScheduleClick(project)
-                                  : undefined
-                              }
-                            >
-                              <div className='flex items-center justify-between'>
-                                <div className='flex items-center gap-1.5 text-xs font-medium text-neutral-900'>
-                                  <Truck className='h-3 w-3 text-orange-500' />
-                                  {format(
-                                    new Date(
-                                      project.jadwal_pengiriman
-                                        .tanggal_pengiriman?.tanggal || ''
-                                    ),
-                                    'MMM d, yyyy'
+                          {(() => {
+                            const schedules = Array.isArray(project.jadwal_pengiriman)
+                              ? project.jadwal_pengiriman
+                              : project.jadwal_pengiriman
+                              ? [project.jadwal_pengiriman]
+                              : [];
+
+                            if (schedules.length > 0) {
+                              const firstSchedule = schedules[0];
+                              const firstDate =
+                                firstSchedule.tanggal ||
+                                firstSchedule.tanggal_pengiriman?.tanggal;
+                              const diff =
+                                firstDate && project.deadline
+                                  ? differenceInDays(
+                                      startOfDay(new Date(project.deadline)),
+                                      startOfDay(new Date(firstDate))
+                                    )
+                                  : null;
+
+                              return (
+                                <div
+                                  className={cn(
+                                    'space-y-1 p-1 rounded-md',
+                                    isJadwalEditable &&
+                                      'cursor-pointer hover:bg-neutral-50 transition-colors group'
+                                  )}
+                                  onClick={
+                                    isJadwalEditable
+                                      ? () => handleScheduleClick(project)
+                                      : undefined
+                                  }
+                                >
+                                  <div className='flex items-center justify-between gap-1'>
+                                    <div className='flex items-center gap-1.5 text-xs font-medium text-neutral-900'>
+                                      <Truck className='h-3 w-3 text-orange-500 shrink-0' />
+                                      <span>
+                                        {firstDate
+                                          ? format(
+                                              new Date(firstDate),
+                                              'MMM d, yyyy'
+                                            )
+                                          : '-'}
+                                      </span>
+                                      {schedules.length > 1 && (
+                                        <Badge
+                                          variant='outline'
+                                          className='text-[10px] h-4 px-1 text-orange-700 bg-orange-50 border-orange-200 font-semibold'
+                                        >
+                                          +{schedules.length - 1} tahap
+                                        </Badge>
+                                      )}
+                                    </div>
+                                    {isJadwalEditable && (
+                                      <Pencil className='h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0' />
+                                    )}
+                                  </div>
+                                  {diff !== null && (
+                                    <Badge
+                                      variant='secondary'
+                                      className={cn(
+                                        'text-[10px] h-4 px-1.5',
+                                        diff < 0
+                                          ? 'bg-red-50 text-red-600'
+                                          : diff <= 2
+                                          ? 'bg-orange-50 text-orange-600'
+                                          : 'bg-emerald-50 text-emerald-600'
+                                      )}
+                                    >
+                                      {diff < 0
+                                        ? `Lewat ${Math.abs(diff)} hari`
+                                        : diff === 0
+                                        ? 'Tepat Deadline'
+                                        : `${diff} hari sebelum deadline`}
+                                    </Badge>
                                   )}
                                 </div>
-                                {isJadwalEditable && (
-                                  <Pencil className='h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity' />
-                                )}
-                              </div>
-                              {(() => {
-                                const jadwalTanggal =
-                                  project.jadwal_pengiriman.tanggal_pengiriman
-                                    ?.tanggal;
-                                if (!jadwalTanggal || !project.deadline)
-                                  return null;
-                                const diff = differenceInDays(
-                                  startOfDay(new Date(project.deadline)),
-                                  startOfDay(new Date(jadwalTanggal))
-                                );
-                                return (
-                                  <Badge
-                                    variant='secondary'
-                                    className={cn(
-                                      'text-[10px] h-4 px-1.5',
-                                      diff < 0
-                                        ? 'bg-red-50 text-red-600'
-                                        : diff <= 2
-                                        ? 'bg-orange-50 text-orange-600'
-                                        : 'bg-emerald-50 text-emerald-600'
-                                    )}
-                                  >
-                                    {diff < 0
-                                      ? `Lewat ${Math.abs(diff)} hari`
-                                      : diff === 0
-                                      ? 'Tepat Deadline'
-                                      : `${diff} hari sebelum deadline`}
-                                  </Badge>
-                                );
-                              })()}
-                            </div>
-                          ) : isJadwalEditable ? (
-                            <Button
-                              variant='outline'
-                              size='sm'
-                              className='h-8 text-xs text-muted-foreground hover:text-orange-600 border border-neutral-200 shadow-sm bg-white'
-                              onClick={() => handleScheduleClick(project)}
-                            >
-                              <CalendarDays className='mr-1.5 h-3.5 w-3.5' />
-                              Set Jadwal
-                            </Button>
-                          ) : (
-                            <span className='text-muted-foreground italic text-xs'>
-                              -
-                            </span>
-                          )}
+                              );
+                            }
+
+                            if (isJadwalEditable) {
+                              return (
+                                <Button
+                                  variant='outline'
+                                  size='sm'
+                                  className='h-8 text-xs text-muted-foreground hover:text-orange-600 border border-neutral-200 shadow-sm bg-white'
+                                  onClick={() => handleScheduleClick(project)}
+                                >
+                                  <CalendarDays className='mr-1.5 h-3.5 w-3.5' />
+                                  Set Jadwal
+                                </Button>
+                              );
+                            }
+
+                            return (
+                              <span className='text-muted-foreground italic text-xs'>
+                                -
+                              </span>
+                            );
+                          })()}
                         </TableCell>
                       )}
                       {(showPengirimanV2 || showQC) && (

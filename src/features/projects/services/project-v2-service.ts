@@ -99,7 +99,7 @@ export interface ProjectV2 {
     updated_at: string;
   };
   basts?: Bast[];
-  jadwal_pengiriman?: JadwalPengiriman;
+  jadwal_pengiriman?: JadwalPengiriman[] | JadwalPengiriman;
   order_gambar_kerja?: Array<{
     id: number;
     file: string | null;
@@ -1139,7 +1139,7 @@ export const projectV2Service = {
     );
     return data;
   },
-  getJadwalPengiriman: async (params?: { tanggal_pengiriman_id?: number }) => {
+  getJadwalPengiriman: async (params?: { tanggal_pengiriman_id?: number; project_id?: number }) => {
     const { data } = await apiClient.get<JadwalPengiriman[]>(
       '/jadwal-pengiriman',
       { params }
@@ -1148,11 +1148,25 @@ export const projectV2Service = {
   },
   storeJadwalPengiriman: async (payload: {
     project_id: number;
-    tanggal_pengiriman_id: number;
+    tanggal?: string;
+    tanggal_pengiriman_id?: number;
     keterangan?: string;
   }) => {
     const { data } = await apiClient.post<JadwalPengiriman>(
       '/jadwal-pengiriman',
+      payload
+    );
+    return data;
+  },
+  updateJadwalPengiriman: async (
+    id: number,
+    payload: {
+      tanggal?: string;
+      keterangan?: string;
+    }
+  ) => {
+    const { data } = await apiClient.put<JadwalPengiriman>(
+      `/jadwal-pengiriman/${id}`,
       payload
     );
     return data;
@@ -1580,7 +1594,8 @@ export interface TanggalPengiriman {
 export interface JadwalPengiriman {
   id: number;
   project_id: number;
-  tanggal_pengiriman_id: number;
+  tanggal?: string;
+  tanggal_pengiriman_id?: number | null;
   keterangan: string | null;
   project?: ProjectV2;
   tanggal_pengiriman?: TanggalPengiriman;

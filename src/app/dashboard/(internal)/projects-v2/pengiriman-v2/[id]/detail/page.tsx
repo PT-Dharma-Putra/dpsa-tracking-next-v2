@@ -1462,18 +1462,27 @@ export default function PerencanaanDetailPage() {
     const spkNomor = project?.spk?.nomor_spk || project?.spk_number || '-';
     const clientName = project?.client?.name || '-';
     const projectName = project?.name || '-';
-    const rawJadwal =
-      project?.jadwal_pengiriman?.tanggal_pengiriman?.tanggal ||
-      (project as any)?.jadwal_pengiriman?.tanggal;
+    const rawSchedules = Array.isArray(project?.jadwal_pengiriman)
+      ? project.jadwal_pengiriman
+      : project?.jadwal_pengiriman
+      ? [project.jadwal_pengiriman]
+      : [];
     let jadwalKirimStr = '-';
-    if (rawJadwal) {
-      try {
-        const d = new Date(rawJadwal);
-        if (!isNaN(d.getTime())) {
-          jadwalKirimStr = format(d, 'dd MMM yyyy');
-        }
-      } catch {
-        jadwalKirimStr = String(rawJadwal);
+    if (rawSchedules.length > 0) {
+      const dates = rawSchedules
+        .map((s: any) => {
+          const raw = s.tanggal || s.tanggal_pengiriman?.tanggal;
+          if (!raw) return null;
+          try {
+            const d = new Date(raw);
+            return !isNaN(d.getTime()) ? format(d, 'dd MMM yyyy') : String(raw);
+          } catch {
+            return String(raw);
+          }
+        })
+        .filter(Boolean);
+      if (dates.length > 0) {
+        jadwalKirimStr = dates.join(', ');
       }
     }
 
