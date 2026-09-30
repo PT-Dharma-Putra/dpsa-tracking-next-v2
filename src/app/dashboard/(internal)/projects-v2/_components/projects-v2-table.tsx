@@ -618,6 +618,8 @@ export function ProjectsV2Table({
         order_status: orderStatusFilter || undefined,
         dashboard_filter: dashboardFilter || undefined,
       }),
+    staleTime: 30000,
+    refetchOnWindowFocus: false,
   });
 
   const { data: stats } = useQuery({
@@ -639,6 +641,8 @@ export function ProjectsV2Table({
         month: selectedMonth !== 'all' ? selectedMonth : undefined,
         year: selectedYear !== 'all' ? selectedYear : undefined,
       }),
+    staleTime: 30000,
+    refetchOnWindowFocus: false,
   });
 
   const [clientPopoverOpen, setClientPopoverOpen] = React.useState(false);
@@ -726,6 +730,7 @@ export function ProjectsV2Table({
     mutationFn: (id: number) => projectV2Service.deleteProject(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects-v2'] });
+      queryClient.invalidateQueries({ queryKey: ['projects-v2-stats'] });
       toast.success('Project deleted successfully');
       setIsDeleteDialogOpen(false);
     },
