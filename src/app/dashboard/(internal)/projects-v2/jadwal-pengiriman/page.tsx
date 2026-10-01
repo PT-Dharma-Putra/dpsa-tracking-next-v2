@@ -485,7 +485,7 @@ function ProjectItemsDialog({ schedule, open, onOpenChange }: ProjectItemsDialog
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[900px] max-h-[90vh] flex flex-col p-0">
+            <DialogContent className="sm:max-w-[1000px] max-h-[90vh] flex flex-col p-0">
                 <DialogHeader className="p-6 pb-4 border-b">
                     <div className="flex items-start justify-between gap-3">
                         <div>
@@ -615,6 +615,7 @@ function ProjectItemsDialog({ schedule, open, onOpenChange }: ProjectItemsDialog
                                         <TableHead className="w-12 text-center text-xs">No</TableHead>
                                         <TableHead className="text-xs">Nama Item</TableHead>
                                         <TableHead className="text-xs">Ruang / Lantai</TableHead>
+                                        <TableHead className="text-xs min-w-[130px]">Progress Produksi</TableHead>
                                         <TableHead className="text-right text-xs">Qty SPK</TableHead>
                                         <TableHead className="text-right text-xs">Terkirim</TableHead>
                                         <TableHead className="text-right text-xs">Sisa</TableHead>
@@ -636,6 +637,46 @@ function ProjectItemsDialog({ schedule, open, onOpenChange }: ProjectItemsDialog
                                                 {[item.ruang, item.lantai ? `Lt. ${item.lantai}` : null]
                                                     .filter(Boolean)
                                                     .join(" • ") || "-"}
+                                            </TableCell>
+                                            <TableCell>
+                                                {(() => {
+                                                    const progress = Number(item.progress_produksi) || 0
+                                                    return (
+                                                        <div className="space-y-1 w-[120px]">
+                                                            <div className="flex items-center justify-between text-[11px] font-medium">
+                                                                <span
+                                                                    className={
+                                                                        progress >= 100
+                                                                            ? "text-emerald-700 font-semibold"
+                                                                            : progress > 0
+                                                                            ? "text-blue-700"
+                                                                            : "text-neutral-400"
+                                                                    }
+                                                                >
+                                                                    {progress}%
+                                                                </span>
+                                                                <span className="text-[10px] text-neutral-400">
+                                                                    {progress >= 100
+                                                                        ? "Selesai"
+                                                                        : progress > 0
+                                                                        ? "Proses"
+                                                                        : "Belum"}
+                                                                </span>
+                                                            </div>
+                                                            <Progress
+                                                                value={progress}
+                                                                className={cn(
+                                                                    "h-1.5",
+                                                                    progress >= 100
+                                                                        ? "[&>div]:bg-emerald-600"
+                                                                        : progress > 0
+                                                                        ? "[&>div]:bg-blue-600"
+                                                                        : "[&>div]:bg-neutral-300"
+                                                                )}
+                                                            />
+                                                        </div>
+                                                    )
+                                                })()}
                                             </TableCell>
                                             <TableCell className="text-right text-xs font-semibold tabular-nums">
                                                 {item.jumlah} {item.satuan || ""}

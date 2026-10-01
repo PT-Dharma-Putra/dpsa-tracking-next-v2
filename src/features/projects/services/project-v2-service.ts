@@ -1711,6 +1711,7 @@ export interface CalendarDeliveryItem {
   qty_terkirim: number;
   sisa: number;
   status: 'lengkap' | 'sebagian' | 'belum';
+  progress_produksi?: number | null;
 }
 
 export interface CalendarDeliverySchedule {
