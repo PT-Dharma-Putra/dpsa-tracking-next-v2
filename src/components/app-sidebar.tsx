@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import Image from 'next/image';
-import { ChevronRight } from 'lucide-react';
+import { CalendarDays, ChevronRight } from 'lucide-react';
 import {
   SquareTerminal,
   FileBox,
@@ -713,6 +713,19 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   <Link href='/dashboard/all'>
                     <Users />
                     <span>Dashboard</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  tooltip='Kalender Pengiriman'
+                  isActive={isActive('/dashboard/projects-v2/jadwal-pengiriman')}
+                >
+                  <Link href='/dashboard/projects-v2/jadwal-pengiriman'>
+                    <CalendarDays />
+                    <span>Kalender Pengiriman</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
