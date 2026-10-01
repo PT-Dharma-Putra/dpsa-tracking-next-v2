@@ -334,9 +334,9 @@ export default function PrintSuratJalanPage() {
         wsData.push([]);
         wsData.push([
           { v: 'SURAT SERAH TERIMA BARANG', t: 's', s: { font: { bold: true, sz: 12 }, alignment: { horizontal: 'center', vertical: 'center' } } },
-          '', '', '', '', '', '', '', '', '',
+          '', '', '', '', '', '', '', '', '', '',
         ]);
-        merges.push({ s: { r: 1, c: 0 }, e: { r: 1, c: 9 } });
+        merges.push({ s: { r: 1, c: 0 }, e: { r: 1, c: 10 } });
 
         wsData.push([]);
 
@@ -344,7 +344,7 @@ export default function PrintSuratJalanPage() {
         wsData.push([
           { v: 'Nomor Surat', t: 's', s: boldStyle }, '',
           { v: noSrt, t: 's', s: { ...normalStyle, border: { top: borderThin, bottom: borderThin, left: borderThin, right: borderThin } } },
-          '', '', '', '', '',
+          '', '', '', '', '', '',
           { v: 'PPIC', t: 's', s: { font: { bold: true, sz: 8 }, alignment: { horizontal: 'center' }, border: { top: borderThin, bottom: borderThin, left: borderThin, right: borderThin } } },
           { v: 'Rev : 00', t: 's', s: { font: { sz: 8 }, alignment: { horizontal: 'center' }, border: { top: borderThin, bottom: borderThin, left: borderThin, right: borderThin } } },
         ]);
@@ -352,7 +352,7 @@ export default function PrintSuratJalanPage() {
         merges.push({ s: { r: rNomor, c: 0 }, e: { r: rNomor, c: 1 } });
 
         wsData.push([
-          '', '', '', '', '', '', '', '',
+          '', '', '', '', '', '', '', '', '',
           { v: '005', t: 's', s: { font: { bold: true, sz: 8 }, alignment: { horizontal: 'center' }, border: { top: borderThin, bottom: borderThin, left: borderThin, right: borderThin } } },
           { v: 'Terbit : 8/25', t: 's', s: { font: { sz: 8 }, alignment: { horizontal: 'center' }, border: { top: borderThin, bottom: borderThin, left: borderThin, right: borderThin } } },
         ]);
@@ -360,7 +360,7 @@ export default function PrintSuratJalanPage() {
         wsData.push([
           { v: 'Tujuan Pengiriman/Penerima', t: 's', s: boldStyle }, '',
           { v: combinedMeta.clientName, t: 's', s: { font: { bold: true, sz: 10 }, border: { top: borderThin, bottom: borderThin, left: borderThin, right: borderThin } } },
-          '', '', '', '', '', '',
+          '', '', '', '', '', '', '',
         ]);
         let rTujuan = wsData.length - 1;
         merges.push({ s: { r: rTujuan, c: 0 }, e: { r: rTujuan, c: 1 } });
@@ -379,21 +379,22 @@ export default function PrintSuratJalanPage() {
         let rTanggal = wsData.length - 1;
         merges.push({ s: { r: rTanggal, c: 0 }, e: { r: rTanggal, c: 1 } });
         merges.push({ s: { r: rTanggal, c: 4 }, e: { r: rTanggal, c: 5 } });
-        merges.push({ s: { r: rTanggal, c: 6 }, e: { r: rTanggal, c: 9 } });
+        merges.push({ s: { r: rTanggal, c: 6 }, e: { r: rTanggal, c: 10 } });
 
         wsData.push([]);
 
         wsData.push([
           { v: 'Telah diterima barang - barang pesanan dari PT DHARMA PUTRA SEJAHTERA ABADI, berupa:', t: 's', s: boldStyle },
-          '', '', '', '', '', '', '', '', '',
+          '', '', '', '', '', '', '', '', '', '',
         ]);
         let rTelah = wsData.length - 1;
-        merges.push({ s: { r: rTelah, c: 0 }, e: { r: rTelah, c: 9 } });
+        merges.push({ s: { r: rTelah, c: 0 }, e: { r: rTelah, c: 10 } });
 
         wsData.push([]);
 
         wsData.push([
           { v: 'NO.', t: 's', s: headerStyle },
+          { v: 'LANTAI', t: 's', s: headerStyle },
           { v: 'RUANG', t: 's', s: headerStyle },
           { v: 'ITEM/PERABOT**)', t: 's', s: headerStyle },
           { v: 'DIMENSI (METER)', t: 's', s: headerStyle },
@@ -410,6 +411,7 @@ export default function PrintSuratJalanPage() {
           { v: '', t: 's', s: headerStyle },
           { v: '', t: 's', s: headerStyle },
           { v: '', t: 's', s: headerStyle },
+          { v: '', t: 's', s: headerStyle },
           { v: 'P', t: 's', s: headerStyle },
           { v: 'L', t: 's', s: headerStyle },
           { v: 'T', t: 's', s: headerStyle },
@@ -423,15 +425,17 @@ export default function PrintSuratJalanPage() {
         merges.push({ s: { r: rHeader1, c: 0 }, e: { r: rHeader2, c: 0 } });
         merges.push({ s: { r: rHeader1, c: 1 }, e: { r: rHeader2, c: 1 } });
         merges.push({ s: { r: rHeader1, c: 2 }, e: { r: rHeader2, c: 2 } });
-        merges.push({ s: { r: rHeader1, c: 3 }, e: { r: rHeader1, c: 5 } });
-        merges.push({ s: { r: rHeader1, c: 6 }, e: { r: rHeader2, c: 6 } });
+        merges.push({ s: { r: rHeader1, c: 3 }, e: { r: rHeader2, c: 3 } });
+        merges.push({ s: { r: rHeader1, c: 4 }, e: { r: rHeader1, c: 6 } });
         merges.push({ s: { r: rHeader1, c: 7 }, e: { r: rHeader2, c: 7 } });
         merges.push({ s: { r: rHeader1, c: 8 }, e: { r: rHeader2, c: 8 } });
         merges.push({ s: { r: rHeader1, c: 9 }, e: { r: rHeader2, c: 9 } });
+        merges.push({ s: { r: rHeader1, c: 10 }, e: { r: rHeader2, c: 10 } });
 
         combinedDetails.forEach((detail, index) => {
           wsData.push([
             { v: index + 1, t: 'n', s: dataStyleCenter },
+            { v: detail.project_item?.lantai || '-', t: 's', s: dataStyleCenter },
             { v: detail.project_item?.ruang || '-', t: 's', s: dataStyleCenter },
             { v: detail.project_item?.item || '-', t: 's', s: dataStyleLeft },
             { v: detail.project_item?.panjang || '-', t: 's', s: dataStyleCenter },
@@ -449,33 +453,33 @@ export default function PrintSuratJalanPage() {
         wsData.push([
           { v: 'Note:', t: 's', s: { font: { italic: true, sz: 10 } } },
           { v: '**) Item / perabot yang ditulis harus sama dengan yang tertulis di SPK/SPH jika barang yang dikirim tidak dalam', t: 's', s: { font: { italic: true, sz: 10 } } },
-          '', '', '', '', '', '', '', '',
+          '', '', '', '', '', '', '', '', '',
         ]);
-        merges.push({ s: { r: wsData.length - 1, c: 1 }, e: { r: wsData.length - 1, c: 9 } });
+        merges.push({ s: { r: wsData.length - 1, c: 1 }, e: { r: wsData.length - 1, c: 10 } });
 
         wsData.push([
           '', { v: 'satu SPK/SP/RAB, harus dibuatkan di lembar yang berbeda (sesuai SPK/SPH)', t: 's', s: { font: { italic: true, sz: 10 } } },
-          '', '', '', '', '', '', '', '',
+          '', '', '', '', '', '', '', '', '',
         ]);
-        merges.push({ s: { r: wsData.length - 1, c: 1 }, e: { r: wsData.length - 1, c: 9 } });
+        merges.push({ s: { r: wsData.length - 1, c: 1 }, e: { r: wsData.length - 1, c: 10 } });
 
         wsData.push([
           '', { v: 'Rangkap 2 : (Asli untuk konsumen)(lembar ke 2 setelah di ttd konsumen kemudian diserahkan ke Keuangan)', t: 's', s: { font: { italic: true, sz: 10 } } },
-          '', '', '', '', '', '', '', '',
+          '', '', '', '', '', '', '', '', '',
         ]);
-        merges.push({ s: { r: wsData.length - 1, c: 1 }, e: { r: wsData.length - 1, c: 9 } });
+        merges.push({ s: { r: wsData.length - 1, c: 1 }, e: { r: wsData.length - 1, c: 10 } });
 
         wsData.push([
           '', { v: 'Untuk setiap barang yang sudah dikirim harus diserahterimakan dan ditandatangani oleh pihak jangum', t: 's', s: { font: { italic: true, sz: 10 } } },
-          '', '', '', '', '', '', '', '',
+          '', '', '', '', '', '', '', '', '',
         ]);
-        merges.push({ s: { r: wsData.length - 1, c: 1 }, e: { r: wsData.length - 1, c: 9 } });
+        merges.push({ s: { r: wsData.length - 1, c: 1 }, e: { r: wsData.length - 1, c: 10 } });
 
         wsData.push([
           '', { v: 'Apabila surat sudah ditandatangani mohon difoto sebagai bukti dan dikirim ke nomor (wa)085712330344', t: 's', s: { font: { italic: true, sz: 10 } } },
-          '', '', '', '', '', '', '', '',
+          '', '', '', '', '', '', '', '', '',
         ]);
-        merges.push({ s: { r: wsData.length - 1, c: 1 }, e: { r: wsData.length - 1, c: 9 } });
+        merges.push({ s: { r: wsData.length - 1, c: 1 }, e: { r: wsData.length - 1, c: 10 } });
 
         wsData.push([], []);
 
@@ -485,41 +489,41 @@ export default function PrintSuratJalanPage() {
         wsData.push([
           { v: 'Disiapkan oleh,', t: 's', s: centerBoldStyle }, '', '',
           { v: 'Diserahkan oleh,', t: 's', s: centerBoldStyle }, '', '',
-          { v: 'Diterima oleh,', t: 's', s: centerBoldStyle }, '', '', '',
+          { v: 'Diterima oleh,', t: 's', s: centerBoldStyle }, '', '', '', '',
         ]);
         const sigRow1 = wsData.length - 1;
         merges.push({ s: { r: sigRow1, c: 0 }, e: { r: sigRow1, c: 2 } });
         merges.push({ s: { r: sigRow1, c: 3 }, e: { r: sigRow1, c: 5 } });
-        merges.push({ s: { r: sigRow1, c: 6 }, e: { r: sigRow1, c: 9 } });
+        merges.push({ s: { r: sigRow1, c: 6 }, e: { r: sigRow1, c: 10 } });
 
         wsData.push([], [], []);
 
         wsData.push([
           { v: preparedByName ? preparedByName : '( ............................ )', t: 's', s: centerStyle }, '', '',
           { v: '( ............................ )', t: 's', s: centerStyle }, '', '',
-          { v: '( ............................ )', t: 's', s: centerStyle }, '', '', '',
+          { v: '( ............................ )', t: 's', s: centerStyle }, '', '', '', '',
         ]);
         const sigRowName = wsData.length - 1;
         merges.push({ s: { r: sigRowName, c: 0 }, e: { r: sigRowName, c: 2 } });
         merges.push({ s: { r: sigRowName, c: 3 }, e: { r: sigRowName, c: 5 } });
-        merges.push({ s: { r: sigRowName, c: 6 }, e: { r: sigRowName, c: 9 } });
+        merges.push({ s: { r: sigRowName, c: 6 }, e: { r: sigRowName, c: 10 } });
 
         wsData.push([
           { v: preparedByDate ? `Tgl. ${preparedByDate}` : 'Tgl. _________________', t: 's', s: centerStyle }, '', '',
           { v: 'Tgl. _________________', t: 's', s: centerStyle }, '', '',
-          { v: 'Tgl. _________________', t: 's', s: centerStyle }, '', '', '',
+          { v: 'Tgl. _________________', t: 's', s: centerStyle }, '', '', '', '',
         ]);
         const sigRow2 = wsData.length - 1;
         merges.push({ s: { r: sigRow2, c: 0 }, e: { r: sigRow2, c: 2 } });
         merges.push({ s: { r: sigRow2, c: 3 }, e: { r: sigRow2, c: 5 } });
-        merges.push({ s: { r: sigRow2, c: 6 }, e: { r: sigRow2, c: 9 } });
+        merges.push({ s: { r: sigRow2, c: 6 }, e: { r: sigRow2, c: 10 } });
       }
 
       const ws = XLSX.utils.aoa_to_sheet(wsData);
       ws['!merges'] = merges;
       ws['!cols'] = isSuratJalan
         ? [{ wch: 4 }, { wch: 11 }, { wch: 15 }, { wch: 24 }, { wch: 5 }, { wch: 5 }, { wch: 5 }, { wch: 6 }, { wch: 5 }, { wch: 5 }, { wch: 5 }]
-        : [{ wch: 4 }, { wch: 18 }, { wch: 26 }, { wch: 5 }, { wch: 5 }, { wch: 5 }, { wch: 5 }, { wch: 5 }, { wch: 5 }, { wch: 8 }];
+        : [{ wch: 4 }, { wch: 10 }, { wch: 16 }, { wch: 26 }, { wch: 5 }, { wch: 5 }, { wch: 5 }, { wch: 5 }, { wch: 5 }, { wch: 5 }, { wch: 8 }];
 
       ws['!margins'] = { left: 0.3, right: 0.3, top: 0.5, bottom: 0.5, header: 0.3, footer: 0.3 };
       ws['!pageSetup'] = { orientation: 'portrait', paperSize: 9, fitToWidth: 1, fitToHeight: 0 };
@@ -763,7 +767,7 @@ export default function PrintSuratJalanPage() {
           <p className='text-xs text-neutral-500'>
             {activeTab === 'surat-jalan'
               ? 'Halaman ini diformat untuk cetak A4. Tanda tangan otomatis disertakan di setiap halaman cetak.'
-              : 'Halaman ini diformat untuk cetak A4. Tanda tangan disertakan pada halaman terakhir cetak.'}
+              : 'Halaman ini diformat untuk cetak A4. Note dan tanda tangan otomatis disertakan di setiap halaman cetak.'}
           </p>
         </div>
         <div className='flex items-center gap-3'>
@@ -1114,7 +1118,10 @@ export default function PrintSuratJalanPage() {
                         <th className='p-1.5 border-r border-black font-semibold text-center w-8' rowSpan={2}>
                           NO.
                         </th>
-                        <th className='p-1.5 border-r border-black font-semibold text-center w-28' rowSpan={2}>
+                        <th className='p-1.5 border-r border-black font-semibold text-center w-14' rowSpan={2}>
+                          LANTAI
+                        </th>
+                        <th className='p-1.5 border-r border-black font-semibold text-center w-24' rowSpan={2}>
                           RUANG
                         </th>
                         <th className='p-1.5 border-r border-black font-semibold text-center' rowSpan={2}>
@@ -1123,16 +1130,16 @@ export default function PrintSuratJalanPage() {
                         <th className='p-1.5 border-r border-black font-semibold text-center w-24' colSpan={3}>
                           DIMENSI (METER)
                         </th>
-                        <th className='p-1.5 border-r border-black font-semibold text-center w-12' rowSpan={2}>
+                        <th className='p-1.5 border-r border-black font-semibold text-center w-10' rowSpan={2}>
                           VOL
                         </th>
-                        <th className='p-1.5 border-r border-black font-semibold text-center w-12' rowSpan={2}>
+                        <th className='p-1.5 border-r border-black font-semibold text-center w-10' rowSpan={2}>
                           SAT
                         </th>
-                        <th className='p-1.5 border-r border-black font-semibold text-center w-12' rowSpan={2}>
+                        <th className='p-1.5 border-r border-black font-semibold text-center w-10' rowSpan={2}>
                           JML
                         </th>
-                        <th className='p-1.5 font-semibold text-center w-16' rowSpan={2}>
+                        <th className='p-1.5 font-semibold text-center w-14' rowSpan={2}>
                           KET
                         </th>
                       </tr>
@@ -1155,6 +1162,9 @@ export default function PrintSuratJalanPage() {
                           <tr key={detail.id || globalIdx} className='border-b border-black h-6'>
                             <td className='p-1.5 border-r border-black text-center'>
                               {globalIdx}
+                            </td>
+                            <td className='p-1.5 border-r border-black text-center'>
+                              {detail.project_item?.lantai || '-'}
                             </td>
                             <td className='p-1.5 border-r border-black text-center'>
                               {detail.project_item?.ruang || '-'}
@@ -1190,82 +1200,78 @@ export default function PrintSuratJalanPage() {
                   </table>
                 </div>
 
-                {/* SETRIM Note & Footer (Hanya di Halaman Terakhir) */}
-                {isLastPage && (
-                  <>
-                    {/* SETRIM Note */}
-                    <div className='flex flex-row gap-1 text-[10px] text-left mb-5 print:mb-2 px-2 print:px-0 print:break-inside-avoid'>
-                      <div>
-                        <p>
-                          <i>Note: </i>
-                        </p>
-                      </div>
-                      <div className='flex-1'>
-                        <p className='leading-tight'>
-                          <i>
-                            **) Item / perabot yang ditulis harus sama dengan yang
-                            tertulis di SPK/SPH jika barang yang dikirim tidak dalam
-                            satu SPK/SP/RAB, harus dibuatkan di lembar yang berbeda
-                            (sesuai SPK/SPH) Rangkap 2 : (Asli untuk konsumen)(lembar ke
-                            2 setelah di ttd konsumen kemudian diserahkan ke Keuangan)
-                            Untuk setiap barang yang sudah dikirim harus
-                            diserahterimakan dan ditandatangani oleh pihak jangum
-                            Apabila surat sudah ditandatangani mohon difoto sebagai
-                            bukti dan dikirim ke nomor (wa)085712330344
-                          </i>
-                        </p>
-                      </div>
-                    </div>
+                {/* SETRIM Note & Footer (Disertakan di Setiap Halaman) */}
+                {/* SETRIM Note */}
+                <div className='flex flex-row gap-1 text-[10px] text-left mb-5 print:mb-2 px-2 print:px-0 print:break-inside-avoid'>
+                  <div>
+                    <p>
+                      <i>Note: </i>
+                    </p>
+                  </div>
+                  <div className='flex-1'>
+                    <p className='leading-tight'>
+                      <i>
+                        **) Item / perabot yang ditulis harus sama dengan yang
+                        tertulis di SPK/SPH jika barang yang dikirim tidak dalam
+                        satu SPK/SP/RAB, harus dibuatkan di lembar yang berbeda
+                        (sesuai SPK/SPH) Rangkap 2 : (Asli untuk konsumen)(lembar ke
+                        2 setelah di ttd konsumen kemudian diserahkan ke Keuangan)
+                        Untuk setiap barang yang sudah dikirim harus
+                        diserahterimakan dan ditandatangani oleh pihak jangum
+                        Apabila surat sudah ditandatangani mohon difoto sebagai
+                        bukti dan dikirim ke nomor (wa)085712330344
+                      </i>
+                    </p>
+                  </div>
+                </div>
 
-                    {/* SETRIM Footer */}
-                    <div className='grid grid-cols-3 gap-4 text-[11px] text-center mt-6 mb-4 px-12 print:mt-3 print:mb-0 print:px-4 print:break-inside-avoid'>
-                      <div className='flex flex-col items-center'>
-                        <span className='font-semibold mb-12 print:mb-8'>Disiapkan oleh,</span>
-                        <div className='w-32 border-b border-black mb-1 relative group focus-within:ring-1 focus-within:ring-black'>
-                          <input
-                            type='text'
-                            value={preparedByName}
-                            onChange={(e) => setPreparedByName(e.target.value)}
-                            className='bg-transparent border-none outline-none w-full p-0 m-0 text-[11px] font-sans text-black text-center'
-                            placeholder='Nama'
-                          />
-                          <Pencil className='w-3 h-3 absolute -right-5 bottom-0.5 text-neutral-400 opacity-0 group-hover:opacity-100 transition-opacity no-print pointer-events-none' />
-                        </div>
-                        <div className='flex w-32 text-left mt-1 items-end'>
-                          <span className='font-semibold mr-1 text-[10px] mb-0.5'>
-                            Tgl.
-                          </span>
-                          <div className='flex-1 border-b border-black border-dashed relative group focus-within:ring-1 focus-within:ring-black'>
-                            <input
-                              type='text'
-                              value={preparedByDate}
-                              onChange={(e) => setPreparedByDate(e.target.value)}
-                              className='bg-transparent border-none outline-none w-full p-0 m-0 text-[10px] font-sans text-black text-center'
-                              placeholder='DD/MM/YY'
-                            />
-                            <Pencil className='w-3 h-3 absolute -right-5 bottom-0.5 text-neutral-400 opacity-0 group-hover:opacity-100 transition-opacity no-print pointer-events-none' />
-                          </div>
-                        </div>
-                      </div>
-                      <div className='flex flex-col items-center'>
-                        <span className='font-semibold mb-16 print:mb-8'>Diserahkan oleh,</span>
-                        <div className='w-32 border-b border-black mb-1 relative'></div>
-                        <div className='flex w-32 text-left mt-1'>
-                          <span className='font-semibold mr-1 text-[10px]'>Tgl.</span>
-                          <span className='flex-1 border-b border-black border-dashed'></span>
-                        </div>
-                      </div>
-                      <div className='flex flex-col items-center'>
-                        <span className='font-semibold mb-16 print:mb-8'>Diterima oleh,</span>
-                        <div className='w-32 border-b border-black mb-1 relative'></div>
-                        <div className='flex w-32 text-left mt-1'>
-                          <span className='font-semibold mr-1 text-[10px]'>Tgl.</span>
-                          <span className='flex-1 border-b border-black border-dashed'></span>
-                        </div>
+                {/* SETRIM Footer */}
+                <div className='grid grid-cols-3 gap-4 text-[11px] text-center mt-6 mb-4 px-12 print:mt-3 print:mb-0 print:px-4 print:break-inside-avoid'>
+                  <div className='flex flex-col items-center'>
+                    <span className='font-semibold mb-12 print:mb-8'>Disiapkan oleh,</span>
+                    <div className='w-32 border-b border-black mb-1 relative group focus-within:ring-1 focus-within:ring-black'>
+                      <input
+                        type='text'
+                        value={preparedByName}
+                        onChange={(e) => setPreparedByName(e.target.value)}
+                        className='bg-transparent border-none outline-none w-full p-0 m-0 text-[11px] font-sans text-black text-center'
+                        placeholder='Nama'
+                      />
+                      <Pencil className='w-3 h-3 absolute -right-5 bottom-0.5 text-neutral-400 opacity-0 group-hover:opacity-100 transition-opacity no-print pointer-events-none' />
+                    </div>
+                    <div className='flex w-32 text-left mt-1 items-end'>
+                      <span className='font-semibold mr-1 text-[10px] mb-0.5'>
+                        Tgl.
+                      </span>
+                      <div className='flex-1 border-b border-black border-dashed relative group focus-within:ring-1 focus-within:ring-black'>
+                        <input
+                          type='text'
+                          value={preparedByDate}
+                          onChange={(e) => setPreparedByDate(e.target.value)}
+                          className='bg-transparent border-none outline-none w-full p-0 m-0 text-[10px] font-sans text-black text-center'
+                          placeholder='DD/MM/YY'
+                        />
+                        <Pencil className='w-3 h-3 absolute -right-5 bottom-0.5 text-neutral-400 opacity-0 group-hover:opacity-100 transition-opacity no-print pointer-events-none' />
                       </div>
                     </div>
-                  </>
-                )}
+                  </div>
+                  <div className='flex flex-col items-center'>
+                    <span className='font-semibold mb-16 print:mb-8'>Diserahkan oleh,</span>
+                    <div className='w-32 border-b border-black mb-1 relative'></div>
+                    <div className='flex w-32 text-left mt-1'>
+                      <span className='font-semibold mr-1 text-[10px]'>Tgl.</span>
+                      <span className='flex-1 border-b border-black border-dashed'></span>
+                    </div>
+                  </div>
+                  <div className='flex flex-col items-center'>
+                    <span className='font-semibold mb-16 print:mb-8'>Diterima oleh,</span>
+                    <div className='w-32 border-b border-black mb-1 relative'></div>
+                    <div className='flex w-32 text-left mt-1'>
+                      <span className='font-semibold mr-1 text-[10px]'>Tgl.</span>
+                      <span className='flex-1 border-b border-black border-dashed'></span>
+                    </div>
+                  </div>
+                </div>
               </div>
             );
           })
