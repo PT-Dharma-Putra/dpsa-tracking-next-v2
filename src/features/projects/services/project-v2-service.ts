@@ -1139,6 +1139,18 @@ export const projectV2Service = {
     );
     return data;
   },
+  getCalendarSchedules: async (params?: {
+    year?: number;
+    month?: number;
+    start_date?: string;
+    end_date?: string;
+  }) => {
+    const { data } = await apiClient.get<CalendarDeliveryResponse>(
+      '/jadwal-pengiriman/calendar',
+      { params }
+    );
+    return data;
+  },
   getJadwalPengiriman: async (params?: { tanggal_pengiriman_id?: number; project_id?: number }) => {
     const { data } = await apiClient.get<JadwalPengiriman[]>(
       '/jadwal-pengiriman',
@@ -1687,5 +1699,57 @@ export interface GetProduksiGlobalItemsParams {
   per_page?: number;
   sort_by?: string;
   sort_order?: 'asc' | 'desc';
+}
+
+export interface CalendarDeliveryItem {
+  id: number;
+  item: string;
+  ruang?: string | null;
+  lantai?: string | null;
+  satuan?: string | null;
+  jumlah: number;
+  qty_terkirim: number;
+  sisa: number;
+  status: 'lengkap' | 'sebagian' | 'belum';
+}
+
+export interface CalendarDeliverySchedule {
+  id: number;
+  tanggal: string;
+  keterangan?: string | null;
+  project_id: number;
+  project_name: string;
+  client_id: number | null;
+  client_name: string;
+  nomor_spk?: string | null;
+  deadline?: string | null;
+  summary: {
+    total_items: number;
+    items_lengkap: number;
+    items_sebagian: number;
+    items_belum: number;
+    total_qty_kebutuhan: number;
+    total_qty_terkirim: number;
+    percent_terkirim: number;
+  };
+  items: CalendarDeliveryItem[];
+}
+
+export interface CalendarDeliveryClient {
+  id: number;
+  name: string;
+  project_count: number;
+}
+
+export interface CalendarDeliveryDay {
+  date: string; // Y-m-d
+  clients: CalendarDeliveryClient[];
+  schedules: CalendarDeliverySchedule[];
+}
+
+export interface CalendarDeliveryResponse {
+  year: number;
+  month: number;
+  data: CalendarDeliveryDay[];
 }
 

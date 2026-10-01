@@ -457,6 +457,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             url: '/dashboard/projects-v2/perencanaan',
           },
           {
+            title: 'Kalender Jadwal Kirim',
+            url: '/dashboard/projects-v2/jadwal-pengiriman',
+          },
+          {
             title: 'Rekap Order Gambar',
             url: '/dashboard/projects-v2/rekap-order-gambar?from=ppic',
           },
