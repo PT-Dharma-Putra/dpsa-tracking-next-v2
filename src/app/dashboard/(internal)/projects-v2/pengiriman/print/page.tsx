@@ -170,109 +170,87 @@ export default function PrintSuratJalanPage() {
       let merges: any[] = [];
 
       if (isSuratJalan) {
-        // SURAT JALAN Layout
-        wsData.push([]); // 1
-        wsData.push([]); // 2
+        // Identitas ISO di sebelah kanan atas, di atas tulisan SURAT JALAN
         wsData.push([
-          { v: 'SURAT JALAN', t: 's', s: titleStyle },
-          '', '', '', '', '', '', '', '', '', '',
-        ]); // 3
-        merges.push({ s: { r: 2, c: 0 }, e: { r: 2, c: 10 } });
-
-        wsData.push([]); // 4
-        wsData.push([]); // 5
-
-        wsData.push([
+          '', '', '', '', '', '', '',
           { v: 'PPIC', t: 's', s: { font: { bold: true, sz: 8 }, alignment: { horizontal: 'center' }, border: { top: borderThin, bottom: borderThin, left: borderThin, right: borderThin } } },
           { v: 'Rev : 00', t: 's', s: { font: { sz: 8 }, alignment: { horizontal: 'center' }, border: { top: borderThin, bottom: borderThin, left: borderThin, right: borderThin } } },
-          '', '', '', '',
-          { v: 'Tujuan', t: 's', s: normalStyle },
-          '',
-          { v: `: ${combinedMeta.clientName}`, t: 's', s: boldStyle },
         ]);
-        let rTujuan = wsData.length - 1;
-        merges.push({ s: { r: rTujuan, c: 6 }, e: { r: rTujuan, c: 7 } });
-
         wsData.push([
+          '', '', '', '', '', '', '',
           { v: '004', t: 's', s: { font: { bold: true, sz: 8 }, alignment: { horizontal: 'center' }, border: { top: borderThin, bottom: borderThin, left: borderThin, right: borderThin } } },
           { v: 'Terbit : 8/25', t: 's', s: { font: { sz: 8 }, alignment: { horizontal: 'center' }, border: { top: borderThin, bottom: borderThin, left: borderThin, right: borderThin } } },
-          '', '', '', '',
-          { v: 'No. Kendaraan', t: 's', s: normalStyle },
-          '',
-          { v: `: ${combinedMeta.noKendaraan}`, t: 's', s: normalStyle },
         ]);
-        let rKendaraan = wsData.length - 1;
-        merges.push({ s: { r: rKendaraan, c: 6 }, e: { r: rKendaraan, c: 7 } });
-
-        wsData.push([
-          '', '', '', '', '', '',
-          { v: 'Nama Sopir', t: 's', s: normalStyle },
-          '',
-          { v: `: ${combinedMeta.supir}`, t: 's', s: normalStyle },
-        ]);
-        let rSupir = wsData.length - 1;
-        merges.push({ s: { r: rSupir, c: 6 }, e: { r: rSupir, c: 7 } });
-
-        wsData.push([
-          '', '', '', '', '', '',
-          { v: 'No. Telepon', t: 's', s: normalStyle },
-          '',
-          { v: `: ${combinedMeta.noHp}`, t: 's', s: normalStyle },
-        ]);
-        let rNoHp = wsData.length - 1;
-        merges.push({ s: { r: rNoHp, c: 6 }, e: { r: rNoHp, c: 7 } });
 
         wsData.push([]);
 
-        const rHeader1 = wsData.length;
+        wsData.push([
+          { v: 'SURAT JALAN', t: 's', s: titleStyle },
+          '', '', '', '', '', '', '', '',
+        ]);
+        let rTitle = wsData.length - 1;
+        merges.push({ s: { r: rTitle, c: 0 }, e: { r: rTitle, c: 8 } });
+
+        wsData.push([]);
+
+        // Info Pengiriman di sebelah kanan
+        wsData.push([
+          '', '', '', '', '',
+          { v: 'Tujuan', t: 's', s: normalStyle },
+          { v: `: ${combinedMeta.clientName}`, t: 's', s: boldStyle },
+          '', '',
+        ]);
+        let rTujuan = wsData.length - 1;
+        merges.push({ s: { r: rTujuan, c: 6 }, e: { r: rTujuan, c: 8 } });
+
+        wsData.push([
+          '', '', '', '', '',
+          { v: 'No. Kendaraan', t: 's', s: normalStyle },
+          { v: `: ${combinedMeta.noKendaraan}`, t: 's', s: normalStyle },
+          '', '',
+        ]);
+        let rKendaraan = wsData.length - 1;
+        merges.push({ s: { r: rKendaraan, c: 6 }, e: { r: rKendaraan, c: 8 } });
+
+        wsData.push([
+          '', '', '', '', '',
+          { v: 'Nama Sopir', t: 's', s: normalStyle },
+          { v: `: ${combinedMeta.supir}`, t: 's', s: normalStyle },
+          '', '',
+        ]);
+        let rSupir = wsData.length - 1;
+        merges.push({ s: { r: rSupir, c: 6 }, e: { r: rSupir, c: 8 } });
+
+        wsData.push([
+          '', '', '', '', '',
+          { v: 'No. Telepon', t: 's', s: normalStyle },
+          { v: `: ${combinedMeta.noHp}`, t: 's', s: normalStyle },
+          '', '',
+        ]);
+        let rNoHp = wsData.length - 1;
+        merges.push({ s: { r: rNoHp, c: 6 }, e: { r: rNoHp, c: 8 } });
+
+        wsData.push([]);
+
         wsData.push([
           { v: 'NO', t: 's', s: headerStyle },
           { v: 'NO. SPK', t: 's', s: headerStyle },
+          { v: 'LANTAI', t: 's', s: headerStyle },
           { v: 'RUANG', t: 's', s: headerStyle },
           { v: 'ITEM/PERABOT', t: 's', s: headerStyle },
-          { v: 'DIMENSI (METER)', t: 's', s: headerStyle },
-          { v: '', t: 's', s: headerStyle },
-          { v: '', t: 's', s: headerStyle },
           { v: 'VOL', t: 's', s: headerStyle },
           { v: 'SAT', t: 's', s: headerStyle },
           { v: 'JML', t: 's', s: headerStyle },
           { v: 'KET', t: 's', s: headerStyle },
         ]);
 
-        const rHeader2 = wsData.length;
-        wsData.push([
-          { v: '', t: 's', s: headerStyle },
-          { v: '', t: 's', s: headerStyle },
-          { v: '', t: 's', s: headerStyle },
-          { v: '', t: 's', s: headerStyle },
-          { v: 'P', t: 's', s: headerStyle },
-          { v: 'L', t: 's', s: headerStyle },
-          { v: 'T', t: 's', s: headerStyle },
-          { v: '', t: 's', s: headerStyle },
-          { v: '', t: 's', s: headerStyle },
-          { v: '', t: 's', s: headerStyle },
-          { v: '', t: 's', s: headerStyle },
-        ]);
-
-        merges.push({ s: { r: rHeader1, c: 0 }, e: { r: rHeader2, c: 0 } });
-        merges.push({ s: { r: rHeader1, c: 1 }, e: { r: rHeader2, c: 1 } });
-        merges.push({ s: { r: rHeader1, c: 2 }, e: { r: rHeader2, c: 2 } });
-        merges.push({ s: { r: rHeader1, c: 3 }, e: { r: rHeader2, c: 3 } });
-        merges.push({ s: { r: rHeader1, c: 4 }, e: { r: rHeader1, c: 6 } });
-        merges.push({ s: { r: rHeader1, c: 7 }, e: { r: rHeader2, c: 7 } });
-        merges.push({ s: { r: rHeader1, c: 8 }, e: { r: rHeader2, c: 8 } });
-        merges.push({ s: { r: rHeader1, c: 9 }, e: { r: rHeader2, c: 9 } });
-        merges.push({ s: { r: rHeader1, c: 10 }, e: { r: rHeader2, c: 10 } });
-
         combinedDetails.forEach((detail, index) => {
           wsData.push([
             { v: index + 1, t: 'n', s: dataStyleCenter },
             { v: detail.project_item?.project?.spk_number || '-', t: 's', s: dataStyleCenter },
+            { v: detail.project_item?.lantai || '-', t: 's', s: dataStyleCenter },
             { v: detail.project_item?.ruang || '-', t: 's', s: dataStyleLeft },
             { v: detail.project_item?.item || '-', t: 's', s: dataStyleLeft },
-            { v: detail.project_item?.panjang || '-', t: 's', s: dataStyleCenter },
-            { v: detail.project_item?.lebar || '-', t: 's', s: dataStyleCenter },
-            { v: detail.project_item?.tinggi || '-', t: 's', s: dataStyleCenter },
             { v: detail.project_item?.volume ?? '-', t: 's', s: dataStyleCenter },
             { v: detail.project_item?.satuan || '-', t: 's', s: dataStyleCenter },
             { v: detail.jumlah_keluar || 0, t: 'n', s: dataStyleCenter },
@@ -283,7 +261,7 @@ export default function PrintSuratJalanPage() {
         wsData.push([]);
         wsData.push([
           { v: `Yogyakarta, ${format(new Date(), 'dd MMMM yyyy', { locale: idLocale })}`, t: 's', s: boldStyle },
-          '', '', '', '', '', '', '', '', '', '',
+          '', '', '', '', '', '', '', '',
         ]);
         let rYogyakarta = wsData.length - 1;
         merges.push({ s: { r: rYogyakarta, c: 0 }, e: { r: rYogyakarta, c: 3 } });
@@ -293,42 +271,42 @@ export default function PrintSuratJalanPage() {
         const centerBoldStyle = { font: { bold: true, sz: 10 }, alignment: { horizontal: 'center' } };
 
         wsData.push([
-          { v: 'Diserahkan Oleh:', t: 's', s: centerStyle }, '', '',
+          { v: 'Diserahkan Oleh:', t: 's', s: centerStyle }, '',
           { v: 'Diterima Oleh:', t: 's', s: centerStyle }, '',
-          { v: 'Mengetahui:', t: 's', s: centerStyle }, '', '',
+          { v: 'Mengetahui:', t: 's', s: centerStyle }, '',
           { v: 'Diterima Oleh:', t: 's', s: centerStyle }, '', '',
         ]);
         const sigRow1 = wsData.length - 1;
-        merges.push({ s: { r: sigRow1, c: 0 }, e: { r: sigRow1, c: 2 } });
-        merges.push({ s: { r: sigRow1, c: 3 }, e: { r: sigRow1, c: 4 } });
-        merges.push({ s: { r: sigRow1, c: 5 }, e: { r: sigRow1, c: 7 } });
-        merges.push({ s: { r: sigRow1, c: 8 }, e: { r: sigRow1, c: 10 } });
+        merges.push({ s: { r: sigRow1, c: 0 }, e: { r: sigRow1, c: 1 } });
+        merges.push({ s: { r: sigRow1, c: 2 }, e: { r: sigRow1, c: 3 } });
+        merges.push({ s: { r: sigRow1, c: 4 }, e: { r: sigRow1, c: 5 } });
+        merges.push({ s: { r: sigRow1, c: 6 }, e: { r: sigRow1, c: 8 } });
 
         wsData.push([
-          { v: 'Petugas Gudang', t: 's', s: centerBoldStyle }, '', '',
+          { v: 'Petugas Gudang', t: 's', s: centerBoldStyle }, '',
           { v: 'Petugas Pengiriman', t: 's', s: centerBoldStyle }, '',
-          { v: 'Security DPSA', t: 's', s: centerBoldStyle }, '', '',
+          { v: 'Security DPSA', t: 's', s: centerBoldStyle }, '',
           { v: 'Konsumen', t: 's', s: centerBoldStyle }, '', '',
         ]);
         const sigRow2 = wsData.length - 1;
-        merges.push({ s: { r: sigRow2, c: 0 }, e: { r: sigRow2, c: 2 } });
-        merges.push({ s: { r: sigRow2, c: 3 }, e: { r: sigRow2, c: 4 } });
-        merges.push({ s: { r: sigRow2, c: 5 }, e: { r: sigRow2, c: 7 } });
-        merges.push({ s: { r: sigRow2, c: 8 }, e: { r: sigRow2, c: 10 } });
+        merges.push({ s: { r: sigRow2, c: 0 }, e: { r: sigRow2, c: 1 } });
+        merges.push({ s: { r: sigRow2, c: 2 }, e: { r: sigRow2, c: 3 } });
+        merges.push({ s: { r: sigRow2, c: 4 }, e: { r: sigRow2, c: 5 } });
+        merges.push({ s: { r: sigRow2, c: 6 }, e: { r: sigRow2, c: 8 } });
 
         wsData.push([], [], []);
 
         wsData.push([
-          { v: '( ............................ )', t: 's', s: centerStyle }, '', '',
           { v: '( ............................ )', t: 's', s: centerStyle }, '',
-          { v: '( ............................ )', t: 's', s: centerStyle }, '', '',
+          { v: '( ............................ )', t: 's', s: centerStyle }, '',
+          { v: '( ............................ )', t: 's', s: centerStyle }, '',
           { v: '( ............................ )', t: 's', s: centerStyle }, '', '',
         ]);
         const sigRow3 = wsData.length - 1;
-        merges.push({ s: { r: sigRow3, c: 0 }, e: { r: sigRow3, c: 2 } });
-        merges.push({ s: { r: sigRow3, c: 3 }, e: { r: sigRow3, c: 4 } });
-        merges.push({ s: { r: sigRow3, c: 5 }, e: { r: sigRow3, c: 7 } });
-        merges.push({ s: { r: sigRow3, c: 8 }, e: { r: sigRow3, c: 10 } });
+        merges.push({ s: { r: sigRow3, c: 0 }, e: { r: sigRow3, c: 1 } });
+        merges.push({ s: { r: sigRow3, c: 2 }, e: { r: sigRow3, c: 3 } });
+        merges.push({ s: { r: sigRow3, c: 4 }, e: { r: sigRow3, c: 5 } });
+        merges.push({ s: { r: sigRow3, c: 6 }, e: { r: sigRow3, c: 8 } });
       } else {
         // SETRIM Layout
         wsData.push([]);
@@ -522,7 +500,7 @@ export default function PrintSuratJalanPage() {
       const ws = XLSX.utils.aoa_to_sheet(wsData);
       ws['!merges'] = merges;
       ws['!cols'] = isSuratJalan
-        ? [{ wch: 4 }, { wch: 11 }, { wch: 15 }, { wch: 24 }, { wch: 5 }, { wch: 5 }, { wch: 5 }, { wch: 6 }, { wch: 5 }, { wch: 5 }, { wch: 5 }]
+        ? [{ wch: 4 }, { wch: 10 }, { wch: 10 }, { wch: 16 }, { wch: 28 }, { wch: 6 }, { wch: 6 }, { wch: 6 }, { wch: 12 }]
         : [{ wch: 4 }, { wch: 10 }, { wch: 16 }, { wch: 26 }, { wch: 5 }, { wch: 5 }, { wch: 5 }, { wch: 5 }, { wch: 5 }, { wch: 5 }, { wch: 8 }];
 
       ws['!margins'] = { left: 0.3, right: 0.3, top: 0.5, bottom: 0.5, header: 0.3, footer: 0.3 };
@@ -819,32 +797,38 @@ export default function PrintSuratJalanPage() {
                   pageIdx === pagedDetails.length - 1 ? 'last-page' : ''
                 }`}
               >
-                {/* Header (SURAT JALAN Title & No only) */}
-                <div className='flex justify-between items-center mb-4 print:mb-2 pt-2 print:pt-0'>
-                  <div className='w-24 no-print'></div>
-                  <div className='flex-1 text-center'>
-                    <h2 className='text-lg font-bold pb-0.5 mb-0.5 uppercase print:mt-0 print:pt-0'>
-                      SURAT JALAN
-                    </h2>
-                  </div>
-                  <div className='w-24 text-right text-[11px] font-semibold text-neutral-600'>
-                    {pagedDetails.length > 1 && `Hal. ${pageIdx + 1} / ${pagedDetails.length}`}
+                {/* Top Section: Identitas ISO di sebelah kanan atas (di atas tulisan SURAT JALAN) */}
+                <div className='flex justify-between items-start mb-2 print:mb-1 pt-2 print:pt-0'>
+                  <div className='w-40 no-print'></div>
+                  <div className='flex-1'></div>
+                  <div className='flex flex-col items-end gap-1'>
+                    <div className='w-40 border border-black text-[10px] grid grid-cols-2 text-center bg-white'>
+                      <div className='border-r border-b border-black py-0.5 font-semibold'>
+                        PPIC
+                      </div>
+                      <div className='border-b border-black py-0.5'>Rev : 00</div>
+                      <div className='border-r border-black py-0.5 font-semibold'>
+                        004
+                      </div>
+                      <div className='py-0.5'>Terbit : 8/25</div>
+                    </div>
+                    {pagedDetails.length > 1 && (
+                      <div className='text-right text-[10px] font-semibold text-neutral-600'>
+                        Hal. {pageIdx + 1} / {pagedDetails.length}
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                {/* Metadata Section */}
-                <div className='flex justify-between items-start mb-5 print:mb-3 text-sm'>
-                  <div className='w-40 border border-black text-[10px] grid grid-cols-2 text-center bg-white'>
-                    <div className='border-r border-b border-black py-0.5 font-semibold'>
-                      PPIC
-                    </div>
-                    <div className='border-b border-black py-0.5'>Rev : 00</div>
-                    <div className='border-r border-black py-0.5 font-semibold'>
-                      004
-                    </div>
-                    <div className='py-0.5'>Terbit : 8/25</div>
-                  </div>
+                {/* Header (SURAT JALAN Title) */}
+                <div className='text-center mb-4 print:mb-2'>
+                  <h2 className='text-lg font-bold pb-0.5 mb-0.5 uppercase print:mt-0 print:pt-0'>
+                    SURAT JALAN
+                  </h2>
+                </div>
 
+                {/* Metadata Section: Tujuan, No. Kendaraan, Nama Sopir, No. Telepon dikembalikan di sebelah kanan */}
+                <div className='flex justify-end items-start mb-5 print:mb-3 text-sm'>
                   {/* Pengiriman Info */}
                   <div className='space-y-1 text-xs w-72'>
                     <div className='grid grid-cols-3 gap-2'>
@@ -874,43 +858,32 @@ export default function PrintSuratJalanPage() {
                 <table className='w-full text-[11px] text-left border border-black mb-6 print:mb-3 border-collapse'>
                   <thead>
                     <tr className='bg-neutral-100 border-b border-black'>
-                      <th className='p-1.5 border-r border-black font-semibold text-center w-10' rowSpan={2}>
+                      <th className='p-1.5 border-r border-black font-semibold text-center w-8'>
                         NO
                       </th>
-                      <th className='p-1.5 border-r border-black font-semibold w-20' rowSpan={2}>
+                      <th className='p-1.5 border-r border-black font-semibold w-16 text-center'>
                         NO. SPK
                       </th>
-                      <th className='p-1.5 border-r border-black font-semibold w-24' rowSpan={2}>
+                      <th className='p-1.5 border-r border-black font-semibold w-14 text-center'>
+                        LANTAI
+                      </th>
+                      <th className='p-1.5 border-r border-black font-semibold w-24'>
                         RUANG
                       </th>
-                      <th className='p-1.5 border-r border-black font-semibold' rowSpan={2}>
+                      <th className='p-1.5 border-r border-black font-semibold'>
                         ITEM/PERABOT
                       </th>
-                      <th className='p-1.5 border-r border-black font-semibold w-24 text-center' colSpan={3}>
-                        DIMENSI (METER)
-                      </th>
-                      <th className='p-1.5 border-r border-black font-semibold w-16 text-center' rowSpan={2}>
+                      <th className='p-1.5 border-r border-black font-semibold w-12 text-center'>
                         VOL
                       </th>
-                      <th className='p-1.5 border-r border-black font-semibold w-16 text-center' rowSpan={2}>
+                      <th className='p-1.5 border-r border-black font-semibold w-12 text-center'>
                         SAT
                       </th>
-                      <th className='p-1.5 border-r border-black font-semibold text-center w-20' rowSpan={2}>
+                      <th className='p-1.5 border-r border-black font-semibold text-center w-14'>
                         JML
                       </th>
-                      <th className='p-1.5 font-semibold text-center w-24' rowSpan={2}>
+                      <th className='p-1.5 font-semibold text-center w-20'>
                         KET
-                      </th>
-                    </tr>
-                    <tr className='bg-neutral-100 border-b border-black'>
-                      <th className='p-1 border-r border-black font-semibold w-8 text-center'>
-                        P
-                      </th>
-                      <th className='p-1 border-r border-black font-semibold w-8 text-center'>
-                        L
-                      </th>
-                      <th className='p-1 border-r border-black font-semibold text-center w-8'>
-                        T
                       </th>
                     </tr>
                   </thead>
@@ -922,23 +895,17 @@ export default function PrintSuratJalanPage() {
                           <td className='p-1.5 border-r border-black text-center'>
                             {globalIdx}
                           </td>
-                          <td className='p-1.5 border-r border-black font-medium'>
+                          <td className='p-1.5 border-r border-black font-medium text-center'>
                             {detail.project_item?.project?.spk_number || '-'}
+                          </td>
+                          <td className='p-1.5 border-r border-black text-center'>
+                            {detail.project_item?.lantai || '-'}
                           </td>
                           <td className='p-1.5 border-r border-black'>
                             {detail.project_item?.ruang || '-'}
                           </td>
                           <td className='p-1.5 border-r border-black font-medium'>
                             {detail.project_item?.item || '-'}
-                          </td>
-                          <td className='p-1.5 border-r border-black text-center'>
-                            {detail.project_item?.panjang || '-'}
-                          </td>
-                          <td className='p-1.5 border-r border-black text-center'>
-                            {detail.project_item?.lebar || '-'}
-                          </td>
-                          <td className='p-1.5 border-r border-black text-center'>
-                            {detail.project_item?.tinggi || '-'}
                           </td>
                           <td className='p-1.5 border-r border-black text-center'>
                             {detail.project_item?.volume ?? '-'}
