@@ -100,6 +100,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import {
   projectV2Service,
   ProjectItemV2,
+  Produksi,
 } from '@/features/projects/services/project-v2-service';
 import { PengirimanService } from '@/features/pengiriman/services/pengiriman-service';
 import { Badge } from '@/components/ui/badge';
@@ -688,6 +689,61 @@ export default function PerencanaanDetailPage() {
   const [produksiViewItem, setProduksiViewItem] = React.useState<ProjectItemV2 | null>(null);
   const [isSupplierViewOpen, setIsSupplierViewOpen] = React.useState(false);
   const [supplierViewItem, setSupplierViewItem] = React.useState<ProjectItemV2 | null>(null);
+
+  const formatTgl = (dateStr?: string | null) => {
+    if (!dateStr) return '-';
+    try {
+      const cleanStr = String(dateStr).slice(0, 10);
+      const parts = cleanStr.split('-');
+      if (parts.length === 3) {
+        const year = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1;
+        const day = parseInt(parts[2], 10);
+        const d = new Date(year, month, day);
+        if (!isNaN(d.getTime())) {
+          return format(d, 'dd MMM yyyy');
+        }
+      }
+      const d = new Date(dateStr);
+      return isNaN(d.getTime()) ? '-' : format(d, 'dd MMM yyyy');
+    } catch {
+      return '-';
+    }
+  };
+
+  const produksiOverallDates = React.useMemo(() => {
+    const prod = produksiViewItem?.produksi;
+    if (!prod) return { start: null, end: null };
+    const stageKeys = [
+      'cold_press',
+      'running_saw',
+      'edging',
+      'cnc',
+      'tukang_kayu',
+      'tukang_jok',
+      'rakit',
+      'finishing',
+    ] as const;
+
+    const startDates: string[] = [];
+    const endDates: string[] = [];
+
+    stageKeys.forEach((key) => {
+      if (prod.skipped_fields?.includes(key)) return;
+      const start = (prod as any)[`tanggal_mulai_${key}`];
+      const end = (prod as any)[`tanggal_selesai_${key}`];
+      if (start) startDates.push(String(start).slice(0, 10));
+      if (end) endDates.push(String(end).slice(0, 10));
+    });
+
+    startDates.sort();
+    endDates.sort();
+
+    return {
+      start: startDates.length > 0 ? startDates[0] : null,
+      end: endDates.length > 0 ? endDates[endDates.length - 1] : null,
+    };
+  }, [produksiViewItem]);
 
   // Edit Dimensi State
   const [isDimDialogOpen, setIsDimDialogOpen] = React.useState(false);
@@ -1940,8 +1996,13 @@ export default function PerencanaanDetailPage() {
                 <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>Vol | Dim</TableHead>
                 <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>Qty</TableHead>
                 <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>PO Divisi</TableHead>
-                <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>Gk MDL</TableHead>
-                <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>GK Custom</TableHead>
+                {/* <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>Gk MDL</TableHead> */}
+                <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>
+                  <div className='flex flex-col'>
+                    <span>Gambar</span>
+                    <span>Custom</span>
+                  </div>
+                </TableHead>
                 <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>Material</TableHead>
                 <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>Produksi</TableHead>
                 <TableHead className='text-[10px] uppercase font-bold text-neutral-500'>
@@ -2149,7 +2210,8 @@ export default function PerencanaanDetailPage() {
                         </Button>
                       </div>
                     </TableCell>
-                    <TableCell>
+
+                    {/* <TableCell>
                       {item.mdl_item?.link_gambar_kerja ? (
                         <Button
                           variant='ghost'
@@ -2168,7 +2230,8 @@ export default function PerencanaanDetailPage() {
                       ) : (
                         <span className='text-[10px] text-muted-foreground italic'>-</span>
                       )}
-                    </TableCell>
+                    </TableCell> */}
+
                     <TableCell>
                       {item.gambar_kerja?.file ? (
                         <div className='flex items-center gap-1'>
@@ -2230,13 +2293,10 @@ export default function PerencanaanDetailPage() {
                     </TableCell>
                     <TableCell>
                       <div 
-                        className="flex items-center gap-2 min-w-[120px] cursor-pointer group hover:bg-blue-50 p-1.5 -ml-1.5 rounded-md transition-colors" 
+                        className="flex items-center gap-2 cursor-pointer group hover:bg-blue-50 p-1.5 -ml-1.5 rounded-md transition-colors" 
                         onClick={() => openProduksiView(item)}
                       >
-                        <span className="text-xs font-bold text-neutral-700 w-8 text-right group-hover:text-blue-700 transition-colors">{Math.round(item.produksi?.is_supplier ? Number(item.barang_supplier?.persen) || 0 : Number(item.produksi?.persen) || 0)}%</span>
-                        <div className="flex-1 h-1.5 bg-neutral-100 rounded-full overflow-hidden group-hover:bg-blue-100 transition-colors">
-                          <div className="h-full bg-blue-600 rounded-full" style={{ width: `${item.produksi?.is_supplier ? Number(item.barang_supplier?.persen) || 0 : Number(item.produksi?.persen) || 0}%` }} />
-                        </div>
+                        <span className="text-xs font-bold text-neutral-700 text-right group-hover:text-blue-700 transition-colors">{Math.round(item.produksi?.is_supplier ? Number(item.barang_supplier?.persen) || 0 : Number(item.produksi?.persen) || 0)}%</span>
                       </div>
                     </TableCell>
                     <TableCell>
@@ -3384,99 +3444,6 @@ export default function PerencanaanDetailPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* View Produksi Progress Dialog (PPIC View-Only) */}
-      <AlertDialog open={isProduksiViewOpen} onOpenChange={setIsProduksiViewOpen}>
-        <AlertDialogContent className='max-w-2xl'>
-          <AlertDialogHeader>
-            <AlertDialogTitle className='flex items-center gap-2'>
-              <BarChart3 className='h-5 w-5 text-orange-500' />
-              Detail Progress Produksi
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              Melihat progress produksi untuk item: <strong>{produksiViewItem?.item}</strong>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          
-          <div className='py-4 space-y-6'>
-            {/* Summary Progress */}
-            <div className='flex flex-col items-center gap-2 p-4 bg-orange-50 rounded-xl border border-orange-100'>
-              <span className='text-xs font-bold text-orange-800 uppercase tracking-wider'>Total Progress</span>
-              <div className='flex items-baseline gap-1'>
-                <span className='text-4xl font-black text-orange-600'>{Math.round(produksiViewItem?.produksi?.persen || 0)}</span>
-                <span className='text-xl font-bold text-orange-400'>%</span>
-              </div>
-              <Progress value={produksiViewItem?.produksi?.persen || 0} className='h-2 bg-orange-200/50 w-full max-w-md' />
-            </div>
-
-            <div className='grid grid-cols-2 gap-x-8 gap-y-6'>
-              {/* Mesin Section */}
-              <div className='space-y-3'>
-                <h4 className='font-bold text-xs text-neutral-400 uppercase tracking-widest border-b pb-2 flex items-center gap-2'>
-                  <Activity className='h-3 w-3' />
-                  Tahapan Mesin
-                </h4>
-                <div className='space-y-3'>
-                  {[
-                    { label: 'Cold Press', value: produksiViewItem?.produksi?.cold_press, key: 'cold_press' },
-                    { label: 'Running Saw', value: produksiViewItem?.produksi?.running_saw, key: 'running_saw' },
-                    { label: 'Edging', value: produksiViewItem?.produksi?.edging, key: 'edging' },
-                    { label: 'CNC', value: produksiViewItem?.produksi?.cnc, key: 'cnc' },
-                  ].map((field) => {
-                    const isSkipped = produksiViewItem?.produksi?.skipped_fields?.includes(field.key);
-                    return (
-                      <div key={field.key} className='flex items-center justify-between'>
-                        <span className='text-xs text-neutral-600'>{field.label}</span>
-                        <div className='flex items-center gap-2'>
-                          {isSkipped ? (
-                            <Badge variant='secondary' className='text-[9px] bg-neutral-100 text-neutral-400 border-none'>SKIPPED</Badge>
-                          ) : (
-                            <span className='text-sm font-bold text-neutral-900'>{field.value || 0} <span className='text-[10px] text-neutral-400 font-normal'>/ {produksiViewItem?.jumlah}</span></span>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Manual Section */}
-              <div className='space-y-3'>
-                <h4 className='font-bold text-xs text-neutral-400 uppercase tracking-widest border-b pb-2 flex items-center gap-2'>
-                  <User className='h-3 w-3' />
-                  Tahapan Manual
-                </h4>
-                <div className='space-y-3'>
-                  {[
-                    { label: 'Tukang Kayu', value: produksiViewItem?.produksi?.tukang_kayu, key: 'tukang_kayu' },
-                    { label: 'Tukang Jok', value: produksiViewItem?.produksi?.tukang_jok, key: 'tukang_jok' },
-                    { label: 'Rakit', value: produksiViewItem?.produksi?.rakit, key: 'rakit' },
-                    { label: 'Finishing', value: produksiViewItem?.produksi?.finishing, key: 'finishing' },
-                  ].map((field) => {
-                    const isSkipped = produksiViewItem?.produksi?.skipped_fields?.includes(field.key);
-                    return (
-                      <div key={field.key} className='flex items-center justify-between'>
-                        <span className='text-xs text-neutral-600'>{field.label}</span>
-                        <div className='flex items-center gap-2'>
-                          {isSkipped ? (
-                            <Badge variant='secondary' className='text-[9px] bg-neutral-100 text-neutral-400 border-none'>SKIPPED</Badge>
-                          ) : (
-                            <span className='text-sm font-bold text-neutral-900'>{field.value || 0} <span className='text-[10px] text-neutral-400 font-normal'>/ {produksiViewItem?.jumlah}</span></span>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <AlertDialogFooter className='border-t pt-4'>
-            <AlertDialogCancel className='bg-neutral-100 hover:bg-neutral-200 border-none'>Tutup</AlertDialogCancel>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
       {/* Edit Dimensi Dialog */}
       <AlertDialog open={isDimDialogOpen} onOpenChange={setIsDimDialogOpen}>
         <AlertDialogContent className='max-w-md'>
@@ -3579,9 +3546,9 @@ export default function PerencanaanDetailPage() {
 
       {/* View Produksi Progress Dialog */}
       <AlertDialog open={isProduksiViewOpen} onOpenChange={setIsProduksiViewOpen}>
-        <AlertDialogContent className='max-w-2xl'>
+        <AlertDialogContent className='max-w-3xl max-h-[90vh] overflow-y-auto'>
           <AlertDialogHeader>
-            <AlertDialogTitle className='flex items-center gap-2'>
+            <AlertDialogTitle className='flex items-center gap-2 text-lg font-bold'>
               <BarChart3 className='h-5 w-5 text-orange-500' />
               Detail Progress Produksi
             </AlertDialogTitle>
@@ -3591,8 +3558,8 @@ export default function PerencanaanDetailPage() {
           </AlertDialogHeader>
           
           <div className='py-4 space-y-6'>
-            {/* Summary Progress */}
-            <div className='grid grid-cols-3 gap-4'>
+            {/* Summary Cards */}
+            <div className='grid grid-cols-2 sm:grid-cols-4 gap-3'>
               <div className='space-y-1 text-center p-3 bg-neutral-50 rounded-xl border border-neutral-100 flex flex-col justify-center'>
                 <span className='text-[10px] font-bold text-neutral-500 uppercase tracking-wider'>Jumlah Order</span>
                 <div className='text-2xl font-black text-neutral-800'>
@@ -3605,41 +3572,118 @@ export default function PerencanaanDetailPage() {
                   {produksiViewItem?.produksi?.menggunakan_stok || 0}
                 </div>
               </div>
-              <div className='space-y-1 text-center p-3 bg-orange-50 rounded-xl border border-orange-100 flex flex-col justify-center'>
-                <span className='text-[10px] font-bold text-orange-800 uppercase tracking-wider'>Total Progress</span>
-                <div className='flex items-baseline justify-center gap-1'>
-                  <span className='text-2xl font-black text-orange-600'>{Math.round(produksiViewItem?.produksi?.persen || 0)}</span>
-                  <span className='text-sm font-bold text-orange-400'>%</span>
+              <div className='space-y-1 text-center p-3 bg-blue-50/70 rounded-xl border border-blue-100 flex flex-col justify-center'>
+                <span className='text-[10px] font-bold text-blue-800 uppercase tracking-wider'>Tanggal Mulai</span>
+                <div className='text-xs sm:text-sm font-bold text-blue-700 truncate'>
+                  {formatTgl(produksiOverallDates.start)}
+                </div>
+              </div>
+              <div className='space-y-1 text-center p-3 bg-emerald-50/70 rounded-xl border border-emerald-100 flex flex-col justify-center'>
+                <span className='text-[10px] font-bold text-emerald-800 uppercase tracking-wider'>Tanggal Selesai</span>
+                <div className='text-xs sm:text-sm font-bold text-emerald-700 truncate'>
+                  {formatTgl(produksiOverallDates.end)}
                 </div>
               </div>
             </div>
-            <Progress value={produksiViewItem?.produksi?.persen || 0} className='h-2 bg-orange-200/50 w-full' />
 
-            <div className='grid grid-cols-2 gap-x-8 gap-y-6'>
+            {/* Total Progress Bar */}
+            <div className='space-y-1.5 p-3.5 bg-orange-50/70 rounded-xl border border-orange-100'>
+              <div className='flex items-center justify-between text-xs'>
+                <span className='font-bold text-orange-900 uppercase tracking-wider'>Total Progress Produksi</span>
+                <div className='flex items-baseline gap-1'>
+                  <span className='text-xl font-black text-orange-600'>{Math.round(produksiViewItem?.produksi?.persen || 0)}</span>
+                  <span className='text-xs font-bold text-orange-400'>%</span>
+                </div>
+              </div>
+              <Progress value={produksiViewItem?.produksi?.persen || 0} className='h-2 bg-orange-200/50 w-full' />
+            </div>
+
+            {/* Mesin & Manual Grid */}
+            <div className='grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6'>
               {/* Mesin Section */}
               <div className='space-y-3'>
-                <h4 className='font-bold text-xs text-neutral-400 uppercase tracking-widest border-b pb-2 flex items-center gap-2'>
-                  <Activity className='h-3 w-3' />
+                <h4 className='font-bold text-xs text-neutral-500 uppercase tracking-widest border-b pb-2 flex items-center gap-2'>
+                  <Activity className='h-3.5 w-3.5 text-orange-500' />
                   Tahapan Mesin
                 </h4>
-                <div className='space-y-3'>
+                <div className='space-y-2.5'>
                   {[
-                    { label: 'Cold Press', value: produksiViewItem?.produksi?.cold_press, key: 'cold_press' },
-                    { label: 'Running Saw', value: produksiViewItem?.produksi?.running_saw, key: 'running_saw' },
-                    { label: 'Edging', value: produksiViewItem?.produksi?.edging, key: 'edging' },
-                    { label: 'CNC', value: produksiViewItem?.produksi?.cnc, key: 'cnc' },
+                    {
+                      label: 'Cold Press',
+                      value: produksiViewItem?.produksi?.cold_press,
+                      key: 'cold_press' as const,
+                      mulai: produksiViewItem?.produksi?.tanggal_mulai_cold_press,
+                      selesai: produksiViewItem?.produksi?.tanggal_selesai_cold_press,
+                    },
+                    {
+                      label: 'Running Saw',
+                      value: produksiViewItem?.produksi?.running_saw,
+                      key: 'running_saw' as const,
+                      mulai: produksiViewItem?.produksi?.tanggal_mulai_running_saw,
+                      selesai: produksiViewItem?.produksi?.tanggal_selesai_running_saw,
+                    },
+                    {
+                      label: 'Edging',
+                      value: produksiViewItem?.produksi?.edging,
+                      key: 'edging' as const,
+                      mulai: produksiViewItem?.produksi?.tanggal_mulai_edging,
+                      selesai: produksiViewItem?.produksi?.tanggal_selesai_edging,
+                    },
+                    {
+                      label: 'CNC',
+                      value: produksiViewItem?.produksi?.cnc,
+                      key: 'cnc' as const,
+                      mulai: produksiViewItem?.produksi?.tanggal_mulai_cnc,
+                      selesai: produksiViewItem?.produksi?.tanggal_selesai_cnc,
+                    },
                   ].map((field) => {
                     const isSkipped = produksiViewItem?.produksi?.skipped_fields?.includes(field.key);
                     return (
-                      <div key={field.key} className='flex items-center justify-between'>
-                        <span className='text-xs text-neutral-600'>{field.label}</span>
-                        <div className='flex items-center gap-2'>
+                      <div
+                        key={field.key}
+                        className={`p-3 rounded-xl border transition-colors ${
+                          isSkipped
+                            ? 'bg-neutral-50/70 border-neutral-200/70 opacity-70'
+                            : 'bg-neutral-50/40 border-neutral-200 hover:border-neutral-300'
+                        }`}
+                      >
+                        <div className='flex items-center justify-between mb-1.5'>
+                          <span className='text-xs font-bold text-neutral-800'>{field.label}</span>
                           {isSkipped ? (
-                            <Badge variant='secondary' className='text-[9px] bg-neutral-100 text-neutral-400 border-none'>SKIPPED</Badge>
+                            <Badge variant='secondary' className='text-[9px] bg-neutral-200 text-neutral-500 border-none font-medium'>SKIPPED</Badge>
                           ) : (
-                            <span className='text-sm font-bold text-neutral-900'>{field.value || 0} <span className='text-[10px] text-neutral-400 font-normal'>/ {produksiViewItem?.jumlah}</span></span>
+                            <span className='text-xs font-bold text-neutral-900'>
+                              {field.value || 0} <span className='text-[10px] text-neutral-400 font-normal'>/ {produksiViewItem?.jumlah}</span>
+                            </span>
                           )}
                         </div>
+
+                        {!isSkipped ? (
+                          <div className='grid grid-cols-2 gap-2 pt-2 border-t border-neutral-200/60 text-[11px]'>
+                            <div className='flex flex-col'>
+                              <span className='text-[10px] text-neutral-400 font-medium flex items-center gap-1'>
+                                <Calendar className='h-3 w-3 text-neutral-400' />
+                                Mulai:
+                              </span>
+                              <span className='font-medium text-neutral-700 truncate'>
+                                {formatTgl(field.mulai)}
+                              </span>
+                            </div>
+                            <div className='flex flex-col'>
+                              <span className='text-[10px] text-neutral-400 font-medium flex items-center gap-1'>
+                                <Calendar className='h-3 w-3 text-neutral-400' />
+                                Selesai:
+                              </span>
+                              <span className='font-medium text-neutral-700 truncate'>
+                                {formatTgl(field.selesai)}
+                              </span>
+                            </div>
+                          </div>
+                        ) : (
+                          <p className='text-[10px] text-neutral-400 italic pt-1 border-t border-neutral-200/60'>
+                            Tahapan dilewati
+                          </p>
+                        )}
                       </div>
                     );
                   })}
@@ -3648,28 +3692,88 @@ export default function PerencanaanDetailPage() {
 
               {/* Manual Section */}
               <div className='space-y-3'>
-                <h4 className='font-bold text-xs text-neutral-400 uppercase tracking-widest border-b pb-2 flex items-center gap-2'>
-                  <User className='h-3 w-3' />
+                <h4 className='font-bold text-xs text-neutral-500 uppercase tracking-widest border-b pb-2 flex items-center gap-2'>
+                  <User className='h-3.5 w-3.5 text-blue-500' />
                   Tahapan Manual
                 </h4>
-                <div className='space-y-3'>
+                <div className='space-y-2.5'>
                   {[
-                    { label: 'Tukang Kayu', value: produksiViewItem?.produksi?.tukang_kayu, key: 'tukang_kayu' },
-                    { label: 'Tukang Jok', value: produksiViewItem?.produksi?.tukang_jok, key: 'tukang_jok' },
-                    { label: 'Rakit', value: produksiViewItem?.produksi?.rakit, key: 'rakit' },
-                    { label: 'Finishing', value: produksiViewItem?.produksi?.finishing, key: 'finishing' },
+                    {
+                      label: 'Tukang Kayu',
+                      value: produksiViewItem?.produksi?.tukang_kayu,
+                      key: 'tukang_kayu' as const,
+                      mulai: produksiViewItem?.produksi?.tanggal_mulai_tukang_kayu,
+                      selesai: produksiViewItem?.produksi?.tanggal_selesai_tukang_kayu,
+                    },
+                    {
+                      label: 'Tukang Jok',
+                      value: produksiViewItem?.produksi?.tukang_jok,
+                      key: 'tukang_jok' as const,
+                      mulai: produksiViewItem?.produksi?.tanggal_mulai_tukang_jok,
+                      selesai: produksiViewItem?.produksi?.tanggal_selesai_tukang_jok,
+                    },
+                    {
+                      label: 'Rakit',
+                      value: produksiViewItem?.produksi?.rakit,
+                      key: 'rakit' as const,
+                      mulai: produksiViewItem?.produksi?.tanggal_mulai_rakit,
+                      selesai: produksiViewItem?.produksi?.tanggal_selesai_rakit,
+                    },
+                    {
+                      label: 'Finishing',
+                      value: produksiViewItem?.produksi?.finishing,
+                      key: 'finishing' as const,
+                      mulai: produksiViewItem?.produksi?.tanggal_mulai_finishing,
+                      selesai: produksiViewItem?.produksi?.tanggal_selesai_finishing,
+                    },
                   ].map((field) => {
                     const isSkipped = produksiViewItem?.produksi?.skipped_fields?.includes(field.key);
                     return (
-                      <div key={field.key} className='flex items-center justify-between'>
-                        <span className='text-xs text-neutral-600'>{field.label}</span>
-                        <div className='flex items-center gap-2'>
+                      <div
+                        key={field.key}
+                        className={`p-3 rounded-xl border transition-colors ${
+                          isSkipped
+                            ? 'bg-neutral-50/70 border-neutral-200/70 opacity-70'
+                            : 'bg-neutral-50/40 border-neutral-200 hover:border-neutral-300'
+                        }`}
+                      >
+                        <div className='flex items-center justify-between mb-1.5'>
+                          <span className='text-xs font-bold text-neutral-800'>{field.label}</span>
                           {isSkipped ? (
-                            <Badge variant='secondary' className='text-[9px] bg-neutral-100 text-neutral-400 border-none'>SKIPPED</Badge>
+                            <Badge variant='secondary' className='text-[9px] bg-neutral-200 text-neutral-500 border-none font-medium'>SKIPPED</Badge>
                           ) : (
-                            <span className='text-sm font-bold text-neutral-900'>{field.value || 0} <span className='text-[10px] text-neutral-400 font-normal'>/ {produksiViewItem?.jumlah}</span></span>
+                            <span className='text-xs font-bold text-neutral-900'>
+                              {field.value || 0} <span className='text-[10px] text-neutral-400 font-normal'>/ {produksiViewItem?.jumlah}</span>
+                            </span>
                           )}
                         </div>
+
+                        {!isSkipped ? (
+                          <div className='grid grid-cols-2 gap-2 pt-2 border-t border-neutral-200/60 text-[11px]'>
+                            <div className='flex flex-col'>
+                              <span className='text-[10px] text-neutral-400 font-medium flex items-center gap-1'>
+                                <Calendar className='h-3 w-3 text-neutral-400' />
+                                Mulai:
+                              </span>
+                              <span className='font-medium text-neutral-700 truncate'>
+                                {formatTgl(field.mulai)}
+                              </span>
+                            </div>
+                            <div className='flex flex-col'>
+                              <span className='text-[10px] text-neutral-400 font-medium flex items-center gap-1'>
+                                <Calendar className='h-3 w-3 text-neutral-400' />
+                                Selesai:
+                              </span>
+                              <span className='font-medium text-neutral-700 truncate'>
+                                {formatTgl(field.selesai)}
+                              </span>
+                            </div>
+                          </div>
+                        ) : (
+                          <p className='text-[10px] text-neutral-400 italic pt-1 border-t border-neutral-200/60'>
+                            Tahapan dilewati
+                          </p>
+                        )}
                       </div>
                     );
                   })}
