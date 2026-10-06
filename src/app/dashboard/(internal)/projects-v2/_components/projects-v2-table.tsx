@@ -4121,6 +4121,9 @@ export function ProjectsV2Table({
                   )}
                   {!showAllDashboard && !showSPD && !showPiutang && (
                     <>
+                      {showPerencanaan && (
+                        <TableHead>DEADLINE SPK</TableHead>
+                      )}
                       <TableHead
                         className='cursor-pointer hover:bg-neutral-100 transition-colors group'
                         onClick={() => {
@@ -4494,7 +4497,7 @@ export function ProjectsV2Table({
                           : showMarketingFilter
                           ? 21
                           : showPerencanaan
-                          ? 22
+                          ? 23
                           : isMainProjectsV2Page
                           ? 21
                           : showPengirimanV2
@@ -4527,7 +4530,7 @@ export function ProjectsV2Table({
                           : showMarketingFilter
                           ? 21
                           : showPerencanaan
-                          ? 22
+                          ? 23
                           : isMainProjectsV2Page
                           ? 21
                           : showPengirimanV2
@@ -5529,6 +5532,16 @@ export function ProjectsV2Table({
                         )}
                       {!showAllDashboard && !showSPD && !showPiutang && (
                         <>
+                          {showPerencanaan && (
+                            <TableCell>
+                              {project.spk?.deadline_spk
+                                ? format(
+                                    new Date(project.spk.deadline_spk),
+                                    'MMM d, yyyy'
+                                  )
+                                : '-'}
+                            </TableCell>
+                          )}
                           <TableCell>
                             {showPerencanaan && canUpdateDeadline ? (
                               <div
