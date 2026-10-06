@@ -111,6 +111,9 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
+const DEFAULT_LINK_GAMBAR_KERJA =
+  "https://drive.google.com/drive/folders/12bicpEkDijxxBN2EWOvO8DFLocjCvfaX?usp=sharing";
+
 function CopyableCode({ code }: { code: string }) {
   const [copied, setCopied] = React.useState(false);
   const handleCopy = () => {
@@ -582,12 +585,13 @@ export default function EngineerDetailPage() {
     setGkStart(item.gambar_kerja?.tanggal_mulai || "");
     setGkEnd(item.gambar_kerja?.tanggal_selesai || "");
     const fileValue = item.gambar_kerja?.file || null;
-    setGkFile(fileValue);
 
     if (fileValue && !fileValue.startsWith("http")) {
       setGkInputType("file");
+      setGkFile(fileValue);
     } else {
       setGkInputType("url");
+      setGkFile(fileValue || DEFAULT_LINK_GAMBAR_KERJA);
     }
 
     setIsGkDialogOpen(true);
@@ -1217,7 +1221,11 @@ export default function EngineerDetailPage() {
                   size="sm"
                   variant="outline"
                   className="h-8 bg-white"
-                  onClick={() => setIsBulkGkDialogOpen(true)}
+                  onClick={() => {
+                    setBulkGkInputType("url");
+                    setBulkGkFile(DEFAULT_LINK_GAMBAR_KERJA);
+                    setIsBulkGkDialogOpen(true);
+                  }}
                 >
                   <ImageIcon className="h-3.5 w-3.5 mr-2" />
                   Set GK Massal
@@ -1784,7 +1792,13 @@ export default function EngineerDetailPage() {
                   className={`flex-1 text-xs py-1.5 rounded-sm transition-colors ${gkInputType === "url" ? "bg-white shadow-sm font-semibold text-neutral-900" : "text-neutral-500 hover:text-neutral-700"}`}
                   onClick={() => {
                     setGkInputType("url");
-                    setGkFile(null);
+                    setGkFile(
+                      typeof gkFile === "string" && gkFile
+                        ? gkFile
+                        : (gkItem?.gambar_kerja?.file?.startsWith("http")
+                            ? gkItem.gambar_kerja.file
+                            : DEFAULT_LINK_GAMBAR_KERJA)
+                    );
                   }}
                 >
                   URL Tautan
@@ -1910,7 +1924,11 @@ export default function EngineerDetailPage() {
                   className={`flex-1 text-xs py-1.5 rounded-sm transition-colors ${bulkGkInputType === "url" ? "bg-white shadow-sm font-semibold text-neutral-900" : "text-neutral-500 hover:text-neutral-700"}`}
                   onClick={() => {
                     setBulkGkInputType("url");
-                    setBulkGkFile(null);
+                    setBulkGkFile(
+                      typeof bulkGkFile === "string" && bulkGkFile
+                        ? bulkGkFile
+                        : DEFAULT_LINK_GAMBAR_KERJA
+                    );
                   }}
                 >
                   URL Tautan

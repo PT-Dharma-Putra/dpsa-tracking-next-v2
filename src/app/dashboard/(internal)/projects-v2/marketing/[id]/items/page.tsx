@@ -422,6 +422,7 @@ export default function ProjectItemsPage() {
   const [spkFile, setSpkFile] = React.useState<File | null>(null);
   const [spkNumber, setSpkNumber] = React.useState<string>('');
   const [spkTanggalSpk, setSpkTanggalSpk] = React.useState<string>('');
+  const [spkDeadlineSpk, setSpkDeadlineSpk] = React.useState<string>('');
   const [spkTanggalMasuk, setSpkTanggalMasuk] = React.useState<string>('');
   const [spkNominal, setSpkNominal] = React.useState<string>('');
   const [spkPpn, setSpkPpn] = React.useState<string>('');
@@ -486,6 +487,7 @@ export default function ProjectItemsPage() {
       tanggal_masuk,
       nominal_dpp,
       tanggal_spk,
+      deadline_spk,
       ppn,
       grand_total,
       penerbit_id,
@@ -495,6 +497,7 @@ export default function ProjectItemsPage() {
       tanggal_masuk?: string;
       nominal_dpp?: string;
       tanggal_spk?: string;
+      deadline_spk?: string;
       ppn?: string;
       grand_total?: string;
       penerbit_id?: string;
@@ -509,7 +512,8 @@ export default function ProjectItemsPage() {
         tanggal_spk,
         ppn,
         grand_total,
-        penerbit_id
+        penerbit_id,
+        deadline_spk
       ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects-v2', projectId] });
@@ -517,6 +521,7 @@ export default function ProjectItemsPage() {
       setSpkFile(null);
       setSpkNumber('');
       setSpkTanggalSpk('');
+      setSpkDeadlineSpk('');
       setSpkTanggalMasuk('');
       setSpkNominal('');
       setSpkPpn('');
@@ -539,6 +544,7 @@ export default function ProjectItemsPage() {
       tanggal_masuk: spkTanggalMasuk,
       nominal_dpp: parseRawNumber(spkNominal),
       tanggal_spk: spkTanggalSpk,
+      deadline_spk: spkDeadlineSpk || undefined,
       ppn: spkPpn,
       grand_total: spkGrandTotal,
       penerbit_id: spkPenerbitId || undefined,
@@ -620,6 +626,7 @@ export default function ProjectItemsPage() {
   const [editSpkFile, setEditSpkFile] = React.useState<File | null>(null);
   const [editSpkNumber, setEditSpkNumber] = React.useState<string>('');
   const [editSpkTanggalSpk, setEditSpkTanggalSpk] = React.useState<string>('');
+  const [editSpkDeadlineSpk, setEditSpkDeadlineSpk] = React.useState<string>('');
   const [editSpkTanggalMasuk, setEditSpkTanggalMasuk] =
     React.useState<string>('');
   const [editSpkNominal, setEditSpkNominal] = React.useState<string>('');
@@ -633,6 +640,7 @@ export default function ProjectItemsPage() {
         nomor_spk: editSpkNumber,
         file: editSpkFile,
         tanggal_spk: editSpkTanggalSpk || undefined,
+        deadline_spk: editSpkDeadlineSpk || '',
         tanggal_masuk: editSpkTanggalMasuk || undefined,
         nominal_dpp: editSpkNominal
           ? parseRawNumber(editSpkNominal)
@@ -661,6 +669,7 @@ export default function ProjectItemsPage() {
     if (existingSpk) {
       setEditSpkNumber(existingSpk.nomor_spk || '');
       setEditSpkTanggalSpk(toDateInput(existingSpk.tanggal_spk));
+      setEditSpkDeadlineSpk(toDateInput(existingSpk.deadline_spk));
       setEditSpkTanggalMasuk(toDateInput(existingSpk.tanggal_masuk));
       setEditSpkNominal(
         existingSpk.nominal_dpp
@@ -1812,6 +1821,11 @@ export default function ProjectItemsPage() {
                               new Date(existingSpk.tanggal_spk),
                               'MMM d, yyyy'
                             )}`}
+                          {existingSpk.deadline_spk &&
+                            ` • DL: ${format(
+                              new Date(existingSpk.deadline_spk),
+                              'MMM d, yyyy'
+                            )}`}
                         </p>
                       </div>
                     </div>
@@ -2789,15 +2803,26 @@ export default function ProjectItemsPage() {
               </div>
               <div className='space-y-1.5'>
                 <Label className='text-xs font-medium text-purple-700'>
-                  Tanggal Masuk
+                  Deadline SPK
                 </Label>
                 <Input
                   type='date'
-                  value={editSpkTanggalMasuk}
-                  onChange={(e) => setEditSpkTanggalMasuk(e.target.value)}
+                  value={editSpkDeadlineSpk}
+                  onChange={(e) => setEditSpkDeadlineSpk(e.target.value)}
                   className='h-9 text-xs border-purple-200 w-full'
                 />
               </div>
+            </div>
+            <div className='space-y-1.5'>
+              <Label className='text-xs font-medium text-purple-700'>
+                Tanggal Masuk
+              </Label>
+              <Input
+                type='date'
+                value={editSpkTanggalMasuk}
+                onChange={(e) => setEditSpkTanggalMasuk(e.target.value)}
+                className='h-9 text-xs border-purple-200 w-full'
+              />
             </div>
             <div className='space-y-1.5'>
               <Label className='text-xs font-medium text-purple-700'>
@@ -3021,15 +3046,26 @@ export default function ProjectItemsPage() {
               </div>
               <div className='space-y-1.5'>
                 <Label className='text-xs font-medium text-purple-700'>
-                  Tanggal Masuk
+                  Deadline SPK
                 </Label>
                 <Input
                   type='date'
-                  value={spkTanggalMasuk}
-                  onChange={(e) => setSpkTanggalMasuk(e.target.value)}
+                  value={spkDeadlineSpk}
+                  onChange={(e) => setSpkDeadlineSpk(e.target.value)}
                   className='h-9 text-xs border-purple-200 w-full'
                 />
               </div>
+            </div>
+            <div className='space-y-1.5'>
+              <Label className='text-xs font-medium text-purple-700'>
+                Tanggal Masuk
+              </Label>
+              <Input
+                type='date'
+                value={spkTanggalMasuk}
+                onChange={(e) => setSpkTanggalMasuk(e.target.value)}
+                className='h-9 text-xs border-purple-200 w-full'
+              />
             </div>
             <div className='space-y-1.5'>
               <Label className='text-xs font-medium text-purple-700'>

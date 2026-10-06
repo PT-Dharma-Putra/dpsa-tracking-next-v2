@@ -79,6 +79,7 @@ export interface ProjectV2 {
     nominal_dpp?: string | number | null;
     ppn?: string | number | null;
     deadline?: string | null;
+    deadline_spk?: string | null;
     file: string | null;
     spk_signed_file: string | null;
     spk_status: string | null;
@@ -615,6 +616,7 @@ export const projectV2Service = {
       ppn?: string;
       grand_total?: string;
       penerbit_id?: string;
+      deadline_spk?: string;
       file?: File | null;
     }
   ) => {
@@ -623,6 +625,8 @@ export const projectV2Service = {
     if (payload.file) formData.append('file', payload.file);
     if (payload.tanggal_spk)
       formData.append('tanggal_spk', payload.tanggal_spk);
+    if (payload.deadline_spk !== undefined)
+      formData.append('deadline_spk', payload.deadline_spk);
     if (payload.prioritas) formData.append('prioritas', payload.prioritas);
     if (payload.tanggal_masuk)
       formData.append('tanggal_masuk', payload.tanggal_masuk);
@@ -647,7 +651,8 @@ export const projectV2Service = {
     tanggal_spk?: string,
     ppn?: string,
     grand_total?: string,
-    penerbit_id?: string
+    penerbit_id?: string,
+    deadline_spk?: string
   ) => {
     const formData = new FormData();
     if (file) formData.append('file', file);
@@ -659,6 +664,7 @@ export const projectV2Service = {
     if (grand_total) formData.append('grand_total', grand_total);
     if (penerbit_id) formData.append('penerbit_id', penerbit_id);
     if (tanggal_spk) formData.append('tanggal_spk', tanggal_spk);
+    if (deadline_spk) formData.append('deadline_spk', deadline_spk);
     const { data } = await apiClient.post(
       `/projects-v2/${projectId}/upload-spk`,
       formData
