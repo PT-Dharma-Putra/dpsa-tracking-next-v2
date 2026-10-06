@@ -311,11 +311,27 @@ export default function JadwalPengirimanPage() {
 
                                         {/* Bottom subtle indicator if deliveries exist */}
                                         {hasDeliveries && (
-                                            <div className="flex items-center gap-1 text-[9px] text-neutral-500 pt-0.5 border-t border-orange-100/60">
-                                                <Truck className="h-2.5 w-2.5 text-orange-500" />
-                                                <span className="truncate">
-                                                    {dayDelivery.schedules.reduce((acc: number, s: CalendarDeliverySchedule) => acc + s.summary.total_items, 0)} item
-                                                </span>
+                                            <div className="flex items-center justify-between gap-1 text-[9px] text-neutral-500 pt-0.5 border-t border-orange-100/60">
+                                                <div className="flex items-center gap-1 truncate">
+                                                    <Truck className="h-2.5 w-2.5 text-orange-500 shrink-0" />
+                                                    <span className="truncate">
+                                                        {dayDelivery.schedules.reduce((acc: number, s: CalendarDeliverySchedule) => acc + s.summary.total_items, 0)} item
+                                                    </span>
+                                                </div>
+                                                {(() => {
+                                                    const divisions = Array.from(
+                                                        new Set(dayDelivery.schedules.map((s) => s.divisi_nama).filter(Boolean))
+                                                    ) as string[]
+                                                    if (divisions.length === 0) return null
+                                                    return (
+                                                        <span
+                                                            className="text-[8.5px] font-semibold text-blue-700 bg-blue-50 px-1 rounded truncate max-w-[65px] border border-blue-200/60"
+                                                            title={`Divisi: ${divisions.join(", ")}`}
+                                                        >
+                                                            {divisions.join(", ")}
+                                                        </span>
+                                                    )
+                                                })()}
                                             </div>
                                         )}
                                     </div>
@@ -370,20 +386,30 @@ export default function JadwalPengirimanPage() {
                                         className="border-neutral-200 bg-white hover:border-orange-300 transition-all shadow-2xs hover:shadow-sm overflow-hidden"
                                     >
                                         <div className="p-4 space-y-3">
-                                            {/* Client and stage badge */}
+                                            {/* Client and stage/divisi badge */}
                                             <div className="flex items-start justify-between gap-2">
-                                                <div className="flex items-center gap-1.5 text-xs font-semibold text-orange-700">
+                                                <div className="flex items-center gap-1.5 text-xs font-semibold text-orange-700 min-w-0">
                                                     <Building2 className="h-3.5 w-3.5 shrink-0 text-orange-500" />
                                                     <span className="truncate">{schedule.client_name}</span>
                                                 </div>
-                                                {schedule.keterangan && (
-                                                    <Badge
-                                                        variant="secondary"
-                                                        className="text-[10px] h-4.5 px-1.5 font-medium bg-neutral-100 text-neutral-700 shrink-0"
-                                                    >
-                                                        {schedule.keterangan}
-                                                    </Badge>
-                                                )}
+                                                <div className="flex items-center gap-1 shrink-0 flex-wrap justify-end">
+                                                    {schedule.divisi_nama && (
+                                                        <Badge
+                                                            variant="outline"
+                                                            className="text-[10px] h-4.5 px-1.5 font-bold bg-blue-50 text-blue-700 border-blue-200"
+                                                        >
+                                                            {schedule.divisi_nama}
+                                                        </Badge>
+                                                    )}
+                                                    {schedule.keterangan && (
+                                                        <Badge
+                                                            variant="secondary"
+                                                            className="text-[10px] h-4.5 px-1.5 font-medium bg-neutral-100 text-neutral-700"
+                                                        >
+                                                            {schedule.keterangan}
+                                                        </Badge>
+                                                    )}
+                                                </div>
                                             </div>
 
                                             {/* Project Title */}
@@ -493,23 +519,30 @@ function ProjectItemsDialog({ schedule, open, onOpenChange }: ProjectItemsDialog
                                 <PackageCheck className="h-5 w-5 text-orange-600" />
                                 Rincian Item Pengiriman
                             </DialogTitle>
-                            <DialogDescription className="mt-1 space-y-0.5">
+                            <DialogDescription className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs">
                                 <span className="font-semibold text-neutral-800">{schedule.project_name}</span>
-                                <span className="mx-1.5 text-neutral-300">•</span>
+                                <span className="text-neutral-300">•</span>
                                 <span className="text-neutral-600">{schedule.client_name}</span>
                                 {schedule.nomor_spk && (
                                     <>
-                                        <span className="mx-1.5 text-neutral-300">•</span>
+                                        <span className="text-neutral-300">•</span>
                                         <span>No. SPK: {schedule.nomor_spk}</span>
                                     </>
                                 )}
                             </DialogDescription>
                         </div>
-                        {schedule.keterangan && (
-                            <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 shrink-0">
-                                {schedule.keterangan}
-                            </Badge>
-                        )}
+                        <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
+                            {schedule.divisi_nama && (
+                                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 font-bold">
+                                    Divisi: {schedule.divisi_nama}
+                                </Badge>
+                            )}
+                            {schedule.keterangan && (
+                                <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
+                                    {schedule.keterangan}
+                                </Badge>
+                            )}
+                        </div>
                     </div>
 
                     {/* Summary Stat Cards */}
