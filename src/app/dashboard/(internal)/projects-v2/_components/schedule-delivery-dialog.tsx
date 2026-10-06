@@ -20,6 +20,13 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
 import { projectV2Service, ProjectV2, JadwalPengiriman } from "@/features/projects/services/project-v2-service"
 
 interface ScheduleDeliveryDialogProps {
@@ -34,11 +41,54 @@ export function ScheduleDeliveryDialog({
     project
 }: ScheduleDeliveryDialogProps) {
     const queryClient = useQueryClient()
+    const [selectedDivisiId, setSelectedDivisiId] = React.useState<string>("")
     const [selectedDate, setSelectedDate] = React.useState<Date | undefined>(undefined)
     const [keterangan, setKeterangan] = React.useState<string>("")
     const [editingId, setEditingId] = React.useState<number | null>(null)
     const [isCalendarOpen, setIsCalendarOpen] = React.useState(false)
     const [deletingId, setDeletingId] = React.useState<number | null>(null)
+
+    // Fetch divisions list
+    const { data: allDivisions = [], isLoading: isLoadingDivisions } = useQuery({
+        queryKey: ["divisions"],
+        queryFn: () => projectV2Service.getDivisions(),
+        enabled: open,
+    })
+
+    // Fetch project team to get divisi_id assigned to this project
+    const { data: teamData, isLoading: isLoadingTeam } = useQuery({
+        queryKey: ["project-team", project?.id],
+        queryFn: () => project?.id ? projectV2Service.getProjectTeam(project.id) : null,
+        enabled: open && !!project?.id,
+    })
+
+    // Filter divisions that belong to project_team.divisi_id
+    const projectDivisiIds = React.useMemo(() => {
+        const raw = teamData?.divisi_id ?? project?.project_team?.divisi_id ?? ""
+        if (!raw) return []
+        return raw
+            .split(",")
+            .map((s: string) => parseInt(s.trim(), 10))
+            .filter((n: number) => !isNaN(n) && n > 0)
+    }, [teamData?.divisi_id, project?.project_team?.divisi_id])
+
+    const availableDivisions = React.useMemo(() => {
+        if (!projectDivisiIds.length) return []
+        return allDivisions.filter((d) => projectDivisiIds.includes(d.id))
+    }, [allDivisions, projectDivisiIds])
+
+    // Dropdown options include availableDivisions and the current editing schedule's division (if not already in list)
+    const dropdownOptions = React.useMemo(() => {
+        const list = [...availableDivisions]
+        if (selectedDivisiId) {
+            const idNum = parseInt(selectedDivisiId, 10)
+            if (!list.some((d) => d.id === idNum)) {
+                const found = allDivisions.find((d) => d.id === idNum)
+                if (found) list.push(found)
+            }
+        }
+        return list
+    }, [availableDivisions, selectedDivisiId, allDivisions])
 
     // Reset form state when dialog opens or project changes
     React.useEffect(() => {
@@ -48,8 +98,13 @@ export function ScheduleDeliveryDialog({
             setEditingId(null)
             setIsCalendarOpen(false)
             setDeletingId(null)
+            if (availableDivisions.length === 1) {
+                setSelectedDivisiId(String(availableDivisions[0].id))
+            } else {
+                setSelectedDivisiId("")
+            }
         }
-    }, [open, project?.id])
+    }, [open, project?.id, availableDivisions.length])
 
     // Query schedules for current project
     const { data: schedules = [], isLoading: isLoadingSchedules } = useQuery({
@@ -72,7 +127,7 @@ export function ScheduleDeliveryDialog({
 
     // Add schedule mutation
     const addMutation = useMutation({
-        mutationFn: (payload: { project_id: number; tanggal: string; keterangan?: string }) =>
+        mutationFn: (payload: { project_id: number; divisi_id?: number | null; tanggal: string; keterangan?: string }) =>
             projectV2Service.storeJadwalPengiriman(payload),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["jadwal-pengiriman", project?.id] })
@@ -80,6 +135,7 @@ export function ScheduleDeliveryDialog({
             toast.success("Jadwal pengiriman berhasil ditambahkan")
             setSelectedDate(undefined)
             setKeterangan("")
+            setSelectedDivisiId(availableDivisions.length === 1 ? String(availableDivisions[0].id) : "")
         },
         onError: (err: any) => {
             const msg = err?.response?.data?.message || "Gagal menambahkan jadwal pengiriman"
@@ -89,7 +145,7 @@ export function ScheduleDeliveryDialog({
 
     // Update schedule mutation
     const updateMutation = useMutation({
-        mutationFn: ({ id, payload }: { id: number; payload: { tanggal: string; keterangan?: string } }) =>
+        mutationFn: ({ id, payload }: { id: number; payload: { divisi_id?: number | null; tanggal: string; keterangan?: string } }) =>
             projectV2Service.updateJadwalPengiriman(id, payload),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["jadwal-pengiriman", project?.id] })
@@ -98,6 +154,7 @@ export function ScheduleDeliveryDialog({
             setEditingId(null)
             setSelectedDate(undefined)
             setKeterangan("")
+            setSelectedDivisiId(availableDivisions.length === 1 ? String(availableDivisions[0].id) : "")
         },
         onError: (err: any) => {
             const msg = err?.response?.data?.message || "Gagal memperbarui jadwal pengiriman"
@@ -119,6 +176,7 @@ export function ScheduleDeliveryDialog({
                 setEditingId(null)
                 setSelectedDate(undefined)
                 setKeterangan("")
+                setSelectedDivisiId(availableDivisions.length === 1 ? String(availableDivisions[0].id) : "")
             }
         },
         onError: (err: any) => {
@@ -132,6 +190,7 @@ export function ScheduleDeliveryDialog({
 
     const handleStartEdit = (s: JadwalPengiriman) => {
         setEditingId(s.id)
+        setSelectedDivisiId(s.divisi_id ? String(s.divisi_id) : "")
         const dateStr = s.tanggal || s.tanggal_pengiriman?.tanggal
         if (dateStr) {
             setSelectedDate(new Date(dateStr))
@@ -145,21 +204,28 @@ export function ScheduleDeliveryDialog({
         setEditingId(null)
         setSelectedDate(undefined)
         setKeterangan("")
+        setSelectedDivisiId(availableDivisions.length === 1 ? String(availableDivisions[0].id) : "")
     }
 
     const handleSubmit = () => {
         if (!project?.id) return
+        if (dropdownOptions.length > 0 && !selectedDivisiId) {
+            toast.error("Pilih divisi terlebih dahulu")
+            return
+        }
         if (!selectedDate) {
             toast.error("Pilih tanggal pengiriman terlebih dahulu")
             return
         }
 
         const dateFormatted = format(selectedDate, "yyyy-MM-dd")
+        const divisiIdNum = selectedDivisiId ? parseInt(selectedDivisiId, 10) : undefined
 
         if (editingId) {
             updateMutation.mutate({
                 id: editingId,
                 payload: {
+                    divisi_id: divisiIdNum,
                     tanggal: dateFormatted,
                     keterangan: keterangan.trim() || undefined,
                 }
@@ -167,6 +233,7 @@ export function ScheduleDeliveryDialog({
         } else {
             addMutation.mutate({
                 project_id: project.id,
+                divisi_id: divisiIdNum,
                 tanggal: dateFormatted,
                 keterangan: keterangan.trim() || undefined,
             })
@@ -211,6 +278,7 @@ export function ScheduleDeliveryDialog({
                                 {displaySchedules.map((s, idx) => {
                                     const scheduleDate = s.tanggal || s.tanggal_pengiriman?.tanggal
                                     const isBeingEdited = editingId === s.id
+                                    const divisiNama = s.divisi?.nama || allDivisions.find((d) => d.id === s.divisi_id)?.nama
                                     return (
                                         <div
                                             key={s.id}
@@ -227,11 +295,21 @@ export function ScheduleDeliveryDialog({
                                                     Tahap {idx + 1}
                                                 </Badge>
                                                 <div className="min-w-0">
-                                                    <p className="text-xs font-semibold text-neutral-900">
-                                                        {scheduleDate
-                                                            ? format(new Date(scheduleDate), "EEEE, d MMMM yyyy")
-                                                            : "-"}
-                                                    </p>
+                                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                                        {divisiNama && (
+                                                            <Badge
+                                                                variant="secondary"
+                                                                className="text-[10px] h-4 px-1.5 font-medium bg-neutral-100 text-neutral-800 border"
+                                                            >
+                                                                {divisiNama}
+                                                            </Badge>
+                                                        )}
+                                                        <p className="text-xs font-semibold text-neutral-900">
+                                                            {scheduleDate
+                                                                ? format(new Date(scheduleDate), "EEEE, d MMMM yyyy")
+                                                                : "-"}
+                                                        </p>
+                                                    </div>
                                                     {s.keterangan && (
                                                         <p className="text-[11px] text-muted-foreground mt-0.5 break-words">
                                                             {s.keterangan}
@@ -293,6 +371,36 @@ export function ScheduleDeliveryDialog({
                             )}
                         </div>
 
+                        {/* Dropdown Divisi (sebelum Tanggal Pengiriman) */}
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-medium text-neutral-700">
+                                Divisi {dropdownOptions.length > 0 && <span className="text-red-500">*</span>}
+                            </label>
+                            {dropdownOptions.length > 0 ? (
+                                <Select
+                                    value={selectedDivisiId || undefined}
+                                    onValueChange={setSelectedDivisiId}
+                                >
+                                    <SelectTrigger className="w-full bg-white h-9 text-xs">
+                                        <SelectValue placeholder="Pilih Divisi..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {dropdownOptions.map((d) => (
+                                            <SelectItem key={d.id} value={String(d.id)}>
+                                                {d.nama} {d.nama_panjang ? `(${d.nama_panjang})` : ""}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            ) : (
+                                <div className="text-xs text-amber-700 bg-amber-50/80 p-2.5 rounded border border-amber-200">
+                                    {isLoadingDivisions || isLoadingTeam
+                                        ? "Memuat data divisi..."
+                                        : "Tidak ada divisi yang terdaftar pada Project Team proyek ini."}
+                                </div>
+                            )}
+                        </div>
+
                         <div className="space-y-1.5">
                             <label className="text-xs font-medium text-neutral-700">
                                 Tanggal Pengiriman <span className="text-red-500">*</span>
@@ -344,7 +452,11 @@ export function ScheduleDeliveryDialog({
                                 type="button"
                                 size="sm"
                                 className="bg-orange-600 hover:bg-orange-700 text-white gap-1.5 text-xs h-8"
-                                disabled={isSubmitting || !selectedDate}
+                                disabled={
+                                    isSubmitting ||
+                                    !selectedDate ||
+                                    (dropdownOptions.length > 0 && !selectedDivisiId)
+                                }
                                 onClick={handleSubmit}
                             >
                                 {isSubmitting ? (

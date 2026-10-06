@@ -1166,6 +1166,7 @@ export const projectV2Service = {
   },
   storeJadwalPengiriman: async (payload: {
     project_id: number;
+    divisi_id?: number | null;
     tanggal?: string;
     tanggal_pengiriman_id?: number;
     keterangan?: string;
@@ -1179,6 +1180,7 @@ export const projectV2Service = {
   updateJadwalPengiriman: async (
     id: number,
     payload: {
+      divisi_id?: number | null;
       tanggal?: string;
       keterangan?: string;
     }
@@ -1612,6 +1614,8 @@ export interface TanggalPengiriman {
 export interface JadwalPengiriman {
   id: number;
   project_id: number;
+  divisi_id?: number | null;
+  divisi?: Divisi | null;
   tanggal?: string;
   tanggal_pengiriman_id?: number | null;
   keterangan: string | null;
@@ -1723,6 +1727,8 @@ export interface CalendarDeliveryItem {
 export interface CalendarDeliverySchedule {
   id: number;
   tanggal: string;
+  divisi_id?: number | null;
+  divisi_nama?: string | null;
   keterangan?: string | null;
   project_id: number;
   project_name: string;
