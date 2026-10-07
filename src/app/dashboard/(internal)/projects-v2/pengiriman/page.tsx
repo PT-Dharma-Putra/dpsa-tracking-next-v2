@@ -147,6 +147,9 @@ export default function PengirimanPage() {
     mutationFn: (id: number) => PengirimanService.deletePengiriman(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pengiriman'] });
+      queryClient.invalidateQueries({ queryKey: ['project-v2-items'] });
+      queryClient.invalidateQueries({ queryKey: ['pengiriman-per-spk'] });
+      queryClient.invalidateQueries({ queryKey: ['projects-v2'] });
       toast.success('Data pengiriman berhasil dihapus');
       setDeleteDialogOpen(false);
     },
