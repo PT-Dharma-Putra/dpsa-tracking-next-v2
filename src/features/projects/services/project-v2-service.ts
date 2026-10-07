@@ -1722,6 +1722,9 @@ export interface CalendarDeliveryItem {
   sisa: number;
   status: 'lengkap' | 'sebagian' | 'belum';
   progress_produksi?: number | null;
+  divisi_id?: number | null;
+  divisi_nama?: string | null;
+  po_divisi?: string | null;
 }
 
 export interface CalendarDeliverySchedule {

@@ -503,7 +503,9 @@ function ProjectItemsDialog({ schedule, open, onOpenChange }: ProjectItemsDialog
                 !q ||
                 item.item.toLowerCase().includes(q) ||
                 (item.ruang && item.ruang.toLowerCase().includes(q)) ||
-                (item.lantai && item.lantai.toLowerCase().includes(q))
+                (item.lantai && item.lantai.toLowerCase().includes(q)) ||
+                (Boolean(item.po_divisi || item.divisi_nama) &&
+                    (item.po_divisi || item.divisi_nama)!.toLowerCase().includes(q))
 
             return matchesStatus && matchesSearch
         })
@@ -511,7 +513,7 @@ function ProjectItemsDialog({ schedule, open, onOpenChange }: ProjectItemsDialog
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[1000px] max-h-[90vh] flex flex-col p-0">
+            <DialogContent className="sm:max-w-[1050px] max-h-[90vh] flex flex-col p-0">
                 <DialogHeader className="p-6 pb-4 border-b">
                     <div className="flex items-start justify-between gap-3">
                         <div>
@@ -571,7 +573,7 @@ function ProjectItemsDialog({ schedule, open, onOpenChange }: ProjectItemsDialog
                     <div className="relative w-full md:w-72">
                         <Search className="h-3.5 w-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
                         <Input
-                            placeholder="Cari item, ruang, atau lantai..."
+                            placeholder="Cari item, PO divisi, ruang, atau lantai..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className="pl-9 h-8 text-xs bg-white"
@@ -647,6 +649,7 @@ function ProjectItemsDialog({ schedule, open, onOpenChange }: ProjectItemsDialog
                                     <TableRow>
                                         <TableHead className="w-12 text-center text-xs">No</TableHead>
                                         <TableHead className="text-xs">Nama Item</TableHead>
+                                        <TableHead className="text-xs">PO Divisi</TableHead>
                                         <TableHead className="text-xs">Ruang / Lantai</TableHead>
                                         <TableHead className="text-xs min-w-[130px]">Progress Produksi</TableHead>
                                         <TableHead className="text-right text-xs">Qty SPK</TableHead>
@@ -665,6 +668,18 @@ function ProjectItemsDialog({ schedule, open, onOpenChange }: ProjectItemsDialog
                                                 <span className="font-semibold text-xs text-neutral-900 block">
                                                     {item.item}
                                                 </span>
+                                            </TableCell>
+                                            <TableCell>
+                                                {item.po_divisi || item.divisi_nama ? (
+                                                    <Badge
+                                                        variant="outline"
+                                                        className="bg-purple-50 text-purple-700 border-purple-200 text-[11px] font-semibold whitespace-nowrap"
+                                                    >
+                                                        {item.po_divisi || item.divisi_nama}
+                                                    </Badge>
+                                                ) : (
+                                                    <span className="text-xs text-muted-foreground">-</span>
+                                                )}
                                             </TableCell>
                                             <TableCell className="text-xs text-neutral-600">
                                                 {[item.ruang, item.lantai ? `Lt. ${item.lantai}` : null]
