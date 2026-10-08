@@ -2178,9 +2178,9 @@ export default function ProjectItemsPage() {
                   <TableHead className='w-[50px] whitespace-nowrap'>
                     #
                   </TableHead>
-                  <TableHead className='whitespace-nowrap'>
+                  {/* <TableHead className='whitespace-nowrap'>
                     Kode Barang
-                  </TableHead>
+                  </TableHead> */}
                   <TableHead className='whitespace-nowrap'>Lantai</TableHead>
                   <TableHead className='whitespace-nowrap'>
                     Area/Sub Kategori
@@ -2256,9 +2256,9 @@ export default function ProjectItemsPage() {
                       <TableCell className='text-muted-foreground font-medium'>
                         {index + 1}
                       </TableCell>
-                      <TableCell className='text-xs text-neutral-500 whitespace-nowrap'>
+                      {/* <TableCell className='text-xs text-neutral-500 whitespace-nowrap'>
                         {item.mdl_item?.kode_barang || '-'}
-                      </TableCell>
+                      </TableCell> */}
                       <TableCell className='text-xs'>
                         {item.lantai || '-'}
                       </TableCell>
