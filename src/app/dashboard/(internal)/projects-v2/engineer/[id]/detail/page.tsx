@@ -492,6 +492,15 @@ export default function EngineerDetailPage() {
       queryClient.invalidateQueries({
         queryKey: ["project-v2-items", projectId],
       });
+      queryClient.invalidateQueries({
+        queryKey: ["projects-v2", projectId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["order-gambar-kerja"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["order-gambar-kerja-stats"],
+      });
       toast.success("Gambar Kerja updated");
       setIsGkDialogOpen(false);
       setGkFile(null);
@@ -526,6 +535,15 @@ export default function EngineerDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ["project-v2-items", projectId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["projects-v2", projectId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["order-gambar-kerja"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["order-gambar-kerja-stats"],
       });
       toast.success("Gambar Kerja massal berhasil diupdate");
       setIsBulkGkDialogOpen(false);
