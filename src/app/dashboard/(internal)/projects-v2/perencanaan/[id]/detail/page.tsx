@@ -169,6 +169,12 @@ export default function PerencanaanDetailPage() {
       queryClient.invalidateQueries({
         queryKey: ['project-v2-items', projectId],
       });
+      queryClient.invalidateQueries({
+        queryKey: ['order-gambar-kerja'],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['order-gambar-kerja-stats'],
+      });
       toast.success('Gambar Kerja updated');
       setIsGkDialogOpen(false);
       setGkFile(null);
