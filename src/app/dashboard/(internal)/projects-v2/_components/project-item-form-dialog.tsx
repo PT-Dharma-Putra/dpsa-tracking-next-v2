@@ -47,12 +47,13 @@ import {
 } from "@/components/ui/command"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
-import { Check, ChevronsUpDown, X } from "lucide-react"
+import { Check, ChevronsUpDown, Search, X } from "lucide-react"
 import { toast } from "sonner"
 import { projectV2Service, ProjectItemV2, MDLItem } from "@/features/projects/services/project-v2-service"
 import { LokasiMDLService } from "@/features/lokasi-mdl/services/lokasi-mdl-service"
 import { cn } from "@/lib/utils"
 import { MDLItemSelectorDialog } from "./mdl-item-selector-dialog"
+import { useDebounce } from "@/hooks/use-debounce"
 
 const itemSchema = z.object({
     id: z.preprocess((val) => (val === "" || val === null || val === undefined ? undefined : Number(val)), z.number().optional()), // For edit mode
@@ -125,6 +126,12 @@ function RuangComboboxField({ value, onChange, lokasiOptions }: {
                             setQuery(val)
                             onChange(val)
                         }}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                                e.preventDefault()
+                                setOpen(false)
+                            }
+                        }}
                     />
                     <CommandList>
                         {filtered.length === 0 ? (
@@ -151,6 +158,159 @@ function RuangComboboxField({ value, onChange, lokasiOptions }: {
                             </CommandGroup>
                         )}
                     </CommandList>
+                </Command>
+            </PopoverContent>
+        </Popover>
+    )
+}
+
+function ItemNameComboboxField({
+    value,
+    onChange,
+    onSelectMDLItem,
+    onOpenMasterData,
+}: {
+    value: string
+    onChange: (value: string) => void
+    onSelectMDLItem?: (item: MDLItem) => void
+    onOpenMasterData?: () => void
+}) {
+    const [open, setOpen] = React.useState(false)
+    const [query, setQuery] = React.useState(value || '')
+    const debouncedQuery = useDebounce(query, 300)
+
+    React.useEffect(() => {
+        setQuery(value || '')
+    }, [value])
+
+    const { data: mdlData, isLoading } = useQuery({
+        queryKey: ["mdl-items-combobox", debouncedQuery],
+        queryFn: () => projectV2Service.getMDLItems({ search: debouncedQuery || undefined, per_page: 8 }),
+        enabled: open,
+    })
+
+    const items: MDLItem[] = mdlData?.data || []
+
+    return (
+        <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+                <Button
+                    variant="outline"
+                    role="combobox"
+                    className={cn(
+                        "h-8 w-full text-xs justify-between font-normal px-2 bg-white",
+                        !value && "text-muted-foreground"
+                    )}
+                >
+                    <span className="truncate">{value || "Item Name..."}</span>
+                    <ChevronsUpDown className="ml-1 h-3 w-3 shrink-0 opacity-50" />
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[320px] p-0" align="start">
+                <Command shouldFilter={false}>
+                    <CommandInput
+                        placeholder="Ketik atau cari nama item..."
+                        className="h-8 text-xs"
+                        value={query}
+                        onValueChange={(val) => {
+                            setQuery(val)
+                            onChange(val)
+                        }}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                                e.preventDefault()
+                                setOpen(false)
+                            }
+                        }}
+                    />
+                    <CommandList>
+                        {query.trim().length > 0 && (
+                            <CommandGroup heading="Nama Manual">
+                                <CommandItem
+                                    value={`manual-${query}`}
+                                    onSelect={() => {
+                                        setQuery(query)
+                                        onChange(query)
+                                        setOpen(false)
+                                    }}
+                                    className="text-xs flex items-center gap-2 cursor-pointer text-purple-700 font-medium py-1.5 hover:bg-purple-50"
+                                >
+                                    <Check className={cn("h-3 w-3 shrink-0", value === query ? "opacity-100" : "opacity-0")} />
+                                    <span className="truncate">Gunakan: "{query}"</span>
+                                </CommandItem>
+                            </CommandGroup>
+                        )}
+
+                        {isLoading ? (
+                            <div className="flex items-center justify-center py-4 text-xs text-muted-foreground gap-2">
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                <span>Mencari di master data...</span>
+                            </div>
+                        ) : items.length === 0 ? (
+                            <CommandEmpty className="py-2.5 px-3 text-center text-xs text-muted-foreground">
+                                {query ? (
+                                    <div className="space-y-1">
+                                        <p className="font-medium text-neutral-700">Tidak ada di Master Data</p>
+                                        <p className="text-[11px] text-purple-600 font-medium">"{query}" tersimpan sebagai nama item manual</p>
+                                    </div>
+                                ) : (
+                                    "Ketik untuk mencari atau mengisi manual"
+                                )}
+                            </CommandEmpty>
+                        ) : (
+                            <CommandGroup heading="Pilihan Master Data" className="max-h-[200px] overflow-y-auto">
+                                {items.map((mdlItem) => (
+                                    <CommandItem
+                                        key={mdlItem.id}
+                                        value={`mdl-${mdlItem.id}`}
+                                        onSelect={() => {
+                                            setQuery(mdlItem.nama_barang)
+                                            onChange(mdlItem.nama_barang)
+                                            if (onSelectMDLItem) {
+                                                onSelectMDLItem(mdlItem)
+                                            }
+                                            setOpen(false)
+                                        }}
+                                        className="text-xs flex items-center justify-between cursor-pointer py-1.5"
+                                    >
+                                        <div className="flex items-center min-w-0 flex-1 mr-2">
+                                            <Check
+                                                className={cn(
+                                                    "mr-2 h-3 w-3 shrink-0",
+                                                    value === mdlItem.nama_barang ? "opacity-100 text-purple-600" : "opacity-0"
+                                                )}
+                                            />
+                                            <div className="truncate">
+                                                <div className="font-medium truncate">{mdlItem.nama_barang}</div>
+                                                {(mdlItem.kategori_mdl || mdlItem.kode_barang) && (
+                                                    <div className="text-[10px] text-muted-foreground truncate">
+                                                        {mdlItem.kategori_mdl} {mdlItem.kode_barang ? `• ${mdlItem.kode_barang}` : ''}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </CommandItem>
+                                ))}
+                            </CommandGroup>
+                        )}
+                    </CommandList>
+                    {onOpenMasterData && (
+                        <div className="p-1 border-t bg-neutral-50/50">
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="w-full text-xs text-purple-600 hover:text-purple-700 hover:bg-purple-50 justify-center h-7 font-normal"
+                                onClick={() => {
+                                    setOpen(false)
+                                    onOpenMasterData()
+                                }}
+                            >
+                                <Search className="h-3 w-3 mr-1.5" />
+                                Buka Katalog Master Data...
+                            </Button>
+                        </div>
+                    )}
                 </Command>
             </PopoverContent>
         </Popover>
@@ -269,27 +429,31 @@ export function ProjectItemFormDialog({ open, onOpenChange, projectId, item }: P
     const [selectorOpen, setSelectorOpen] = React.useState(false)
     const [activeIndex, setActiveIndex] = React.useState<number | null>(null)
 
+    const selectMDLItemAtIndex = (index: number, mdlItem: MDLItem) => {
+        form.setValue(`items.${index}.mdl_item_id` as any, mdlItem.id)
+        form.setValue(`items.${index}.item` as any, mdlItem.nama_barang)
+        form.setValue(`items.${index}.ruang` as any, mdlItem.lokasi_ruangan || "")
+        form.setValue(`items.${index}.keterangan` as any, mdlItem.spesifikasi_dan_material || "")
+        form.setValue(`items.${index}.panjang` as any, mdlItem.dimensi_panjang ?? null)
+        form.setValue(`items.${index}.lebar` as any, mdlItem.dimensi_lebar ?? null)
+        form.setValue(`items.${index}.tinggi` as any, mdlItem.dimensi_tinggi ?? null)
+        form.setValue(`items.${index}.volume` as any, mdlItem.volume ?? null)
+        if (mdlItem.kode_satuan_beli) {
+            // Determine if kode_satuan_beli matches the allowed enum values: 'M1', 'M2', 'UNIT', 'SET'
+            const normalizedSatuan = mdlItem.kode_satuan_beli.toUpperCase();
+            if (['M1', 'M2', 'UNIT', 'SET'].includes(normalizedSatuan)) {
+                form.setValue(`items.${index}.satuan` as any, normalizedSatuan)
+            } else if (normalizedSatuan === 'PCS') {
+                form.setValue(`items.${index}.satuan` as any, 'UNIT')
+            } else {
+                form.setValue(`items.${index}.satuan` as any, normalizedSatuan) // Let it pass if the Select accepts it or just use it
+            }
+        }
+    }
+
     const handleSelectMDLItem = (mdlItem: MDLItem) => {
         if (activeIndex !== null) {
-            form.setValue(`items.${activeIndex}.mdl_item_id` as any, mdlItem.id)
-            form.setValue(`items.${activeIndex}.item` as any, mdlItem.nama_barang)
-            form.setValue(`items.${activeIndex}.ruang` as any, mdlItem.lokasi_ruangan || "")
-            form.setValue(`items.${activeIndex}.keterangan` as any, mdlItem.spesifikasi_dan_material || "")
-            form.setValue(`items.${activeIndex}.panjang` as any, mdlItem.dimensi_panjang ?? null)
-            form.setValue(`items.${activeIndex}.lebar` as any, mdlItem.dimensi_lebar ?? null)
-            form.setValue(`items.${activeIndex}.tinggi` as any, mdlItem.dimensi_tinggi ?? null)
-            form.setValue(`items.${activeIndex}.volume` as any, mdlItem.volume ?? null)
-            if (mdlItem.kode_satuan_beli) {
-                // Determine if kode_satuan_beli matches the allowed enum values: 'M1', 'M2', 'UNIT', 'SET'
-                const normalizedSatuan = mdlItem.kode_satuan_beli.toUpperCase();
-                if (['M1', 'M2', 'UNIT', 'SET'].includes(normalizedSatuan)) {
-                    form.setValue(`items.${activeIndex}.satuan` as any, normalizedSatuan)
-                } else if (normalizedSatuan === 'PCS') {
-                    form.setValue(`items.${activeIndex}.satuan` as any, 'UNIT')
-                } else {
-                    form.setValue(`items.${activeIndex}.satuan` as any, normalizedSatuan) // Let it pass if the Select accepts it or just use it
-                }
-            }
+            selectMDLItemAtIndex(activeIndex, mdlItem)
             setSelectorOpen(false)
             setActiveIndex(null)
         }
@@ -356,17 +520,15 @@ export function ProjectItemFormDialog({ open, onOpenChange, projectId, item }: P
                                                 render={({ field }) => (
                                                     <FormItem>
                                                         <FormControl>
-                                                            <Button
-                                                                type="button"
-                                                                variant="outline"
-                                                                className="h-8 w-full text-xs justify-start font-normal px-2 truncate bg-white"
-                                                                onClick={() => {
+                                                            <ItemNameComboboxField
+                                                                value={field.value}
+                                                                onChange={field.onChange}
+                                                                onSelectMDLItem={(mdlItem) => selectMDLItemAtIndex(index, mdlItem)}
+                                                                onOpenMasterData={() => {
                                                                     setActiveIndex(index)
                                                                     setSelectorOpen(true)
                                                                 }}
-                                                            >
-                                                                {field.value || <span className="text-muted-foreground">Select item...</span>}
-                                                            </Button>
+                                                            />
                                                         </FormControl>
                                                         <FormMessage />
                                                     </FormItem>
