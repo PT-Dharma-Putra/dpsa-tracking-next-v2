@@ -4230,7 +4230,6 @@ export function ProjectsV2Table({
                       </TableHead>
                     )}
                   {!showAllDashboard &&
-                    !showProduksi &&
                     !showPurchasing &&
                     !showPiutang &&
                     !showQC && (
@@ -4491,7 +4490,7 @@ export function ProjectsV2Table({
                           : showPurchasing
                           ? 12
                           : showProduksi
-                          ? 12
+                          ? 15
                           : showPiutang
                           ? 14
                           : showMarketingFilter
@@ -4524,7 +4523,7 @@ export function ProjectsV2Table({
                           : showPurchasing
                           ? 12
                           : showProduksi
-                          ? 12
+                          ? 15
                           : showPiutang
                           ? 14
                           : showMarketingFilter
@@ -5794,7 +5793,6 @@ export function ProjectsV2Table({
                           </TableCell>
                         )}
                       {!showAllDashboard &&
-                        !showProduksi &&
                         !showPurchasing &&
                         !showPiutang &&
                         !showQC && (
