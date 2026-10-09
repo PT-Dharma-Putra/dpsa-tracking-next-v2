@@ -2,6 +2,7 @@
 
 import { ReactNode, useEffect, useState } from "react";
 import Link from "next/link";
+import Image from 'next/image';
 import { useRouter } from "next/navigation";
 import { Building2, LogOut, LayoutDashboard, Settings, FileText, ShoppingBag, ShoppingCart, CreditCard, User, LifeBuoy } from "lucide-react";
 import { usePathname } from "next/navigation";
@@ -62,8 +63,15 @@ export default function CustomerLayout({ children }: { children: ReactNode }) {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 min-h-[5rem] flex flex-wrap sm:flex-nowrap items-center justify-between gap-4">
                     {/* Logo Section */}
                     <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 bg-gradient-to-br from-orange-500 to-amber-600 rounded-xl flex items-center justify-center shadow-lg shadow-orange-500/20 text-white shrink-0">
-                            <Building2 className="h-6 w-6" />
+                        <div className='flex aspect-square size-8 items-center justify-center rounded-lg overflow-hidden'>
+                        <Image
+                            src='/Logo.png'
+                            alt='DPSA Logo'
+                            width={32}
+                            height={32}
+                            className='size-8 object-contain'
+                            priority
+                        />
                         </div>
                         <div>
                             <h1 className="text-xl font-bold tracking-tight text-neutral-950">DPSA <span className="text-orange-600">Client</span></h1>
