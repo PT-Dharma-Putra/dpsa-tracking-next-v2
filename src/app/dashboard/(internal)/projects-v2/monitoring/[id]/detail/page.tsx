@@ -316,25 +316,41 @@ export default function ProjectMonitoringDetailPage() {
               <TableHeader className="bg-neutral-50">
                 <TableRow>
                   <TableHead className="w-[50px] font-bold">#</TableHead>
-                  <TableHead className="font-bold">Item Name</TableHead>
-                  <TableHead className="font-bold">Lantai / Ruang</TableHead>
+                  <TableHead className="font-bold">Nama Item</TableHead>
+                  <TableHead className="font-bold">Lantai | Ruang</TableHead>
                   <TableHead className="font-bold">Qty</TableHead>
                   <TableHead className="font-bold">Divisi</TableHead>
-                  <TableHead className="font-bold">Progres Produksi</TableHead>
-                  <TableHead className="font-bold">Progres Gudang</TableHead>
+                  <TableHead className="font-bold">
+                    <div className='flex flex-col'>
+                      <span>Progres</span>
+                      <span>Produksi</span>
+                    </div>
+                  </TableHead>
+                  <TableHead className="font-bold">
+                    <div className='flex flex-col'>
+                      <span>Gudang</span>
+                      <span>B. Jadi</span>
+                    </div>
+                  </TableHead>
+                  <TableHead className="font-bold">
+                    <div className='flex flex-col'>
+                      <span>Barang</span>
+                      <span>Terkirim</span>
+                    </div>
+                  </TableHead>
                   <TableHead className="font-bold text-right">Status</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isItemsLoading ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="h-32 text-center text-muted-foreground">
+                    <TableCell colSpan={9} className="h-32 text-center text-muted-foreground">
                       Loading items...
                     </TableCell>
                   </TableRow>
                 ) : filteredItems.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="h-32 text-center text-muted-foreground">
+                    <TableCell colSpan={9} className="h-32 text-center text-muted-foreground">
                       No items found.
                     </TableCell>
                   </TableRow>
@@ -387,6 +403,24 @@ export default function ProjectMonitoringDetailPage() {
                               />
                             </div>
                           </div>
+                        </TableCell>
+                        <TableCell>
+                          {(() => {
+                            const total =
+                              item.detail_pengiriman?.reduce(
+                                (sum, d) => sum + Number(d.jumlah_keluar),
+                                0
+                              ) ?? 0;
+                            return total > 0 ? (
+                              <Badge className='bg-teal-600 text-white border-none font-bold text-[10px] h-5 px-1.5 shadow-sm'>
+                                {total} / {item.jumlah}
+                              </Badge>
+                            ) : (
+                              <span className='text-[10px] text-muted-foreground italic'>
+                                -
+                              </span>
+                            );
+                          })()}
                         </TableCell>
                         <TableCell className="text-right">
                           {project.tanggal_selesai || totalKeluar >= item.jumlah ? (
