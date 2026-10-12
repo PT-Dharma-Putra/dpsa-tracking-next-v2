@@ -338,8 +338,8 @@ export default function ClientDashboardPage() {
                                 ? "Filtered Projects"
                                 : isHerminaPusat
                                 ? clientTab === "managed"
-                                    ? "Active Managed"
-                                    : "Active Cabang"
+                                    ? "Active Projects"
+                                    : "Active Projects"
                                 : "Active Projects"}
                         </div>
                     </div>
