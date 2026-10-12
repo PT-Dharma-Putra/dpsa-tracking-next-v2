@@ -2159,7 +2159,7 @@ export default function ProjectItemsPage() {
             <Table>
               <TableHeader className='bg-white'>
                 <TableRow>
-                  <TableHead className='w-[40px] text-center'>
+                  {/* <TableHead className='w-[40px] text-center'>
                     <Checkbox
                       checked={
                         !!items &&
@@ -2174,7 +2174,7 @@ export default function ProjectItemsPage() {
                         }
                       }}
                     />
-                  </TableHead>
+                  </TableHead> */}
                   <TableHead className='w-[50px] whitespace-nowrap'>
                     #
                   </TableHead>
@@ -2239,7 +2239,7 @@ export default function ProjectItemsPage() {
                       key={item.id}
                       className='hover:bg-blue-50/30 transition-colors group'
                     >
-                      <TableCell className='text-center'>
+                      {/* <TableCell className='text-center'>
                         <Checkbox
                           checked={selectedItemIds.includes(item.id)}
                           onCheckedChange={(checked) => {
@@ -2252,7 +2252,7 @@ export default function ProjectItemsPage() {
                             }
                           }}
                         />
-                      </TableCell>
+                      </TableCell> */}
                       <TableCell className='text-muted-foreground font-medium'>
                         {index + 1}
                       </TableCell>
