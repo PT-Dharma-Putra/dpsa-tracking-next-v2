@@ -275,7 +275,7 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
                             )}
                         />
 
-                        <FormField
+                        {/* <FormField
                             control={form.control}
                             name="prioritas"
                             render={({ field }) => (
@@ -300,7 +300,7 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
                                     <FormMessage />
                                 </FormItem>
                             )}
-                        />
+                        /> */}
 
                         <FormField
                             control={form.control}
