@@ -27,6 +27,7 @@ import {
     FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import {
     Command,
@@ -49,6 +50,7 @@ import { ClientService } from "@/features/clients/services/client-service"
 const formSchema = z.object({
     name: z.string().min(1, "Project name is required"),
     client_id: z.string().min(1, "Client is required"),
+    catatan: z.string().optional().nullable(),
     tanggal_selesai: z.date().optional().nullable(),
     need_design: z.number(),
     prioritas: z.enum(['Normal', 'Urgent']),
@@ -117,6 +119,7 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
         defaultValues: {
             name: "",
             client_id: "",
+            catatan: "",
             tanggal_selesai: null,
             need_design: 1,
             prioritas: "Normal",
@@ -129,6 +132,7 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
                 form.reset({
                     name: project.name,
                     client_id: project.client_id.toString(),
+                    catatan: project.catatan || "",
                     tanggal_selesai: project.tanggal_selesai ? new Date(project.tanggal_selesai) : null,
                     need_design: project.need_design ?? 1,
                     prioritas: project.prioritas || "Normal",
@@ -137,6 +141,7 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
                 form.reset({
                     name: "",
                     client_id: "",
+                    catatan: "",
                     tanggal_selesai: null,
                     need_design: 1,
                     prioritas: "Normal",
@@ -150,6 +155,7 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
             const payload = {
                 name: values.name,
                 client_id: parseInt(values.client_id),
+                catatan: values.catatan || null,
                 tanggal_selesai: values.tanggal_selesai ? format(values.tanggal_selesai, "yyyy-MM-dd") : null,
                 need_design: values.need_design,
                 prioritas: values.prioritas,
@@ -275,7 +281,8 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
                             )}
                         />
 
-                        <FormField
+
+                        {/* <FormField
                             control={form.control}
                             name="prioritas"
                             render={({ field }) => (
@@ -300,7 +307,7 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
                                     <FormMessage />
                                 </FormItem>
                             )}
-                        />
+                        /> */}
 
                         <FormField
                             control={form.control}
@@ -323,6 +330,27 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
                                                 <Label htmlFor="design-tidak" className="font-normal cursor-pointer">Tidak</Label>
                                             </div>
                                         </RadioGroup>
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        
+                        <FormField
+                            control={form.control}
+                            name="catatan"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Catatan</FormLabel>
+                                    <FormControl>
+                                        <Textarea
+                                            placeholder="Masukkan catatan proyek (opsional)..."
+                                            className="resize-none"
+                                            rows={3}
+                                            {...field}
+                                            value={field.value || ""}
+                                        />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>

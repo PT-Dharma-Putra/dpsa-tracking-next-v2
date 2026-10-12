@@ -5,6 +5,7 @@ export interface Project {
   id: number;
   name: string;
   description?: string;
+  catatan?: string | null;
   client_id: number;
   status: string;
   current_phase: number;
@@ -38,6 +39,7 @@ export interface CreateProjectPayload {
   name: string;
   client_id: string | number; // Form usually returns string, but user.id is number
   description?: string;
+  catatan?: string;
   due_date?: string;
   items?: {
     item: string;
