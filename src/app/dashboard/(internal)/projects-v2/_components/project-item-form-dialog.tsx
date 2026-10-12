@@ -5,7 +5,7 @@ import { useForm, useFieldArray, useWatch } from "react-hook-form"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query"
-import { Loader2, Plus, Trash2 } from "lucide-react"
+import { Loader2, Plus, Trash2, Package, Layers, Boxes, FileText } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -25,6 +25,7 @@ import {
     FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import {
     Select,
     SelectContent,
@@ -69,6 +70,7 @@ const itemSchema = z.object({
     satuan: z.string().default("UNIT"),
     jumlah: z.preprocess((val) => (val === "" || val === null ? 0 : Number(val)), z.number().min(0, "Quantity must be at least 0")),
     custom: z.preprocess((val) => val === true || val === 1 || val === "1" || val === "true", z.boolean().default(false)),
+    catatan: z.string().default(""),
 })
 
 const formSchema = z.object({
@@ -84,10 +86,11 @@ interface ProjectItemFormDialogProps {
     item?: ProjectItemV2 | null
 }
 
-function RuangComboboxField({ value, onChange, lokasiOptions }: {
+function RuangComboboxField({ value, onChange, lokasiOptions, className }: {
     value: string
     onChange: (value: string) => void
     lokasiOptions: Array<{ id: number; nama: string }>
+    className?: string
 }) {
     const [open, setOpen] = React.useState(false)
     const [query, setQuery] = React.useState(value || '')
@@ -109,7 +112,8 @@ function RuangComboboxField({ value, onChange, lokasiOptions }: {
                     role="combobox"
                     className={cn(
                         "h-8 w-full text-xs justify-between font-normal px-2 bg-white",
-                        !value && "text-muted-foreground"
+                        !value && "text-muted-foreground",
+                        className
                     )}
                 >
                     <span className="truncate">{value || "Ruang..."}</span>
@@ -169,11 +173,13 @@ function ItemNameComboboxField({
     onChange,
     onSelectMDLItem,
     onOpenMasterData,
+    className,
 }: {
     value: string
     onChange: (value: string) => void
     onSelectMDLItem?: (item: MDLItem) => void
     onOpenMasterData?: () => void
+    className?: string
 }) {
     const [open, setOpen] = React.useState(false)
     const [query, setQuery] = React.useState(value || '')
@@ -199,7 +205,8 @@ function ItemNameComboboxField({
                     role="combobox"
                     className={cn(
                         "h-8 w-full text-xs justify-between font-normal px-2 bg-white",
-                        !value && "text-muted-foreground"
+                        !value && "text-muted-foreground",
+                        className
                     )}
                 >
                     <span className="truncate">{value || "Item Name..."}</span>
@@ -317,6 +324,98 @@ function ItemNameComboboxField({
     )
 }
 
+function LantaiMultiSelectField({
+    value,
+    onChange,
+    idPrefix = "floor",
+    className,
+    placeholder = "Pilih Lantai..."
+}: {
+    value: string
+    onChange: (value: string) => void
+    idPrefix?: string
+    className?: string
+    placeholder?: string
+}) {
+    const selectedList = value ? value.split(", ").filter(Boolean) : []
+    return (
+        <Popover>
+            <PopoverTrigger asChild>
+                <Button
+                    variant="outline"
+                    role="combobox"
+                    className={cn(
+                        "h-8 w-full text-xs justify-between font-normal px-2 bg-white",
+                        !value && "text-muted-foreground",
+                        className
+                    )}
+                >
+                    <div className="flex gap-1 flex-wrap truncate max-w-[90%]">
+                        {selectedList.length > 0 ? (
+                            selectedList.map((val: string) => (
+                                <Badge variant="secondary" key={val} className="text-[10px] h-5 px-1 font-normal">
+                                    {val.replace("Lantai ", "L")}
+                                </Badge>
+                            ))
+                        ) : (
+                            placeholder
+                        )}
+                    </div>
+                    <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[200px] p-2" align="start">
+                <div className="space-y-2">
+                    <div className="flex items-center justify-between pb-2 border-b">
+                        <span className="text-xs font-semibold">Pilih Lantai</span>
+                        <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-6 px-2 text-[10px]"
+                            onClick={() => onChange("")}
+                        >
+                            Reset
+                        </Button>
+                    </div>
+                    <div className="max-h-[200px] overflow-y-auto space-y-1 py-1">
+                        {Array.from({ length: 10 }, (_, i) => {
+                            const floorValue = `Lantai ${i + 1}`;
+                            const isSelected = selectedList.includes(floorValue);
+                            return (
+                                <div 
+                                    key={floorValue} 
+                                    className="flex items-center space-x-2 p-1 hover:bg-neutral-100 rounded-md cursor-pointer"
+                                    onClick={() => {
+                                        let newValues;
+                                        if (isSelected) {
+                                            newValues = selectedList.filter((v: string) => v !== floorValue);
+                                        } else {
+                                            newValues = [...selectedList, floorValue].sort();
+                                        }
+                                        onChange(newValues.join(", "));
+                                    }}
+                                >
+                                    <Checkbox 
+                                        id={`${idPrefix}-${i}`} 
+                                        checked={isSelected}
+                                        onCheckedChange={() => {}}
+                                    />
+                                    <label
+                                        htmlFor={`${idPrefix}-${i}`}
+                                        className="text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
+                                    >
+                                        {floorValue}
+                                    </label>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            </PopoverContent>
+        </Popover>
+    )
+}
+
 export function ProjectItemFormDialog({ open, onOpenChange, projectId, item }: ProjectItemFormDialogProps) {
     const queryClient = useQueryClient()
     const isEdit = !!item
@@ -337,6 +436,7 @@ export function ProjectItemFormDialog({ open, onOpenChange, projectId, item }: P
                 satuan: "UNIT",
                 jumlah: 1,
                 custom: false,
+                catatan: "",
             }]
         },
     })
@@ -363,6 +463,7 @@ export function ProjectItemFormDialog({ open, onOpenChange, projectId, item }: P
                     satuan: item.satuan || "UNIT",
                     jumlah: item.jumlah !== null && item.jumlah !== undefined ? Number(item.jumlah) : 1,
                     custom: (item.custom as any) === true || (item.custom as any) === 1 || (item.custom as any) === "1",
+                    catatan: item.catatan || "",
                 }])
             } else {
                 replace([{
@@ -378,6 +479,7 @@ export function ProjectItemFormDialog({ open, onOpenChange, projectId, item }: P
                     satuan: "UNIT",
                     jumlah: 1,
                     custom: false,
+                    catatan: "",
                 }])
             }
         }
@@ -484,48 +586,67 @@ export function ProjectItemFormDialog({ open, onOpenChange, projectId, item }: P
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-[95vw] lg:max-w-[1200px] overflow-hidden flex flex-col max-h-[90vh]">
-                <DialogHeader>
-                    <DialogTitle>{isEdit ? "Edit Item" : "Add Project Items"}</DialogTitle>
-                    <DialogDescription>
-                        {isEdit ? "Update item details." : "Add one or more items to this project. Each row is one item."}
-                    </DialogDescription>
+            <DialogContent className={cn(
+                "overflow-hidden flex flex-col max-h-[90vh]",
+                isEdit ? "max-w-[760px] p-0 gap-0" : "max-w-[95vw] lg:max-w-[1200px]"
+            )}>
+                <DialogHeader className={cn(isEdit && "p-6 pb-4 border-b bg-neutral-50/50")}>
+                    {isEdit ? (
+                        <div className="flex items-center gap-3">
+                            <div className="p-2.5 rounded-xl bg-blue-50 text-blue-600 border border-blue-200">
+                                <Package className="h-5 w-5" />
+                            </div>
+                            <div>
+                                <DialogTitle className="text-lg font-bold text-neutral-900">
+                                    Edit Item Project
+                                </DialogTitle>
+                                <DialogDescription className="text-xs text-neutral-500 mt-0.5">
+                                    {item?.item ? `Mengubah rincian item: ${item.item}` : "Perbarui detail dan spesifikasi teknis item."}
+                                </DialogDescription>
+                            </div>
+                        </div>
+                    ) : (
+                        <>
+                            <DialogTitle>Add Project Items</DialogTitle>
+                            <DialogDescription>
+                                Add one or more items to this project. Each row is one item.
+                            </DialogDescription>
+                        </>
+                    )}
                 </DialogHeader>
                 
                 <Form {...(form as any)}>
-                    <form onSubmit={form.handleSubmit(onSubmit as any, (errors) => console.error("Validation Errors:", errors))} className="flex flex-col gap-4 overflow-hidden">
-                        <div className="overflow-x-auto pb-4">
-                            <div className="min-w-[1200px] space-y-2">
-                                <div className="grid grid-cols-[1.2fr_0.5fr_0.9fr_0.4fr_0.4fr_0.4fr_0.5fr_0.6fr_0.4fr_1.1fr_0.6fr_40px] gap-0.5 px-1 text-xs font-medium text-muted-foreground uppercase">
-                                    <div>Item Name</div>
-                                    <div>Lantai</div>
-                                    <div>Ruang</div>
-                                    <div className="text-center">P</div>
-                                    <div className="text-center">L</div>
-                                    <div className="text-center">T</div>
-                                    <div className="text-center">Vol</div>
-                                    <div>Satuan</div>
-                                    <div className="text-center">Qty</div>
-                                    <div>Keterangan</div>
-                                    <div>Tipe</div>
-                                    <div></div>
-                                </div>
-                                
-                                <div className="space-y-2 max-h-[400px] overflow-y-auto px-1">
-                                    {fields.map((field, index) => (
-                                        <div key={field.id} className="grid grid-cols-[1.2fr_0.5fr_0.9fr_0.4fr_0.4fr_0.4fr_0.5fr_0.6fr_0.4fr_1.1fr_0.6fr_40px] gap-0.5 items-start">
+                    <form onSubmit={form.handleSubmit(onSubmit as any, (errors) => console.error("Validation Errors:", errors))} className="flex flex-col gap-0 overflow-hidden">
+                        {isEdit ? (
+                            <div className="flex flex-col flex-1 overflow-hidden">
+                                <div className="flex-1 overflow-y-auto p-6 space-y-6 max-h-[calc(90vh-140px)]">
+                                    {/* Section 1: Informasi Item & Penempatan */}
+                                    <div className="space-y-4 rounded-xl border border-neutral-200 bg-neutral-50/50 p-4">
+                                        <div className="flex items-center gap-2 text-xs font-bold text-neutral-800 uppercase tracking-wider">
+                                            <Package className="h-4 w-4 text-blue-600" />
+                                            <span>Informasi Item & Penempatan</span>
+                                        </div>
+
+                                        <div className="space-y-3">
                                             <FormField
                                                 control={form.control as any}
-                                                name={`items.${index}.item`}
+                                                name="items.0.item"
                                                 render={({ field }) => (
                                                     <FormItem>
+                                                        <div className="flex items-center justify-between">
+                                                            <FormLabel className="text-xs font-semibold text-neutral-700">
+                                                                Nama Item <span className="text-red-500">*</span>
+                                                            </FormLabel>
+                                                            <span className="text-[11px] text-muted-foreground">Ketik manual atau cari di katalog</span>
+                                                        </div>
                                                         <FormControl>
                                                             <ItemNameComboboxField
                                                                 value={field.value}
                                                                 onChange={field.onChange}
-                                                                onSelectMDLItem={(mdlItem) => selectMDLItemAtIndex(index, mdlItem)}
+                                                                className="h-9 text-xs"
+                                                                onSelectMDLItem={(mdlItem) => selectMDLItemAtIndex(0, mdlItem)}
                                                                 onOpenMasterData={() => {
-                                                                    setActiveIndex(index)
+                                                                    setActiveIndex(0)
                                                                     setSelectorOpen(true)
                                                                 }}
                                                             />
@@ -534,274 +655,541 @@ export function ProjectItemFormDialog({ open, onOpenChange, projectId, item }: P
                                                     </FormItem>
                                                 )}
                                             />
-                                            <FormField
-                                                control={form.control as any}
-                                                name={`items.${index}.lantai`}
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <Popover>
-                                                            <PopoverTrigger asChild>
+
+                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                                <FormField
+                                                    control={form.control as any}
+                                                    name="items.0.lantai"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel className="text-xs font-semibold text-neutral-700">Lantai</FormLabel>
+                                                            <FormControl>
+                                                                <LantaiMultiSelectField
+                                                                    value={field.value}
+                                                                    onChange={field.onChange}
+                                                                    idPrefix="edit-floor"
+                                                                    className="h-9 text-xs"
+                                                                    placeholder="Pilih Lantai..."
+                                                                />
+                                                            </FormControl>
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
+
+                                                <FormField
+                                                    control={form.control as any}
+                                                    name="items.0.ruang"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel className="text-xs font-semibold text-neutral-700">Ruangan</FormLabel>
+                                                            <FormControl>
+                                                                <RuangComboboxField
+                                                                    value={field.value}
+                                                                    onChange={field.onChange}
+                                                                    lokasiOptions={lokasiOptions}
+                                                                    className="h-9 text-xs"
+                                                                />
+                                                            </FormControl>
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
+
+                                                <FormField
+                                                    control={form.control as any}
+                                                    name="items.0.custom"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel className="text-xs font-semibold text-neutral-700">Tipe Item</FormLabel>
+                                                            <Select 
+                                                                onValueChange={(val) => field.onChange(val === "1")} 
+                                                                value={field.value ? "1" : "0"}
+                                                            >
                                                                 <FormControl>
-                                                                    <Button
-                                                                        variant="outline"
-                                                                        role="combobox"
-                                                                        className={cn(
-                                                                            "h-8 w-full text-xs justify-between font-normal px-2 bg-white",
-                                                                            !field.value && "text-muted-foreground"
-                                                                        )}
-                                                                    >
-                                                                        <div className="flex gap-1 flex-wrap truncate max-w-[90%]">
-                                                                            {field.value ? (
-                                                                                field.value.split(", ").map((val: string) => (
-                                                                                    <Badge variant="secondary" key={val} className="text-[10px] h-5 px-1 font-normal">
-                                                                                        {val.replace("Lantai ", "L")}
-                                                                                    </Badge>
-                                                                                ))
-                                                                            ) : (
-                                                                                "L"
-                                                                            )}
-                                                                        </div>
-                                                                        <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
-                                                                    </Button>
+                                                                    <SelectTrigger className="h-9 text-xs bg-white">
+                                                                        <SelectValue />
+                                                                    </SelectTrigger>
                                                                 </FormControl>
-                                                            </PopoverTrigger>
-                                                            <PopoverContent className="w-[200px] p-2" align="start">
-                                                                <div className="space-y-2">
-                                                                    <div className="flex items-center justify-between pb-2 border-b">
-                                                                        <span className="text-xs font-semibold">Pilih Lantai</span>
-                                                                        <Button 
-                                                                            variant="ghost" 
-                                                                            size="sm" 
-                                                                            className="h-6 px-2 text-[10px]"
-                                                                            onClick={() => field.onChange("")}
-                                                                        >
-                                                                            Reset
-                                                                        </Button>
-                                                                    </div>
-                                                                    <div className="max-h-[200px] overflow-y-auto space-y-1 py-1">
-                                                                        {Array.from({ length: 10 }, (_, i) => {
-                                                                            const floorValue = `Lantai ${i + 1}`;
-                                                                            const isSelected = field.value?.split(", ").includes(floorValue);
-                                                                            return (
-                                                                                <div 
-                                                                                    key={floorValue} 
-                                                                                    className="flex items-center space-x-2 p-1 hover:bg-neutral-100 rounded-md cursor-pointer"
-                                                                                    onClick={() => {
-                                                                                        const currentValues = field.value ? field.value.split(", ") : [];
-                                                                                        let newValues;
-                                                                                        if (isSelected) {
-                                                                                            newValues = currentValues.filter((v: string) => v !== floorValue);
-                                                                                        } else {
-                                                                                            newValues = [...currentValues, floorValue].sort();
-                                                                                        }
-                                                                                        field.onChange(newValues.join(", "));
-                                                                                    }}
-                                                                                >
-                                                                                    <Checkbox 
-                                                                                        id={`floor-${index}-${i}`} 
-                                                                                        checked={isSelected}
-                                                                                        onCheckedChange={() => {}} // handled by div onClick
-                                                                                    />
-                                                                                    <label
-                                                                                        htmlFor={`floor-${index}-${i}`}
-                                                                                        className="text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
-                                                                                    >
-                                                                                        {floorValue}
-                                                                                    </label>
-                                                                                </div>
-                                                                            );
-                                                                        })}
-                                                                    </div>
-                                                                </div>
-                                                            </PopoverContent>
-                                                        </Popover>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
+                                                                <SelectContent>
+                                                                    <SelectItem value="0" className="text-xs">Standar (Katalog)</SelectItem>
+                                                                    <SelectItem value="1" className="text-xs">Custom (Pesanan Khusus)</SelectItem>
+                                                                </SelectContent>
+                                                            </Select>
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Section 2: Dimensi & Kuantitas */}
+                                    <div className="space-y-4 rounded-xl border border-neutral-200 bg-neutral-50/50 p-4">
+                                        <div className="flex items-center gap-2 text-xs font-bold text-neutral-800 uppercase tracking-wider">
+                                            <Boxes className="h-4 w-4 text-blue-600" />
+                                            <span>Dimensi & Kuantitas</span>
+                                        </div>
+
+                                        <div className="space-y-3">
+                                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                                <FormField
+                                                    control={form.control as any}
+                                                    name="items.0.panjang"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel className="text-xs font-semibold text-neutral-700">Panjang (P)</FormLabel>
+                                                            <FormControl>
+                                                                <Input 
+                                                                    type="number" 
+                                                                    step="any"
+                                                                    placeholder="0" 
+                                                                    className="h-9 text-xs bg-white" 
+                                                                    {...field} 
+                                                                    value={field.value ?? ''} 
+                                                                />
+                                                            </FormControl>
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
+
+                                                <FormField
+                                                    control={form.control as any}
+                                                    name="items.0.lebar"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel className="text-xs font-semibold text-neutral-700">Lebar (L)</FormLabel>
+                                                            <FormControl>
+                                                                <Input 
+                                                                    type="number" 
+                                                                    step="any"
+                                                                    placeholder="0" 
+                                                                    className="h-9 text-xs bg-white" 
+                                                                    {...field} 
+                                                                    value={field.value ?? ''} 
+                                                                />
+                                                            </FormControl>
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
+
+                                                <FormField
+                                                    control={form.control as any}
+                                                    name="items.0.tinggi"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel className="text-xs font-semibold text-neutral-700">Tinggi (T)</FormLabel>
+                                                            <FormControl>
+                                                                <Input 
+                                                                    type="number" 
+                                                                    step="any"
+                                                                    placeholder="0" 
+                                                                    className="h-9 text-xs bg-white" 
+                                                                    {...field} 
+                                                                    value={field.value ?? ''} 
+                                                                />
+                                                            </FormControl>
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
+
+                                                <FormField
+                                                    control={form.control as any}
+                                                    name="items.0.volume"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel className="text-xs font-semibold text-neutral-700">Volume (Vol)</FormLabel>
+                                                            <FormControl>
+                                                                <Input 
+                                                                    type="number" 
+                                                                    step="any"
+                                                                    placeholder="Otomatis" 
+                                                                    className="h-9 text-xs bg-white font-medium text-blue-700" 
+                                                                    {...field} 
+                                                                    value={field.value ?? ''} 
+                                                                />
+                                                            </FormControl>
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                            </div>
+
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                                                <FormField
+                                                    control={form.control as any}
+                                                    name="items.0.satuan"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel className="text-xs font-semibold text-neutral-700">Satuan Ukuran</FormLabel>
+                                                            <Select onValueChange={field.onChange} value={field.value || "UNIT"}>
+                                                                <FormControl>
+                                                                    <SelectTrigger className="h-9 text-xs bg-white">
+                                                                        <SelectValue placeholder="Pilih Satuan" />
+                                                                    </SelectTrigger>
+                                                                </FormControl>
+                                                                <SelectContent>
+                                                                    <SelectItem value="M1" className="text-xs">M1 (Meter Lari)</SelectItem>
+                                                                    <SelectItem value="M2 (pxl)" className="text-xs">M2 (pxl) - Luas P x L</SelectItem>
+                                                                    <SelectItem value="M2 (pxt)" className="text-xs">M2 (pxt) - Luas P x T</SelectItem>
+                                                                    <SelectItem value="UNIT" className="text-xs">UNIT</SelectItem>
+                                                                    <SelectItem value="SET" className="text-xs">SET</SelectItem>
+                                                                </SelectContent>
+                                                            </Select>
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
+
+                                                <FormField
+                                                    control={form.control as any}
+                                                    name="items.0.jumlah"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel className="text-xs font-semibold text-neutral-700">Jumlah (Qty)</FormLabel>
+                                                            <FormControl>
+                                                                <Input 
+                                                                    type="number" 
+                                                                    min={0} 
+                                                                    step="any"
+                                                                    placeholder="1" 
+                                                                    className="h-9 text-xs bg-white" 
+                                                                    {...field} 
+                                                                    value={field.value ?? ''} 
+                                                                />
+                                                            </FormControl>
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Section 3: Spesifikasi & Catatan */}
+                                    <div className="space-y-4 rounded-xl border border-neutral-200 bg-neutral-50/50 p-4">
+                                        <div className="flex items-center gap-2 text-xs font-bold text-neutral-800 uppercase tracking-wider">
+                                            <FileText className="h-4 w-4 text-blue-600" />
+                                            <span>Spesifikasi & Catatan Tambahan</span>
+                                        </div>
+
+                                        <div className="space-y-3">
                                             <FormField
                                                 control={form.control as any}
-                                                name={`items.${index}.ruang`}
+                                                name="items.0.keterangan"
                                                 render={({ field }) => (
                                                     <FormItem>
+                                                        <FormLabel className="text-xs font-semibold text-neutral-700">
+                                                            Keterangan / Spesifikasi Material
+                                                        </FormLabel>
                                                         <FormControl>
-                                                            <RuangComboboxField
-                                                                value={field.value}
-                                                                onChange={field.onChange}
-                                                                lokasiOptions={lokasiOptions}
+                                                            <Textarea 
+                                                                rows={3}
+                                                                placeholder="Spesifikasi teknis, finishing, material pembentuk, warna, dll..." 
+                                                                className="text-xs bg-white resize-y min-h-[70px]" 
+                                                                {...field} 
+                                                                value={field.value ?? ''} 
                                                             />
                                                         </FormControl>
                                                         <FormMessage />
                                                     </FormItem>
                                                 )}
                                             />
+
                                             <FormField
                                                 control={form.control as any}
-                                                name={`items.${index}.panjang`}
+                                                name="items.0.catatan"
                                                 render={({ field }) => (
                                                     <FormItem>
+                                                        <FormLabel className="text-xs font-semibold text-neutral-700">
+                                                            Catatan
+                                                        </FormLabel>
                                                         <FormControl>
-                                                            <Input type="number" placeholder="P" className="h-8 text-xs text-center px-1" {...field} value={field.value ?? ''} />
+                                                            <Textarea 
+                                                                rows={2}
+                                                                placeholder="Catatan tambahan untuk tim produksi, marketing, atau instruksi pengerjaan..." 
+                                                                className="text-xs bg-white resize-y min-h-[60px]" 
+                                                                {...field} 
+                                                                value={field.value ?? ''} 
+                                                            />
                                                         </FormControl>
                                                         <FormMessage />
                                                     </FormItem>
                                                 )}
                                             />
-                                            <FormField
-                                                control={form.control as any}
-                                                name={`items.${index}.lebar`}
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormControl>
-                                                            <Input type="number" placeholder="L" className="h-8 text-xs text-center px-1" {...field} value={field.value ?? ''} />
-                                                        </FormControl>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
-                                            <FormField
-                                                control={form.control as any}
-                                                name={`items.${index}.tinggi`}
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormControl>
-                                                            <Input type="number" placeholder="T" className="h-8 text-xs text-center px-1" {...field} value={field.value ?? ''} />
-                                                        </FormControl>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
-                                            <FormField
-                                                control={form.control as any}
-                                                name={`items.${index}.volume`}
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormControl>
-                                                            <Input type="number" placeholder="Vol" className="h-8 text-xs text-center px-1" {...field} value={field.value ?? ''} />
-                                                        </FormControl>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
-                                            <FormField
-                                                control={form.control as any}
-                                                name={`items.${index}.satuan`}
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <Select onValueChange={field.onChange} value={field.value || "UNIT"}>
-                                                            <FormControl>
-                                                                 <SelectTrigger className="h-8 text-xs">
-                                                                    <SelectValue placeholder="Unit" />
-                                                                </SelectTrigger>
-                                                            </FormControl>
-                                                            <SelectContent>
-                                                                <SelectItem value="M1" className="text-xs">M1</SelectItem>
-                                                                <SelectItem value="M2 (pxl)" className="text-xs">M2 (pxl)</SelectItem>
-                                                                <SelectItem value="M2 (pxt)" className="text-xs">M2 (pxt)</SelectItem>
-                                                                <SelectItem value="UNIT" className="text-xs">UNIT</SelectItem>
-                                                                <SelectItem value="SET" className="text-xs">SET</SelectItem>
-                                                            </SelectContent>
-                                                        </Select>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
-                                            <FormField
-                                                control={form.control as any}
-                                                name={`items.${index}.jumlah`}
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormControl>
-                                                            <Input type="number" min={0} placeholder="Qty" className="h-8 text-xs text-center px-1" {...field} value={field.value ?? ''} />
-                                                        </FormControl>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
-                                            <FormField
-                                                control={form.control as any}
-                                                name={`items.${index}.keterangan`}
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormControl>
-                                                            <Input placeholder="Keterangan" className="h-8 text-xs" {...field} />
-                                                        </FormControl>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
-                                            <FormField
-                                                control={form.control as any}
-                                                name={`items.${index}.custom`}
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <Select onValueChange={(val) => field.onChange(val === "1")} value={field.value ? "1" : "0"}>
-                                                            <FormControl>
-                                                                <SelectTrigger className="h-8 text-[10px] px-2">
-                                                                    <SelectValue />
-                                                                </SelectTrigger>
-                                                            </FormControl>
-                                                            <SelectContent>
-                                                                <SelectItem value="0" className="text-[10px]">Standar</SelectItem>
-                                                                <SelectItem value="1" className="text-[10px]">Custom</SelectItem>
-                                                            </SelectContent>
-                                                        </Select>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
-                                            {!isEdit && fields.length > 1 ? (
-                                                <Button 
-                                                    type="button" 
-                                                    variant="ghost" 
-                                                    size="icon" 
-                                                    className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                                                    onClick={() => remove(index)}
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
-                                            ) : <div />}
                                         </div>
-                                    ))}
+                                    </div>
                                 </div>
+
+                                <DialogFooter className="p-4 px-6 border-t bg-neutral-50/50 flex items-center justify-end gap-2">
+                                    <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                                        Batal
+                                    </Button>
+                                    <Button type="submit" disabled={mutation.isPending} className="bg-blue-600 hover:bg-blue-700 text-white">
+                                        {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                        Simpan Perubahan
+                                    </Button>
+                                </DialogFooter>
                             </div>
-                        </div>
+                        ) : (
+                            <>
+                                <div className="overflow-x-auto pb-4">
+                                    <div className="min-w-[1300px] space-y-2">
+                                        <div className="grid grid-cols-[1.2fr_0.5fr_0.9fr_0.4fr_0.4fr_0.4fr_0.5fr_0.6fr_0.4fr_1.1fr_0.6fr_1.1fr_40px] gap-0.5 px-1 text-xs font-medium text-muted-foreground uppercase">
+                                            <div>Item Name</div>
+                                            <div>Lantai</div>
+                                            <div>Ruang</div>
+                                            <div className="text-center">P</div>
+                                            <div className="text-center">L</div>
+                                            <div className="text-center">T</div>
+                                            <div className="text-center">Vol</div>
+                                            <div>Satuan</div>
+                                            <div className="text-center">Qty</div>
+                                            <div>Keterangan</div>
+                                            <div>Tipe</div>
+                                            <div>Catatan</div>
+                                            <div></div>
+                                        </div>
+                                        
+                                        <div className="space-y-2 max-h-[400px] overflow-y-auto px-1">
+                                            {fields.map((field, index) => (
+                                                <div key={field.id} className="grid grid-cols-[1.2fr_0.5fr_0.9fr_0.4fr_0.4fr_0.4fr_0.5fr_0.6fr_0.4fr_1.1fr_0.6fr_1.1fr_40px] gap-0.5 items-start">
+                                                    <FormField
+                                                        control={form.control as any}
+                                                        name={`items.${index}.item`}
+                                                        render={({ field }) => (
+                                                            <FormItem>
+                                                                <FormControl>
+                                                                    <ItemNameComboboxField
+                                                                        value={field.value}
+                                                                        onChange={field.onChange}
+                                                                        onSelectMDLItem={(mdlItem) => selectMDLItemAtIndex(index, mdlItem)}
+                                                                        onOpenMasterData={() => {
+                                                                            setActiveIndex(index)
+                                                                            setSelectorOpen(true)
+                                                                        }}
+                                                                    />
+                                                                </FormControl>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
+                                                    />
+                                                    <FormField
+                                                        control={form.control as any}
+                                                        name={`items.${index}.lantai`}
+                                                        render={({ field }) => (
+                                                            <FormItem>
+                                                                <FormControl>
+                                                                    <LantaiMultiSelectField
+                                                                        value={field.value}
+                                                                        onChange={field.onChange}
+                                                                        idPrefix={`table-floor-${index}`}
+                                                                        placeholder="L"
+                                                                    />
+                                                                </FormControl>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
+                                                    />
+                                                    <FormField
+                                                        control={form.control as any}
+                                                        name={`items.${index}.ruang`}
+                                                        render={({ field }) => (
+                                                            <FormItem>
+                                                                <FormControl>
+                                                                    <RuangComboboxField
+                                                                        value={field.value}
+                                                                        onChange={field.onChange}
+                                                                        lokasiOptions={lokasiOptions}
+                                                                    />
+                                                                </FormControl>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
+                                                    />
+                                                    <FormField
+                                                        control={form.control as any}
+                                                        name={`items.${index}.panjang`}
+                                                        render={({ field }) => (
+                                                            <FormItem>
+                                                                <FormControl>
+                                                                    <Input type="number" placeholder="P" className="h-8 text-xs text-center px-1" {...field} value={field.value ?? ''} />
+                                                                </FormControl>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
+                                                    />
+                                                    <FormField
+                                                        control={form.control as any}
+                                                        name={`items.${index}.lebar`}
+                                                        render={({ field }) => (
+                                                            <FormItem>
+                                                                <FormControl>
+                                                                    <Input type="number" placeholder="L" className="h-8 text-xs text-center px-1" {...field} value={field.value ?? ''} />
+                                                                </FormControl>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
+                                                    />
+                                                    <FormField
+                                                        control={form.control as any}
+                                                        name={`items.${index}.tinggi`}
+                                                        render={({ field }) => (
+                                                            <FormItem>
+                                                                <FormControl>
+                                                                    <Input type="number" placeholder="T" className="h-8 text-xs text-center px-1" {...field} value={field.value ?? ''} />
+                                                                </FormControl>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
+                                                    />
+                                                    <FormField
+                                                        control={form.control as any}
+                                                        name={`items.${index}.volume`}
+                                                        render={({ field }) => (
+                                                            <FormItem>
+                                                                <FormControl>
+                                                                    <Input type="number" placeholder="Vol" className="h-8 text-xs text-center px-1" {...field} value={field.value ?? ''} />
+                                                                </FormControl>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
+                                                    />
+                                                    <FormField
+                                                        control={form.control as any}
+                                                        name={`items.${index}.satuan`}
+                                                        render={({ field }) => (
+                                                            <FormItem>
+                                                                <Select onValueChange={field.onChange} value={field.value || "UNIT"}>
+                                                                    <FormControl>
+                                                                        <SelectTrigger className="h-8 text-xs">
+                                                                            <SelectValue placeholder="Unit" />
+                                                                        </SelectTrigger>
+                                                                    </FormControl>
+                                                                    <SelectContent>
+                                                                        <SelectItem value="M1" className="text-xs">M1</SelectItem>
+                                                                        <SelectItem value="M2 (pxl)" className="text-xs">M2 (pxl)</SelectItem>
+                                                                        <SelectItem value="M2 (pxt)" className="text-xs">M2 (pxt)</SelectItem>
+                                                                        <SelectItem value="UNIT" className="text-xs">UNIT</SelectItem>
+                                                                        <SelectItem value="SET" className="text-xs">SET</SelectItem>
+                                                                    </SelectContent>
+                                                                </Select>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
+                                                    />
+                                                    <FormField
+                                                        control={form.control as any}
+                                                        name={`items.${index}.jumlah`}
+                                                        render={({ field }) => (
+                                                            <FormItem>
+                                                                <FormControl>
+                                                                    <Input type="number" min={0} placeholder="Qty" className="h-8 text-xs text-center px-1" {...field} value={field.value ?? ''} />
+                                                                </FormControl>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
+                                                    />
+                                                    <FormField
+                                                        control={form.control as any}
+                                                        name={`items.${index}.keterangan`}
+                                                        render={({ field }) => (
+                                                            <FormItem>
+                                                                <FormControl>
+                                                                    <Input placeholder="Keterangan" className="h-8 text-xs" {...field} />
+                                                                </FormControl>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
+                                                    />
+                                                    <FormField
+                                                        control={form.control as any}
+                                                        name={`items.${index}.custom`}
+                                                        render={({ field }) => (
+                                                            <FormItem>
+                                                                <Select onValueChange={(val) => field.onChange(val === "1")} value={field.value ? "1" : "0"}>
+                                                                    <FormControl>
+                                                                        <SelectTrigger className="h-8 text-[10px] px-2">
+                                                                            <SelectValue />
+                                                                        </SelectTrigger>
+                                                                    </FormControl>
+                                                                    <SelectContent>
+                                                                        <SelectItem value="0" className="text-[10px]">Standar</SelectItem>
+                                                                        <SelectItem value="1" className="text-[10px]">Custom</SelectItem>
+                                                                    </SelectContent>
+                                                                </Select>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
+                                                    />
+                                                    <FormField
+                                                        control={form.control as any}
+                                                        name={`items.${index}.catatan`}
+                                                        render={({ field }) => (
+                                                            <FormItem>
+                                                                <FormControl>
+                                                                    <Input placeholder="Catatan" className="h-8 text-xs" {...field} value={field.value ?? ''} />
+                                                                </FormControl>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
+                                                    />
+                                                    {fields.length > 1 ? (
+                                                        <Button 
+                                                            type="button" 
+                                                            variant="ghost" 
+                                                            size="icon" 
+                                                            className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                                                            onClick={() => remove(index)}
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    ) : <div />}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
 
-                        {!isEdit && (
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                className="w-fit"
-                                onClick={() => append({
-                                    mdl_item_id: null,
-                                    item: "",
-                                    lantai: "",
-                                    ruang: "",
-                                    keterangan: "",
-                                    volume: null,
-                                    panjang: null,
-                                    lebar: null,
-                                    tinggi: null,
-                                    satuan: "UNIT",
-                                    jumlah: 1,
-                                    custom: false,
-                                })}
-                            >
-                                <Plus className="mr-2 h-4 w-4" />
-                                Add Row
-                            </Button>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    className="w-fit"
+                                    onClick={() => append({
+                                        mdl_item_id: null,
+                                        item: "",
+                                        lantai: "",
+                                        ruang: "",
+                                        keterangan: "",
+                                        volume: null,
+                                        panjang: null,
+                                        lebar: null,
+                                        tinggi: null,
+                                        satuan: "UNIT",
+                                        jumlah: 1,
+                                        custom: false,
+                                        catatan: "",
+                                    })}
+                                >
+                                    <Plus className="mr-2 h-4 w-4" />
+                                    Add Row
+                                </Button>
+
+                                <DialogFooter className="mt-4">
+                                    <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                                        Cancel
+                                    </Button>
+                                    <Button type="submit" disabled={mutation.isPending}>
+                                        {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                        Save All Items
+                                    </Button>
+                                </DialogFooter>
+                            </>
                         )}
-
-                        <DialogFooter className="mt-4">
-                            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                                Cancel
-                            </Button>
-                            <Button type="submit" disabled={mutation.isPending}>
-                                {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                {isEdit ? "Update Item" : "Save All Items"}
-                            </Button>
-                        </DialogFooter>
                     </form>
                 </Form>
             </DialogContent>

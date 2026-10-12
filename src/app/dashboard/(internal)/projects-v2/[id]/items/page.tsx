@@ -1316,6 +1316,9 @@ export default function ProjectItemsPage() {
                   <TableHead className='whitespace-nowrap'>
                     Tipe
                   </TableHead>
+                  <TableHead className='whitespace-nowrap min-w-[200px]'>
+                    Catatan
+                  </TableHead>
                   <TableHead className='w-[80px] text-right whitespace-nowrap'>
                     Actions
                   </TableHead>
@@ -1324,7 +1327,7 @@ export default function ProjectItemsPage() {
               <TableBody>
                 {isLoadingItems ? (
                   <TableRow>
-                    <TableCell colSpan={11} className='h-32 text-center'>
+                    <TableCell colSpan={12} className='h-32 text-center'>
                       <div className='flex items-center justify-center'>
                         <Loader2 className='h-6 w-6 animate-spin text-neutral-400' />
                       </div>
@@ -1332,7 +1335,7 @@ export default function ProjectItemsPage() {
                   </TableRow>
                 ) : items?.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={11} className='h-40 text-center'>
+                    <TableCell colSpan={12} className='h-40 text-center'>
                       <div className='flex flex-col items-center justify-center text-muted-foreground space-y-3'>
                         <div className='h-12 w-12 rounded-full bg-neutral-100 flex items-center justify-center'>
                           <Package className='h-6 w-6 text-neutral-400' />
@@ -1398,6 +1401,12 @@ export default function ProjectItemsPage() {
                         <Badge variant={item.custom ? "destructive" : "secondary"} className="text-[10px] h-5 px-1.5 font-normal">
                           {item.custom ? "Custom" : "Standar"}
                         </Badge>
+                      </TableCell>
+                      <TableCell
+                        className='max-w-[200px] truncate text-xs text-neutral-600'
+                        title={item.catatan || undefined}
+                      >
+                        {item.catatan || '-'}
                       </TableCell>
                       <TableCell className='text-right'>
                         <DropdownMenu>
