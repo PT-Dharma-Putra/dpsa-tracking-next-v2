@@ -13,9 +13,11 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Download, File, Loader2, FileText, Search } from "lucide-react";
+import { Download, File, Loader2, FileText, Search, FileSpreadsheet } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { axiosInstance } from "@/lib/axios";
+import * as XLSX from "xlsx-js-style";
+import { toast } from "sonner";
 
 type BarangJadiMasuk = {
   id: number;
@@ -120,6 +122,243 @@ export default function SetrimBarangJadiClient() {
     });
   };
 
+  const handleExportExcel = () => {
+    if (!data || data.length === 0) {
+      toast.error("Tidak ada data untuk diexport");
+      return;
+    }
+
+    try {
+      const titleStyle = {
+        font: { bold: true, sz: 14, color: { rgb: "1A4F8B" } },
+        alignment: { horizontal: "left", vertical: "center" },
+      };
+
+      const subtitleStyle = {
+        font: { bold: true, sz: 11 },
+        alignment: { horizontal: "left", vertical: "center" },
+      };
+
+      const metaLabelStyle = {
+        font: { bold: true, sz: 10 },
+        alignment: { horizontal: "left", vertical: "center" },
+      };
+
+      const metaValueStyle = {
+        font: { sz: 10 },
+        alignment: { horizontal: "left", vertical: "center" },
+      };
+
+      const tableHeaderStyle = {
+        font: { bold: true, sz: 10, color: { rgb: "FFFFFF" } },
+        alignment: { horizontal: "center", vertical: "center", wrapText: true },
+        fill: { fgColor: { rgb: "1A4F8B" } },
+        border: {
+          top: { style: "thin", color: { rgb: "D1D5DB" } },
+          bottom: { style: "thin", color: { rgb: "D1D5DB" } },
+          left: { style: "thin", color: { rgb: "D1D5DB" } },
+          right: { style: "thin", color: { rgb: "D1D5DB" } },
+        },
+      };
+
+      const cellStyleLeft = {
+        font: { sz: 10 },
+        alignment: { horizontal: "left", vertical: "center", wrapText: true },
+        border: {
+          top: { style: "thin", color: { rgb: "E5E7EB" } },
+          bottom: { style: "thin", color: { rgb: "E5E7EB" } },
+          left: { style: "thin", color: { rgb: "E5E7EB" } },
+          right: { style: "thin", color: { rgb: "E5E7EB" } },
+        },
+      };
+
+      const cellStyleCenter = {
+        font: { sz: 10 },
+        alignment: { horizontal: "center", vertical: "center" },
+        border: {
+          top: { style: "thin", color: { rgb: "E5E7EB" } },
+          bottom: { style: "thin", color: { rgb: "E5E7EB" } },
+          left: { style: "thin", color: { rgb: "E5E7EB" } },
+          right: { style: "thin", color: { rgb: "E5E7EB" } },
+        },
+      };
+
+      const cellStyleRight = {
+        font: { sz: 10 },
+        alignment: { horizontal: "right", vertical: "center" },
+        border: {
+          top: { style: "thin", color: { rgb: "E5E7EB" } },
+          bottom: { style: "thin", color: { rgb: "E5E7EB" } },
+          left: { style: "thin", color: { rgb: "E5E7EB" } },
+          right: { style: "thin", color: { rgb: "E5E7EB" } },
+        },
+      };
+
+      const totalStyle = {
+        font: { bold: true, sz: 10 },
+        alignment: { horizontal: "center", vertical: "center" },
+        fill: { fgColor: { rgb: "F3F4F6" } },
+        border: {
+          top: { style: "thin", color: { rgb: "9CA3AF" } },
+          bottom: { style: "double", color: { rgb: "374151" } },
+          left: { style: "thin", color: { rgb: "D1D5DB" } },
+          right: { style: "thin", color: { rgb: "D1D5DB" } },
+        },
+      };
+
+      const totalNumberStyle = {
+        font: { bold: true, sz: 10 },
+        alignment: { horizontal: "right", vertical: "center" },
+        fill: { fgColor: { rgb: "F3F4F6" } },
+        border: {
+          top: { style: "thin", color: { rgb: "9CA3AF" } },
+          bottom: { style: "double", color: { rgb: "374151" } },
+          left: { style: "thin", color: { rgb: "D1D5DB" } },
+          right: { style: "thin", color: { rgb: "D1D5DB" } },
+        },
+      };
+
+      const periodeStr =
+        startDate && endDate
+          ? `${startDate} s/d ${endDate}`
+          : startDate
+          ? `Mulai ${startDate}`
+          : endDate
+          ? `Sampai ${endDate}`
+          : "Semua Tanggal";
+
+      const wsData: any[][] = [
+        [{ v: "PT DHARMA PUTRA SEJAHTERA ABADI", t: "s", s: titleStyle }],
+        [{ v: "SERAH TERIMA BARANG JADI (Dari Produksi ke Petugas Gudang)", t: "s", s: subtitleStyle }],
+        [
+          { v: "Periode Serah Terima:", t: "s", s: metaLabelStyle },
+          { v: periodeStr, t: "s", s: metaValueStyle },
+        ],
+        [
+          { v: "Tanggal Export:", t: "s", s: metaLabelStyle },
+          { v: format(new Date(), "dd MMMM yyyy HH:mm"), t: "s", s: metaValueStyle },
+        ],
+        [],
+        [
+          { v: "No", t: "s", s: tableHeaderStyle },
+          { v: "Client", t: "s", s: tableHeaderStyle },
+          { v: "No. SPK", t: "s", s: tableHeaderStyle },
+          { v: "Item Name", t: "s", s: tableHeaderStyle },
+          { v: "P (m)", t: "s", s: tableHeaderStyle },
+          { v: "L (m)", t: "s", s: tableHeaderStyle },
+          { v: "T (m)", t: "s", s: tableHeaderStyle },
+          { v: "Vol", t: "s", s: tableHeaderStyle },
+          { v: "Sat", t: "s", s: tableHeaderStyle },
+          { v: "Jml Order", t: "s", s: tableHeaderStyle },
+          { v: "Tanggal", t: "s", s: tableHeaderStyle },
+          { v: "Jml Masuk", t: "s", s: tableHeaderStyle },
+          { v: "File Setrim", t: "s", s: tableHeaderStyle },
+        ],
+      ];
+
+      let totalJmlOrder = 0;
+      let totalJmlMasuk = 0;
+
+      data.forEach((row, index) => {
+        const clientName =
+          row.project_item?.project?.client?.name ||
+          row.project_item?.project?.client?.company_name ||
+          "-";
+        const nomorSpk = row.project_item?.project?.spk?.nomor_spk || "-";
+        const itemName = row.project_item?.item || "-";
+        const p = row.project_item?.panjang != null ? Number(row.project_item.panjang) : "-";
+        const l = row.project_item?.lebar != null ? Number(row.project_item.lebar) : "-";
+        const t = row.project_item?.tinggi != null ? Number(row.project_item.tinggi) : "-";
+        const vol = row.project_item?.volume != null ? Number(row.project_item.volume) : "-";
+        const satuan = row.project_item?.satuan || "-";
+        const jmlOrder = Number(row.project_item?.jumlah) || 0;
+        const tanggalStr = row.tanggal
+          ? format(new Date(row.tanggal), "dd MMM yyyy")
+          : "-";
+        const jmlMasuk = Number(row.jumlah) || 0;
+        const fileUrl = row.file_setrim ? getFileUrl(row.file_setrim) : "-";
+
+        totalJmlOrder += jmlOrder;
+        totalJmlMasuk += jmlMasuk;
+
+        wsData.push([
+          { v: index + 1, t: "n", s: cellStyleCenter },
+          { v: clientName, t: "s", s: cellStyleLeft },
+          { v: nomorSpk, t: "s", s: cellStyleCenter },
+          { v: itemName, t: "s", s: cellStyleLeft },
+          { v: p, t: typeof p === "number" ? "n" : "s", s: cellStyleCenter },
+          { v: l, t: typeof l === "number" ? "n" : "s", s: cellStyleCenter },
+          { v: t, t: typeof t === "number" ? "n" : "s", s: cellStyleCenter },
+          { v: vol, t: typeof vol === "number" ? "n" : "s", s: cellStyleCenter },
+          { v: satuan, t: "s", s: cellStyleCenter },
+          { v: jmlOrder, t: "n", s: cellStyleRight },
+          { v: tanggalStr, t: "s", s: cellStyleCenter },
+          { v: jmlMasuk, t: "n", s: cellStyleRight },
+          { v: fileUrl, t: "s", s: cellStyleLeft },
+        ]);
+      });
+
+      // Total row
+      const totalRowIndex = wsData.length;
+      wsData.push([
+        { v: "TOTAL", t: "s", s: totalStyle },
+        { v: "", t: "s", s: totalStyle },
+        { v: "", t: "s", s: totalStyle },
+        { v: "", t: "s", s: totalStyle },
+        { v: "", t: "s", s: totalStyle },
+        { v: "", t: "s", s: totalStyle },
+        { v: "", t: "s", s: totalStyle },
+        { v: "", t: "s", s: totalStyle },
+        { v: "", t: "s", s: totalStyle },
+        { v: totalJmlOrder, t: "n", s: totalNumberStyle },
+        { v: "", t: "s", s: totalStyle },
+        { v: totalJmlMasuk, t: "n", s: totalNumberStyle },
+        { v: "", t: "s", s: totalStyle },
+      ]);
+
+      const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+      ws["!cols"] = [
+        { wch: 6 },  // No
+        { wch: 25 }, // Client
+        { wch: 20 }, // No SPK
+        { wch: 32 }, // Item Name
+        { wch: 10 }, // P
+        { wch: 10 }, // L
+        { wch: 10 }, // T
+        { wch: 10 }, // Vol
+        { wch: 10 }, // Sat
+        { wch: 12 }, // Jml Order
+        { wch: 16 }, // Tanggal
+        { wch: 12 }, // Jml Masuk
+        { wch: 35 }, // File Setrim
+      ];
+
+      ws["!merges"] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 12 } },
+        { s: { r: 1, c: 0 }, e: { r: 1, c: 12 } },
+        { s: { r: 2, c: 1 }, e: { r: 2, c: 5 } },
+        { s: { r: 3, c: 1 }, e: { r: 3, c: 5 } },
+        { s: { r: totalRowIndex, c: 0 }, e: { r: totalRowIndex, c: 8 } },
+      ];
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Setrim Barang Jadi");
+
+      const dateStr = format(new Date(), "yyyyMMdd_HHmmss");
+      let fileName = `Setrim_Barang_Jadi_${dateStr}.xlsx`;
+      if (startDate && endDate) {
+        fileName = `Setrim_Barang_Jadi_${startDate}_sd_${endDate}.xlsx`;
+      }
+
+      XLSX.writeFile(wb, fileName);
+      toast.success("Excel berhasil diexport");
+    } catch (error) {
+      console.error("Error exporting excel:", error);
+      toast.error("Gagal melakukan export Excel");
+    }
+  };
+
   return (
     <Card className="shadow-sm">
       <CardHeader className="flex flex-row items-center justify-between">
@@ -140,6 +379,15 @@ export default function SetrimBarangJadiClient() {
               className="w-auto h-9 text-xs"
             />
           </div>
+          <Button
+            onClick={handleExportExcel}
+            variant="outline"
+            size="sm"
+            className="h-9 gap-1.5 border-emerald-500 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 font-medium"
+          >
+            <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+            Export Excel
+          </Button>
           <Button onClick={handleExportPdf} variant="default" size="sm" className="h-9">
             <FileText className="w-4 h-4 mr-2" />
             Export PDF

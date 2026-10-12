@@ -1433,6 +1433,7 @@ export interface ProjectItemV2 {
   divisi_id: number | null;
   pic_engineer_id: number | null;
   custom: boolean;
+  catatan?: string | null;
   created_at: string;
   updated_at: string;
   gambar_kerja?: {
