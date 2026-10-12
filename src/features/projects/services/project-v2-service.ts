@@ -4,6 +4,7 @@ export interface ProjectV2 {
   id: number;
   name: string;
   description: string | null;
+  catatan?: string | null;
   note_engineer: string | null;
   prioritas: 'Normal' | 'Urgent' | null;
   spk_number: string | null;
@@ -349,6 +350,7 @@ export const projectV2Service = {
     name: string;
     client_id: number;
     description?: string;
+    catatan?: string | null;
     deadline?: string;
     tanggal_selesai?: string | null;
     need_design?: number;
@@ -364,6 +366,7 @@ export const projectV2Service = {
       name: string;
       client_id: number;
       description?: string;
+      catatan?: string | null;
       deadline?: string;
       tanggal_selesai?: string | null;
       need_design?: number;
