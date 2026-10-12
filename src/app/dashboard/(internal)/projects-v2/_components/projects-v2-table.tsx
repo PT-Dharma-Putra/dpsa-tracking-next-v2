@@ -111,6 +111,7 @@ import { DeadlineDialog } from './deadline-dialog';
 import { SetTeamDialog } from './set-team-dialog';
 import { SiteReadinessViewDialog } from './site-readiness-view-dialog';
 import { CatatanKeterlambatanDialog } from './catatan-keterlambatan-dialog';
+import { CatatanProjectDialog } from './catatan-project-dialog';
 import { MonthlyPerformanceDialog } from './monthly-performance-dialog';
 const formatRupiah = (value: string | number) => {
   if (value === null || value === undefined || value === '') return '';
@@ -520,6 +521,11 @@ export function ProjectsV2Table({
 
   const [isCatatanDialogOpen, setIsCatatanDialogOpen] = React.useState(false);
   const [projectForCatatan, setProjectForCatatan] =
+    React.useState<ProjectV2 | null>(null);
+
+  const [isCatatanProjectDialogOpen, setIsCatatanProjectDialogOpen] =
+    React.useState(false);
+  const [projectForCatatanProject, setProjectForCatatanProject] =
     React.useState<ProjectV2 | null>(null);
 
   const [isTrendModalOpen, setIsTrendModalOpen] = React.useState(false);
@@ -4117,6 +4123,13 @@ export function ProjectsV2Table({
                       {!showPiutang && (
                         <TableHead>NAMA PROJEK</TableHead>
                       )}
+                      {showMarketingFilter && (
+                        <TableHead className='text-center min-w-[140px]'>
+                          <div className='flex flex-col items-center'>
+                            <span>CATATAN</span>
+                          </div>
+                        </TableHead>
+                      )}
                     </>
                   )}
                   {!showAllDashboard && !showSPD && !showPiutang && (
@@ -4494,7 +4507,7 @@ export function ProjectsV2Table({
                           : showPiutang
                           ? 14
                           : showMarketingFilter
-                          ? 21
+                          ? 22
                           : showPerencanaan
                           ? 23
                           : isMainProjectsV2Page
@@ -4527,7 +4540,7 @@ export function ProjectsV2Table({
                           : showPiutang
                           ? 14
                           : showMarketingFilter
-                          ? 21
+                          ? 22
                           : showPerencanaan
                           ? 23
                           : isMainProjectsV2Page
@@ -5529,6 +5542,54 @@ export function ProjectsV2Table({
                             )}
                           </TableCell>
                         )}
+                      {showMarketingFilter && (
+                        <TableCell className='text-center'>
+                          {(() => {
+                            const noteText = project.catatan;
+
+                            if (noteText) {
+                              return (
+                                <button
+                                  type='button'
+                                  onClick={() => {
+                                    setProjectForCatatanProject(project);
+                                    setIsCatatanProjectDialogOpen(true);
+                                  }}
+                                  className='inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-medium bg-amber-50 border-amber-200 text-amber-800 hover:bg-amber-100 transition-all max-w-[160px] truncate cursor-pointer shadow-xs'
+                                  title={noteText}
+                                >
+                                  <FileText className='h-3 w-3 shrink-0 text-amber-600' />
+                                  <span className='truncate'>{noteText}</span>
+                                </button>
+                              );
+                            }
+
+                            if (canEditCatatan) {
+                              return (
+                                <Button
+                                  variant='ghost'
+                                  size='sm'
+                                  onClick={() => {
+                                    setProjectForCatatanProject(project);
+                                    setIsCatatanProjectDialogOpen(true);
+                                  }}
+                                  className='h-7 px-2 text-xs text-muted-foreground hover:text-amber-700 hover:bg-amber-50 border border-dashed border-neutral-200'
+                                  title='Tambah Catatan'
+                                >
+                                  <FileText className='h-3 w-3 mr-1 text-neutral-400' />
+                                  + Catatan
+                                </Button>
+                              );
+                            }
+
+                            return (
+                              <span className='text-muted-foreground italic text-xs'>
+                                -
+                              </span>
+                            );
+                          })()}
+                        </TableCell>
+                      )}
                       {!showAllDashboard && !showSPD && !showPiutang && (
                         <>
                           {showPerencanaan && (
@@ -6593,6 +6654,13 @@ export function ProjectsV2Table({
             project={projectForCatatan}
             canEdit={canEditCatatan}
             isViewOnlyAllDashboard={showAllDashboard}
+          />
+
+          <CatatanProjectDialog
+            open={isCatatanProjectDialogOpen}
+            onOpenChange={setIsCatatanProjectDialogOpen}
+            project={projectForCatatanProject}
+            canEdit={canEditCatatan}
           />
 
           <MonthlyPerformanceDialog

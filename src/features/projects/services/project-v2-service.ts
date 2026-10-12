@@ -405,6 +405,16 @@ export const projectV2Service = {
     return data;
   },
 
+  updateCatatan: async (projectId: number, catatan: string | null) => {
+    const { data } = await apiClient.post<ProjectV2>(
+      `/projects-v2/${projectId}/update-catatan`,
+      {
+        catatan,
+      }
+    );
+    return data;
+  },
+
   getDesigners: async (role?: string) => {
     const { data } = await apiClient.get<Array<{ id: number; name: string }>>(
       '/designers',
