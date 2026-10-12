@@ -261,7 +261,7 @@ export function ProduksiDocumentationDialog({
                   <div>
                     <DialogTitle className='text-lg font-bold text-neutral-900'>
                       {isViewOnly
-                        ? 'Riwayat Foto Dokumentasi Produksi'
+                        ? 'Riwayat Foto Progres Produksi'
                         : 'Foto Progres Produksi'}
                     </DialogTitle>
                     <DialogDescription className='text-xs text-neutral-500 font-medium'>

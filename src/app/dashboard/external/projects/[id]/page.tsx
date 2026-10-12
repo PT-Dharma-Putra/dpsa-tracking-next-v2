@@ -128,10 +128,10 @@ export default function ClientProjectDetailPage({ params }: { params: Promise<{ 
                                     size="sm"
                                     onClick={() => setIsProduksiDocOpen(true)}
                                     className="h-7 text-xs font-semibold rounded-md border-orange-200 text-orange-700 bg-orange-50/80 hover:bg-orange-100 hover:text-orange-800 hover:border-orange-300 transition-colors inline-flex items-center gap-1.5 shadow-xs"
-                                    title="Lihat Riwayat Dokumentasi Foto"
+                                    title="Lihat Riwayat Progres Produksi"
                                 >
                                     <Camera className="h-3.5 w-3.5 text-orange-600" />
-                                    <span>Dokumentasi Foto</span>
+                                    <span>Progres Produksi</span>
                                     {produksiDocs?.data && produksiDocs.data.length > 0 && (
                                         <Badge className="ml-0.5 px-1.5 py-0 h-4 text-[10px] bg-orange-600 text-white font-bold border-none">
                                             {produksiDocs.data.length}
