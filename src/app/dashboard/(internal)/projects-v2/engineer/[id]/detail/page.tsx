@@ -591,6 +591,15 @@ export default function EngineerDetailPage() {
 
   const handleGkUpload = () => {
     if (!gkItem) return;
+    if (gkInputType === "file" && gkFile instanceof File) {
+      const isPdf =
+        gkFile.type === "application/pdf" ||
+        gkFile.name.toLowerCase().endsWith(".pdf");
+      if (!isPdf) {
+        toast.error("File gambar kerja harus berupa file PDF (.pdf)");
+        return;
+      }
+    }
     uploadGkMutation.mutate({
       file: gkFile || undefined,
       tanggal_mulai: gkStart || undefined,
@@ -1850,8 +1859,25 @@ export default function EngineerDetailPage() {
                 <div className="relative group border-2 border-dashed border-neutral-300 rounded-lg p-6 hover:bg-orange-50/50 hover:border-orange-500 transition-colors flex flex-col items-center justify-center gap-1 text-center">
                   <input
                     type="file"
+                    accept=".pdf,application/pdf"
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                    onChange={(e) => setGkFile(e.target.files?.[0] || null)}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0] || null;
+                      if (file) {
+                        const isPdf =
+                          file.type === "application/pdf" ||
+                          file.name.toLowerCase().endsWith(".pdf");
+                        if (!isPdf) {
+                          toast.error("File gambar kerja harus berupa file PDF (.pdf)");
+                          e.target.value = "";
+                          setGkFile(null);
+                          return;
+                        }
+                        setGkFile(file);
+                      } else {
+                        setGkFile(null);
+                      }
+                    }}
                   />
                   <Upload className="h-8 w-8 text-neutral-400 group-hover:text-orange-500 transition-colors mb-2" />
                   {gkFile && typeof gkFile !== "string" ? (
@@ -1860,7 +1886,16 @@ export default function EngineerDetailPage() {
                         {gkFile.name}
                       </div>
                       <div className="text-xs text-neutral-500">
-                        {(gkFile.size / 1024 / 1024).toFixed(2)} MB
+                        {(gkFile.size / 1024 / 1024).toFixed(2)} MB (PDF)
+                      </div>
+                    </>
+                  ) : gkFile && typeof gkFile === "string" ? (
+                    <>
+                      <div className="text-sm font-semibold text-neutral-900 truncate max-w-[280px]">
+                        {gkFile.split("/").pop()}
+                      </div>
+                      <div className="text-xs text-emerald-600 font-medium">
+                        File PDF tersimpan (Klik atau drag file PDF baru untuk mengganti)
                       </div>
                     </>
                   ) : (
@@ -1869,7 +1904,7 @@ export default function EngineerDetailPage() {
                         Klik atau drag file ke area ini
                       </div>
                       <div className="text-xs text-neutral-500">
-                        Mendukung upload dokumen atau gambar
+                        Hanya file PDF (.pdf) yang diperbolehkan
                       </div>
                     </>
                   )}
@@ -1980,8 +2015,25 @@ export default function EngineerDetailPage() {
                 <div className="relative group border-2 border-dashed border-neutral-300 rounded-lg p-6 hover:bg-orange-50/50 hover:border-orange-500 transition-colors flex flex-col items-center justify-center gap-1 text-center">
                   <input
                     type="file"
+                    accept=".pdf,application/pdf"
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                    onChange={(e) => setBulkGkFile(e.target.files?.[0] || null)}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0] || null;
+                      if (file) {
+                        const isPdf =
+                          file.type === "application/pdf" ||
+                          file.name.toLowerCase().endsWith(".pdf");
+                        if (!isPdf) {
+                          toast.error("File gambar kerja harus berupa file PDF (.pdf)");
+                          e.target.value = "";
+                          setBulkGkFile(null);
+                          return;
+                        }
+                        setBulkGkFile(file);
+                      } else {
+                        setBulkGkFile(null);
+                      }
+                    }}
                   />
                   <Upload className="h-8 w-8 text-neutral-400 group-hover:text-orange-500 transition-colors mb-2" />
                   {bulkGkFile && typeof bulkGkFile !== "string" ? (
@@ -1990,7 +2042,7 @@ export default function EngineerDetailPage() {
                         {bulkGkFile.name}
                       </div>
                       <div className="text-xs text-neutral-500">
-                        {(bulkGkFile.size / 1024 / 1024).toFixed(2)} MB
+                        {(bulkGkFile.size / 1024 / 1024).toFixed(2)} MB (PDF)
                       </div>
                     </>
                   ) : (
@@ -1999,7 +2051,7 @@ export default function EngineerDetailPage() {
                         Klik atau drag file ke area ini
                       </div>
                       <div className="text-xs text-neutral-500">
-                        Mendukung upload dokumen atau gambar
+                        Hanya file PDF (.pdf) yang diperbolehkan
                       </div>
                     </>
                   )}
@@ -2014,6 +2066,15 @@ export default function EngineerDetailPage() {
             <Button
               className="bg-orange-600 hover:bg-orange-700"
               onClick={() => {
+                if (bulkGkInputType === "file" && bulkGkFile instanceof File) {
+                  const isPdf =
+                    bulkGkFile.type === "application/pdf" ||
+                    bulkGkFile.name.toLowerCase().endsWith(".pdf");
+                  if (!isPdf) {
+                    toast.error("File gambar kerja harus berupa file PDF (.pdf)");
+                    return;
+                  }
+                }
                 bulkUploadGkMutation.mutate({
                   file: bulkGkFile || undefined,
                   tanggal_mulai: bulkGkStart || undefined,
