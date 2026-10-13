@@ -110,6 +110,7 @@ import { ScheduleDeliveryDialog } from './schedule-delivery-dialog';
 import { DeadlineDialog } from './deadline-dialog';
 import { SetTeamDialog } from './set-team-dialog';
 import { SiteReadinessViewDialog } from './site-readiness-view-dialog';
+import { JadwalPengirimanViewDialog } from './jadwal-pengiriman-view-dialog';
 import { CatatanKeterlambatanDialog } from './catatan-keterlambatan-dialog';
 import { CatatanProjectDialog } from './catatan-project-dialog';
 import { MonthlyPerformanceDialog } from './monthly-performance-dialog';
@@ -519,6 +520,10 @@ export function ProjectsV2Table({
   const [projectForReadinessView, setProjectForReadinessView] =
     React.useState<ProjectV2 | null>(null);
 
+  const [isJadwalViewOpen, setIsJadwalViewOpen] = React.useState(false);
+  const [projectForJadwalView, setProjectForJadwalView] =
+    React.useState<ProjectV2 | null>(null);
+
   const [isCatatanDialogOpen, setIsCatatanDialogOpen] = React.useState(false);
   const [projectForCatatan, setProjectForCatatan] =
     React.useState<ProjectV2 | null>(null);
@@ -807,6 +812,12 @@ export function ProjectsV2Table({
   const handleScheduleClick = (project: ProjectV2) => {
     setProjectToSchedule(project);
     setIsScheduleOpen(true);
+  };
+
+  const handleOpenJadwalView = (project: ProjectV2, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setProjectForJadwalView(project);
+    setIsJadwalViewOpen(true);
   };
 
   const handleDeadlineClick = (project: ProjectV2) => {
@@ -5145,18 +5156,42 @@ export function ProjectsV2Table({
                               const firstDate =
                                 firstSchedule.tanggal ||
                                 firstSchedule.tanggal_pengiriman?.tanggal;
+                              const hasMultiple = schedules.length > 1;
+
                               return (
-                                <div className='flex items-center gap-1.5 text-xs font-medium text-neutral-900'>
-                                  <Truck className='h-3 w-3 text-orange-500 shrink-0' />
+                                <div
+                                  className={cn(
+                                    'flex items-center gap-1.5 text-xs font-medium text-neutral-900',
+                                    hasMultiple &&
+                                      'cursor-pointer hover:bg-neutral-100 p-1 -m-1 rounded transition-colors group select-none'
+                                  )}
+                                  onClick={
+                                    hasMultiple
+                                      ? (e) => handleOpenJadwalView(project, e)
+                                      : undefined
+                                  }
+                                  title={
+                                    hasMultiple
+                                      ? 'Klik untuk melihat rincian semua jadwal kirim'
+                                      : undefined
+                                  }
+                                >
+                                  <Truck
+                                    className={cn(
+                                      'h-3 w-3 text-orange-500 shrink-0',
+                                      hasMultiple &&
+                                        'group-hover:scale-110 transition-transform'
+                                    )}
+                                  />
                                   <span>
                                     {firstDate
                                       ? format(new Date(firstDate), 'MMM d, yyyy')
                                       : '-'}
                                   </span>
-                                  {schedules.length > 1 && (
+                                  {hasMultiple && (
                                     <Badge
                                       variant='outline'
-                                      className='text-[10px] h-4 px-1 text-orange-700 bg-orange-50 border-orange-200 font-semibold'
+                                      className='text-[10px] h-4 px-1 text-orange-700 bg-orange-50 border-orange-200 font-semibold group-hover:bg-orange-100 transition-colors'
                                     >
                                       +{schedules.length - 1} tahap
                                     </Badge>
@@ -5910,23 +5945,42 @@ export function ProjectsV2Table({
                                       startOfDay(new Date(firstDate))
                                     )
                                   : null;
+                              const hasMultiple = schedules.length > 1;
 
                               return (
                                 <div
                                   className={cn(
-                                    'space-y-1 p-1 rounded-md',
+                                    'space-y-1 p-1 rounded-md transition-colors group',
                                     isJadwalEditable &&
-                                      'cursor-pointer hover:bg-neutral-50 transition-colors group'
+                                      'cursor-pointer hover:bg-neutral-50',
+                                    !isJadwalEditable &&
+                                      hasMultiple &&
+                                      'cursor-pointer hover:bg-neutral-100 select-none'
                                   )}
                                   onClick={
                                     isJadwalEditable
                                       ? () => handleScheduleClick(project)
+                                      : hasMultiple
+                                      ? (e) => handleOpenJadwalView(project, e)
+                                      : undefined
+                                  }
+                                  title={
+                                    isJadwalEditable
+                                      ? 'Klik untuk mengedit jadwal kirim'
+                                      : hasMultiple
+                                      ? 'Klik untuk melihat rincian semua jadwal kirim'
                                       : undefined
                                   }
                                 >
                                   <div className='flex items-center justify-between gap-1'>
                                     <div className='flex items-center gap-1.5 text-xs font-medium text-neutral-900'>
-                                      <Truck className='h-3 w-3 text-orange-500 shrink-0' />
+                                      <Truck
+                                        className={cn(
+                                          'h-3 w-3 text-orange-500 shrink-0',
+                                          hasMultiple &&
+                                            'group-hover:scale-110 transition-transform'
+                                        )}
+                                      />
                                       <span>
                                         {firstDate
                                           ? format(
@@ -5935,10 +5989,29 @@ export function ProjectsV2Table({
                                             )
                                           : '-'}
                                       </span>
-                                      {schedules.length > 1 && (
+                                      {hasMultiple && (
                                         <Badge
                                           variant='outline'
-                                          className='text-[10px] h-4 px-1 text-orange-700 bg-orange-50 border-orange-200 font-semibold'
+                                          className={cn(
+                                            'text-[10px] h-4 px-1 text-orange-700 bg-orange-50 border-orange-200 font-semibold transition-colors',
+                                            'group-hover:bg-orange-100',
+                                            isJadwalEditable &&
+                                              'hover:bg-orange-200 hover:text-orange-900'
+                                          )}
+                                          onClick={
+                                            isJadwalEditable
+                                              ? (e) =>
+                                                  handleOpenJadwalView(
+                                                    project,
+                                                    e
+                                                  )
+                                              : undefined
+                                          }
+                                          title={
+                                            isJadwalEditable
+                                              ? 'Klik untuk melihat rincian tahap jadwal kirim'
+                                              : undefined
+                                          }
                                         >
                                           +{schedules.length - 1} tahap
                                         </Badge>
@@ -6646,6 +6719,17 @@ export function ProjectsV2Table({
               undefined
             }
             deadline={projectForReadinessView?.deadline}
+          />
+
+          <JadwalPengirimanViewDialog
+            open={isJadwalViewOpen}
+            onOpenChange={(open) => {
+              setIsJadwalViewOpen(open);
+              if (!open) {
+                setProjectForJadwalView(null);
+              }
+            }}
+            project={projectForJadwalView}
           />
 
           <CatatanKeterlambatanDialog
