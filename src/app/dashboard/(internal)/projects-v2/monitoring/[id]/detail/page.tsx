@@ -449,7 +449,7 @@ export default function ProjectMonitoringDetailPage() {
           <AlertDialogHeader>
             <AlertDialogTitle className='flex items-center gap-2'>
               <BarChart3 className='h-5 w-5 text-orange-500' />
-              Detail Progress Produksi
+              Detail Progres Produksi
             </AlertDialogTitle>
             <AlertDialogDescription>
               Melihat progress produksi untuk item: <strong>{produksiViewItem?.item}</strong>
@@ -559,7 +559,7 @@ export default function ProjectMonitoringDetailPage() {
           <AlertDialogHeader>
             <AlertDialogTitle className='flex items-center gap-2 text-lg sm:text-xl font-bold tracking-tight text-neutral-800'>
               <Truck className='h-6 w-6 text-blue-500' />
-              Detail Progress Supplier
+              Detail Progres Supplier
             </AlertDialogTitle>
             <AlertDialogDescription className='text-sm text-neutral-500 mt-1'>
               Melihat progress supplier untuk item: <strong>{supplierViewItem?.item}</strong>

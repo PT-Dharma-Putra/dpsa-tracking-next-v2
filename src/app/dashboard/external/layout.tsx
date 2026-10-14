@@ -118,17 +118,10 @@ export default function CustomerLayout({ children }: { children: ReactNode }) {
                                 </Avatar>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-56 mt-2 rounded-xl shadow-xl border-neutral-100">
-                                <DropdownMenuLabel className="font-normal">
-                                    <div className="flex flex-col space-y-1">
-                                        <p className="text-sm font-bold leading-none">{user?.name}</p>
-                                        <p className="text-xs leading-none text-muted-foreground">{user?.email}</p>
-                                    </div>
-                                </DropdownMenuLabel>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={() => router.push("/dashboard/external/requests")} className="cursor-pointer py-2.5">
+                                {/* <DropdownMenuItem onClick={() => router.push("/dashboard/external/requests")} className="cursor-pointer py-2.5">
                                     <LifeBuoy className="mr-2 h-4 w-4 text-orange-600" />
                                     <span>{isHerminaPusat ? "Request & Kendala IT" : "Lapor Kendala IT"}</span>
-                                </DropdownMenuItem>
+                                </DropdownMenuItem> */}
                                 <DropdownMenuItem onClick={() => router.push("/dashboard/external/profile")} className="cursor-pointer py-2.5">
                                     <User className="mr-2 h-4 w-4 text-neutral-500" />
                                     <span>Profile & Keamanan</span>
@@ -161,7 +154,7 @@ export default function CustomerLayout({ children }: { children: ReactNode }) {
             </footer>
 
             {/* === FLOATING HELP & REQUEST WIDGET === */}
-            <ClientHelpButton />
+            {/* <ClientHelpButton /> */}
         </div>
     );
 }

@@ -1539,7 +1539,7 @@ export default function QCDetailPage() {
           <AlertDialogHeader>
             <AlertDialogTitle className='flex items-center gap-2'>
               <BarChart3 className='h-5 w-5 text-orange-500' />
-              Detail Progress Produksi
+              Detail Progres Produksi
             </AlertDialogTitle>
             <AlertDialogDescription>
               Melihat progress produksi untuk item:{' '}
