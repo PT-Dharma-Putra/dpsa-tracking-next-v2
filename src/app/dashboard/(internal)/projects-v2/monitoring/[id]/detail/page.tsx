@@ -359,6 +359,11 @@ export default function ProjectMonitoringDetailPage() {
                     const totalMasuk = item.barang_jadi_masuk?.reduce((s, b) => s + Number(b.jumlah || 0), 0) || 0;
                     const gudangProgress = item.jumlah > 0 ? (totalMasuk / item.jumlah) * 100 : 0;
                     const totalKeluar = item.barang_jadi_keluar?.reduce((s, bjk) => s + Number(bjk.jumlah || 0), 0) || 0;
+                    const totalTerkirim = item.detail_pengiriman?.reduce((sum, d) => sum + Number(d.jumlah_keluar), 0) ?? 0;
+                    const isDelivered = item.jumlah > 0 
+                      ? (totalTerkirim >= item.jumlah || totalKeluar >= item.jumlah)
+                      : (totalTerkirim > 0 || totalKeluar > 0);
+                    const isComplete = Boolean(project.tanggal_selesai || isDelivered);
                     
                     return (
                       <TableRow key={item.id} className="hover:bg-neutral-50/50 transition-colors">
@@ -405,27 +410,20 @@ export default function ProjectMonitoringDetailPage() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          {(() => {
-                            const total =
-                              item.detail_pengiriman?.reduce(
-                                (sum, d) => sum + Number(d.jumlah_keluar),
-                                0
-                              ) ?? 0;
-                            return total > 0 ? (
-                              <Badge className='bg-teal-600 text-white border-none font-bold text-[10px] h-5 px-1.5 shadow-sm'>
-                                {total} / {item.jumlah}
-                              </Badge>
-                            ) : (
-                              <span className='text-[10px] text-muted-foreground italic'>
-                                -
-                              </span>
-                            );
-                          })()}
+                          {totalTerkirim > 0 ? (
+                            <Badge className='bg-teal-600 text-white border-none font-bold text-[10px] h-5 px-1.5 shadow-sm'>
+                              {totalTerkirim} / {item.jumlah}
+                            </Badge>
+                          ) : (
+                            <span className='text-[10px] text-muted-foreground italic'>
+                              -
+                            </span>
+                          )}
                         </TableCell>
                         <TableCell className="text-right">
-                          {project.tanggal_selesai || totalKeluar >= item.jumlah ? (
+                          {isComplete ? (
                             <Badge className="bg-emerald-500 text-white border-none text-[10px] font-black uppercase tracking-widest px-2 py-1">
-                              Completed
+                              Complete
                             </Badge>
                           ) : (
                             <Badge variant="secondary" className="text-neutral-500 border-none text-[10px] font-bold uppercase tracking-widest px-2 py-1">
