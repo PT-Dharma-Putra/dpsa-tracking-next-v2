@@ -454,7 +454,7 @@ export default function PrintSuratJalanPage() {
         merges.push({ s: { r: wsData.length - 1, c: 1 }, e: { r: wsData.length - 1, c: 10 } });
 
         wsData.push([
-          '', { v: 'Apabila surat sudah ditandatangani mohon difoto sebagai bukti dan dikirim ke nomor (wa)085712330344', t: 's', s: { font: { italic: true, sz: 10 } } },
+          '', { v: 'Apabila surat sudah ditandatangani mohon difoto sebagai bukti dan dikirim ke nomor (wa)088215038796', t: 's', s: { font: { italic: true, sz: 10 } } },
           '', '', '', '', '', '', '', '', '',
         ]);
         merges.push({ s: { r: wsData.length - 1, c: 1 }, e: { r: wsData.length - 1, c: 10 } });
@@ -1186,7 +1186,7 @@ export default function PrintSuratJalanPage() {
                         Untuk setiap barang yang sudah dikirim harus
                         diserahterimakan dan ditandatangani oleh pihak jangum
                         Apabila surat sudah ditandatangani mohon difoto sebagai
-                        bukti dan dikirim ke nomor (wa)085712330344
+                        bukti dan dikirim ke nomor (wa)088215038796
                       </i>
                     </p>
                   </div>
