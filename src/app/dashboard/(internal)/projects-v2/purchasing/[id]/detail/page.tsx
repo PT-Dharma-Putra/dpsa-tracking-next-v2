@@ -458,11 +458,16 @@ export default function PurchasingDetailPage() {
     format(new Date(), 'yyyy-MM-dd')
   );
   const [bjJumlah, setBjJumlah] = React.useState<number>(0);
-  const [bjFile, setBjFile] = React.useState<File | null>(null);
+  const [isBjDirectDelivery, setIsBjDirectDelivery] = React.useState(false);
+  const [bjKeterangan, setBjKeterangan] = React.useState('');
 
   const updateBjMutation = useMutation({
-    mutationFn: (payload: { tanggal: string; jumlah: number; file?: File | null }) =>
-      projectV2Service.updateBarangJadiMasuk(bjItem!.id, payload),
+    mutationFn: (payload: {
+      tanggal: string;
+      jumlah: number;
+      is_direct_delivery?: boolean;
+      keterangan?: string | null;
+    }) => projectV2Service.updateBarangJadiMasuk(bjItem!.id, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ['project-v2-items', projectId],
@@ -471,7 +476,8 @@ export default function PurchasingDetailPage() {
       toast.success('Barang Masuk recorded');
       setIsBjDialogOpen(false);
       setBjJumlah(0);
-      setBjFile(null);
+      setIsBjDirectDelivery(false);
+      setBjKeterangan('');
     },
     onError: () => {
       toast.error('Failed to record Barang Masuk');
@@ -495,14 +501,16 @@ export default function PurchasingDetailPage() {
     updateBjMutation.mutate({
       tanggal: bjTanggal,
       jumlah: bjJumlah,
-      file: bjFile,
+      is_direct_delivery: isBjDirectDelivery,
+      keterangan: bjKeterangan,
     });
   };
 
   const openBjDialog = (item: ProjectItemV2) => {
     setBjItem(item);
     setBjJumlah(0);
-    setBjFile(null);
+    setIsBjDirectDelivery(false);
+    setBjKeterangan('');
     setIsBjDialogOpen(true);
   };
 
@@ -2077,13 +2085,31 @@ export default function PurchasingDetailPage() {
                         >
                           {item.barang_jadi_masuk &&
                           item.barang_jadi_masuk.length > 0 ? (
-                            <Badge className='bg-blue-600 text-white border-none font-bold text-[10px] h-5 px-1.5 shadow-sm w-fit'>
-                              {item.barang_jadi_masuk.reduce(
+                            (() => {
+                              const totalMasuk = item.barang_jadi_masuk.reduce(
                                 (sum, bj) => sum + Number(bj.jumlah),
                                 0
-                              )}{' '}
-                              / {item.jumlah}
-                            </Badge>
+                              );
+                              const hasDirect = item.barang_jadi_masuk.some(
+                                (bj) => bj.is_direct_delivery
+                              );
+                              return (
+                                <Badge
+                                  className={`${
+                                    hasDirect
+                                      ? 'bg-emerald-600 hover:bg-emerald-700'
+                                      : 'bg-blue-600 hover:bg-blue-700'
+                                  } text-white border-none font-bold text-[10px] h-5 px-1.5 shadow-sm w-fit flex items-center gap-1`}
+                                  title={hasDirect ? 'Terdapat barang langsung kirim / bypass gudang' : 'Barang masuk gudang'}
+                                >
+                                  {hasDirect && <Truck className='h-3 w-3' />}
+                                  {totalMasuk} / {item.jumlah}
+                                  {hasDirect && (
+                                    <span className='text-[9px] font-normal opacity-90'>(Direct)</span>
+                                  )}
+                                </Badge>
+                              );
+                            })()
                           ) : (
                             <span className='inline-flex items-center justify-center rounded border border-neutral-300 bg-white text-[10px] font-semibold text-neutral-600 hover:text-blue-600 hover:border-blue-300 hover:bg-neutral-50 px-2 py-0.5 h-5 shadow-xs transition-colors w-fit'>
                               Record
@@ -2819,19 +2845,25 @@ export default function PurchasingDetailPage() {
                         key={i}
                         className='flex justify-between items-center text-xs border-b border-neutral-100 last:border-0 pb-1 last:pb-0'
                       >
-                        <span className='text-neutral-600'>
-                          {format(new Date(record.tanggal), 'dd MMM yyyy')}
-                        </span>
+                        <div className='flex items-center gap-1.5'>
+                          <span className='text-neutral-600'>
+                            {format(new Date(record.tanggal), 'dd MMM yyyy')}
+                          </span>
+                          {record.is_direct_delivery ? (
+                            <Badge variant='outline' className='bg-emerald-50 text-emerald-700 border-emerald-200 text-[9px] px-1.5 py-0'>
+                              Direct to Site
+                            </Badge>
+                          ) : (
+                            <Badge variant='outline' className='bg-blue-50 text-blue-700 border-blue-200 text-[9px] px-1.5 py-0'>
+                              Gudang
+                            </Badge>
+                          )}
+                        </div>
                         <div className='flex items-center gap-2'>
-                          {record.file_setrim && (
-                            <a
-                              href={`${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '')}/storage/${record.file_setrim}`}
-                              target='_blank'
-                              rel='noreferrer'
-                              className='text-[10px] text-blue-600 hover:underline flex items-center gap-0.5'
-                            >
-                              <Eye className='h-3 w-3' /> File Setrim
-                            </a>
+                          {record.keterangan && (
+                            <span className='text-[10px] text-muted-foreground truncate max-w-[120px]' title={record.keterangan}>
+                              {record.keterangan}
+                            </span>
                           )}
                           <span className='font-bold text-blue-600'>
                             +{record.jumlah}
@@ -2852,8 +2884,33 @@ export default function PurchasingDetailPage() {
                   </div>
                 </div>
               )}
+
+            {/* Checkbox Bypass Gudang BJ (Direct Delivery) */}
+            <div className='flex items-start space-x-3 p-3 rounded-lg border border-neutral-200 bg-neutral-50/70'>
+              <Checkbox
+                id='isDirectDelivery'
+                checked={isBjDirectDelivery}
+                onCheckedChange={(checked) => setIsBjDirectDelivery(Boolean(checked))}
+                className='mt-0.5'
+              />
+              <div className='space-y-1'>
+                <Label
+                  htmlFor='isDirectDelivery'
+                  className='text-xs font-bold text-neutral-800 cursor-pointer flex items-center gap-1.5'
+                >
+                  <Truck className='h-3.5 w-3.5 text-emerald-600' />
+                  Barang Langsung Dikirim ke Lokasi (Bypass Gudang BJ)
+                </Label>
+                <p className='text-[11px] text-muted-foreground leading-relaxed'>
+                  Centang jika barang langsung dikirim ke lokasi/site tanpa masuk ke gudang fisik. Persentase Gudang BJ tetap bertambah 100%. Data pengiriman tetap diinput di menu Pengiriman.
+                </p>
+              </div>
+            </div>
+
             <div className='space-y-2'>
-              <Label>Tanggal Masuk</Label>
+              <Label className='text-xs font-semibold'>
+                {isBjDirectDelivery ? 'Tanggal Pengiriman / Penyelesaian' : 'Tanggal Masuk'}
+              </Label>
               <Input
                 type='date'
                 value={bjTanggal}
@@ -2861,8 +2918,9 @@ export default function PurchasingDetailPage() {
                 className='text-xs'
               />
             </div>
+
             <div className='space-y-2'>
-              <Label>Jumlah Barang Baru</Label>
+              <Label className='text-xs font-semibold'>Jumlah Barang</Label>
               <div className='flex items-center gap-4'>
                 <Input
                   type='number'
@@ -2889,11 +2947,14 @@ export default function PurchasingDetailPage() {
                 </span>
               </div>
             </div>
+
             <div className='space-y-2'>
-              <Label>File Setrim Barang Jadi</Label>
+              <Label className='text-xs font-semibold'>Keterangan / Catatan (Opsional)</Label>
               <Input
-                type='file'
-                onChange={(e) => setBjFile(e.target.files?.[0] || null)}
+                type='text'
+                placeholder={isBjDirectDelivery ? 'Contoh: Dikirim langsung oleh vendor via ekspedisi...' : 'Catatan barang masuk...'}
+                value={bjKeterangan}
+                onChange={(e) => setBjKeterangan(e.target.value)}
                 className='text-xs'
               />
             </div>
@@ -2903,7 +2964,9 @@ export default function PurchasingDetailPage() {
               Cancel
             </AlertDialogCancel>
             <Button
-              className='bg-blue-600 hover:bg-blue-700 text-white'
+              className={`${
+                isBjDirectDelivery ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-blue-600 hover:bg-blue-700'
+              } text-white`}
               onClick={handleBjUpdate}
               disabled={
                 updateBjMutation.isPending ||
@@ -2921,7 +2984,7 @@ export default function PurchasingDetailPage() {
               ) : (
                 <CheckCircle2 className='mr-2 h-4 w-4' />
               )}
-              Record Barang
+              {isBjDirectDelivery ? 'Record Direct Delivery' : 'Record Barang'}
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>

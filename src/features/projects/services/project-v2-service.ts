@@ -976,12 +976,24 @@ export const projectV2Service = {
 
   updateBarangJadiMasuk: async (
     itemId: number,
-    payload: { tanggal: string; jumlah: number; file?: File | null }
+    payload: {
+      tanggal: string;
+      jumlah: number;
+      file?: File | null;
+      is_direct_delivery?: boolean;
+      keterangan?: string | null;
+    }
   ) => {
     const formData = new FormData();
     formData.append('tanggal', payload.tanggal);
     formData.append('jumlah', payload.jumlah.toString());
     if (payload.file) formData.append('file_setrim', payload.file);
+    if (payload.is_direct_delivery !== undefined) {
+      formData.append('is_direct_delivery', payload.is_direct_delivery ? '1' : '0');
+    }
+    if (payload.keterangan) {
+      formData.append('keterangan', payload.keterangan);
+    }
 
     const { data } = await apiClient.post(
       `/projects-v2-items/${itemId}/barang-jadi-masuk`,
@@ -1562,6 +1574,8 @@ export interface BarangJadiMasuk {
   tanggal: string;
   jumlah: number;
   file_setrim: string | null;
+  is_direct_delivery?: boolean;
+  keterangan?: string | null;
   created_at: string;
   updated_at: string;
 }
