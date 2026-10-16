@@ -449,6 +449,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             title: 'Rekap Order Gambar',
             url: '/dashboard/projects-v2/rekap-order-gambar?from=studio',
           },
+          {
+            title: 'Surat Serah Terima Gambar',
+            url: '/dashboard/projects-v2/serah-terima-gambar?from=studio',
+          },
         ],
       },
       {
@@ -467,6 +471,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           {
             title: 'Rekap Order Gambar',
             url: '/dashboard/projects-v2/rekap-order-gambar?from=ppic',
+          },
+          {
+            title: 'Surat Serah Terima Gambar',
+            url: '/dashboard/projects-v2/serah-terima-gambar?from=ppic',
           },
           {
             title: 'Project V2 | Pengiriman V2',
