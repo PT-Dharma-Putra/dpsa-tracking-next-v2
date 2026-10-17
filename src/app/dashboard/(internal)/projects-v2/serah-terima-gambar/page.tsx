@@ -28,6 +28,12 @@ import {
   CheckSquare,
   Square,
   Building,
+  ChevronDown,
+  ChevronRight,
+  Folder,
+  FolderOpen,
+  X,
+  Check,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -136,78 +142,88 @@ export default function SuratSerahTerimaGambarPage() {
     queryFn: () => kopSuratService.getKopSuratList(),
   });
 
-  // 3. Fetch Available Drawing Items for Create/Edit modal
+  // 3. Fetch Available Drawing Items for Create/Edit modal (not restricted by formTanggal)
   const { data: availableItems, isLoading: itemsLoading } = useQuery({
-    queryKey: ['available-drawing-items', formTanggal, createModalOpen, editingSuratId],
+    queryKey: ['available-drawing-items', createModalOpen, editingSuratId],
     queryFn: () =>
       suratSerahTerimaService.getAvailableItems({
-        tanggal: formTanggal,
         exclude_surat_id: editingSuratId || undefined,
       }),
     enabled: createModalOpen,
   });
 
-  // Filtered available items by itemSearch
-  const filteredAvailableItems = useMemo(() => {
-    if (!availableItems) return [];
-    if (!itemSearch.trim()) return availableItems;
-    const q = itemSearch.toLowerCase();
-    return availableItems.filter(
-      (it) =>
-        it.item.toLowerCase().includes(q) ||
-        it.client_name.toLowerCase().includes(q) ||
-        it.nomor_spk.toLowerCase().includes(q)
-    );
-  }, [availableItems, itemSearch]);
-
-  // Grouped available items (consolidated by Client, SPK, Item, Satuan)
-  type GroupedAvailableItem = {
-    key: string;
+  // Grouped available items by Project
+  type ProjectGroup = {
+    project_id: number;
+    project_name: string;
     client_name: string;
     nomor_spk: string;
-    item: string;
-    satuan: string;
-    total_jumlah: number;
-    tanggal_submit: string | null;
-    file_gambar_kerja: string | null;
-    item_ids: number[];
+    tanggal_spk_masuk?: string | null;
+    items: DrawingItemDetail[];
   };
 
-  const groupedAvailableItems = useMemo<GroupedAvailableItem[]>(() => {
-    if (!filteredAvailableItems) return [];
-    const map = new Map<string, GroupedAvailableItem>();
-
-    filteredAvailableItems.forEach((it) => {
-      const clientName = (it.client_name || '-').trim();
-      const nomorSpk = (it.nomor_spk || '-').trim();
-      const itemName = (it.item || '-').trim();
-      const satuan = (it.satuan || 'UNIT').trim();
-      const key = `${clientName.toLowerCase()}_${nomorSpk.toLowerCase()}_${itemName.toLowerCase()}_${satuan.toLowerCase()}`;
-
-      if (!map.has(key)) {
-        map.set(key, {
-          key,
-          client_name: clientName,
-          nomor_spk: nomorSpk,
-          item: itemName,
-          satuan,
-          total_jumlah: Number(it.jumlah || 1),
-          tanggal_submit: it.tanggal_submit || it.tanggal_selesai || null,
-          file_gambar_kerja: it.file_gambar_kerja || null,
-          item_ids: [it.id],
+  const projectGroups = useMemo<ProjectGroup[]>(() => {
+    if (!availableItems) return [];
+    const q = itemSearch.toLowerCase().trim();
+    const filtered = !q
+      ? availableItems
+      : availableItems.filter((it) => {
+          return (
+            it.item.toLowerCase().includes(q) ||
+            (it.project_name && it.project_name.toLowerCase().includes(q)) ||
+            it.client_name.toLowerCase().includes(q) ||
+            it.nomor_spk.toLowerCase().includes(q)
+          );
         });
-      } else {
-        const existing = map.get(key)!;
-        existing.total_jumlah += Number(it.jumlah || 1);
-        existing.item_ids.push(it.id);
-        if (!existing.file_gambar_kerja && it.file_gambar_kerja) {
-          existing.file_gambar_kerja = it.file_gambar_kerja;
-        }
+
+    const map = new Map<number, ProjectGroup>();
+    filtered.forEach((it) => {
+      if (!map.has(it.project_id)) {
+        map.set(it.project_id, {
+          project_id: it.project_id,
+          project_name: it.project_name || `Projek #${it.project_id}`,
+          client_name: it.client_name || '-',
+          nomor_spk: it.nomor_spk || '-',
+          tanggal_spk_masuk: it.tanggal_spk_masuk || null,
+          items: [],
+        });
       }
+      map.get(it.project_id)!.items.push(it);
     });
 
-    return Array.from(map.values());
-  }, [filteredAvailableItems]);
+    const groups = Array.from(map.values()).sort((a, b) => b.project_id - a.project_id);
+    groups.forEach((g) => {
+      g.items.sort((a, b) => b.id - a.id);
+    });
+
+    return groups;
+  }, [availableItems, itemSearch]);
+
+  const [expandedProjectIds, setExpandedProjectIds] = useState<number[]>([]);
+
+  const toggleProjectExpand = (projectId: number) => {
+    setExpandedProjectIds((prev) =>
+      prev.includes(projectId) ? prev.filter((id) => id !== projectId) : [...prev, projectId]
+    );
+  };
+
+  const collapseAllProjects = () => {
+    setExpandedProjectIds([]);
+  };
+
+  const expandAllProjects = () => {
+    setExpandedProjectIds(projectGroups.map((p) => p.project_id));
+  };
+
+  // Selected items with full details for right-hand preview panel
+  const selectedItemsDetails = useMemo(() => {
+    if (!availableItems || selectedItemIds.length === 0) return [];
+    return availableItems.filter((it) => selectedItemIds.includes(it.id));
+  }, [availableItems, selectedItemIds]);
+
+  const totalSelectedUnits = useMemo(() => {
+    return selectedItemsDetails.reduce((sum, it) => sum + (Number(it.jumlah) || 1), 0);
+  }, [selectedItemsDetails]);
 
   // Mutations
   const createMutation = useMutation({
@@ -315,6 +331,7 @@ export default function SuratSerahTerimaGambarPage() {
     setFormCatatan('');
     setSelectedItemIds([]);
     setItemSearch('');
+    setExpandedProjectIds([]);
   };
 
   const handleOpenCreateModal = () => {
@@ -353,25 +370,32 @@ export default function SuratSerahTerimaGambarPage() {
     );
   };
 
-  const toggleSelectAll = () => {
-    if (!filteredAvailableItems) return;
-    const filteredIds = filteredAvailableItems.map((i) => i.id);
-    const allSelected = filteredIds.every((id) => selectedItemIds.includes(id));
-
+  const toggleProjectSelect = (projectItems: DrawingItemDetail[]) => {
+    const ids = projectItems.map((i) => i.id);
+    const allSelected = ids.every((id) => selectedItemIds.includes(id));
     if (allSelected) {
-      setSelectedItemIds((prev) => prev.filter((id) => !filteredIds.includes(id)));
+      setSelectedItemIds((prev) => prev.filter((id) => !ids.includes(id)));
     } else {
-      setSelectedItemIds((prev) => Array.from(new Set([...prev, ...filteredIds])));
+      setSelectedItemIds((prev) => Array.from(new Set([...prev, ...ids])));
     }
   };
 
-  const toggleGroupSelect = (itemIds: number[]) => {
-    const allSelected = itemIds.every((id) => selectedItemIds.includes(id));
+  const toggleSelectAllFiltered = () => {
+    const allFilteredIds = projectGroups.flatMap((p) => p.items.map((i) => i.id));
+    const allSelected = allFilteredIds.length > 0 && allFilteredIds.every((id) => selectedItemIds.includes(id));
     if (allSelected) {
-      setSelectedItemIds((prev) => prev.filter((id) => !itemIds.includes(id)));
+      setSelectedItemIds((prev) => prev.filter((id) => !allFilteredIds.includes(id)));
     } else {
-      setSelectedItemIds((prev) => Array.from(new Set([...prev, ...itemIds])));
+      setSelectedItemIds((prev) => Array.from(new Set([...prev, ...allFilteredIds])));
     }
+  };
+
+  const removeItemSelect = (id: number) => {
+    setSelectedItemIds((prev) => prev.filter((i) => i !== id));
+  };
+
+  const clearAllSelected = () => {
+    setSelectedItemIds([]);
   };
 
   const handleOpenDetail = async (item: SuratSerahTerimaItem) => {
@@ -816,81 +840,52 @@ export default function SuratSerahTerimaGambarPage() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className='space-y-4 py-2 flex-1 overflow-y-auto pr-1'>
-            
-            {/* Header Form Row */}
-            <div className='grid grid-cols-1 sm:grid-cols-3 gap-3'>
-              <div>
-                <Label className='text-xs font-semibold'>Tanggal Serah Terima *</Label>
-                <Input
-                  type='date'
-                  value={formTanggal}
-                  onChange={(e) => setFormTanggal(e.target.value)}
-                  className='mt-1 text-xs'
-                />
-              </div>
-
-              <div>
-                <Label className='text-xs font-semibold'>Kop Surat Acuan</Label>
-                <Select value={formKopId} onValueChange={setFormKopId}>
-                  <SelectTrigger className='mt-1 text-xs'>
-                    <SelectValue placeholder='Pilih Kop Surat' />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {kopSuratList?.map((k) => (
-                      <SelectItem key={k.id} value={String(k.id)}>
-                        {k.nama_kop} ({k.nama_identitas_iso || 'ISO'} - {k.nomor_identitas_iso || '004'})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label className='text-xs font-semibold'>Nomor Surat (Opsional)</Label>
-                <Input
-                  placeholder='Otomatis: STG/YYYYMMDD/...'
-                  value={formNomorSurat}
-                  onChange={(e) => setFormNomorSurat(e.target.value)}
-                  className='mt-1 text-xs'
-                />
-              </div>
-            </div>
-
-            {/* Checkbox Items Selection Section */}
-            <div className='rounded-lg border p-3 space-y-3 bg-slate-50/60'>
-              <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-2'>
-                <div className='flex items-center gap-2'>
-                  <Label className='text-xs font-bold uppercase tracking-wider text-slate-700'>
-                    Pilih Item Gambar Kerja yang Turun ({selectedItemIds.length} dipilih)
-                  </Label>
+          <div className='grid grid-cols-1 lg:grid-cols-12 gap-5 flex-1 min-h-0 overflow-hidden py-2'>
+            {/* PANEL KIRI: DAFTAR PROYEK & PILIH ITEM GAMBAR KERJA (7/12) */}
+            <div className='lg:col-span-7 xl:col-span-8 flex flex-col h-full min-h-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-50/50 p-4 space-y-3'>
+              
+              {/* Header Bar Panel Kiri */}
+              <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2.5 border-b border-slate-200 shrink-0'>
+                <div>
+                  <div className='flex items-center gap-2'>
+                    <h3 className='text-sm font-bold text-slate-800 uppercase tracking-wide flex items-center gap-1.5'>
+                      <Building className='h-4 w-4 text-blue-600' />
+                      Pilih Item Gambar Kerja per Proyek
+                    </h3>
+                    <Badge variant='outline' className='text-xs font-semibold bg-blue-50 text-blue-700 border-blue-200'>
+                      {projectGroups.length} Proyek
+                    </Badge>
+                  </div>
+                  <p className='text-xs text-slate-500 mt-0.5'>
+                    Klik baris proyek untuk melihat atau menyembunyikan item gambar kerja.
+                  </p>
                 </div>
-                
-                <div className='flex flex-wrap items-center gap-2'>
-                  <Button
-                    type='button'
-                    variant={groupByItem ? 'default' : 'outline'}
-                    size='sm'
-                    onClick={() => setGroupByItem((prev) => !prev)}
-                    className='h-8 text-xs gap-1.5'
-                    title={groupByItem ? 'Item yang sama digabung menjadi satu baris' : 'Menampilkan setiap baris item secara terpisah'}
-                  >
-                    <Layers className='h-3.5 w-3.5' />
-                    {groupByItem ? 'Kelompokkan Item: Aktif' : 'Kelompokkan Item: Nonaktif'}
-                  </Button>
 
-                  <Input
-                    placeholder='Filter item / konsumen...'
-                    value={itemSearch}
-                    onChange={(e) => setItemSearch(e.target.value)}
-                    className='w-36 sm:w-44 h-8 text-xs bg-white'
-                  />
+                <div className='flex items-center gap-1.5'>
                   <Button
                     type='button'
                     variant='outline'
                     size='sm'
-                    onClick={toggleSelectAll}
-                    className='h-8 text-xs gap-1'
+                    onClick={expandAllProjects}
+                    className='h-7 text-xs px-2 bg-white'
+                  >
+                    Buka Semua
+                  </Button>
+                  <Button
+                    type='button'
+                    variant='outline'
+                    size='sm'
+                    onClick={collapseAllProjects}
+                    className='h-7 text-xs px-2 bg-white'
+                  >
+                    Tutup Semua
+                  </Button>
+                  <Button
+                    type='button'
+                    variant='outline'
+                    size='sm'
+                    onClick={toggleSelectAllFiltered}
+                    className='h-7 text-xs px-2 gap-1 bg-white font-medium text-blue-700 border-blue-200 hover:bg-blue-50'
                   >
                     <CheckSquare className='h-3.5 w-3.5' />
                     Pilih Semua
@@ -898,221 +893,425 @@ export default function SuratSerahTerimaGambarPage() {
                 </div>
               </div>
 
-              {/* Items Table */}
-              <div className='max-h-[55vh] min-h-[350px] overflow-y-auto rounded border bg-white'>
-                <Table>
-                  <TableHeader>
-                    <TableRow className='bg-muted/50 text-[11px]'>
-                      <TableHead className='w-10 text-center'>Pilih</TableHead>
-                      <TableHead className='w-36'>Konsumen</TableHead>
-                      <TableHead className='w-24'>SPK</TableHead>
-                      <TableHead>Item Produk</TableHead>
-                      <TableHead className='w-16 text-center'>Satuan</TableHead>
-                      <TableHead className='w-14 text-center'>Jml</TableHead>
-                      <TableHead className='w-28 text-center'>Tanggal Submit</TableHead>
-                      <TableHead className='w-24 text-center'>File PDF</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {itemsLoading ? (
-                      <TableRow>
-                        <TableCell colSpan={8} className='h-24 text-center'>
-                          <Loader2 className='mx-auto h-5 w-5 animate-spin text-muted-foreground' />
-                          <span className='mt-1 block text-xs text-muted-foreground'>Memuat item gambar kerja...</span>
-                        </TableCell>
+              {/* Search Bar Panel Kiri */}
+              <div className='relative shrink-0'>
+                <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400' />
+                <Input
+                  placeholder='Cari nama projek, nomor SPK, client, atau item...'
+                  value={itemSearch}
+                  onChange={(e) => setItemSearch(e.target.value)}
+                  className='pl-9 h-8 text-xs bg-white'
+                />
+              </div>
+
+              {/* Scrollable Project Tree Table */}
+              <div className='flex-1 overflow-y-auto min-h-0 border border-slate-200 rounded-lg bg-white shadow-2xs'>
+                {itemsLoading ? (
+                  <div className='flex flex-col items-center justify-center py-16 text-slate-500 gap-2'>
+                    <Loader2 className='h-6 w-6 animate-spin text-blue-600' />
+                    <span className='text-xs'>Memuat daftar item gambar kerja...</span>
+                  </div>
+                ) : projectGroups.length === 0 ? (
+                  <div className='flex flex-col items-center justify-center py-16 text-center text-slate-400 p-6'>
+                    <AlertCircle className='h-8 w-8 text-slate-300 mb-2' />
+                    <p className='text-sm font-semibold text-slate-700'>Tidak Ada Gambar Kerja Siap Turun</p>
+                    <p className='text-xs text-slate-500 mt-1 max-w-sm'>
+                      Tidak ditemukan gambar kerja berstatus selesai yang belum diserahterimakan, atau hasil pencarian tidak cocok.
+                    </p>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader className='sticky top-0 bg-slate-100 z-10 shadow-2xs'>
+                      <TableRow className='hover:bg-slate-100 text-[11px] font-semibold text-slate-700 uppercase'>
+                        <TableHead className='w-10 text-center py-2'>#</TableHead>
+                        <TableHead className='w-36 py-2'>Client</TableHead>
+                        <TableHead className='w-36 py-2'>No SPK</TableHead>
+                        <TableHead className='w-32 py-2 whitespace-nowrap'>SPK Masuk</TableHead>
+                        <TableHead className='py-2'>Nama Proyek</TableHead>
+                        <TableHead className='w-32 text-center py-2'>Item Terpilih</TableHead>
+                        <TableHead className='w-28 text-center py-2'>Aksi</TableHead>
                       </TableRow>
-                    ) : (groupByItem ? groupedAvailableItems.length === 0 : filteredAvailableItems.length === 0) ? (
-                      <TableRow>
-                        <TableCell colSpan={8} className='h-20 text-center text-xs text-muted-foreground'>
-                          Tidak ada gambar kerja baru pada tanggal ini atau semua item sudah diserahterimakan.
-                        </TableCell>
-                      </TableRow>
-                    ) : groupByItem ? (
-                      groupedAvailableItems.map((grp) => {
-                        const isSelected = grp.item_ids.every((id) => selectedItemIds.includes(id));
-                        const isPartiallySelected = !isSelected && grp.item_ids.some((id) => selectedItemIds.includes(id));
+                    </TableHeader>
+                    <TableBody>
+                      {projectGroups.map((proj) => {
+                        const isExpanded = expandedProjectIds.includes(proj.project_id);
+                        const projectItemIds = proj.items.map((i) => i.id);
+                        const selectedCountInProj = projectItemIds.filter((id) => selectedItemIds.includes(id)).length;
+                        const isAllSelectedInProj = proj.items.length > 0 && selectedCountInProj === proj.items.length;
 
                         return (
-                          <TableRow
-                            key={grp.key}
-                            className={`cursor-pointer text-xs ${isSelected ? 'bg-blue-50/70' : isPartiallySelected ? 'bg-blue-50/30' : 'hover:bg-slate-50'}`}
-                            onClick={() => toggleGroupSelect(grp.item_ids)}
-                          >
-                            <TableCell className='text-center p-2'>
-                              <input
-                                type='checkbox'
-                                checked={isSelected}
-                                ref={(el) => {
-                                  if (el) el.indeterminate = isPartiallySelected;
-                                }}
-                                onChange={() => toggleGroupSelect(grp.item_ids)}
-                                className='h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500'
-                                onClick={(e) => e.stopPropagation()}
-                              />
-                            </TableCell>
-                            <TableCell className='font-bold uppercase text-slate-800 p-2'>
-                              {grp.client_name}
-                            </TableCell>
-                            <TableCell className='font-medium text-slate-600 p-2'>
-                              {grp.nomor_spk}
-                            </TableCell>
-                            <TableCell className='font-medium uppercase text-slate-800 p-2'>
-                              <div className='flex items-center gap-1.5 flex-wrap'>
-                                <span>{grp.item}</span>
-                                {grp.item_ids.length > 1 && (
-                                  <Badge variant='outline' className='text-[10px] bg-blue-50 text-blue-700 border-blue-200 px-1 py-0'>
-                                    {grp.item_ids.length} baris digabung
-                                  </Badge>
-                                )}
-                              </div>
-                            </TableCell>
-                            <TableCell className='text-center p-2 font-medium'>
-                              {grp.satuan}
-                            </TableCell>
-                            <TableCell className='text-center p-2 font-bold text-blue-700'>
-                              {grp.total_jumlah}
-                            </TableCell>
-                            <TableCell className='text-center p-2 text-slate-700 whitespace-nowrap font-medium text-[11px]'>
-                              {grp.tanggal_submit ? format(new Date(grp.tanggal_submit), 'dd MMM yyyy', { locale: idLocale }) : '-'}
-                            </TableCell>
-                            <TableCell className='text-center p-2' onClick={(e) => e.stopPropagation()}>
-                              {grp.file_gambar_kerja ? (
-                                <a
-                                  href={grp.file_gambar_kerja}
-                                  target='_blank'
-                                  rel='noreferrer'
-                                  className='inline-flex items-center gap-1 text-[11px] text-blue-600 hover:underline font-medium'
+                          <React.Fragment key={proj.project_id}>
+                            {/* Baris Utama Proyek (Parent Row) */}
+                            <TableRow
+                              className={`cursor-pointer select-none font-semibold transition-colors border-t border-slate-200 ${
+                                selectedCountInProj > 0
+                                  ? 'bg-blue-50/70 hover:bg-blue-100/60'
+                                  : isExpanded
+                                  ? 'bg-slate-100/90 hover:bg-slate-200/70 text-slate-800'
+                                  : 'hover:bg-slate-100/70 bg-white text-slate-800'
+                              }`}
+                              onClick={() => toggleProjectExpand(proj.project_id)}
+                            >
+                              <TableCell className='text-center p-2'>
+                                <div className='flex items-center justify-center'>
+                                  {isExpanded ? (
+                                    <ChevronDown className='h-4 w-4 text-blue-700' />
+                                  ) : (
+                                    <ChevronRight className='h-4 w-4 text-slate-400' />
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell
+                                className='py-2.5 px-3 text-xs text-slate-700 font-medium truncate max-w-[140px]'
+                                title={proj.client_name}
+                              >
+                                {proj.client_name}
+                              </TableCell>
+                              <TableCell
+                                className='py-2.5 px-3 text-xs font-semibold text-blue-700 truncate max-w-[140px]'
+                                title={proj.nomor_spk}
+                              >
+                                {proj.nomor_spk}
+                              </TableCell>
+                              <TableCell className='py-2.5 px-3 text-xs text-slate-600 whitespace-nowrap'>
+                                {proj.tanggal_spk_masuk
+                                  ? format(new Date(proj.tanggal_spk_masuk), 'dd MMM yyyy', { locale: idLocale })
+                                  : '-'}
+                              </TableCell>
+                              <TableCell className='py-2.5 px-3 text-xs sm:text-sm font-bold text-slate-900'>
+                                <div className='flex items-center gap-2 min-w-0'>
+                                  <Folder
+                                    className={`h-4 w-4 shrink-0 ${
+                                      selectedCountInProj > 0 ? 'text-blue-600' : 'text-slate-500'
+                                    }`}
+                                  />
+                                  <span className='truncate' title={proj.project_name}>
+                                    {proj.project_name}
+                                  </span>
+                                </div>
+                              </TableCell>
+                              <TableCell className='py-2 px-2 text-center' onClick={(e) => e.stopPropagation()}>
+                                <Badge
+                                  className={`text-[11px] font-semibold ${
+                                    isAllSelectedInProj
+                                      ? 'bg-blue-600 text-white'
+                                      : selectedCountInProj > 0
+                                      ? 'bg-blue-100 text-blue-800'
+                                      : 'bg-slate-100 text-slate-600 border border-slate-200'
+                                  }`}
                                 >
-                                  PDF <ExternalLink className='h-3 w-3' />
-                                </a>
-                              ) : (
-                                <span className='text-[10px] text-muted-foreground'>-</span>
-                              )}
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })
-                    ) : (
-                      filteredAvailableItems.map((it) => {
-                        const isSelected = selectedItemIds.includes(it.id);
-                        return (
-                          <TableRow
-                            key={it.id}
-                            className={`cursor-pointer text-xs ${isSelected ? 'bg-blue-50/70' : 'hover:bg-slate-50'}`}
-                            onClick={() => toggleItemSelect(it.id)}
-                          >
-                            <TableCell className='text-center p-2'>
-                              <input
-                                type='checkbox'
-                                checked={isSelected}
-                                onChange={() => toggleItemSelect(it.id)}
-                                className='h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500'
-                                onClick={(e) => e.stopPropagation()}
-                              />
-                            </TableCell>
-                            <TableCell className='font-bold uppercase text-slate-800 p-2'>
-                              {it.client_name}
-                            </TableCell>
-                            <TableCell className='font-medium text-slate-600 p-2'>
-                              {it.nomor_spk}
-                            </TableCell>
-                            <TableCell className='font-medium uppercase text-slate-800 p-2'>
-                              {it.item}
-                            </TableCell>
-                            <TableCell className='text-center p-2 font-medium'>
-                              {it.satuan}
-                            </TableCell>
-                            <TableCell className='text-center p-2 font-semibold'>
-                              {it.jumlah}
-                            </TableCell>
-                            <TableCell className='text-center p-2 text-slate-700 whitespace-nowrap font-medium text-[11px]'>
-                              {it.tanggal_submit
-                                ? format(new Date(it.tanggal_submit), 'dd MMM yyyy', { locale: idLocale })
-                                : (it.tanggal_selesai ? format(new Date(it.tanggal_selesai), 'dd MMM yyyy', { locale: idLocale }) : '-')}
-                            </TableCell>
-                            <TableCell className='text-center p-2' onClick={(e) => e.stopPropagation()}>
-                              {it.file_gambar_kerja ? (
-                                <a
-                                  href={it.file_gambar_kerja}
-                                  target='_blank'
-                                  rel='noreferrer'
-                                  className='inline-flex items-center gap-1 text-[11px] text-blue-600 hover:underline font-medium'
+                                  {selectedCountInProj} / {proj.items.length} dipilih
+                                </Badge>
+                              </TableCell>
+                              <TableCell className='py-2 px-2 text-center' onClick={(e) => e.stopPropagation()}>
+                                <Button
+                                  type='button'
+                                  variant='ghost'
+                                  size='sm'
+                                  onClick={() => toggleProjectSelect(proj.items)}
+                                  className={`h-6 px-2 text-xs font-medium ${
+                                    isAllSelectedInProj
+                                      ? 'text-red-600 hover:text-red-700 hover:bg-red-50'
+                                      : 'text-blue-600 hover:text-blue-700 hover:bg-blue-50'
+                                  }`}
                                 >
-                                  PDF <ExternalLink className='h-3 w-3' />
-                                </a>
-                              ) : (
-                                <span className='text-[10px] text-muted-foreground'>-</span>
-                              )}
-                            </TableCell>
-                          </TableRow>
+                                  {isAllSelectedInProj ? 'Batal Semua' : 'Pilih Semua'}
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+
+                            {/* Baris Child (Sub-table Item Produk per Proyek) */}
+                            {isExpanded && (
+                              <TableRow className='bg-slate-50/50 hover:bg-slate-50/50 border-b border-slate-200'>
+                                <TableCell colSpan={7} className='p-3 pl-8 bg-slate-50/70 border-l-4 border-blue-500'>
+                                  <div className='rounded-md border border-slate-200 bg-white shadow-2xs overflow-hidden'>
+                                    <Table>
+                                      <TableHeader>
+                                        <TableRow className='bg-slate-50 text-[11px] font-semibold text-slate-600'>
+                                          <TableHead className='w-10 text-center py-1.5'>Pilih</TableHead>
+                                          <TableHead className='py-1.5'>Item Produk</TableHead>
+                                          <TableHead className='w-16 text-center py-1.5'>Satuan</TableHead>
+                                          <TableHead className='w-14 text-center py-1.5'>Jml</TableHead>
+                                          <TableHead className='w-28 text-center py-1.5'>Tanggal Selesai</TableHead>
+                                          <TableHead className='w-24 text-center py-1.5'>File PDF</TableHead>
+                                        </TableRow>
+                                      </TableHeader>
+                                      <TableBody>
+                                        {proj.items.map((it) => {
+                                          const isSelected = selectedItemIds.includes(it.id);
+                                          return (
+                                            <TableRow
+                                              key={it.id}
+                                              className={`cursor-pointer text-xs transition-colors ${
+                                                isSelected ? 'bg-blue-50/70 hover:bg-blue-50' : 'hover:bg-slate-50'
+                                              }`}
+                                              onClick={() => toggleItemSelect(it.id)}
+                                            >
+                                              <TableCell className='text-center p-2'>
+                                                <input
+                                                  type='checkbox'
+                                                  checked={isSelected}
+                                                  onChange={() => toggleItemSelect(it.id)}
+                                                  className='h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500'
+                                                  onClick={(e) => e.stopPropagation()}
+                                                />
+                                              </TableCell>
+                                              <TableCell className='font-medium uppercase text-slate-800 p-2'>
+                                                {it.item}
+                                              </TableCell>
+                                              <TableCell className='text-center p-2 font-medium text-slate-600'>
+                                                {it.satuan}
+                                              </TableCell>
+                                              <TableCell className='text-center p-2 font-bold text-blue-700'>
+                                                {it.jumlah}
+                                              </TableCell>
+                                              <TableCell className='text-center p-2 text-slate-700 whitespace-nowrap font-medium text-[11px]'>
+                                                {it.tanggal_submit
+                                                  ? format(new Date(it.tanggal_submit), 'dd MMM yyyy', { locale: idLocale })
+                                                  : it.tanggal_selesai
+                                                  ? format(new Date(it.tanggal_selesai), 'dd MMM yyyy', { locale: idLocale })
+                                                  : '-'}
+                                              </TableCell>
+                                              <TableCell className='text-center p-2' onClick={(e) => e.stopPropagation()}>
+                                                {it.file_gambar_kerja ? (
+                                                  <a
+                                                    href={it.file_gambar_kerja}
+                                                    target='_blank'
+                                                    rel='noreferrer'
+                                                    className='inline-flex items-center gap-1 text-[11px] text-blue-600 hover:underline font-medium'
+                                                  >
+                                                    PDF <ExternalLink className='h-3 w-3' />
+                                                  </a>
+                                                ) : (
+                                                  <span className='text-[10px] text-muted-foreground'>-</span>
+                                                )}
+                                              </TableCell>
+                                            </TableRow>
+                                          );
+                                        })}
+                                      </TableBody>
+                                    </Table>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            )}
+                          </React.Fragment>
                         );
-                      })
-                    )}
-                  </TableBody>
-                </Table>
+                      })}
+                    </TableBody>
+                  </Table>
+                )}
               </div>
             </div>
 
-            <div>
-              <Label className='text-xs font-semibold'>Catatan Tambahan (Opsional)</Label>
-              <Textarea
-                placeholder='Catatan khusus untuk serah terima ini...'
-                value={formCatatan}
-                onChange={(e) => setFormCatatan(e.target.value)}
-                className='mt-1 text-xs h-16'
-              />
-            </div>
+            {/* PANEL KANAN: FORM SURAT & PREVIEW ITEM TERPILIH (5/12) */}
+            <div className='lg:col-span-5 xl:col-span-4 flex flex-col h-full min-h-0 overflow-hidden rounded-xl border border-slate-200 bg-white p-4 space-y-3.5 shadow-sm'>
+              
+              {/* Header Surat Form Fields */}
+              <div className='space-y-2.5 pb-3 border-b border-slate-200 shrink-0'>
+                <div className='flex items-center justify-between'>
+                  <h4 className='text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5'>
+                    <FileText className='h-4 w-4 text-blue-600' />
+                    Informasi Surat Serah Terima
+                  </h4>
+                </div>
 
-          </div>
+                <div className='grid grid-cols-1 sm:grid-cols-2 gap-2.5'>
+                  <div>
+                    <Label className='text-[11px] font-semibold text-slate-700'>Tanggal Serah Terima *</Label>
+                    <Input
+                      type='date'
+                      value={formTanggal}
+                      onChange={(e) => setFormTanggal(e.target.value)}
+                      className='mt-1 text-xs h-8'
+                    />
+                  </div>
 
-          <DialogFooter className='gap-2 sm:gap-0 pt-2 border-t'>
-            <Button
-              type='button'
-              variant='outline'
-              onClick={() => {
-                setCreateModalOpen(false);
-                setEditingSuratId(null);
-              }}
-              disabled={createMutation.isPending || updateMutation.isPending}
-            >
-              Batal
-            </Button>
-            <div className='flex gap-2'>
-              <Button
-                type='button'
-                variant='secondary'
-                onClick={() => {
-                  if (editingSuratId) {
-                    updateMutation.mutate({ id: editingSuratId, langsung_kirim: false });
-                  } else {
-                    createMutation.mutate({ langsung_kirim: false });
-                  }
-                }}
-                disabled={createMutation.isPending || updateMutation.isPending || selectedItemIds.length === 0}
-              >
-                {editingSuratId ? 'Simpan Perubahan' : 'Simpan Draft'}
-              </Button>
-              <Button
-                type='button'
-                onClick={() => {
-                  if (editingSuratId) {
-                    updateMutation.mutate({ id: editingSuratId, langsung_kirim: true });
-                  } else {
-                    createMutation.mutate({ langsung_kirim: true });
-                  }
-                }}
-                disabled={createMutation.isPending || updateMutation.isPending || selectedItemIds.length === 0}
-                className='gap-1.5 bg-blue-600 hover:bg-blue-700'
-              >
-                {(createMutation.isPending || updateMutation.isPending) ? (
-                  <Loader2 className='h-4 w-4 animate-spin' />
-                ) : (
-                  <Send className='h-4 w-4' />
+                  <div>
+                    <Label className='text-[11px] font-semibold text-slate-700'>Kop Surat Acuan</Label>
+                    <Select value={formKopId} onValueChange={setFormKopId}>
+                      <SelectTrigger className='mt-1 text-xs h-8'>
+                        <SelectValue placeholder='Pilih Kop Surat' />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {kopSuratList?.map((k) => (
+                          <SelectItem key={k.id} value={String(k.id)}>
+                            {k.nama_kop} ({k.nama_identitas_iso || 'ISO'})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div>
+                  <Label className='text-[11px] font-semibold text-slate-700'>Nomor Surat (Opsional)</Label>
+                  <Input
+                    placeholder='Otomatis: STG/YYYYMMDD/...'
+                    value={formNomorSurat}
+                    onChange={(e) => setFormNomorSurat(e.target.value)}
+                    className='mt-1 text-xs h-8'
+                  />
+                </div>
+
+                <div>
+                  <Label className='text-[11px] font-semibold text-slate-700'>Catatan Tambahan (Opsional)</Label>
+                  <Textarea
+                    placeholder='Catatan khusus untuk serah terima ini...'
+                    value={formCatatan}
+                    onChange={(e) => setFormCatatan(e.target.value)}
+                    className='mt-1 text-xs h-12 min-h-12'
+                  />
+                </div>
+              </div>
+
+              {/* Cart / Preview Header */}
+              <div className='flex items-center justify-between shrink-0 pt-1'>
+                <div className='flex items-center gap-2'>
+                  <h4 className='text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5'>
+                    <CheckSquare className='h-4 w-4 text-emerald-600' />
+                    Preview Item Terpilih
+                  </h4>
+                  <Badge variant='secondary' className='text-[11px] font-bold bg-blue-50 text-blue-700 border-blue-200'>
+                    {selectedItemIds.length} Item
+                  </Badge>
+                  <Badge variant='secondary' className='text-[11px] font-bold bg-emerald-50 text-emerald-700 border-emerald-200'>
+                    {totalSelectedUnits} Unit
+                  </Badge>
+                </div>
+
+                {selectedItemIds.length > 0 && (
+                  <Button
+                    type='button'
+                    variant='ghost'
+                    size='sm'
+                    onClick={clearAllSelected}
+                    className='h-6 text-[11px] px-1.5 text-red-600 hover:text-red-700 hover:bg-red-50'
+                  >
+                    Reset Pilihan
+                  </Button>
                 )}
-                {editingSuratId ? 'Simpan & Kirim ke PPIC' : 'Kirim ke PPIC'}
-              </Button>
+              </div>
+
+              {/* Scrollable Preview List */}
+              <div className='flex-1 overflow-y-auto min-h-0 border rounded-lg bg-slate-50/70 p-2 space-y-1.5'>
+                {selectedItemsDetails.length === 0 ? (
+                  <div className='h-full flex flex-col items-center justify-center text-center p-4 text-slate-400'>
+                    <Square className='h-8 w-8 text-slate-300 mb-1' />
+                    <p className='text-xs font-medium text-slate-600'>Belum ada item dipilih</p>
+                    <p className='text-[11px] text-slate-400 mt-0.5'>
+                      Centang item dari daftar proyek di sebelah kiri untuk menambahkannya ke surat serah terima ini.
+                    </p>
+                  </div>
+                ) : (
+                  selectedItemsDetails.map((it) => (
+                    <div
+                      key={it.id}
+                      className='flex items-center justify-between p-2 rounded-md bg-white border border-slate-200 text-xs shadow-2xs hover:border-slate-300 transition-colors'
+                    >
+                      <div className='min-w-0 flex-1 pr-2'>
+                        <div className='flex items-center gap-1.5'>
+                          <span className='font-bold text-slate-800 truncate uppercase'>{it.item}</span>
+                          <Badge variant='outline' className='text-[10px] font-semibold text-blue-700 bg-blue-50 border-blue-200 px-1 py-0'>
+                            {it.jumlah} {it.satuan}
+                          </Badge>
+                        </div>
+                        <div className='flex items-center gap-2 text-[10px] text-slate-500 mt-0.5 truncate'>
+                          <span className='font-medium text-slate-600 truncate'>{it.project_name}</span>
+                          <span>•</span>
+                          <span className='truncate'>{it.client_name}</span>
+                          <span>•</span>
+                          <span className='truncate'>SPK: {it.nomor_spk}</span>
+                        </div>
+                      </div>
+
+                      <div className='flex items-center gap-1 shrink-0'>
+                        {it.file_gambar_kerja && (
+                          <a
+                            href={it.file_gambar_kerja}
+                            target='_blank'
+                            rel='noreferrer'
+                            className='p-1 text-slate-400 hover:text-blue-600 rounded'
+                            title='Lihat File PDF'
+                          >
+                            <ExternalLink className='h-3.5 w-3.5' />
+                          </a>
+                        )}
+                        <Button
+                          type='button'
+                          variant='ghost'
+                          size='icon'
+                          onClick={() => removeItemSelect(it.id)}
+                          className='h-6 w-6 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded'
+                          title='Hapus dari serah terima'
+                        >
+                          <X className='h-3.5 w-3.5' />
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Action Buttons Footer di Kanan */}
+              <div className='pt-2 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-2 shrink-0'>
+                <Button
+                  type='button'
+                  variant='outline'
+                  size='sm'
+                  onClick={() => {
+                    setCreateModalOpen(false);
+                    setEditingSuratId(null);
+                  }}
+                  disabled={createMutation.isPending || updateMutation.isPending}
+                  className='w-full sm:w-auto h-9 text-xs'
+                >
+                  Batal
+                </Button>
+
+                <div className='flex items-center gap-2 w-full sm:w-auto'>
+                  <Button
+                    type='button'
+                    variant='secondary'
+                    size='sm'
+                    onClick={() => {
+                      if (editingSuratId) {
+                        updateMutation.mutate({ id: editingSuratId, langsung_kirim: false });
+                      } else {
+                        createMutation.mutate({ langsung_kirim: false });
+                      }
+                    }}
+                    disabled={createMutation.isPending || updateMutation.isPending || selectedItemIds.length === 0}
+                    className='flex-1 sm:flex-none h-9 text-xs'
+                  >
+                    {editingSuratId ? 'Simpan Perubahan' : 'Simpan Draft'}
+                  </Button>
+
+                  <Button
+                    type='button'
+                    size='sm'
+                    onClick={() => {
+                      if (editingSuratId) {
+                        updateMutation.mutate({ id: editingSuratId, langsung_kirim: true });
+                      } else {
+                        createMutation.mutate({ langsung_kirim: true });
+                      }
+                    }}
+                    disabled={createMutation.isPending || updateMutation.isPending || selectedItemIds.length === 0}
+                    className='flex-1 sm:flex-none h-9 text-xs gap-1.5 bg-blue-600 hover:bg-blue-700 text-white shadow-xs'
+                  >
+                    {(createMutation.isPending || updateMutation.isPending) ? (
+                      <Loader2 className='h-3.5 w-3.5 animate-spin' />
+                    ) : (
+                      <Send className='h-3.5 w-3.5' />
+                    )}
+                    {editingSuratId ? 'Simpan & Kirim PPIC' : 'Kirim ke PPIC'}
+                  </Button>
+                </div>
+              </div>
+
             </div>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
 

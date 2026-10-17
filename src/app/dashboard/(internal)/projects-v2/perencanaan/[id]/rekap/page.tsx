@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, Loader2, Package, ListChecks, CheckCircle2, Box, Layers, Building2, Calendar, ClipboardCheck, FileText, FileDown, BarChart3, Activity, User, Truck, Search } from 'lucide-react';
+import { ArrowLeft, Loader2, Package, ListChecks, CheckCircle2, Box, Layers, Building2, Calendar, ClipboardCheck, FileText, FileDown, BarChart3, Activity, User, Truck, Search, Eye } from 'lucide-react';
 import { format } from 'date-fns';
 import * as XLSX from 'xlsx-js-style';
 import { toast } from 'sonner';
@@ -449,6 +449,7 @@ export default function PerencanaanRekapPage() {
           { v: 'VOL/DIM', t: 's', s: headerStyle },
           { v: 'QTY', t: 's', s: headerStyle },
           { v: 'PO DIVISI', t: 's', s: headerStyle },
+          { v: 'GAMBAR CUSTOM', t: 's', s: headerStyle },
           { v: 'PRODUKSI', t: 's', s: headerStyle },
           { v: 'BARANG JADI', t: 's', s: headerStyle },
           { v: 'TERKIRIM', t: 's', s: headerStyle },
@@ -464,6 +465,7 @@ export default function PerencanaanRekapPage() {
           { v: `${row.volDim.volume} (${row.volDim.dim} ${row.volDim.satuan})`, t: 's', s: dataStyleCenter },
           { v: row.qty, t: 'n', s: dataStyleCenter },
           { v: row.poDivisi, t: 's', s: dataStyleCenter },
+          { v: row.originalItem.gambar_kerja?.file ? 'Ada' : '-', t: 's', s: dataStyleCenter },
           { v: row.produksi.text || '0%', t: 's', s: dataStyleCenter },
           { v: row.packing.text === '-' ? '-' : row.packing.text, t: 's', s: dataStyleCenter },
           { v: row.terkirim.text, t: 's', s: dataStyleCenter },
@@ -476,6 +478,7 @@ export default function PerencanaanRekapPage() {
       wsData.push([
         { v: '', t: 's', s: headerStyle },
         { v: 'RATA-RATA PROGRESS', t: 's', s: headerStyle },
+        { v: '', t: 's', s: headerStyle },
         { v: '', t: 's', s: headerStyle },
         { v: '', t: 's', s: headerStyle },
         { v: '', t: 's', s: headerStyle },
@@ -494,6 +497,7 @@ export default function PerencanaanRekapPage() {
         { wch: 20 }, // VOL/DIM
         { wch: 10 }, // QTY
         { wch: 20 }, // PO DIVISI
+        { wch: 15 }, // GAMBAR CUSTOM
         { wch: 15 }, // PRODUKSI
         { wch: 15 }, // BARANG JADI
         { wch: 15 }, // TERKIRIM
@@ -782,6 +786,12 @@ export default function PerencanaanRekapPage() {
                 <TableHead className="text-[10px] font-bold text-neutral-500 tracking-wider min-w-[120px]">VOL/DIM</TableHead>
                 <TableHead className="w-16 text-center text-[10px] font-bold text-neutral-500 tracking-wider">QTY</TableHead>
                 <TableHead className="text-[10px] font-bold text-neutral-500 tracking-wider">PO DIVISI</TableHead>
+                <TableHead className="text-[10px] uppercase font-bold text-neutral-500 tracking-wider">
+                  <div className="flex flex-col">
+                    <span>Gambar</span>
+                    <span>Custom</span>
+                  </div>
+                </TableHead>
                 <TableHead className="text-center">
                   <div className="flex flex-col items-center">
                     <span className="text-[10px] font-bold text-neutral-500 tracking-wider">PRODUKSI</span>
@@ -812,7 +822,7 @@ export default function PerencanaanRekapPage() {
             <TableBody>
               {filteredTableData.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={10} className="text-center text-sm text-muted-foreground h-24">
+                  <TableCell colSpan={11} className="text-center text-sm text-muted-foreground h-24">
                     No items found.
                   </TableCell>
                 </TableRow>
@@ -834,6 +844,38 @@ export default function PerencanaanRekapPage() {
                     </TableCell>
                     <TableCell>
                       <span className="text-xs font-medium text-emerald-600 uppercase">{row.poDivisi}</span>
+                    </TableCell>
+                    {/* Gambar Custom */}
+                    <TableCell>
+                      {row.originalItem.gambar_kerja?.file ? (
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 text-blue-600 hover:bg-blue-50"
+                            asChild
+                          >
+                            <a
+                              href={row.originalItem.gambar_kerja.file.startsWith('http') || row.originalItem.gambar_kerja.file.startsWith('www')
+                                ? row.originalItem.gambar_kerja.file
+                                : `${(
+                                  process.env.NEXT_PUBLIC_API_URL ||
+                                  'http://localhost:8000'
+                                ).replace('/api', '')}/storage/${
+                                  row.originalItem.gambar_kerja.file
+                                }`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <Eye className="h-3.5 w-3.5" />
+                            </a>
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] text-muted-foreground italic">-</span>
+                        </div>
+                      )}
                     </TableCell>
                     {/* Produksi Progress */}
                     <TableCell>
