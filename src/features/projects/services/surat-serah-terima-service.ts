@@ -13,11 +13,13 @@ export interface UserSignature {
 export interface DrawingItemDetail {
   id: number;
   project_id: number;
+  project_name?: string;
   item: string;
   satuan: string;
   jumlah: number;
   client_name: string;
   nomor_spk: string;
+  tanggal_spk_masuk?: string | null;
   tanggal_selesai: string | null;
   tanggal_submit?: string | null;
   file_gambar_kerja: string | null;
@@ -121,6 +123,7 @@ export const suratSerahTerimaService = {
 
   getAvailableItems: async (params?: {
     tanggal?: string;
+    filter_tanggal?: string;
     search?: string;
     exclude_surat_id?: number;
   }) => {
