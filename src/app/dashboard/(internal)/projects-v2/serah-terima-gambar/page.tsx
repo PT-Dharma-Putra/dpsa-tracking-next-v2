@@ -95,7 +95,7 @@ export default function SuratSerahTerimaGambarPage() {
 
   const isSuperAdmin = userRoles.includes('Super-Admin');
   const isPPIC = isSuperAdmin || userRoles.includes('PPIC') || isPpicView;
-  const isEngineer = isSuperAdmin || userRoles.includes('Studio') || userRoles.includes('Engineer') || !isPpicView;
+  const isEngineer = !isPpicView && (isSuperAdmin || userRoles.includes('Studio') || userRoles.includes('Engineer') || true);
 
   // Filters state
   const todayStr = useMemo(() => format(new Date(), 'yyyy-MM-dd'), []);
@@ -510,7 +510,7 @@ export default function SuratSerahTerimaGambarPage() {
             Atur Tanda Tangan Saya
           </Button>
 
-          {isEngineer && (
+          {!isPpicView && isEngineer && (
             <Button
               size='sm'
               onClick={handleOpenCreateModal}
