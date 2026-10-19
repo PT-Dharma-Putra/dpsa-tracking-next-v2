@@ -358,11 +358,10 @@ export default function ProjectMonitoringDetailPage() {
                   filteredItems.map((item, idx) => {
                     const totalMasuk = item.barang_jadi_masuk?.reduce((s, b) => s + Number(b.jumlah || 0), 0) || 0;
                     const gudangProgress = item.jumlah > 0 ? (totalMasuk / item.jumlah) * 100 : 0;
-                    const totalKeluar = item.barang_jadi_keluar?.reduce((s, bjk) => s + Number(bjk.jumlah || 0), 0) || 0;
                     const totalTerkirim = item.detail_pengiriman?.reduce((sum, d) => sum + Number(d.jumlah_keluar), 0) ?? 0;
                     const isDelivered = item.jumlah > 0 
-                      ? (totalTerkirim >= item.jumlah || totalKeluar >= item.jumlah)
-                      : (totalTerkirim > 0 || totalKeluar > 0);
+                      ? totalTerkirim >= item.jumlah
+                      : totalTerkirim > 0;
                     const isComplete = Boolean(project.tanggal_selesai || isDelivered);
                     
                     return (
