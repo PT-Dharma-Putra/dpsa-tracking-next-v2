@@ -175,13 +175,34 @@ export function OverviewTab({ projectId, onNavigateTab }: OverviewTabProps) {
                     }
                 })();
 
+                const tanggalSelesaiFormatted = (() => {
+                    if (!project?.tanggal_selesai) return null;
+                    try {
+                        return format(new Date(project.tanggal_selesai), 'd MMMM yyyy', { locale: idLocale });
+                    } catch {
+                        return project.tanggal_selesai;
+                    }
+                })();
+
+                const overallProgressValue = isCompleted ? 100 : (stats.overall_progress ?? 0);
+
                 return (
                     <div className={`grid grid-cols-1 ${isCompleted ? 'md:grid-cols-3' : 'sm:grid-cols-2 lg:grid-cols-4'} gap-4`}>
                         <StatsCard
                             title="Overall Progress"
-                            value={`${stats.overall_progress ?? 0}%`}
+                            value={`${overallProgressValue}%`}
                             icon={<LayoutDashboard className="h-4 w-4 text-blue-500" />}
-                            desc={`The last progres: ${stats.last_progress_label || 'Draft'}`}
+                            desc={
+                                <span className="block space-y-1">
+                                    <span className="block">The last progres: {stats.last_progress_label || 'Draft'}</span>
+                                    {tanggalSelesaiFormatted && (
+                                        <span className="flex items-center gap-1 text-emerald-700 font-semibold">
+                                            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                                            <span>Tanggal Selesai: {tanggalSelesaiFormatted}</span>
+                                        </span>
+                                    )}
+                                </span>
+                            }
                         />
                         <StatsCard
                             title="SPK Value"

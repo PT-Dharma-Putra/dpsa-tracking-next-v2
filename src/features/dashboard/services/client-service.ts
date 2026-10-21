@@ -16,6 +16,7 @@ export interface ClientProject {
     nomor_spk?: string | null;
     tanggal_spk?: string | null;
     tanggal_masuk?: string | null;
+    tanggal_selesai?: string | null;
 }
 
 export interface HerminaClient {
