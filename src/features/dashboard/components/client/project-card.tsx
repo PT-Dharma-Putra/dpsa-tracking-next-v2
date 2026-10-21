@@ -18,11 +18,14 @@ interface Project {
     nomor_spk?: string | null;
     tanggal_spk?: string | null;
     tanggal_masuk?: string | null;
+    tanggal_selesai?: string | null;
     client_name?: string | null;
 }
 
 export function ClientProjectCard({ project }: { project: Project }) {
     const isActionRequired = project.status.includes("Review") || project.status.includes("Approval");
+    const isCompleted = Boolean(project.tanggal_selesai) || ['completed', 'done', 'selesai'].includes(project.status?.toLowerCase?.() || '');
+    const displayProgress = isCompleted ? 100 : project.progress;
 
     // Helper for status color
     const getStatusColor = (status: string, isGradient = false) => {
@@ -93,9 +96,23 @@ export function ClientProjectCard({ project }: { project: Project }) {
                 <div className="space-y-2">
                     <div className="flex justify-between text-sm">
                         <span className="text-neutral-500 font-medium">Overall Progress</span>
-                        <span className="text-neutral-900 font-bold">{project.progress}%</span>
+                        <span className="text-neutral-900 font-bold">{displayProgress}%</span>
                     </div>
-                    <Progress value={project.progress} className="h-2" indicatorClassName={project.progress === 100 ? "bg-green-500" : "bg-orange-500"} />
+                    <Progress value={displayProgress} className="h-2" indicatorClassName={displayProgress === 100 ? "bg-green-500" : "bg-orange-500"} />
+                    {project.tanggal_selesai && (
+                        <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700 pt-0.5">
+                            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                            <span>
+                                Tanggal Selesai: {(() => {
+                                    try {
+                                        return format(new Date(project.tanggal_selesai), "d MMMM yyyy", { locale: idLocale });
+                                    } catch {
+                                        return project.tanggal_selesai;
+                                    }
+                                })()}
+                            </span>
+                        </div>
+                    )}
                 </div>
 
                 {project.description && (

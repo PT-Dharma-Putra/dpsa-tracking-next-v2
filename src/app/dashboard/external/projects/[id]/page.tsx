@@ -112,15 +112,6 @@ export default function ClientProjectDetailPage({ params }: { params: Promise<{ 
                                 <span>Nomor SPK:</span>
                                 <span className="font-semibold text-neutral-900">{project.spk_number || (project as any).spk?.nomor_spk || "-"}</span>
                             </div>
-                            {project.tanggal_selesai && (
-                                <div className="text-sm font-medium text-emerald-800 bg-emerald-50 px-3 py-1 rounded-md border border-emerald-200 inline-flex items-center gap-1.5">
-                                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
-                                    <span>Tanggal Selesai:</span>
-                                    <span className="font-bold text-emerald-900">
-                                        {format(new Date(project.tanggal_selesai), 'd MMMM yyyy', { locale: idLocale })}
-                                    </span>
-                                </div>
-                            )}
                             {isHerminaPusat && (
                                 <Button
                                     type="button"
