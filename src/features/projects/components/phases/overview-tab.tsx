@@ -462,7 +462,9 @@ export function OverviewTab({ projectId, onNavigateTab }: OverviewTabProps) {
                                             </TableCell>
 
                                             <TableCell className="text-right">
-                                                {item.design?.progress === 100 ? (
+                                                {totalQty > 0 && shippedQty >= totalQty && tersettingQty >= totalQty ? (
+                                                    <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-none">Complete</Badge>
+                                                ) : item.design?.progress === 100 ? (
                                                     <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-none">Ready</Badge>
                                                 ) : (
                                                     <Badge variant="outline" className="text-neutral-500">In Progress</Badge>
