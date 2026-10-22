@@ -432,7 +432,13 @@ export default function SuratSerahTerimaGambarPage() {
       const satuan = (pi?.satuan || 'UNIT').trim();
       const key = `${clientName.toLowerCase()}_${nomorSpk.toLowerCase()}_${itemName.toLowerCase()}_${satuan.toLowerCase()}`;
       const gk = pi?.gambar_kerja;
-      const fileUrl = gk?.file ? (gk.file.startsWith('http') ? gk.file : `/storage/${gk.file}`) : null;
+      const fileUrl = gk?.file
+        ? gk.file.startsWith('http')
+          ? gk.file
+          : `${(
+              process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+            ).replace('/api', '')}/storage/${gk.file}`
+        : null;
       const submitDate = gk?.tanggal_selesai || gk?.updated_at || null;
 
       if (!map.has(key)) {
@@ -1411,14 +1417,21 @@ export default function SuratSerahTerimaGambarPage() {
                               </TableCell>
                               <TableCell className='text-center p-2'>
                                 {it.file_url ? (
-                                  <a
-                                    href={it.file_url}
-                                    target='_blank'
-                                    rel='noreferrer'
-                                    className='inline-flex items-center gap-1 text-[11px] text-blue-600 hover:underline font-semibold'
+                                  <Button
+                                    variant='ghost'
+                                    size='icon'
+                                    className='h-7 w-7 text-blue-600 hover:bg-blue-50 mx-auto'
+                                    asChild
+                                    title='Buka Gambar Kerja'
                                   >
-                                    Buka PDF <ExternalLink className='h-3 w-3' />
-                                  </a>
+                                    <a
+                                      href={it.file_url}
+                                      target='_blank'
+                                      rel='noopener noreferrer'
+                                    >
+                                      <Eye className='h-4 w-4' />
+                                    </a>
+                                  </Button>
                                 ) : (
                                   <span className='text-[10px] text-muted-foreground'>-</span>
                                 )}
