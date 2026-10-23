@@ -477,6 +477,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             url: '/dashboard/projects-v2/serah-terima-gambar?from=ppic',
           },
           {
+            title: 'Order Pekerjaan Produksi',
+            url: '/dashboard/projects-v2/order-pekerjaan-produksi?from=ppic',
+          },
+          {
             title: 'Project V2 | Pengiriman V2',
             url: '/dashboard/projects-v2/pengiriman-v2',
           },
@@ -510,6 +514,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           {
             title: 'Semua Item Produksi',
             url: '/dashboard/projects-v2/produksi/items',
+          },
+          {
+            title: 'Order Pekerjaan Produksi',
+            url: '/dashboard/projects-v2/order-pekerjaan-produksi?from=produksi',
           },
           {
             title: 'Scan Barang Jadi',
