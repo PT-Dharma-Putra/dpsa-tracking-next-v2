@@ -34,6 +34,8 @@ import {
   ShieldCheck,
   MapPin,
   Layers,
+  Search,
+  X,
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -177,6 +179,25 @@ export default function ProjectItemsPage() {
     queryKey: ['project-v2-items', projectId],
     queryFn: () => projectV2Service.getProjectItems(projectId),
   });
+
+  const [itemSearch, setItemSearch] = React.useState('');
+
+  const filteredItems = React.useMemo(() => {
+    if (!items) return [];
+    if (!itemSearch.trim()) return items;
+    const q = itemSearch.toLowerCase();
+    return items.filter(
+      (item) =>
+        item.item?.toLowerCase().includes(q) ||
+        item.ruang?.toLowerCase().includes(q) ||
+        item.lantai?.toLowerCase().includes(q) ||
+        item.sub_kategori?.toLowerCase().includes(q) ||
+        item.keterangan?.toLowerCase().includes(q) ||
+        item.catatan?.toLowerCase().includes(q) ||
+        (item.custom ? 'custom' : 'standar').includes(q) ||
+        item.satuan?.toLowerCase().includes(q)
+    );
+  }, [items, itemSearch]);
 
   const [selectedItemIds, setSelectedItemIds] = React.useState<number[]>([]);
   const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] =
@@ -2111,7 +2132,7 @@ export default function ProjectItemsPage() {
             </div>
           </div>
 
-          <div className='flex items-center gap-2'>
+          <div className='flex items-center gap-2 flex-wrap'>
             {selectedItemIds.length > 0 && (
               <Button
                 onClick={() => setIsBulkDeleteDialogOpen(true)}
@@ -2122,6 +2143,24 @@ export default function ProjectItemsPage() {
                 Hapus Terpilih ({selectedItemIds.length})
               </Button>
             )}
+            <div className='relative w-48 sm:w-64'>
+              <Search className='absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-neutral-400 pointer-events-none' />
+              <Input
+                placeholder='Cari item, lantai, ruang...'
+                value={itemSearch}
+                onChange={(e) => setItemSearch(e.target.value)}
+                className='pl-8 pr-8 h-9 text-xs bg-white shadow-sm border-neutral-200 focus-visible:ring-blue-500'
+              />
+              {itemSearch && (
+                <button
+                  type='button'
+                  onClick={() => setItemSearch('')}
+                  className='absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600'
+                >
+                  <X className='h-3.5 w-3.5' />
+                </button>
+              )}
+            </div>
             <Button
               onClick={() => {
                 if (!flowSteps[4].isActive) {
@@ -2236,8 +2275,34 @@ export default function ProjectItemsPage() {
                       </div>
                     </TableCell>
                   </TableRow>
+                ) : filteredItems?.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={13} className='h-40 text-center'>
+                      <div className='flex flex-col items-center justify-center text-muted-foreground space-y-3'>
+                        <div className='h-12 w-12 rounded-full bg-neutral-100 flex items-center justify-center'>
+                          <Search className='h-6 w-6 text-neutral-400' />
+                        </div>
+                        <div className='space-y-1'>
+                          <p className='font-semibold text-neutral-700'>
+                            Tidak ada item yang sesuai
+                          </p>
+                          <p className='text-xs text-neutral-500'>
+                            Tidak ditemukan hasil untuk "{itemSearch}". Coba kata kunci lain atau bersihkan pencarian.
+                          </p>
+                        </div>
+                        <Button
+                          variant='outline'
+                          size='sm'
+                          onClick={() => setItemSearch('')}
+                          className='text-xs h-8'
+                        >
+                          Reset Pencarian
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
                 ) : (
-                  items?.map((item, index) => (
+                  filteredItems?.map((item, index) => (
                     <TableRow
                       key={item.id}
                       className='hover:bg-blue-50/30 transition-colors group'
