@@ -2401,7 +2401,8 @@ export default function ProjectItemsPage() {
                               Edit
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem
+                            {/* Option Cancel di-hide sesuai request */}
+                            {/* <DropdownMenuItem
                               className='text-orange-600 focus:text-orange-600 focus:bg-orange-50'
                               onClick={() => handleCancelClick(item)}
                               disabled={item.status === 'Cancelled'}
@@ -2409,7 +2410,7 @@ export default function ProjectItemsPage() {
                               <Ban className='mr-2 h-4 w-4' />
                               Cancel
                             </DropdownMenuItem>
-                            <DropdownMenuSeparator />
+                            <DropdownMenuSeparator /> */}
                             <DropdownMenuItem
                               className='text-red-600 focus:text-red-600 focus:bg-red-50'
                               onClick={() => handleDeleteClick(item)}
