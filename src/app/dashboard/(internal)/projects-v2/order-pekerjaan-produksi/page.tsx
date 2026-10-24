@@ -92,8 +92,8 @@ export default function OrderPekerjaanProduksiPage() {
   }, [user]);
 
   const isSuperAdmin = userRoles.includes('Super-Admin');
-  const isPPIC = isSuperAdmin || userRoles.includes('PPIC') || isPpicView;
-  const isProduksi = isSuperAdmin || userRoles.includes('Produksi') || fromParam === 'produksi';
+  const isPPIC = isPpicView && (isSuperAdmin || userRoles.includes('PPIC') || true);
+  const isProduksi = !isPpicView && (isSuperAdmin || userRoles.includes('Produksi') || fromParam === 'produksi');
 
   // Filters State
   const [page, setPage] = useState<number>(1);
@@ -602,13 +602,13 @@ export default function OrderPekerjaanProduksiPage() {
   const totalProduksiSum = Object.values(selectedItemRows).reduce((sum, it) => sum + (Number(it.produksi) || 0), 0);
 
   return (
-    <div className='space-y-5 p-4 md:p-6 max-w-7xl mx-auto'>
+    <div className='space-y-5 p-4 md:p-6 mx-auto'>
       {/* Header Banner */}
       <div className='flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b'>
         <div>
           <div className='flex items-center gap-2'>
             <Badge variant='secondary' className='text-xs font-semibold uppercase'>
-              {isPpicView ? 'Divisi PPIC' : 'Divisi Produksi'}
+              {isPpicView ? 'PPIC' : 'Produksi'}
             </Badge>
             <span className='text-xs text-muted-foreground'>• Formulir Resmi PPIC - 019</span>
           </div>
@@ -1619,7 +1619,8 @@ export default function OrderPekerjaanProduksiPage() {
       {/* MODAL 2: DETAIL ORDER PEKERJAAN PRODUKSI                                  */}
       {/* ========================================================================= */}
       <Dialog open={detailModalOpen} onOpenChange={setDetailModalOpen}>
-        <DialogContent className='max-w-4xl max-h-[92vh] overflow-y-auto p-4 sm:p-6'>
+        {/* <DialogContent className='max-w-4xl max-h-[92vh] overflow-y-auto p-4 sm:p-6'> */}
+        <DialogContent className='min-w-[calc(100vw-2rem)] h-[calc(100vh-2rem)] max-h-[calc(100vh-2rem)] flex flex-col p-6 overflow-y-auto'>
           <DialogHeader>
             <div className='flex items-center justify-between pr-6'>
               <DialogTitle className='flex items-center gap-2 text-lg'>
