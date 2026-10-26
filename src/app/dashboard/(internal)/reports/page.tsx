@@ -146,7 +146,15 @@ export default function ReportsDashboard() {
   const {
     statusData = [],
     progressData = [],
-    piutang = { total_spk: 0, total_tagihan: 0, total_terbayar: 0, sisa_piutang: 0, persentase_sisa: 0 },
+    piutang = {
+      total_spk: 0,
+      total_tagihan: 0,
+      total_terbayar: 0,
+      sisa_belum_ditagihkan: 0,
+      persentase_belum_ditagihkan: 0,
+      sisa_piutang: 0,
+      persentase_sisa: 0
+    },
     spkData = [],
     totalSpkPeriode = 0,
     deadlineData = [],
@@ -538,19 +546,52 @@ export default function ReportsDashboard() {
                 <div className="text-[10px] text-slate-500">Total Terbayar</div>
               </div>
             </div>
-            <div className="bg-amber-50/50 border border-amber-100 rounded-lg p-4 flex items-center justify-between">
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="bg-amber-100 p-1.5 rounded-full text-amber-600">
-                    <CircleDollarSign className="w-4 h-4" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="bg-rose-50/50 border border-rose-100 rounded-lg p-4 flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="bg-rose-100 p-1.5 rounded-full text-rose-600">
+                      <FileText className="w-4 h-4" />
+                    </div>
+                    <span className="text-[10px] font-bold text-rose-700 tracking-wider">SISA NOMINAL BELUM DITAGIHKAN</span>
                   </div>
-                  <span className="text-[10px] font-bold text-amber-700 tracking-wider">SISA PIUTANG</span>
+                  <div className="text-2xl font-bold text-slate-900">
+                    {formatShortValue(
+                      piutang.sisa_belum_ditagihkan ??
+                        Math.max(0, Number(piutang.total_spk ?? totalSpkPeriode) - Number(piutang.total_tagihan || 0))
+                    )}
+                  </div>
                 </div>
-                <div className="text-2xl font-bold text-slate-900">{formatShortValue(piutang.sisa_piutang)}</div>
+                <div className="text-right">
+                  <div className="text-xl font-bold text-rose-700">
+                    {piutang.persentase_belum_ditagihkan ??
+                      (Number(piutang.total_spk ?? totalSpkPeriode) > 0
+                        ? (
+                            (Math.max(0, Number(piutang.total_spk ?? totalSpkPeriode) - Number(piutang.total_tagihan || 0)) /
+                              Number(piutang.total_spk ?? totalSpkPeriode)) *
+                            100
+                          ).toFixed(1)
+                        : 0)}
+                    %
+                  </div>
+                  <div className="text-[10px] text-slate-500">dari total SPK</div>
+                </div>
               </div>
-              <div className="text-right">
-                <div className="text-xl font-bold text-amber-700">{piutang.persentase_sisa}%</div>
-                <div className="text-[10px] text-slate-500">dari total tagihan</div>
+
+              <div className="bg-amber-50/50 border border-amber-100 rounded-lg p-4 flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="bg-amber-100 p-1.5 rounded-full text-amber-600">
+                      <CircleDollarSign className="w-4 h-4" />
+                    </div>
+                    <span className="text-[10px] font-bold text-amber-700 tracking-wider">SISA PIUTANG</span>
+                  </div>
+                  <div className="text-2xl font-bold text-slate-900">{formatShortValue(piutang.sisa_piutang)}</div>
+                </div>
+                <div className="text-right">
+                  <div className="text-xl font-bold text-amber-700">{piutang.persentase_sisa}%</div>
+                  <div className="text-[10px] text-slate-500">dari total tagihan</div>
+                </div>
               </div>
             </div>
           </CardContent>
