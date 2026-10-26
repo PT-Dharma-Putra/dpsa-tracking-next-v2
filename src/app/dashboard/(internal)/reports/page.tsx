@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Button } from "@/components/ui/button"
 import {
   FileText,
@@ -11,7 +13,10 @@ import {
   AlertTriangle,
   Lightbulb,
   CalendarDays,
-  ChevronDown
+  ChevronDown,
+  Check,
+  ChevronsUpDown,
+  Loader2
 } from "lucide-react"
 import {
   PieChart,
@@ -25,10 +30,13 @@ import {
   Tooltip,
   ResponsiveContainer
 } from "recharts"
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useInfiniteQuery } from "@tanstack/react-query"
 import { getReportsData } from "@/features/dashboard/services/dashboard-reports-service"
 import { ClientService } from "@/features/clients/services/client-service"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Badge } from "@/components/ui/badge"
+import { cn } from "@/lib/utils"
+import { CatatanKeterlambatanDialog } from "@/app/dashboard/(internal)/projects-v2/_components/catatan-keterlambatan-dialog"
 
 // Custom Label for Center of Donut Chart
 const renderCustomizedLabel = ({ cx, cy, value, text1, text2 }: any) => {
@@ -47,14 +55,61 @@ const renderCustomizedLabel = ({ cx, cy, value, text1, text2 }: any) => {
 export default function ReportsDashboard() {
   const [mounted, setMounted] = useState(false)
   const [selectedClient, setSelectedClient] = useState<string>("all-clients")
+  const [selectedClientName, setSelectedClientName] = useState<string>("All Clients")
+  const [clientPopoverOpen, setClientPopoverOpen] = useState(false)
+  const [clientSearch, setClientSearch] = useState("")
+  const [debouncedClientSearch, setDebouncedClientSearch] = useState("")
   const [selectedMonth, setSelectedMonth] = useState<string>("all-months")
+  const [selectedOverdueProject, setSelectedOverdueProject] = useState<any | null>(null)
+  const [isCatatanDialogOpen, setIsCatatanDialogOpen] = useState(false)
 
-  const { data: clientsData } = useQuery({
-    queryKey: ['clients-reports-list'],
-    queryFn: () => ClientService.getClients({ page: 1 })
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedClientSearch(clientSearch), 400)
+    return () => clearTimeout(timer)
+  }, [clientSearch])
+
+  const {
+    data: clientsData,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading: isLoadingClients,
+  } = useInfiniteQuery({
+    queryKey: ['clients-reports-list', debouncedClientSearch],
+    queryFn: ({ pageParam = 1 }) =>
+      ClientService.getClients({
+        page: pageParam,
+        search: debouncedClientSearch,
+      }),
+    getNextPageParam: (lastPage: any) => {
+      const current_page = lastPage.meta?.current_page
+      const last_page = lastPage.meta?.last_page
+      return current_page < last_page ? current_page + 1 : undefined
+    },
+    initialPageParam: 1,
   })
 
-  const clients = clientsData?.data || []
+  const clientsRaw = clientsData?.pages.flatMap((page) => page.data) || []
+  const clients = Array.from(
+    new Map(clientsRaw.map((c: any) => [c.id, c])).values()
+  )
+
+  const observerRef = React.useRef<IntersectionObserver | null>(null)
+  const loadMoreRef = React.useCallback(
+    (node: HTMLDivElement | null) => {
+      if (isFetchingNextPage) return
+      if (observerRef.current) observerRef.current.disconnect()
+
+      observerRef.current = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting && hasNextPage) {
+          fetchNextPage()
+        }
+      })
+
+      if (node) observerRef.current.observe(node)
+    },
+    [isFetchingNextPage, hasNextPage, fetchNextPage]
+  )
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['dashboard-reports', selectedClient, selectedMonth],
@@ -74,12 +129,12 @@ export default function ReportsDashboard() {
     return (
       <div className="p-6 bg-slate-50/50 min-h-screen space-y-6">
         <Skeleton className="h-12 w-64 mb-8" />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <Skeleton className="h-72 w-full rounded-xl" />
           <Skeleton className="h-72 w-full rounded-xl" />
           <Skeleton className="h-72 w-full rounded-xl" />
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <Skeleton className="h-72 w-full rounded-xl" />
           <Skeleton className="h-72 w-full rounded-xl" />
           <Skeleton className="h-72 w-full rounded-xl" />
@@ -147,19 +202,82 @@ export default function ReportsDashboard() {
           <p className="text-slate-500 text-sm mt-1">Ringkasan kinerja proyek secara real-time</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <Select value={selectedClient} onValueChange={setSelectedClient}>
-            <SelectTrigger className="w-[160px] bg-white h-9">
-              <SelectValue placeholder="All Clients" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all-clients">All Clients</SelectItem>
-              {clients.map((c: any) => (
-                <SelectItem key={c.id} value={c.id.toString()}>
-                  {c.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Popover open={clientPopoverOpen} onOpenChange={setClientPopoverOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={clientPopoverOpen}
+                className="w-[220px] justify-between bg-white h-9 text-sm font-normal"
+              >
+                <span className="truncate">
+                  {selectedClient === "all-clients"
+                    ? "All Clients"
+                    : clients.find((c: any) => c.id.toString() === selectedClient)?.name || selectedClientName}
+                </span>
+                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[260px] p-0" align="end">
+              <Command shouldFilter={false}>
+                <CommandInput
+                  placeholder="Cari client..."
+                  value={clientSearch}
+                  onValueChange={setClientSearch}
+                />
+                <CommandList>
+                  <CommandEmpty>
+                    {isLoadingClients ? "Memuat client..." : "Client tidak ditemukan."}
+                  </CommandEmpty>
+                  <CommandGroup>
+                    {(!clientSearch || "all clients".includes(clientSearch.toLowerCase())) && (
+                      <CommandItem
+                        value="all-clients"
+                        onSelect={() => {
+                          setSelectedClient("all-clients")
+                          setSelectedClientName("All Clients")
+                          setClientPopoverOpen(false)
+                        }}
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            selectedClient === "all-clients" ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        All Clients
+                      </CommandItem>
+                    )}
+                    {clients.map((c: any) => (
+                      <CommandItem
+                        key={c.id}
+                        value={c.id.toString()}
+                        onSelect={() => {
+                          setSelectedClient(c.id.toString())
+                          setSelectedClientName(c.name)
+                          setClientPopoverOpen(false)
+                        }}
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            selectedClient === c.id.toString() ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        <span className="truncate">{c.name}</span>
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                  {hasNextPage && (
+                    <div ref={loadMoreRef} className="py-3 flex justify-center items-center">
+                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                      <span className="ml-2 text-xs text-muted-foreground">Memuat lainnya...</span>
+                    </div>
+                  )}
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
 
           <Select value={selectedMonth} onValueChange={setSelectedMonth}>
             <SelectTrigger className="w-[140px] bg-white h-9">
@@ -185,22 +303,22 @@ export default function ReportsDashboard() {
       </div>
 
       {/* ROW 1: STATUS PROYEK | TOP 10 PROYEK OVERDUE */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
         {/* Card 1: Status Proyek */}
-        <Card className="shadow-sm border-slate-200">
+        <Card className="shadow-sm border-slate-200 flex flex-col justify-between">
           <CardHeader className="pb-2">
             <CardTitle className="text-xs font-semibold text-slate-800 tracking-wider">STATUS PROYEK</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="flex flex-row items-center justify-between">
-              <div className="h-48 w-48 relative">
+          <CardContent className="@container flex-1 flex flex-col justify-between">
+            <div className="flex flex-col @[340px]:flex-row items-center justify-between gap-4 @[340px]:gap-5 my-auto">
+              <div className="h-40 w-40 sm:h-44 sm:w-44 shrink-0 relative mx-auto @[340px]:mx-0">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
                       data={statusData}
-                      innerRadius={55}
-                      outerRadius={80}
+                      innerRadius="58%"
+                      outerRadius="85%"
                       paddingAngle={2}
                       dataKey="value"
                       stroke="none"
@@ -213,18 +331,22 @@ export default function ReportsDashboard() {
                 </ResponsiveContainer>
                 {/* Center Text absolute */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                  <span className="text-3xl font-bold text-slate-900 leading-none">{totalActive}</span>
+                  <span className="text-2xl sm:text-3xl font-bold text-slate-900 leading-none">{totalActive}</span>
                   <span className="text-[10px] text-slate-500 mt-1">Total Proyek</span>
                 </div>
               </div>
-              <div className="flex-1 pl-2">
-                <div className="space-y-3">
+              <div className="w-full flex-1 min-w-0">
+                <div className="space-y-2.5">
                   {statusData.map((item: any, i: number) => (
-                    <div key={i} className="flex items-center text-xs">
-                      <div className="w-2.5 h-2.5 rounded-full mr-2 shrink-0" style={{ backgroundColor: item.color }}></div>
-                      <span className="text-slate-600 flex-1">{item.name}</span>
-                      <span className="font-bold text-slate-900 mx-2">{item.value}</span>
-                      <span className="text-slate-400 text-[10px]">({item.percentage})</span>
+                    <div key={i} className="flex items-center justify-between gap-2 text-xs">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }}></div>
+                        <span className="text-slate-600 truncate" title={item.name}>{item.name}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span className="font-bold text-slate-900">{item.value}</span>
+                        <span className="text-slate-400 text-[10px]">({item.percentage})</span>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -235,7 +357,7 @@ export default function ReportsDashboard() {
         </Card>
 
         {/* Card 2: Top 10 Proyek Overdue */}
-        <Card className="shadow-sm border-slate-200 md:col-span-2">
+        <Card className="shadow-sm border-slate-200 lg:col-span-2">
           <CardHeader className="pb-3">
             <CardTitle className="text-xs font-semibold text-slate-800 tracking-wider">
               TOP 10 PROYEK OVERDUE (PALING LAMA)
@@ -253,6 +375,7 @@ export default function ReportsDashboard() {
                     <th className="py-3 px-4 min-w-[95px] bg-slate-50">SPK Masuk</th>
                     <th className="py-3 px-4 min-w-[95px] bg-slate-50">Deadline</th>
                     <th className="py-3 px-4 min-w-[85px] text-right bg-slate-50">Terlambat</th>
+                    <th className="py-3 px-4 min-w-[160px] bg-slate-50">Catatan Keterlambatan</th>
                     <th className="py-3 px-4 min-w-[130px] bg-slate-50">Team</th>
                   </tr>
                 </thead>
@@ -267,6 +390,34 @@ export default function ReportsDashboard() {
                         <td className="py-3.5 px-4 text-slate-600">{project.spk_masuk}</td>
                         <td className="py-3.5 px-4 text-slate-600">{project.deadline}</td>
                         <td className="py-3.5 px-4 text-right font-semibold text-red-500">{project.days}</td>
+                        <td className="py-3.5 px-4">
+                          {project.catatan_keterlambatan ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedOverdueProject({
+                                  id: project.project_id || project.id,
+                                  name: project.name,
+                                  client: project.client && project.client !== '-' ? { name: project.client } : undefined,
+                                  catatan_keterlambatans: project.catatan_keterlambatans || [],
+                                })
+                                setIsCatatanDialogOpen(true)
+                              }}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-medium bg-amber-50 border-amber-200 text-amber-800 hover:bg-amber-100 transition-all max-w-[180px] truncate cursor-pointer shadow-xs"
+                              title={project.catatan_keterlambatan}
+                            >
+                              <FileText className="h-3 w-3 shrink-0 text-amber-600" />
+                              <span className="truncate">{project.catatan_keterlambatan}</span>
+                              {project.catatan_keterlambatan_count > 1 && (
+                                <Badge className="ml-0.5 px-1 py-0 text-[10px] h-4 bg-amber-200 text-amber-900 border-none font-semibold">
+                                  {project.catatan_keterlambatan_count}
+                                </Badge>
+                              )}
+                            </button>
+                          ) : (
+                            <span className="text-slate-400 italic text-[11px]">-</span>
+                          )}
+                        </td>
                         <td className="py-3.5 px-4">
                           {project.team_list && project.team_list.length > 0 ? (
                             <div className="flex flex-wrap gap-1">
@@ -284,7 +435,7 @@ export default function ReportsDashboard() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={8} className="text-center py-8 text-slate-500 text-sm">Tidak ada proyek overdue</td>
+                      <td colSpan={9} className="text-center py-8 text-slate-500 text-sm">Tidak ada proyek overdue</td>
                     </tr>
                   )}
                 </tbody>
@@ -296,7 +447,7 @@ export default function ReportsDashboard() {
       </div>
 
       {/* ROW 2: SPK PER BULAN | KEUANGAN */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
         {/* Card 3: Nominal SPK Per Bulan */}
         <Card className="shadow-sm border-slate-200">
@@ -350,7 +501,7 @@ export default function ReportsDashboard() {
         </Card>
 
         {/* Card 4: Keuangan */}
-        <Card className="shadow-sm border-slate-200 md:col-span-2">
+        <Card className="shadow-sm border-slate-200 lg:col-span-2">
           <CardHeader className="pb-4">
             <CardTitle className="text-xs font-semibold text-slate-800 tracking-wider">KEUANGAN</CardTitle>
           </CardHeader>
@@ -421,6 +572,13 @@ export default function ReportsDashboard() {
           </p>
         </div>
       </div> */}
+
+      <CatatanKeterlambatanDialog
+        open={isCatatanDialogOpen}
+        onOpenChange={setIsCatatanDialogOpen}
+        project={selectedOverdueProject}
+        isViewOnlyAllDashboard={true}
+      />
 
     </div>
   )
