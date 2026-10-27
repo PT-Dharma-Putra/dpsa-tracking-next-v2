@@ -3977,7 +3977,7 @@ export function ProjectsV2Table({
                       <TableHead>CLIENT</TableHead>
                       {showPiutang && <TableHead>CLIENT (PENERBIT SPK)</TableHead>}
                       {(!showSPD || showEngineer) && <TableHead>NO SPK</TableHead>}
-                      {showPiutang && <TableHead>NOIMNAL</TableHead>}
+                      {showPiutang && <TableHead>NOMINAL</TableHead>}
                       {showMarketingFilter && (
                         <TableHead
                           className='cursor-pointer hover:bg-neutral-100 transition-colors group'
