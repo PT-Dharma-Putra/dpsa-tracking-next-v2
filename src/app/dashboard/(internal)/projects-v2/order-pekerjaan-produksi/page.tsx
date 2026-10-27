@@ -16,6 +16,7 @@ import {
   Clock,
   AlertCircle,
   Pencil,
+  PenTool,
   Send,
   Trash2,
   ExternalLink,
@@ -620,7 +621,7 @@ export default function OrderPekerjaanProduksiPage() {
           </p>
         </div>
 
-        <div className='flex items-center gap-2'>
+        <div className='flex flex-wrap items-center gap-2'>
           <Button
             variant='outline'
             size='sm'
@@ -628,6 +629,19 @@ export default function OrderPekerjaanProduksiPage() {
             className='h-9 gap-1.5'
           >
             <RefreshCw className='h-3.5 w-3.5' /> Segarkan
+          </Button>
+
+          <Button
+            variant='outline'
+            size='sm'
+            onClick={() => {
+              setPendingAction(null);
+              setSignatureModalOpen(true);
+            }}
+            className='h-9 gap-1.5'
+          >
+            <PenTool className='h-4 w-4 text-primary' />
+            Atur Tanda Tangan Saya
           </Button>
 
           {isPPIC && (
@@ -1924,6 +1938,10 @@ export default function OrderPekerjaanProduksiPage() {
         onOpenChange={setSignatureModalOpen}
         onSuccess={() => {
           setSignatureModalOpen(false);
+          queryClient.invalidateQueries({ queryKey: ['order-pekerjaan-produksi-list'] });
+          if (selectedOrder) {
+            orderPekerjaanProduksiService.getDetail(selectedOrder.id).then(setSelectedOrder);
+          }
           if (pendingAction === 'submit_order' && selectedOrder) {
             submitDraftMutation.mutate(selectedOrder.id);
           } else if (pendingAction === 'terima_order' && selectedOrder) {

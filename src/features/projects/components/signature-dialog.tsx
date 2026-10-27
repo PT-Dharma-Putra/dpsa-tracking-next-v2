@@ -165,7 +165,7 @@ export function SignatureDialog({
             Atur Tanda Tangan Digital
           </DialogTitle>
           <DialogDescription>
-            Tanda tangan ini akan otomatis digunakan pada dokumen serah terima gambar saat Anda menyerahkan atau menerima berkas.
+            Tanda tangan ini akan otomatis digunakan pada dokumen projek (serah terima gambar, order pekerjaan produksi, dll) saat Anda menyerahkan atau menerima berkas.
           </DialogDescription>
         </DialogHeader>
 
