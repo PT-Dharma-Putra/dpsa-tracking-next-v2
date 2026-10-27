@@ -4147,7 +4147,7 @@ export function ProjectsV2Table({
                       {!showProduksi && !showPurchasing && (
                         <TableHead>MKT</TableHead>
                       )}
-                      <TableHead>CLIENT</TableHead>
+                      {!showPiutang && <TableHead>CLIENT</TableHead>}
                       {showPiutang && <TableHead>CLIENT (PENERBIT SPK)</TableHead>}
                       {(!showSPD || showEngineer) && <TableHead>NO SPK</TableHead>}
                       {showPiutang && <TableHead>NOMINAL</TableHead>}
@@ -5500,7 +5500,7 @@ export function ProjectsV2Table({
                                 {project.marketing?.name || '-'}
                               </TableCell>
                             )}
-                          {!showAllDashboard && (
+                          {!showAllDashboard && !showPiutang && (
                             <TableCell className='font-semibold'>
                               {project.client?.name || '-'}
                             </TableCell>
