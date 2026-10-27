@@ -520,7 +520,6 @@ export function ProjectsV2Table({
     } else {
       params.delete('pengiriman_status');
     }
-    params.delete('penagihan_status');
     params.delete('dashboard_filter');
     params.delete('page');
     router.push(`${pathname}?${params.toString()}`, { scroll: false });
@@ -531,7 +530,6 @@ export function ProjectsV2Table({
     setDokubahFilter(null);
     setStokMaterialFilter(null);
     setProduksiFilter(null);
-    setPenagihanStatusFilter(null);
     setQcStatusFilter(null);
     setOrderStatusFilter(null);
     setDashboardFilter(null);
@@ -550,7 +548,6 @@ export function ProjectsV2Table({
     } else {
       params.delete('penagihan_status');
     }
-    params.delete('pengiriman_status');
     params.delete('dashboard_filter');
     params.delete('page');
     router.push(`${pathname}?${params.toString()}`, { scroll: false });
@@ -561,7 +558,6 @@ export function ProjectsV2Table({
     setDokubahFilter(null);
     setStokMaterialFilter(null);
     setProduksiFilter(null);
-    setPengirimanStatusFilter(null);
     setQcStatusFilter(null);
     setOrderStatusFilter(null);
     setDashboardFilter(null);
@@ -733,6 +729,9 @@ export function ProjectsV2Table({
       selectedDivisi,
       selectedMonth,
       selectedYear,
+      pengirimanStatusFilter,
+      penagihanStatusFilter,
+      dashboardFilter,
     ],
     queryFn: () =>
       projectV2Service.getProjectStats({
@@ -742,6 +741,9 @@ export function ProjectsV2Table({
         divisi_id: selectedDivisi !== 'all' ? selectedDivisi : undefined,
         month: selectedMonth !== 'all' ? selectedMonth : undefined,
         year: selectedYear !== 'all' ? selectedYear : undefined,
+        pengiriman_status: pengirimanStatusFilter || undefined,
+        penagihan_status: penagihanStatusFilter || undefined,
+        dashboard_filter: dashboardFilter || undefined,
       }),
     staleTime: 30000,
     refetchOnWindowFocus: false,
@@ -2523,6 +2525,24 @@ export function ProjectsV2Table({
                   {stats.penagihan_100 ?? 0}
                 </span>
               </div>
+            </div>
+          </div>
+
+          {/* Total Nominal */}
+          <div className='flex flex-col gap-2 p-4 rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md'>
+            <div className='flex items-center gap-2 border-b border-slate-100 pb-2'>
+              <div className='h-6 w-6 rounded bg-amber-100 flex items-center justify-center text-amber-600 shrink-0'>
+                <TrendingUp className='h-3.5 w-3.5' />
+              </div>
+              <p className='text-[10px] font-bold text-slate-500 uppercase tracking-wider'>
+                Total Nominal
+              </p>
+            </div>
+
+            <div className='flex items-center justify-between mt-auto pt-1'>
+              <span className='text-base sm:text-lg font-bold text-emerald-700 truncate'>
+                {formatRupiah(stats.total_nominal ?? 0)}
+              </span>
             </div>
           </div>
         </div>

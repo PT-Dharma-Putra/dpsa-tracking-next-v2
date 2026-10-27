@@ -253,6 +253,7 @@ export interface ProjectV2Stats {
   penagihan_belum?: number;
   penagihan_kurang_100?: number;
   penagihan_100?: number;
+  total_nominal?: number;
   qc_completed: number;
   qc_not_completed: number;
   pakai_desain: number;
