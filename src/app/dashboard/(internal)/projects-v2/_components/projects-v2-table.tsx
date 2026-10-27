@@ -267,6 +267,12 @@ export function ProjectsV2Table({
     const urlMonth = searchParams.get('month') || 'all';
     const urlYear = searchParams.get('year') || 'all';
     const urlDashboardFilter = (searchParams.get('dashboard_filter') as any) || null;
+    const urlPengirimanStatus =
+      (searchParams.get('pengiriman_status') as 'completed' | 'not_completed') ||
+      null;
+    const urlPenagihanStatus =
+      (searchParams.get('penagihan_status') as 'belum' | 'kurang_100' | '100') ||
+      null;
 
     setPage(urlPage);
     setSortBy(urlSortBy);
@@ -279,6 +285,8 @@ export function ProjectsV2Table({
     setSelectedMonth(urlMonth);
     setSelectedYear(urlYear);
     setDashboardFilter(urlDashboardFilter);
+    setPengirimanStatusFilter(urlPengirimanStatus);
+    setPenagihanStatusFilter(urlPenagihanStatus);
   }, [searchParams]);
 
   const [poDivisiFilter, setPoDivisiFilter] = React.useState<
@@ -299,7 +307,16 @@ export function ProjectsV2Table({
   >(null);
   const [pengirimanStatusFilter, setPengirimanStatusFilter] = React.useState<
     'completed' | 'not_completed' | null
-  >(null);
+  >(
+    (searchParams.get('pengiriman_status') as 'completed' | 'not_completed') ||
+      null
+  );
+  const [penagihanStatusFilter, setPenagihanStatusFilter] = React.useState<
+    'belum' | 'kurang_100' | '100' | null
+  >(
+    (searchParams.get('penagihan_status') as 'belum' | 'kurang_100' | '100') ||
+      null
+  );
   const [qcStatusFilter, setQcStatusFilter] = React.useState<
     'completed' | 'not_completed' | null
   >(null);
@@ -363,6 +380,9 @@ export function ProjectsV2Table({
     } else {
       params.delete('dashboard_filter');
     }
+    params.delete('pengiriman_status');
+    params.delete('penagihan_status');
+    params.delete('page');
     // ensure page is reset in url if we had it, but we aren't managing page in url yet, just to be safe
     router.push(`${pathname}?${params.toString()}`, { scroll: false });
 
@@ -372,6 +392,9 @@ export function ProjectsV2Table({
     setDokubahFilter(null);
     setStokMaterialFilter(null);
     setProduksiFilter(null);
+    setPengirimanStatusFilter(null);
+    setPenagihanStatusFilter(null);
+    setQcStatusFilter(null);
     setOrderStatusFilter(null);
     setPage(1);
   };
@@ -383,6 +406,9 @@ export function ProjectsV2Table({
     setDokubahFilter(null);
     setStokMaterialFilter(null);
     setProduksiFilter(null);
+    setPengirimanStatusFilter(null);
+    setPenagihanStatusFilter(null);
+    setQcStatusFilter(null);
     setOrderStatusFilter(null);
     setDashboardFilter(null);
     setPage(1);
@@ -395,6 +421,9 @@ export function ProjectsV2Table({
     setDokubahFilter(null);
     setStokMaterialFilter(null);
     setProduksiFilter(null);
+    setPengirimanStatusFilter(null);
+    setPenagihanStatusFilter(null);
+    setQcStatusFilter(null);
     setOrderStatusFilter(null);
     setDashboardFilter(null);
     setPage(1);
@@ -409,6 +438,9 @@ export function ProjectsV2Table({
     setDokubahFilter(null);
     setStokMaterialFilter(null);
     setProduksiFilter(null);
+    setPengirimanStatusFilter(null);
+    setPenagihanStatusFilter(null);
+    setQcStatusFilter(null);
     setOrderStatusFilter(null);
     setDashboardFilter(null);
     setPage(1);
@@ -421,6 +453,9 @@ export function ProjectsV2Table({
     setGambarKerjaFilter(null);
     setStokMaterialFilter(null);
     setProduksiFilter(null);
+    setPengirimanStatusFilter(null);
+    setPenagihanStatusFilter(null);
+    setQcStatusFilter(null);
     setOrderStatusFilter(null);
     setDashboardFilter(null);
     setPage(1);
@@ -435,6 +470,9 @@ export function ProjectsV2Table({
     setGambarKerjaFilter(null);
     setDokubahFilter(null);
     setProduksiFilter(null);
+    setPengirimanStatusFilter(null);
+    setPenagihanStatusFilter(null);
+    setQcStatusFilter(null);
     setOrderStatusFilter(null);
     setDashboardFilter(null);
     setPage(1);
@@ -447,6 +485,9 @@ export function ProjectsV2Table({
     setGambarKerjaFilter(null);
     setDokubahFilter(null);
     setStokMaterialFilter(null);
+    setPengirimanStatusFilter(null);
+    setPenagihanStatusFilter(null);
+    setQcStatusFilter(null);
     setOrderStatusFilter(null);
     setDashboardFilter(null);
     setPage(1);
@@ -461,6 +502,7 @@ export function ProjectsV2Table({
     setStokMaterialFilter(null);
     setProduksiFilter(null);
     setPengirimanStatusFilter(null);
+    setPenagihanStatusFilter(null);
     setOrderStatusFilter(null);
     setDashboardFilter(null);
     setPage(1);
@@ -469,7 +511,47 @@ export function ProjectsV2Table({
   const handlePengirimanStatusFilterClick = (
     type: 'completed' | 'not_completed'
   ) => {
-    setPengirimanStatusFilter(pengirimanStatusFilter === type ? null : type);
+    const newFilter = pengirimanStatusFilter === type ? null : type;
+    setPengirimanStatusFilter(newFilter);
+
+    const params = new URLSearchParams(searchParams.toString());
+    if (newFilter) {
+      params.set('pengiriman_status', newFilter);
+    } else {
+      params.delete('pengiriman_status');
+    }
+    params.delete('dashboard_filter');
+    params.delete('page');
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+
+    setSpkFilterActive(false);
+    setPoDivisiFilter(null);
+    setGambarKerjaFilter(null);
+    setDokubahFilter(null);
+    setStokMaterialFilter(null);
+    setProduksiFilter(null);
+    setQcStatusFilter(null);
+    setOrderStatusFilter(null);
+    setDashboardFilter(null);
+    setPage(1);
+  };
+
+  const handlePenagihanStatusFilterClick = (
+    type: 'belum' | 'kurang_100' | '100'
+  ) => {
+    const newFilter = penagihanStatusFilter === type ? null : type;
+    setPenagihanStatusFilter(newFilter);
+
+    const params = new URLSearchParams(searchParams.toString());
+    if (newFilter) {
+      params.set('penagihan_status', newFilter);
+    } else {
+      params.delete('penagihan_status');
+    }
+    params.delete('dashboard_filter');
+    params.delete('page');
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+
     setSpkFilterActive(false);
     setPoDivisiFilter(null);
     setGambarKerjaFilter(null);
@@ -492,6 +574,9 @@ export function ProjectsV2Table({
     setDokubahFilter(null);
     setStokMaterialFilter(null);
     setProduksiFilter(null);
+    setPengirimanStatusFilter(null);
+    setPenagihanStatusFilter(null);
+    setQcStatusFilter(null);
     setDashboardFilter(null);
     setPage(1);
   };
@@ -603,6 +688,7 @@ export function ProjectsV2Table({
       stokMaterialFilter,
       produksiFilter,
       pengirimanStatusFilter,
+      penagihanStatusFilter,
       qcStatusFilter,
       orderStatusFilter,
       dashboardFilter,
@@ -625,6 +711,7 @@ export function ProjectsV2Table({
         stok_material_status: stokMaterialFilter || undefined,
         produksi_status: produksiFilter || undefined,
         pengiriman_status: pengirimanStatusFilter || undefined,
+        penagihan_status: penagihanStatusFilter || undefined,
         qc_status: qcStatusFilter || undefined,
         order_status: orderStatusFilter || undefined,
         dashboard_filter: dashboardFilter || undefined,
@@ -642,6 +729,9 @@ export function ProjectsV2Table({
       selectedDivisi,
       selectedMonth,
       selectedYear,
+      pengirimanStatusFilter,
+      penagihanStatusFilter,
+      dashboardFilter,
     ],
     queryFn: () =>
       projectV2Service.getProjectStats({
@@ -651,6 +741,9 @@ export function ProjectsV2Table({
         divisi_id: selectedDivisi !== 'all' ? selectedDivisi : undefined,
         month: selectedMonth !== 'all' ? selectedMonth : undefined,
         year: selectedYear !== 'all' ? selectedYear : undefined,
+        pengiriman_status: pengirimanStatusFilter || undefined,
+        penagihan_status: penagihanStatusFilter || undefined,
+        dashboard_filter: dashboardFilter || undefined,
       }),
     staleTime: 30000,
     refetchOnWindowFocus: false,
@@ -2372,6 +2465,86 @@ export function ProjectsV2Table({
               </div>
             </div>
           </div>
+
+          {/* Penagihan */}
+          <div className='flex flex-col gap-2 p-4 rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md'>
+            <div className='flex items-center gap-2 border-b border-slate-100 pb-2'>
+              <div className='h-6 w-6 rounded bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0'>
+                <FileText className='h-3.5 w-3.5' />
+              </div>
+              <p className='text-[10px] font-bold text-slate-500 uppercase tracking-wider'>
+                Penagihan
+              </p>
+            </div>
+
+            <div className='grid grid-cols-3 gap-1.5 mt-auto'>
+              {/* Belum ditagihkan */}
+              <div
+                onClick={() => handlePenagihanStatusFilterClick('belum')}
+                className={cn(
+                  'flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  penagihanStatusFilter === 'belum'
+                    ? 'border-rose-500 bg-rose-50 text-rose-700 font-semibold'
+                    : 'border-slate-100 hover:border-slate-300 text-slate-600'
+                )}
+              >
+                <span className='truncate mr-1'>Belum ditagihkan</span>
+                <span className='font-bold shrink-0'>
+                  {stats.penagihan_belum ?? 0}
+                </span>
+              </div>
+
+              {/* < 100 % */}
+              <div
+                onClick={() => handlePenagihanStatusFilterClick('kurang_100')}
+                className={cn(
+                  'flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  penagihanStatusFilter === 'kurang_100'
+                    ? 'border-amber-500 bg-amber-50 text-amber-700 font-semibold'
+                    : 'border-slate-100 hover:border-slate-300 text-slate-600'
+                )}
+              >
+                <span className='truncate mr-1'>&lt; 100 %</span>
+                <span className='font-bold shrink-0'>
+                  {stats.penagihan_kurang_100 ?? 0}
+                </span>
+              </div>
+
+              {/* 100% */}
+              <div
+                onClick={() => handlePenagihanStatusFilterClick('100')}
+                className={cn(
+                  'flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  penagihanStatusFilter === '100'
+                    ? 'border-emerald-500 bg-emerald-50 text-emerald-700 font-semibold'
+                    : 'border-slate-100 hover:border-slate-300 text-slate-600'
+                )}
+              >
+                <span className='truncate mr-1'>100%</span>
+                <span className='font-bold shrink-0'>
+                  {stats.penagihan_100 ?? 0}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Total Nominal */}
+          <div className='flex flex-col gap-2 p-4 rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md'>
+            <div className='flex items-center gap-2 border-b border-slate-100 pb-2'>
+              <div className='h-6 w-6 rounded bg-amber-100 flex items-center justify-center text-amber-600 shrink-0'>
+                <TrendingUp className='h-3.5 w-3.5' />
+              </div>
+              <p className='text-[10px] font-bold text-slate-500 uppercase tracking-wider'>
+                Total Nominal
+              </p>
+            </div>
+
+            <div className='flex items-center justify-between mt-auto pt-1'>
+              <span className='text-base sm:text-lg font-bold text-emerald-700 truncate'>
+                {formatRupiah(stats.total_nominal ?? 0)}
+              </span>
+            </div>
+          </div>
         </div>
       )}
 
@@ -3977,7 +4150,7 @@ export function ProjectsV2Table({
                       <TableHead>CLIENT</TableHead>
                       {showPiutang && <TableHead>CLIENT (PENERBIT SPK)</TableHead>}
                       {(!showSPD || showEngineer) && <TableHead>NO SPK</TableHead>}
-                      {showPiutang && <TableHead>NOIMNAL</TableHead>}
+                      {showPiutang && <TableHead>NOMINAL</TableHead>}
                       {showMarketingFilter && (
                         <TableHead
                           className='cursor-pointer hover:bg-neutral-100 transition-colors group'
