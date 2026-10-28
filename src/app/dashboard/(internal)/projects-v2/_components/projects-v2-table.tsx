@@ -4281,6 +4281,9 @@ export function ProjectsV2Table({
                         </TableHead>
                       )}
                       {showPiutang && (
+                        <TableHead className='text-center'>BAST</TableHead>
+                      )}
+                      {showPiutang && (
                         <TableHead
                           className='cursor-pointer hover:bg-neutral-100 transition-colors group'
                           onClick={() => handleSortChange('total_penagihan')}
@@ -5665,6 +5668,58 @@ export function ProjectsV2Table({
                           <span className='text-xs font-bold text-neutral-700'>
                             {Math.round(project.progres_kerja?.pengiriman || 0)}%
                           </span>
+                        </TableCell>
+                      )}
+                      {showPiutang && (
+                        <TableCell className='text-center'>
+                          {(() => {
+                            if (!project.spk?.nomor_spk) {
+                              return (
+                                <span className='text-muted-foreground italic text-xs'>
+                                  -
+                                </span>
+                              );
+                            }
+                            const hasBast =
+                              Array.isArray(project.basts) &&
+                              project.basts.length > 0;
+                            const spkNominal = project.spk?.nominal
+                              ? Number(project.spk.nominal)
+                              : 0;
+                            const isTanpaBast =
+                              spkNominal > 0 && spkNominal < 50000000;
+
+                            if (hasBast) {
+                              return (
+                                <Badge
+                                  variant='outline'
+                                  className='bg-emerald-50 text-emerald-700 border-emerald-200 font-semibold whitespace-nowrap'
+                                >
+                                  Terupload
+                                </Badge>
+                              );
+                            }
+
+                            if (isTanpaBast) {
+                              return (
+                                <Badge
+                                  variant='outline'
+                                  className='bg-neutral-100 text-neutral-600 border-neutral-200 font-medium whitespace-nowrap'
+                                >
+                                  Tanpa BAST
+                                </Badge>
+                              );
+                            }
+
+                            return (
+                              <Badge
+                                variant='outline'
+                                className='bg-amber-50 text-amber-700 border-amber-200 font-semibold whitespace-nowrap'
+                              >
+                                Belum diupload
+                              </Badge>
+                            );
+                          })()}
                         </TableCell>
                       )}
                       {showAllDashboard && <></>}
