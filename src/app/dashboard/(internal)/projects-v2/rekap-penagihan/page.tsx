@@ -402,12 +402,14 @@ export default function RekapPenagihanPage() {
         ''
       ).toLowerCase();
       const spk = (p.project?.spk?.nomor_spk || '').toLowerCase();
+      const marketingName = (p.project?.marketing?.name || '').toLowerCase();
       const invoice = (p.nomor_invoice || '').toLowerCase();
       const deskripsi = (p.deskripsi || '').toLowerCase();
 
       const matchesSearch =
         projectName.includes(searchLower) ||
         clientName.includes(searchLower) ||
+        marketingName.includes(searchLower) ||
         spk.includes(searchLower) ||
         invoice.includes(searchLower) ||
         deskripsi.includes(searchLower);
@@ -720,6 +722,7 @@ export default function RekapPenagihanPage() {
                 <TableHeader className='bg-neutral-50/80'>
                   <TableRow>
                     <TableHead className='w-[50px]'>No</TableHead>
+                    <TableHead>MKT</TableHead>
                     <TableHead
                       className='cursor-pointer hover:bg-neutral-200/50 transition-colors select-none'
                       onClick={() => {
@@ -790,14 +793,14 @@ export default function RekapPenagihanPage() {
                 <TableBody>
                   {isLoadingPenagihan ? (
                     <TableRow>
-                      <TableCell colSpan={13 + (canUpdate ? 1 : 0) + (canDelete ? 1 : 0)} className='h-32 text-center'>
+                      <TableCell colSpan={14 + (canUpdate ? 1 : 0) + (canDelete ? 1 : 0)} className='h-32 text-center'>
                         <Loader2 className='h-6 w-6 animate-spin mx-auto text-neutral-400' />
                       </TableCell>
                     </TableRow>
                   ) : filteredPenagihans.length === 0 ? (
                     <TableRow>
                       <TableCell
-                        colSpan={13 + (canUpdate ? 1 : 0) + (canDelete ? 1 : 0)}
+                        colSpan={14 + (canUpdate ? 1 : 0) + (canDelete ? 1 : 0)}
                         className='h-32 text-center text-muted-foreground'
                       >
                         Belum ada data penagihan.
@@ -811,6 +814,9 @@ export default function RekapPenagihanPage() {
                       >
                         <TableCell className='text-muted-foreground font-medium'>
                           {(currentPage - 1) * itemsPerPage + index + 1}
+                        </TableCell>
+                        <TableCell className='text-sm font-medium text-neutral-700 whitespace-nowrap'>
+                          {item.project?.marketing?.name || '-'}
                         </TableCell>
                         <TableCell className='text-sm font-medium text-neutral-700 whitespace-nowrap'>
                           {item.nomor_invoice || '-'}
