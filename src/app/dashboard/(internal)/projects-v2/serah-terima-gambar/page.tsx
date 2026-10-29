@@ -337,7 +337,9 @@ export default function SuratSerahTerimaGambarPage() {
   const handleOpenCreateModal = () => {
     resetCreateForm();
     if (kopSuratList && kopSuratList.length > 0) {
-      const stuKop = kopSuratList.find((k) => k.nama_identitas_iso === 'STU' || k.is_active);
+      const stuKop = kopSuratList.find((k) => k.nama_identitas_iso === 'STU' && k.is_active)
+        || kopSuratList.find((k) => k.nama_identitas_iso === 'STU')
+        || kopSuratList.find((k) => k.is_active);
       if (stuKop) {
         setFormKopId(String(stuKop.id));
       } else {
@@ -353,7 +355,8 @@ export default function SuratSerahTerimaGambarPage() {
       setEditingSuratId(fullDetail.id);
       setFormTanggal(fullDetail.tanggal ? format(new Date(fullDetail.tanggal), 'yyyy-MM-dd') : todayStr);
       setFormNomorSurat(fullDetail.nomor_surat);
-      setFormKopId(fullDetail.kop_surat_id ? String(fullDetail.kop_surat_id) : '');
+      const stuKop = kopSuratList?.find((k) => k.nama_identitas_iso === 'STU');
+      setFormKopId(fullDetail.kop_surat_id ? String(fullDetail.kop_surat_id) : (stuKop ? String(stuKop.id) : ''));
       setFormCatatan(fullDetail.catatan || '');
       setSelectedItemIds(fullDetail.items?.map((it) => it.project_item_id) || []);
       setItemSearch('');
@@ -841,7 +844,7 @@ export default function SuratSerahTerimaGambarPage() {
             </DialogTitle>
             <DialogDescription>
               {editingSuratId
-                ? 'Perbarui data tanggal, nomor surat, kop surat, atau daftar centang item yang diserahterimakan.'
+                ? 'Perbarui data tanggal, nomor surat, atau daftar centang item yang diserahterimakan.'
                 : 'Pilih tanggal dan centang item-item produk yang gambar kerjanya sudah selesai untuk diserahterimakan ke PPIC.'}
             </DialogDescription>
           </DialogHeader>
@@ -1134,30 +1137,14 @@ export default function SuratSerahTerimaGambarPage() {
                   </div>
 
                   <div>
-                    <Label className='text-[11px] font-semibold text-slate-700'>Kop Surat Acuan</Label>
-                    <Select value={formKopId} onValueChange={setFormKopId}>
-                      <SelectTrigger className='mt-1 text-xs h-8'>
-                        <SelectValue placeholder='Pilih Kop Surat' />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {kopSuratList?.map((k) => (
-                          <SelectItem key={k.id} value={String(k.id)}>
-                            {k.nama_kop} ({k.nama_identitas_iso || 'ISO'})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Label className='text-[11px] font-semibold text-slate-700'>Nomor Surat (Opsional)</Label>
+                    <Input
+                      placeholder='Otomatis: STG/YYYYMMDD/...'
+                      value={formNomorSurat}
+                      onChange={(e) => setFormNomorSurat(e.target.value)}
+                      className='mt-1 text-xs h-8'
+                    />
                   </div>
-                </div>
-
-                <div>
-                  <Label className='text-[11px] font-semibold text-slate-700'>Nomor Surat (Opsional)</Label>
-                  <Input
-                    placeholder='Otomatis: STG/YYYYMMDD/...'
-                    value={formNomorSurat}
-                    onChange={(e) => setFormNomorSurat(e.target.value)}
-                    className='mt-1 text-xs h-8'
-                  />
                 </div>
 
                 <div>
