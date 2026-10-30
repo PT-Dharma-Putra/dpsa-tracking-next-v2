@@ -32,6 +32,10 @@ type BarangJadiMasuk = {
     volume: number | null;
     satuan: string | null;
     jumlah: number;
+    divisi?: {
+      id: number;
+      nama: string;
+    } | null;
     project: {
       name: string;
       client?: {
@@ -244,6 +248,7 @@ export default function SetrimBarangJadiClient() {
           { v: "Client", t: "s", s: tableHeaderStyle },
           { v: "No. SPK", t: "s", s: tableHeaderStyle },
           { v: "Item Name", t: "s", s: tableHeaderStyle },
+          { v: "PO Divisi", t: "s", s: tableHeaderStyle },
           { v: "P (m)", t: "s", s: tableHeaderStyle },
           { v: "L (m)", t: "s", s: tableHeaderStyle },
           { v: "T (m)", t: "s", s: tableHeaderStyle },
@@ -266,6 +271,7 @@ export default function SetrimBarangJadiClient() {
           "-";
         const nomorSpk = row.project_item?.project?.spk?.nomor_spk || "-";
         const itemName = row.project_item?.item || "-";
+        const poDivisiStr = row.project_item?.divisi?.nama || "-";
         const p = row.project_item?.panjang != null ? Number(row.project_item.panjang) : "-";
         const l = row.project_item?.lebar != null ? Number(row.project_item.lebar) : "-";
         const t = row.project_item?.tinggi != null ? Number(row.project_item.tinggi) : "-";
@@ -286,6 +292,7 @@ export default function SetrimBarangJadiClient() {
           { v: clientName, t: "s", s: cellStyleLeft },
           { v: nomorSpk, t: "s", s: cellStyleCenter },
           { v: itemName, t: "s", s: cellStyleLeft },
+          { v: poDivisiStr, t: "s", s: cellStyleCenter },
           { v: p, t: typeof p === "number" ? "n" : "s", s: cellStyleCenter },
           { v: l, t: typeof l === "number" ? "n" : "s", s: cellStyleCenter },
           { v: t, t: typeof t === "number" ? "n" : "s", s: cellStyleCenter },
@@ -310,6 +317,7 @@ export default function SetrimBarangJadiClient() {
         { v: "", t: "s", s: totalStyle },
         { v: "", t: "s", s: totalStyle },
         { v: "", t: "s", s: totalStyle },
+        { v: "", t: "s", s: totalStyle },
         { v: totalJmlOrder, t: "n", s: totalNumberStyle },
         { v: "", t: "s", s: totalStyle },
         { v: totalJmlMasuk, t: "n", s: totalNumberStyle },
@@ -323,6 +331,7 @@ export default function SetrimBarangJadiClient() {
         { wch: 25 }, // Client
         { wch: 20 }, // No SPK
         { wch: 32 }, // Item Name
+        { wch: 18 }, // PO Divisi
         { wch: 10 }, // P
         { wch: 10 }, // L
         { wch: 10 }, // T
@@ -335,11 +344,11 @@ export default function SetrimBarangJadiClient() {
       ];
 
       ws["!merges"] = [
-        { s: { r: 0, c: 0 }, e: { r: 0, c: 12 } },
-        { s: { r: 1, c: 0 }, e: { r: 1, c: 12 } },
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 13 } },
+        { s: { r: 1, c: 0 }, e: { r: 1, c: 13 } },
         { s: { r: 2, c: 1 }, e: { r: 2, c: 5 } },
         { s: { r: 3, c: 1 }, e: { r: 3, c: 5 } },
-        { s: { r: totalRowIndex, c: 0 }, e: { r: totalRowIndex, c: 8 } },
+        { s: { r: totalRowIndex, c: 0 }, e: { r: totalRowIndex, c: 9 } },
       ];
 
       const wb = XLSX.utils.book_new();
@@ -408,6 +417,7 @@ export default function SetrimBarangJadiClient() {
                   <TableHead>Client</TableHead>
                   <TableHead>No. SPK</TableHead>
                   <TableHead>Item Name</TableHead>
+                  <TableHead>PO Divisi</TableHead>
                   <TableHead>P / L / T</TableHead>
                   <TableHead>Vol</TableHead>
                   <TableHead>Sat</TableHead>
@@ -420,7 +430,7 @@ export default function SetrimBarangJadiClient() {
               <TableBody>
                 {data.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={11} className="h-24 text-center">
+                    <TableCell colSpan={12} className="h-24 text-center">
                       Tidak ada data barang jadi masuk.
                     </TableCell>
                   </TableRow>
@@ -431,6 +441,20 @@ export default function SetrimBarangJadiClient() {
                       <TableCell>{row.project_item?.project?.client?.name || row.project_item?.project?.client?.company_name || "-"}</TableCell>
                       <TableCell>{row.project_item?.project?.spk?.nomor_spk || "-"}</TableCell>
                       <TableCell>{row.project_item?.item || "-"}</TableCell>
+                      <TableCell>
+                        {row.project_item?.divisi ? (
+                          <Badge
+                            variant="outline"
+                            className="bg-purple-50 text-purple-700 border-purple-200 font-bold"
+                          >
+                            {row.project_item.divisi.nama}
+                          </Badge>
+                        ) : (
+                          <span className="text-[10px] text-muted-foreground italic">
+                            -
+                          </span>
+                        )}
+                      </TableCell>
                       <TableCell className="text-nowrap text-xs text-muted-foreground whitespace-nowrap">
                         {row.project_item?.panjang || 0} / {row.project_item?.lebar || 0} / {row.project_item?.tinggi || 0}
                       </TableCell>
