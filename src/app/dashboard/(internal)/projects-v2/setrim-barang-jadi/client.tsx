@@ -13,11 +13,18 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Download, File, Loader2, FileText, Search, FileSpreadsheet } from "lucide-react";
+import { Download, File, Loader2, FileText, Search, FileSpreadsheet, ChevronsUpDown, X, Check } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
 import { axiosInstance } from "@/lib/axios";
 import * as XLSX from "xlsx-js-style";
 import { toast } from "sonner";
+
+type DivisiOption = {
+  id: number;
+  nama: string;
+};
 
 type BarangJadiMasuk = {
   id: number;
@@ -54,10 +61,27 @@ export default function SetrimBarangJadiClient() {
   const [loading, setLoading] = useState(true);
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
+  const [divisions, setDivisions] = useState<DivisiOption[]>([]);
+  const [selectedDivisi, setSelectedDivisi] = useState<string[]>([]);
+
+  useEffect(() => {
+    fetchDivisions();
+  }, []);
+
+  const fetchDivisions = async () => {
+    try {
+      const res = await axiosInstance.get("/divisi");
+      if (Array.isArray(res.data)) {
+        setDivisions(res.data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch divisions", error);
+    }
+  };
 
   useEffect(() => {
     fetchData();
-  }, [startDate, endDate]);
+  }, [startDate, endDate, selectedDivisi]);
 
   const fetchData = async () => {
     try {
@@ -65,6 +89,9 @@ export default function SetrimBarangJadiClient() {
       const params = new URLSearchParams();
       if (startDate) params.append("start_date", startDate);
       if (endDate) params.append("end_date", endDate);
+      if (selectedDivisi.length > 0) {
+        params.append("divisi_ids", selectedDivisi.join(","));
+      }
       
       const res = await axiosInstance.get(`/barang-jadi-masuk?${params.toString()}`);
       setData(res.data);
@@ -85,6 +112,9 @@ export default function SetrimBarangJadiClient() {
     const params = new URLSearchParams();
     if (startDate) params.append("start_date", startDate);
     if (endDate) params.append("end_date", endDate);
+    if (selectedDivisi.length > 0) {
+      params.append("divisi_ids", selectedDivisi.join(","));
+    }
     
     // Auth token might be needed if the route is protected by Sanctum
     const authData = typeof window !== 'undefined' ? localStorage.getItem('auth-storage') : null;
@@ -115,7 +145,24 @@ export default function SetrimBarangJadiClient() {
         const url = window.URL.createObjectURL(new Blob([blob]));
         const link = document.createElement('a');
         link.href = url;
-        link.setAttribute('download', `Setrim_Barang_Jadi_${new Date().getTime()}.pdf`);
+        let pdfName = "Setrim_Barang_Jadi";
+        if (selectedDivisi.length > 0) {
+          const divNames = selectedDivisi
+            .map((id) =>
+              id === "none"
+                ? "Tanpa_Divisi"
+                : (divisions.find((d) => String(d.id) === id)?.nama || `Divisi_${id}`).replace(/[^a-zA-Z0-9_-]/g, "_")
+            )
+            .join("_");
+          pdfName += `_${divNames.substring(0, 40)}`;
+        }
+        if (startDate && endDate) {
+          pdfName += `_${startDate}_sd_${endDate}`;
+        } else {
+          pdfName += `_${new Date().getTime()}`;
+        }
+        pdfName += ".pdf";
+        link.setAttribute('download', pdfName);
         document.body.appendChild(link);
         link.click();
         link.parentNode?.removeChild(link);
@@ -231,12 +278,27 @@ export default function SetrimBarangJadiClient() {
           ? `Sampai ${endDate}`
           : "Semua Tanggal";
 
+      const divisiLabel =
+        selectedDivisi.length === 0
+          ? "Semua PO Divisi"
+          : selectedDivisi
+              .map((id) =>
+                id === "none"
+                  ? "Tanpa Divisi"
+                  : divisions.find((d) => String(d.id) === id)?.nama || `Divisi ID: ${id}`
+              )
+              .join(", ");
+
       const wsData: any[][] = [
         [{ v: "PT DHARMA PUTRA SEJAHTERA ABADI", t: "s", s: titleStyle }],
         [{ v: "SERAH TERIMA BARANG JADI (Dari Produksi ke Petugas Gudang)", t: "s", s: subtitleStyle }],
         [
           { v: "Periode Serah Terima:", t: "s", s: metaLabelStyle },
           { v: periodeStr, t: "s", s: metaValueStyle },
+        ],
+        [
+          { v: "PO Divisi:", t: "s", s: metaLabelStyle },
+          { v: divisiLabel, t: "s", s: metaValueStyle },
         ],
         [
           { v: "Tanggal Export:", t: "s", s: metaLabelStyle },
@@ -348,6 +410,7 @@ export default function SetrimBarangJadiClient() {
         { s: { r: 1, c: 0 }, e: { r: 1, c: 13 } },
         { s: { r: 2, c: 1 }, e: { r: 2, c: 5 } },
         { s: { r: 3, c: 1 }, e: { r: 3, c: 5 } },
+        { s: { r: 4, c: 1 }, e: { r: 4, c: 5 } },
         { s: { r: totalRowIndex, c: 0 }, e: { r: totalRowIndex, c: 9 } },
       ];
 
@@ -355,9 +418,15 @@ export default function SetrimBarangJadiClient() {
       XLSX.utils.book_append_sheet(wb, ws, "Setrim Barang Jadi");
 
       const dateStr = format(new Date(), "yyyyMMdd_HHmmss");
-      let fileName = `Setrim_Barang_Jadi_${dateStr}.xlsx`;
+      let fileName = "Setrim_Barang_Jadi";
+      if (selectedDivisi.length > 0) {
+        const safeDiv = divisiLabel.replace(/[^a-zA-Z0-9_-]/g, "_").substring(0, 40);
+        fileName += `_${safeDiv}`;
+      }
       if (startDate && endDate) {
-        fileName = `Setrim_Barang_Jadi_${startDate}_sd_${endDate}.xlsx`;
+        fileName += `_${startDate}_sd_${endDate}.xlsx`;
+      } else {
+        fileName += `_${dateStr}.xlsx`;
       }
 
       XLSX.writeFile(wb, fileName);
@@ -370,10 +439,139 @@ export default function SetrimBarangJadiClient() {
 
   return (
     <Card className="shadow-sm">
-      <CardHeader className="flex flex-row items-center justify-between">
+      <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <CardTitle>Riwayat Barang Jadi Masuk</CardTitle>
-        <div className="flex flex-col sm:flex-row items-center gap-3">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-9 min-w-[160px] max-w-[260px] text-xs justify-between font-normal px-2.5 bg-background border-input hover:bg-accent"
+                >
+                  <div className="flex items-center gap-1.5 truncate">
+                    {selectedDivisi.length === 0 ? (
+                      <span className="text-muted-foreground">Semua PO Divisi</span>
+                    ) : selectedDivisi.length === 1 ? (
+                      <Badge
+                        variant="secondary"
+                        className="text-[11px] h-5 px-1.5 font-normal bg-purple-50 text-purple-700 border border-purple-200"
+                      >
+                        {selectedDivisi[0] === "none"
+                          ? "Tanpa Divisi"
+                          : divisions.find((d) => String(d.id) === selectedDivisi[0])?.nama ||
+                            `Divisi ${selectedDivisi[0]}`}
+                      </Badge>
+                    ) : (
+                      <Badge
+                        variant="secondary"
+                        className="text-[11px] h-5 px-1.5 font-medium bg-purple-100 text-purple-800 border border-purple-200"
+                      >
+                        {selectedDivisi.length} PO Divisi
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="flex items-center ml-1 shrink-0">
+                    {selectedDivisi.length > 0 && (
+                      <span
+                        role="button"
+                        tabIndex={0}
+                        className="mr-1 hover:text-red-600 rounded p-0.5 cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedDivisi([]);
+                        }}
+                      >
+                        <X className="h-3 w-3" />
+                      </span>
+                    )}
+                    <ChevronsUpDown className="h-3.5 w-3.5 opacity-50" />
+                  </div>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[220px] p-2" align="start">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between pb-1.5 border-b text-xs">
+                    <span className="font-semibold text-neutral-700">Filter PO Divisi</span>
+                    <div className="flex items-center gap-1">
+                      {selectedDivisi.length > 0 ? (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 px-1.5 text-[11px] text-red-600 hover:text-red-700 hover:bg-red-50"
+                          onClick={() => setSelectedDivisi([])}
+                        >
+                          Reset
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 px-1.5 text-[11px] text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                          onClick={() =>
+                            setSelectedDivisi([...divisions.map((d) => String(d.id)), "none"])
+                          }
+                        >
+                          Pilih Semua
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                  <div className="max-h-[220px] overflow-y-auto space-y-1 py-0.5">
+                    {divisions.map((div) => {
+                      const idStr = String(div.id);
+                      const isChecked = selectedDivisi.includes(idStr);
+                      return (
+                        <div
+                          key={div.id}
+                          className="flex items-center space-x-2 px-2 py-1.5 rounded-md hover:bg-neutral-100 cursor-pointer text-xs transition-colors"
+                          onClick={() => {
+                            setSelectedDivisi((prev) =>
+                              isChecked ? prev.filter((id) => id !== idStr) : [...prev, idStr]
+                            );
+                          }}
+                        >
+                          <Checkbox
+                            checked={isChecked}
+                            onCheckedChange={() => {
+                              setSelectedDivisi((prev) =>
+                                isChecked ? prev.filter((id) => id !== idStr) : [...prev, idStr]
+                              );
+                            }}
+                          />
+                          <span className="flex-1 select-none font-medium text-neutral-700">
+                            {div.nama}
+                          </span>
+                        </div>
+                      );
+                    })}
+                    <div
+                      className="flex items-center space-x-2 px-2 py-1.5 rounded-md hover:bg-neutral-100 cursor-pointer text-xs transition-colors border-t mt-1 pt-1.5"
+                      onClick={() => {
+                        const isChecked = selectedDivisi.includes("none");
+                        setSelectedDivisi((prev) =>
+                          isChecked ? prev.filter((id) => id !== "none") : [...prev, "none"]
+                        );
+                      }}
+                    >
+                      <Checkbox
+                        checked={selectedDivisi.includes("none")}
+                        onCheckedChange={() => {
+                          const isChecked = selectedDivisi.includes("none");
+                          setSelectedDivisi((prev) =>
+                            isChecked ? prev.filter((id) => id !== "none") : [...prev, "none"]
+                          );
+                        }}
+                      />
+                      <span className="flex-1 select-none text-muted-foreground italic">
+                        Tanpa Divisi
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
             <Input 
               type="date" 
               value={startDate} 
@@ -388,19 +586,21 @@ export default function SetrimBarangJadiClient() {
               className="w-auto h-9 text-xs"
             />
           </div>
-          <Button
-            onClick={handleExportExcel}
-            variant="outline"
-            size="sm"
-            className="h-9 gap-1.5 border-emerald-500 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 font-medium"
-          >
-            <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
-            Export Excel
-          </Button>
-          <Button onClick={handleExportPdf} variant="default" size="sm" className="h-9">
-            <FileText className="w-4 h-4 mr-2" />
-            Export PDF
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={handleExportExcel}
+              variant="outline"
+              size="sm"
+              className="h-9 gap-1.5 border-emerald-500 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 font-medium"
+            >
+              <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+              Export Excel
+            </Button>
+            <Button onClick={handleExportPdf} variant="default" size="sm" className="h-9">
+              <FileText className="w-4 h-4 mr-2" />
+              Export PDF
+            </Button>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
