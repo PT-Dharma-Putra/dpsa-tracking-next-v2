@@ -70,7 +70,7 @@ export function EngineeringWidget({ projectId }: EngineeringWidgetProps) {
     // 4. Upload Item Drawing Mutation
     const uploadItemDrawingMutation = useMutation({
         mutationFn: async ({ itemId, file }: { itemId: number, file: File }) => {
-            return await DocumentService.uploadDocument(projectId, file, DOC_TYPE, itemId);
+            throw new Error("Legacy upload deprecated. Silakan upload gambar kerja via menu Projects V2.");
         },
         onSuccess: (_, variables) => {
             toast.success("Drawing uploaded");
@@ -85,7 +85,7 @@ export function EngineeringWidget({ projectId }: EngineeringWidgetProps) {
     // 5. Delete Mutation
     const deleteMutation = useMutation({
         mutationFn: async (docId: number) => {
-            return await DocumentService.deleteDocument(projectId, docId);
+            throw new Error("Legacy delete deprecated.");
         },
         onSuccess: () => {
             toast.success("Drawing deleted");
@@ -209,7 +209,7 @@ export function EngineeringWidget({ projectId }: EngineeringWidgetProps) {
 function ItemDrawingAccordion({ item, projectId, onUpload, onDelete, isUploading, currentFile, onFileChange }: any) {
     const { data: drawings } = useQuery({
         queryKey: ["item-drawings", projectId, item.id],
-        queryFn: () => DocumentService.getDocuments(projectId, "ENGINEERING", item.id)
+        queryFn: () => ({ data: [] })
     });
 
     const drawingsList = drawings?.data || [];

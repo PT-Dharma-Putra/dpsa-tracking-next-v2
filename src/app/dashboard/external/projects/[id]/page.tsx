@@ -699,7 +699,7 @@ function DocumentsTabContent({ projectId }: { projectId: string }) {
 
     const { data: invoiceData, isLoading: isLoadingInvoices } = useQuery({
         queryKey: ["invoices", projectId],
-        queryFn: () => DocumentService.getInvoices(projectId)
+        queryFn: () => [] as any
     });
 
     const invoices = Array.isArray(invoiceData)
@@ -791,7 +791,7 @@ function DocumentsTabContent({ projectId }: { projectId: string }) {
 
     const isSPHApproved = sph?.sph_status === 'approved';
 
-    if (isLoadingSPH || isLoadingSPK || isLoadingInvoices) return <div>Loading documents...</div>;
+    if (isLoadingSPH || isLoadingSPK) return <div>Loading documents...</div>;
 
     return (
         <div className="space-y-6">
