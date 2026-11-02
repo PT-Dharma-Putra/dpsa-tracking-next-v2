@@ -74,6 +74,7 @@ const getUmurTagihanInfo = (inv: Penagihan) => {
 export default function FinanceOverviewPage() {
     const user = useAuthStore((s) => s.user);
     const [agingFilter, setAgingFilter] = React.useState<string>("all");
+    const [statusFilter, setStatusFilter] = React.useState<string>("all");
     const [selectedHerminaClientId, setSelectedHerminaClientId] = React.useState<number | "all">("all");
     const [isHerminaSelectOpen, setIsHerminaSelectOpen] = React.useState(false);
 
@@ -162,19 +163,39 @@ export default function FinanceOverviewPage() {
     }, [penagihanList, user, isHerminaPusat, selectedHerminaClientId]);
 
     const finalPenagihanList = React.useMemo(() => {
-        if (agingFilter === 'all') return filteredPenagihanList;
+        let list = filteredPenagihanList;
 
-        return filteredPenagihanList.filter((inv: Penagihan) => {
-            const diffDays = getUmurTagihanHari(inv);
-            if (diffDays === null) return false;
+        if (agingFilter !== 'all') {
+            list = list.filter((inv: Penagihan) => {
+                const diffDays = getUmurTagihanHari(inv);
+                if (diffDays === null) return false;
 
-            if (agingFilter === 'under_30') return diffDays <= 30;
-            if (agingFilter === '31_60') return diffDays >= 31 && diffDays <= 60;
-            if (agingFilter === 'over_60') return diffDays > 60;
+                if (agingFilter === 'under_30') return diffDays <= 30;
+                if (agingFilter === '31_60') return diffDays >= 31 && diffDays <= 60;
+                if (agingFilter === 'over_60') return diffDays > 60;
 
-            return true;
-        });
-    }, [filteredPenagihanList, agingFilter]);
+                return true;
+            });
+        }
+
+        if (statusFilter !== 'all') {
+            list = list.filter((inv: Penagihan) => {
+                const s = String(inv.status || '').toLowerCase().trim();
+                if (statusFilter === 'lunas') {
+                    return s === 'lunas' || s === 'paid';
+                }
+                if (statusFilter === 'sebagian_dibayar') {
+                    return s === 'sebagian dibayar' || s === 'sebagian';
+                }
+                if (statusFilter === 'belum_bayar') {
+                    return s === 'belum bayar' || s === 'unpaid' || s === 'overdue';
+                }
+                return true;
+            });
+        }
+
+        return list;
+    }, [filteredPenagihanList, agingFilter, statusFilter]);
 
     const totalTagihan = React.useMemo(() => {
         return finalPenagihanList.reduce((acc: number, inv: any) => {
@@ -357,6 +378,20 @@ export default function FinanceOverviewPage() {
                                     <SelectItem value="under_30">&lt; 30 Hari</SelectItem>
                                     <SelectItem value="31_60">31 - 60 Hari</SelectItem>
                                     <SelectItem value="over_60">&gt; 60 Hari</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <span className="text-xs font-medium text-neutral-500 whitespace-nowrap">Filter Status:</span>
+                            <Select value={statusFilter} onValueChange={setStatusFilter}>
+                                <SelectTrigger className="w-[150px] h-9 text-xs bg-white border-neutral-200">
+                                    <SelectValue placeholder="Semua Status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">Semua Status</SelectItem>
+                                    <SelectItem value="belum_bayar">Belum Bayar</SelectItem>
+                                    <SelectItem value="sebagian_dibayar">Sebagian Dibayar</SelectItem>
+                                    <SelectItem value="lunas">Lunas</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
