@@ -801,6 +801,44 @@ export function ProjectsV2Table({
     return map;
   }, [divisions]);
 
+  const [divisiPopoverOpen, setDivisiPopoverOpen] = React.useState(false);
+
+  const selectedDivisiIds = React.useMemo(() => {
+    if (!selectedDivisi || selectedDivisi === 'all') return [];
+    return selectedDivisi
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }, [selectedDivisi]);
+
+  const handleToggleDivisi = (divisiId: string) => {
+    let newIds: string[];
+    if (selectedDivisiIds.includes(divisiId)) {
+      newIds = selectedDivisiIds.filter((id) => id !== divisiId);
+    } else {
+      newIds = [...selectedDivisiIds, divisiId];
+    }
+    const newValue = newIds.length > 0 ? newIds.join(',') : 'all';
+    setSelectedDivisi(newValue);
+    handleFilterParamChange('divisi_id', newValue);
+  };
+
+  const handleSelectAllDivisi = () => {
+    if (selectedDivisiIds.length === divisions.length) {
+      setSelectedDivisi('all');
+      handleFilterParamChange('divisi_id', 'all');
+    } else {
+      const allIds = divisions.map((d) => d.id.toString()).join(',');
+      setSelectedDivisi(allIds);
+      handleFilterParamChange('divisi_id', allIds);
+    }
+  };
+
+  const handleClearDivisi = () => {
+    setSelectedDivisi('all');
+    handleFilterParamChange('divisi_id', 'all');
+  };
+
   const { data: engineers = [] } = useQuery({
     queryKey: ['engineers'],
     queryFn: () => projectV2Service.getEngineers(),
@@ -3884,22 +3922,135 @@ export function ProjectsV2Table({
             </div>
 
             <div className='flex flex-wrap gap-2 items-center'>
-              <Select
-                value={selectedDivisi}
-                onValueChange={(v: string) => handleFilterParamChange('divisi_id', v)}
-              >
-                <SelectTrigger className='w-[150px]'>
-                  <SelectValue placeholder='Divisi' />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value='all'>Semua Divisi</SelectItem>
-                  {divisions.map((d) => (
-                    <SelectItem key={d.id} value={d.id.toString()}>
-                      {d.nama}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={divisiPopoverOpen} onOpenChange={setDivisiPopoverOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={divisiPopoverOpen}
+                    className={cn(
+                      'h-9 justify-between min-w-[150px] max-w-[240px] font-normal text-sm bg-background',
+                      selectedDivisiIds.length === 0 && 'text-muted-foreground'
+                    )}
+                  >
+                    <div className="flex items-center gap-1.5 truncate mr-1">
+                      <span className="truncate text-xs sm:text-sm text-foreground">
+                        {selectedDivisiIds.length === 0
+                          ? 'Semua Divisi'
+                          : selectedDivisiIds.length === 1
+                          ? divisions.find((d) => d.id.toString() === selectedDivisiIds[0])?.nama || '1 Divisi'
+                          : `${selectedDivisiIds.length} Divisi`}
+                      </span>
+                      {selectedDivisiIds.length > 1 && (
+                        <Badge
+                          variant="secondary"
+                          className="h-5 px-1.5 text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200"
+                        >
+                          {selectedDivisiIds.length}
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      {selectedDivisiIds.length > 0 && (
+                        <span
+                          role="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleClearDivisi();
+                          }}
+                          className="rounded-full p-0.5 hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer"
+                          title="Reset filter divisi"
+                        >
+                          <X className="h-3 w-3" />
+                        </span>
+                      )}
+                      <ChevronsUpDown className="h-3.5 w-3.5 opacity-50" />
+                    </div>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[240px] p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Cari divisi..." className="h-8 text-xs" />
+                    <div className="flex items-center justify-between px-3 py-1.5 border-b text-xs text-muted-foreground bg-muted/30">
+                      <span className="text-[11px] font-medium">
+                        {selectedDivisiIds.length > 0
+                          ? `${selectedDivisiIds.length} dipilih`
+                          : 'Semua divisi'}
+                      </span>
+                      {selectedDivisiIds.length > 0 ? (
+                        <button
+                          type="button"
+                          onClick={handleClearDivisi}
+                          className="text-[11px] text-blue-600 hover:text-blue-800 font-medium hover:underline cursor-pointer"
+                        >
+                          Reset
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={handleSelectAllDivisi}
+                          className="text-[11px] text-blue-600 hover:text-blue-800 font-medium hover:underline cursor-pointer"
+                        >
+                          Pilih Semua
+                        </button>
+                      )}
+                    </div>
+                    <CommandList className="max-h-[220px] overflow-y-auto p-1">
+                      <CommandEmpty className="py-4 text-center text-xs text-muted-foreground">
+                        Tidak ada divisi ditemukan.
+                      </CommandEmpty>
+                      <CommandGroup>
+                        {divisions.map((d) => {
+                          const isSelected = selectedDivisiIds.includes(d.id.toString());
+                          return (
+                            <CommandItem
+                              key={d.id}
+                              value={`${d.nama} ${d.nama_panjang || ''}`}
+                              onSelect={() => handleToggleDivisi(d.id.toString())}
+                              className="flex items-center gap-2 cursor-pointer py-1.5 px-2 rounded-sm text-xs hover:bg-accent"
+                            >
+                              <Checkbox
+                                checked={isSelected}
+                                className="pointer-events-none"
+                              />
+                              <div className="flex flex-col min-w-0 flex-1 leading-tight">
+                                <span className={cn('truncate', isSelected && 'font-semibold text-primary')}>
+                                  {d.nama}
+                                </span>
+                                {d.nama_panjang && (
+                                  <span className="text-[10px] text-muted-foreground truncate">
+                                    {d.nama_panjang}
+                                  </span>
+                                )}
+                              </div>
+                            </CommandItem>
+                          );
+                        })}
+                      </CommandGroup>
+                    </CommandList>
+                    <div className="flex items-center justify-between p-2 border-t bg-muted/20 text-xs">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 text-xs px-2 text-muted-foreground hover:text-foreground"
+                        onClick={handleSelectAllDivisi}
+                      >
+                        {selectedDivisiIds.length === divisions.length ? 'Batal Semua' : 'Pilih Semua'}
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="default"
+                        className="h-7 text-xs px-3 bg-blue-600 hover:bg-blue-700 text-white"
+                        onClick={() => setDivisiPopoverOpen(false)}
+                      >
+                        Selesai
+                      </Button>
+                    </div>
+                  </Command>
+                </PopoverContent>
+              </Popover>
 
               <Select
                 value={selectedMonth}
