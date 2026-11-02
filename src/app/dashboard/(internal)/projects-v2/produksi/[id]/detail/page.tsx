@@ -4067,7 +4067,7 @@ export default function ProduksiDetailPage() {
         open={isMassQrDialogOpen}
         onOpenChange={setIsMassQrDialogOpen}
       >
-        <AlertDialogContent className='sm:max-w-2xl max-w-2xl'>
+        <AlertDialogContent className='min-w-[calc(60vw-2rem)] sm:max-w-2xl max-w-2xl'>
           <AlertDialogHeader>
             <AlertDialogTitle className='flex items-center gap-2 text-base'>
               <Printer className='h-4 w-4 text-blue-600' />
