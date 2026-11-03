@@ -95,7 +95,9 @@ export default function MarketingBastPage() {
   const [pengirimanFilter, setPengirimanFilter] = React.useState('all');
   const [page, setPage] = React.useState(1);
   const [perPage, setPerPage] = React.useState(15);
-  const [sortBy, setSortBy] = React.useState<'spk_masuk' | 'nominal' | 'pengiriman'>('spk_masuk');
+  const [sortBy, setSortBy] = React.useState<
+    'spk_masuk' | 'nominal' | 'pengiriman' | 'tgl_upload'
+  >('spk_masuk');
   const [sortDir, setSortDir] = React.useState<'asc' | 'desc'>('desc');
 
   // Debounce search
@@ -232,7 +234,9 @@ export default function MarketingBastPage() {
     });
   };
 
-  const handleSortToggle = (col: 'spk_masuk' | 'nominal' | 'pengiriman') => {
+  const handleSortToggle = (
+    col: 'spk_masuk' | 'nominal' | 'pengiriman' | 'tgl_upload'
+  ) => {
     if (sortBy === col) {
       setSortDir((prev) => (prev === 'asc' ? 'desc' : 'asc'));
     } else {
@@ -442,7 +446,11 @@ export default function MarketingBastPage() {
             </Select>
           </div>
 
-          {(search || marketingFilter !== 'all' || statusBastFilter !== 'all' || pengirimanFilter !== 'all') && (
+          {(search ||
+            marketingFilter !== 'all' ||
+            statusBastFilter !== 'all' ||
+            pengirimanFilter !== 'all' ||
+            sortBy !== 'spk_masuk') && (
             <div className='flex items-center justify-between pt-1 border-t border-neutral-100 text-xs text-neutral-500'>
               <span>Menampilkan filter aktif</span>
               <button
@@ -484,7 +492,13 @@ export default function MarketingBastPage() {
                 >
                   <div className='flex items-center gap-1'>
                     SPK MASUK
-                    <ArrowUpDown className='h-3 w-3 text-neutral-400' />
+                    <ArrowUpDown
+                      className={`h-3 w-3 ${
+                        sortBy === 'spk_masuk'
+                          ? 'text-orange-600 font-bold'
+                          : 'text-neutral-400'
+                      }`}
+                    />
                   </div>
                 </TableHead>
 
@@ -495,7 +509,13 @@ export default function MarketingBastPage() {
                 >
                   <div className='flex items-center justify-end gap-1'>
                     NOMINAL SPK
-                    <ArrowUpDown className='h-3 w-3 text-neutral-400' />
+                    <ArrowUpDown
+                      className={`h-3 w-3 ${
+                        sortBy === 'nominal'
+                          ? 'text-orange-600 font-bold'
+                          : 'text-neutral-400'
+                      }`}
+                    />
                   </div>
                 </TableHead>
 
@@ -506,7 +526,13 @@ export default function MarketingBastPage() {
                 >
                   <div className='flex items-center gap-1'>
                     PROGRES PENGIRIMAN
-                    <ArrowUpDown className='h-3 w-3 text-neutral-400' />
+                    <ArrowUpDown
+                      className={`h-3 w-3 ${
+                        sortBy === 'pengiriman'
+                          ? 'text-orange-600 font-bold'
+                          : 'text-neutral-400'
+                      }`}
+                    />
                   </div>
                 </TableHead>
 
@@ -514,13 +540,30 @@ export default function MarketingBastPage() {
                 <TableHead className='min-w-[240px] text-xs font-bold text-neutral-700'>
                   FILE BAST
                 </TableHead>
+
+                {/* 7. TGL UPLOAD */}
+                <TableHead
+                  className='w-[140px] text-xs font-bold text-neutral-700 uppercase whitespace-nowrap cursor-pointer hover:bg-neutral-100'
+                  onClick={() => handleSortToggle('tgl_upload')}
+                >
+                  <div className='flex items-center gap-1'>
+                    Tgl Upload
+                    <ArrowUpDown
+                      className={`h-3 w-3 ${
+                        sortBy === 'tgl_upload'
+                          ? 'text-orange-600 font-bold'
+                          : 'text-neutral-400'
+                      }`}
+                    />
+                  </div>
+                </TableHead>
               </TableRow>
             </TableHeader>
 
             <TableBody>
               {isLoadingList ? (
                 <TableRow>
-                  <TableCell colSpan={7} className='h-48 text-center'>
+                  <TableCell colSpan={8} className='h-48 text-center'>
                     <div className='flex flex-col items-center justify-center gap-2 text-neutral-500'>
                       <Loader2 className='h-6 w-6 animate-spin text-orange-500' />
                       <span className='text-xs'>Memuat data BAST...</span>
@@ -529,7 +572,7 @@ export default function MarketingBastPage() {
                 </TableRow>
               ) : projects.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className='h-48 text-center'>
+                  <TableCell colSpan={8} className='h-48 text-center'>
                     <div className='flex flex-col items-center justify-center gap-2 text-neutral-400'>
                       <FileText className='h-8 w-8 text-neutral-300' />
                       <span className='text-sm font-medium text-neutral-600'>
@@ -715,6 +758,17 @@ export default function MarketingBastPage() {
                               </Button>
                             </div>
                           </div>
+                        )}
+                      </TableCell>
+
+                      {/* 7. TGL UPLOAD */}
+                      <TableCell className='align-top py-3.5 text-neutral-700 whitespace-nowrap font-medium'>
+                        {latestBast?.created_at ? (
+                          <span title={latestBast.created_at}>
+                            {formatDate(latestBast.created_at)}
+                          </span>
+                        ) : (
+                          <span className='text-neutral-400 italic'>-</span>
                         )}
                       </TableCell>
                     </TableRow>
