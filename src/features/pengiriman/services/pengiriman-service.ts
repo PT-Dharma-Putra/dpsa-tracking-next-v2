@@ -7,6 +7,7 @@ export interface DetailPengiriman {
   project_item_id: number;
   jumlah_keluar: number;
   jumlah_tersetting: number;
+  nomor_pack?: string | null;
   keterangan?: string | null;
   project_item?: {
     id: number;
@@ -206,6 +207,13 @@ export const PengirimanService = {
     mediaId: number
   ): Promise<{ status: string; message: string; pengiriman: Pengiriman }> => {
     const response = await apiClient.delete(`/pengiriman/dokumentasi/${mediaId}`);
+    return response.data;
+  },
+
+  updateDetailsPack: async (
+    items: { id: number; nomor_pack?: string | null; keterangan?: string | null }[]
+  ): Promise<{ status: string; message: string }> => {
+    const response = await apiClient.put('/pengiriman/details-pack', { items });
     return response.data;
   },
 };
