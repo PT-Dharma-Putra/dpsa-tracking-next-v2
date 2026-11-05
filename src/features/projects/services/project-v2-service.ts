@@ -254,6 +254,9 @@ export interface ProjectV2Stats {
   penagihan_kurang_100?: number;
   penagihan_100?: number;
   total_nominal?: number;
+  bast_uploaded?: number;
+  bast_pending?: number;
+  bast_tanpa?: number;
   qc_completed: number;
   qc_not_completed: number;
   pakai_desain: number;
@@ -290,6 +293,7 @@ interface GetProjectsV2Params {
   produksi_status?: string;
   pengiriman_status?: string;
   penagihan_status?: string;
+  bast_status?: string;
   qc_status?: string;
   order_status?: string;
   dashboard_filter?: string;
