@@ -3266,7 +3266,6 @@ export default function PerencanaanDetailPage() {
                         )}
                       </TableCell>
 
-
                       <TableCell>
                         {item.gambar_kerja?.file ? (
                           <div className='flex items-center gap-1'>

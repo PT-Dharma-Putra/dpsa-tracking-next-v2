@@ -273,6 +273,11 @@ export function ProjectsV2Table({
     const urlPenagihanStatus =
       (searchParams.get('penagihan_status') as 'belum' | 'kurang_100' | '100') ||
       null;
+    const urlBastStatus =
+      (searchParams.get('bast_status') as
+        | 'uploaded'
+        | 'pending'
+        | 'tanpa_bast') || null;
 
     setPage(urlPage);
     setSortBy(urlSortBy);
@@ -287,6 +292,7 @@ export function ProjectsV2Table({
     setDashboardFilter(urlDashboardFilter);
     setPengirimanStatusFilter(urlPengirimanStatus);
     setPenagihanStatusFilter(urlPenagihanStatus);
+    setBastStatusFilter(urlBastStatus);
   }, [searchParams]);
 
   const [poDivisiFilter, setPoDivisiFilter] = React.useState<
@@ -316,6 +322,14 @@ export function ProjectsV2Table({
   >(
     (searchParams.get('penagihan_status') as 'belum' | 'kurang_100' | '100') ||
       null
+  );
+  const [bastStatusFilter, setBastStatusFilter] = React.useState<
+    'uploaded' | 'pending' | 'tanpa_bast' | null
+  >(
+    (searchParams.get('bast_status') as
+      | 'uploaded'
+      | 'pending'
+      | 'tanpa_bast') || null
   );
   const [qcStatusFilter, setQcStatusFilter] = React.useState<
     'completed' | 'not_completed' | null
@@ -382,6 +396,7 @@ export function ProjectsV2Table({
     }
     params.delete('pengiriman_status');
     params.delete('penagihan_status');
+    params.delete('bast_status');
     params.delete('page');
     // ensure page is reset in url if we had it, but we aren't managing page in url yet, just to be safe
     router.push(`${pathname}?${params.toString()}`, { scroll: false });
@@ -394,6 +409,7 @@ export function ProjectsV2Table({
     setProduksiFilter(null);
     setPengirimanStatusFilter(null);
     setPenagihanStatusFilter(null);
+    setBastStatusFilter(null);
     setQcStatusFilter(null);
     setOrderStatusFilter(null);
     setPage(1);
@@ -564,6 +580,34 @@ export function ProjectsV2Table({
     setPage(1);
   };
 
+  const handleBastStatusFilterClick = (
+    type: 'uploaded' | 'pending' | 'tanpa_bast'
+  ) => {
+    const newFilter = bastStatusFilter === type ? null : type;
+    setBastStatusFilter(newFilter);
+
+    const params = new URLSearchParams(searchParams.toString());
+    if (newFilter) {
+      params.set('bast_status', newFilter);
+    } else {
+      params.delete('bast_status');
+    }
+    params.delete('dashboard_filter');
+    params.delete('page');
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+
+    setSpkFilterActive(false);
+    setPoDivisiFilter(null);
+    setGambarKerjaFilter(null);
+    setDokubahFilter(null);
+    setStokMaterialFilter(null);
+    setProduksiFilter(null);
+    setQcStatusFilter(null);
+    setOrderStatusFilter(null);
+    setDashboardFilter(null);
+    setPage(1);
+  };
+
   const handleOrderStatusFilterClick = (
     type: 'has_order' | 'tanpa_gambar' | 'sudah_diorder' | 'belum_diorder'
   ) => {
@@ -689,6 +733,7 @@ export function ProjectsV2Table({
       produksiFilter,
       pengirimanStatusFilter,
       penagihanStatusFilter,
+      bastStatusFilter,
       qcStatusFilter,
       orderStatusFilter,
       dashboardFilter,
@@ -712,6 +757,7 @@ export function ProjectsV2Table({
         produksi_status: produksiFilter || undefined,
         pengiriman_status: pengirimanStatusFilter || undefined,
         penagihan_status: penagihanStatusFilter || undefined,
+        bast_status: bastStatusFilter || undefined,
         qc_status: qcStatusFilter || undefined,
         order_status: orderStatusFilter || undefined,
         dashboard_filter: dashboardFilter || undefined,
@@ -731,6 +777,7 @@ export function ProjectsV2Table({
       selectedYear,
       pengirimanStatusFilter,
       penagihanStatusFilter,
+      bastStatusFilter,
       dashboardFilter,
     ],
     queryFn: () =>
@@ -743,6 +790,7 @@ export function ProjectsV2Table({
         year: selectedYear !== 'all' ? selectedYear : undefined,
         pengiriman_status: pengirimanStatusFilter || undefined,
         penagihan_status: penagihanStatusFilter || undefined,
+        bast_status: bastStatusFilter || undefined,
         dashboard_filter: dashboardFilter || undefined,
       }),
     staleTime: 30000,
@@ -2406,7 +2454,7 @@ export function ProjectsV2Table({
       )}
 
       {showPiutang && stats && (
-        <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 w-full'>
+        <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 w-full'>
           {/* Total Project */}
           <div className='flex flex-col gap-2 p-4 rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md'>
             <div className='flex items-center gap-2 border-b border-slate-100 pb-2'>
@@ -2561,6 +2609,68 @@ export function ProjectsV2Table({
                 <span className='truncate mr-1'>100%</span>
                 <span className='font-bold shrink-0'>
                   {stats.penagihan_100 ?? 0}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* BAST */}
+          <div className='flex flex-col gap-2 p-4 rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md'>
+            <div className='flex items-center gap-2 border-b border-slate-100 pb-2'>
+              <div className='h-6 w-6 rounded bg-indigo-100 flex items-center justify-center text-indigo-600 shrink-0'>
+                <CheckCircle2 className='h-3.5 w-3.5' />
+              </div>
+              <p className='text-[10px] font-bold text-slate-500 uppercase tracking-wider'>
+                BAST
+              </p>
+            </div>
+
+            <div className='grid grid-cols-3 gap-1.5 mt-auto'>
+              {/* Terupload */}
+              <div
+                onClick={() => handleBastStatusFilterClick('uploaded')}
+                className={cn(
+                  'flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  bastStatusFilter === 'uploaded'
+                    ? 'border-emerald-500 bg-emerald-50 text-emerald-700 font-semibold'
+                    : 'border-slate-100 hover:border-slate-300 text-slate-600'
+                )}
+              >
+                <span className='truncate mr-1'>Terupload</span>
+                <span className='font-bold shrink-0'>
+                  {stats.bast_uploaded ?? 0}
+                </span>
+              </div>
+
+              {/* Belum diupload */}
+              <div
+                onClick={() => handleBastStatusFilterClick('pending')}
+                className={cn(
+                  'flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  bastStatusFilter === 'pending'
+                    ? 'border-amber-500 bg-amber-50 text-amber-700 font-semibold'
+                    : 'border-slate-100 hover:border-slate-300 text-slate-600'
+                )}
+              >
+                <span className='truncate mr-1'>Belum diupload</span>
+                <span className='font-bold shrink-0'>
+                  {stats.bast_pending ?? 0}
+                </span>
+              </div>
+
+              {/* Tanpa BAST */}
+              <div
+                onClick={() => handleBastStatusFilterClick('tanpa_bast')}
+                className={cn(
+                  'flex items-center justify-between p-1.5 rounded-lg border cursor-pointer text-[10px] select-none transition-all',
+                  bastStatusFilter === 'tanpa_bast'
+                    ? 'border-slate-500 bg-slate-100 text-slate-700 font-semibold'
+                    : 'border-slate-100 hover:border-slate-300 text-slate-600'
+                )}
+              >
+                <span className='truncate mr-1'>Tanpa BAST</span>
+                <span className='font-bold shrink-0'>
+                  {stats.bast_tanpa ?? 0}
                 </span>
               </div>
             </div>
@@ -4432,7 +4542,23 @@ export function ProjectsV2Table({
                         </TableHead>
                       )}
                       {showPiutang && (
-                        <TableHead className='text-center'>BAST</TableHead>
+                        <TableHead
+                          className='cursor-pointer hover:bg-neutral-100 transition-colors group text-center'
+                          onClick={() => handleSortChange('bast')}
+                        >
+                          <div className='flex items-center justify-center gap-1'>
+                            <span>BAST</span>
+                            {sortBy === 'bast' ? (
+                              sortOrder === 'asc' ? (
+                                <ArrowUp className='h-3 w-3' />
+                              ) : (
+                                <ArrowDown className='h-3 w-3' />
+                              )
+                            ) : (
+                              <ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
+                            )}
+                          </div>
+                        </TableHead>
                       )}
                       {showPiutang && (
                         <TableHead
