@@ -2,10 +2,11 @@
 
 import * as React from 'react';
 import { useSearchParams } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
-import { Loader2, Pencil } from 'lucide-react';
+import { Loader2, Pencil, Check, X } from 'lucide-react';
+import { toast } from 'sonner';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import * as XLSX from 'xlsx-js-style';
 
@@ -21,6 +22,7 @@ export default function PrintSuratJalanPage() {
       .filter((x) => !isNaN(x) && x > 0);
   }, [rawIds]);
 
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = React.useState('surat-jalan');
   const [editedSetrimNo, setEditedSetrimNo] = React.useState<string | null>(
     null
@@ -28,6 +30,13 @@ export default function PrintSuratJalanPage() {
   const [preparedByName, setPreparedByName] = React.useState<string>('');
   const [preparedByDate, setPreparedByDate] = React.useState<string>('');
   const [itemsPerPageSetting, setItemsPerPageSetting] = React.useState<number | 'auto'>('auto');
+
+  // Edit Mode State for nomor_pack and keterangan
+  const [isEditing, setIsEditing] = React.useState(false);
+  const [editedValues, setEditedValues] = React.useState<
+    Record<number, { nomor_pack: string; keterangan: string }>
+  >({});
+  const [isSaving, setIsSaving] = React.useState(false);
 
   // Fetch all requested shipments in parallel
   const { data: shipmentsList = [], isLoading } = useQuery({
@@ -109,14 +118,56 @@ export default function PrintSuratJalanPage() {
   }, [combinedDetails, itemsPerPageSetting]);
 
   // Trigger browser print dialog when data is loaded
+  const hasAutoPrintedRef = React.useRef(false);
   React.useEffect(() => {
-    if (shipmentsList.length > 0) {
+    if (shipmentsList.length > 0 && !hasAutoPrintedRef.current && !isEditing) {
+      hasAutoPrintedRef.current = true;
       const timer = setTimeout(() => {
         window.print();
       }, 800);
       return () => clearTimeout(timer);
     }
-  }, [shipmentsList]);
+  }, [shipmentsList, isEditing]);
+
+  const handleStartEdit = () => {
+    const initial: Record<number, { nomor_pack: string; keterangan: string }> = {};
+    combinedDetails.forEach((d) => {
+      if (d.id) {
+        initial[d.id] = {
+          nomor_pack: d.nomor_pack || '',
+          keterangan: d.keterangan || '',
+        };
+      }
+    });
+    setEditedValues(initial);
+    setIsEditing(true);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditedValues({});
+  };
+
+  const handleSaveEdit = async () => {
+    setIsSaving(true);
+    try {
+      const items = Object.entries(editedValues).map(([idStr, val]) => ({
+        id: parseInt(idStr),
+        nomor_pack: val.nomor_pack.trim() || null,
+        keterangan: val.keterangan.trim() || null,
+      }));
+
+      await PengirimanService.updateDetailsPack(items);
+      toast.success('Nomor pack dan keterangan berhasil disimpan');
+      setIsEditing(false);
+      await queryClient.invalidateQueries({ queryKey: ['pengiriman-print-batch'] });
+    } catch (error) {
+      console.error('Error saving detail pack', error);
+      toast.error('Gagal menyimpan data nomor pack dan keterangan');
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const downloadExcel = () => {
     if (shipmentsList.length === 0) return;
@@ -241,6 +292,7 @@ export default function PrintSuratJalanPage() {
           { v: 'VOL', t: 's', s: headerStyle },
           { v: 'SAT', t: 's', s: headerStyle },
           { v: 'JML', t: 's', s: headerStyle },
+          { v: 'NO. PACK', t: 's', s: headerStyle },
           { v: 'KET', t: 's', s: headerStyle },
         ]);
 
@@ -254,6 +306,7 @@ export default function PrintSuratJalanPage() {
             { v: detail.project_item?.volume ?? '-', t: 's', s: dataStyleCenter },
             { v: detail.project_item?.satuan || '-', t: 's', s: dataStyleCenter },
             { v: detail.jumlah_keluar || 0, t: 'n', s: dataStyleCenter },
+            { v: detail.nomor_pack || '-', t: 's', s: dataStyleCenter },
             { v: detail.keterangan || '-', t: 's', s: dataStyleLeft },
           ]);
         });
@@ -381,6 +434,7 @@ export default function PrintSuratJalanPage() {
           { v: 'VOL', t: 's', s: headerStyle },
           { v: 'SAT', t: 's', s: headerStyle },
           { v: 'JML', t: 's', s: headerStyle },
+          { v: 'NO. PACK', t: 's', s: headerStyle },
           { v: 'KET', t: 's', s: headerStyle },
         ]);
         let rHeader1 = wsData.length - 1;
@@ -397,6 +451,7 @@ export default function PrintSuratJalanPage() {
           { v: '', t: 's', s: headerStyle },
           { v: '', t: 's', s: headerStyle },
           { v: '', t: 's', s: headerStyle },
+          { v: '', t: 's', s: headerStyle },
         ]);
         let rHeader2 = wsData.length - 1;
 
@@ -409,6 +464,7 @@ export default function PrintSuratJalanPage() {
         merges.push({ s: { r: rHeader1, c: 8 }, e: { r: rHeader2, c: 8 } });
         merges.push({ s: { r: rHeader1, c: 9 }, e: { r: rHeader2, c: 9 } });
         merges.push({ s: { r: rHeader1, c: 10 }, e: { r: rHeader2, c: 10 } });
+        merges.push({ s: { r: rHeader1, c: 11 }, e: { r: rHeader2, c: 11 } });
 
         combinedDetails.forEach((detail, index) => {
           wsData.push([
@@ -422,6 +478,7 @@ export default function PrintSuratJalanPage() {
             { v: detail.project_item?.volume ?? '-', t: 's', s: dataStyleCenter },
             { v: detail.project_item?.satuan || '-', t: 's', s: dataStyleCenter },
             { v: detail.jumlah_keluar || 0, t: 'n', s: dataStyleCenter },
+            { v: detail.nomor_pack || '-', t: 's', s: dataStyleCenter },
             { v: detail.keterangan || '-', t: 's', s: dataStyleLeft },
           ]);
         });
@@ -500,8 +557,8 @@ export default function PrintSuratJalanPage() {
       const ws = XLSX.utils.aoa_to_sheet(wsData);
       ws['!merges'] = merges;
       ws['!cols'] = isSuratJalan
-        ? [{ wch: 4 }, { wch: 10 }, { wch: 10 }, { wch: 16 }, { wch: 28 }, { wch: 6 }, { wch: 6 }, { wch: 6 }, { wch: 12 }]
-        : [{ wch: 4 }, { wch: 10 }, { wch: 16 }, { wch: 26 }, { wch: 5 }, { wch: 5 }, { wch: 5 }, { wch: 5 }, { wch: 5 }, { wch: 5 }, { wch: 8 }];
+        ? [{ wch: 4 }, { wch: 10 }, { wch: 10 }, { wch: 16 }, { wch: 28 }, { wch: 6 }, { wch: 6 }, { wch: 6 }, { wch: 14 }, { wch: 12 }]
+        : [{ wch: 4 }, { wch: 10 }, { wch: 16 }, { wch: 26 }, { wch: 5 }, { wch: 5 }, { wch: 5 }, { wch: 5 }, { wch: 5 }, { wch: 5 }, { wch: 14 }, { wch: 8 }];
 
       ws['!margins'] = { left: 0.3, right: 0.3, top: 0.5, bottom: 0.5, header: 0.3, footer: 0.3 };
       ws['!pageSetup'] = { orientation: 'portrait', paperSize: 9, fitToWidth: 1, fitToHeight: 0 };
@@ -748,7 +805,7 @@ export default function PrintSuratJalanPage() {
               : 'Halaman ini diformat untuk cetak A4. Note dan tanda tangan otomatis disertakan di setiap halaman cetak.'}
           </p>
         </div>
-        <div className='flex items-center gap-3'>
+        <div className='flex items-center gap-2.5'>
           <div className='flex items-center gap-1.5 text-xs text-neutral-700 bg-white px-2.5 py-1.5 rounded border border-neutral-300'>
             <span className='font-medium text-neutral-600'>Baris/Hal:</span>
             <select
@@ -767,6 +824,38 @@ export default function PrintSuratJalanPage() {
               <option value='16'>16 Baris</option>
             </select>
           </div>
+          {!isEditing ? (
+            <button
+              onClick={handleStartEdit}
+              className='px-3.5 py-2 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700 transition-colors shadow-xs flex items-center gap-1.5'
+              title='Klik untuk mengedit Nomor Pack dan Keterangan'
+            >
+              <Pencil className='h-3.5 w-3.5' />
+              Edit
+            </button>
+          ) : (
+            <div className='flex items-center gap-2'>
+              <button
+                onClick={handleCancelEdit}
+                disabled={isSaving}
+                className='px-3 py-2 bg-white text-neutral-700 border border-neutral-300 rounded text-sm font-medium hover:bg-neutral-50 transition-colors shadow-xs disabled:opacity-50'
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleSaveEdit}
+                disabled={isSaving}
+                className='px-3.5 py-2 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700 transition-colors shadow-xs flex items-center gap-1.5 disabled:opacity-50'
+              >
+                {isSaving ? (
+                  <Loader2 className='h-3.5 w-3.5 animate-spin' />
+                ) : (
+                  <Check className='h-3.5 w-3.5' />
+                )}
+                Simpan
+              </button>
+            </div>
+          )}
           <button
             onClick={downloadExcel}
             className='px-4 py-2 bg-emerald-600 text-white rounded text-sm font-medium hover:bg-emerald-700 transition-colors shadow-xs'
@@ -775,7 +864,8 @@ export default function PrintSuratJalanPage() {
           </button>
           <button
             onClick={() => window.print()}
-            className='px-4 py-2 bg-neutral-800 text-white rounded text-sm font-medium hover:bg-neutral-900 transition-colors shadow-xs'
+            disabled={isEditing}
+            className='px-4 py-2 bg-neutral-800 text-white rounded text-sm font-medium hover:bg-neutral-900 transition-colors shadow-xs disabled:opacity-50'
           >
             Cetak Manual
           </button>
@@ -882,7 +972,10 @@ export default function PrintSuratJalanPage() {
                       <th className='p-1.5 border-r border-black font-semibold text-center w-14'>
                         JML
                       </th>
-                      <th className='p-1.5 font-semibold text-center w-20'>
+                      <th className='p-1.5 border-r border-black font-semibold text-center w-24'>
+                        NO. PACK
+                      </th>
+                      <th className='p-1.5 font-semibold text-center w-24'>
                         KET
                       </th>
                     </tr>
@@ -916,8 +1009,59 @@ export default function PrintSuratJalanPage() {
                           <td className='p-1.5 border-r border-black text-center font-bold text-xs'>
                             {detail.jumlah_keluar}
                           </td>
+                          <td className='p-1.5 border-r border-black text-center text-xs'>
+                            {isEditing && detail.id ? (
+                              <input
+                                type='text'
+                                value={
+                                  editedValues[detail.id]?.nomor_pack ??
+                                  (detail.nomor_pack || '')
+                                }
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  setEditedValues((prev) => ({
+                                    ...prev,
+                                    [detail.id!]: {
+                                      nomor_pack: val,
+                                      keterangan:
+                                        prev[detail.id!]?.keterangan ??
+                                        (detail.keterangan || ''),
+                                    },
+                                  }));
+                                }}
+                                placeholder='Nomor pack...'
+                                className='w-full px-1.5 py-0.5 border border-blue-400 rounded text-xs text-center bg-blue-50/40 focus:bg-white focus:outline-blue-600'
+                              />
+                            ) : (
+                              detail.nomor_pack || ''
+                            )}
+                          </td>
                           <td className='p-1.5 text-center text-xs'>
-                            {detail.keterangan || '-'}
+                            {isEditing && detail.id ? (
+                              <input
+                                type='text'
+                                value={
+                                  editedValues[detail.id]?.keterangan ??
+                                  (detail.keterangan || '')
+                                }
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  setEditedValues((prev) => ({
+                                    ...prev,
+                                    [detail.id!]: {
+                                      nomor_pack:
+                                        prev[detail.id!]?.nomor_pack ??
+                                        (detail.nomor_pack || ''),
+                                      keterangan: val,
+                                    },
+                                  }));
+                                }}
+                                placeholder='Keterangan...'
+                                className='w-full px-1.5 py-0.5 border border-blue-400 rounded text-xs text-center bg-blue-50/40 focus:bg-white focus:outline-blue-600'
+                              />
+                            ) : (
+                              detail.keterangan || ''
+                            )}
                           </td>
                         </tr>
                       );
@@ -1106,7 +1250,10 @@ export default function PrintSuratJalanPage() {
                         <th className='p-1.5 border-r border-black font-semibold text-center w-10' rowSpan={2}>
                           JML
                         </th>
-                        <th className='p-1.5 font-semibold text-center w-14' rowSpan={2}>
+                        <th className='p-1.5 border-r border-black font-semibold text-center w-24' rowSpan={2}>
+                          NO. PACK
+                        </th>
+                        <th className='p-1.5 font-semibold text-center w-24' rowSpan={2}>
                           KET
                         </th>
                       </tr>
@@ -1157,8 +1304,59 @@ export default function PrintSuratJalanPage() {
                             <td className='p-1.5 border-r border-black text-center'>
                               {detail.jumlah_keluar}
                             </td>
-                            <td className='p-1.5 text-center'>
-                              {detail.keterangan || ''}
+                            <td className='p-1.5 border-r border-black text-center text-xs'>
+                              {isEditing && detail.id ? (
+                                <input
+                                  type='text'
+                                  value={
+                                    editedValues[detail.id]?.nomor_pack ??
+                                    (detail.nomor_pack || '')
+                                  }
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    setEditedValues((prev) => ({
+                                      ...prev,
+                                      [detail.id!]: {
+                                        nomor_pack: val,
+                                        keterangan:
+                                          prev[detail.id!]?.keterangan ??
+                                          (detail.keterangan || ''),
+                                      },
+                                    }));
+                                  }}
+                                  placeholder='Nomor pack...'
+                                  className='w-full px-1.5 py-0.5 border border-blue-400 rounded text-xs text-center bg-blue-50/40 focus:bg-white focus:outline-blue-600'
+                                />
+                              ) : (
+                                detail.nomor_pack || ''
+                              )}
+                            </td>
+                            <td className='p-1.5 text-center text-xs'>
+                              {isEditing && detail.id ? (
+                                <input
+                                  type='text'
+                                  value={
+                                    editedValues[detail.id]?.keterangan ??
+                                    (detail.keterangan || '')
+                                  }
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    setEditedValues((prev) => ({
+                                      ...prev,
+                                      [detail.id!]: {
+                                        nomor_pack:
+                                          prev[detail.id!]?.nomor_pack ??
+                                          (detail.nomor_pack || ''),
+                                        keterangan: val,
+                                      },
+                                    }));
+                                  }}
+                                  placeholder='Keterangan...'
+                                  className='w-full px-1.5 py-0.5 border border-blue-400 rounded text-xs text-center bg-blue-50/40 focus:bg-white focus:outline-blue-600'
+                                />
+                              ) : (
+                                detail.keterangan || ''
+                              )}
                             </td>
                           </tr>
                         );

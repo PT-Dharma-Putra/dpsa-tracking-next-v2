@@ -598,10 +598,7 @@ export default function PerencanaanDetailPage() {
 
   const bulkUpdateItemDivisiMutation = useMutation({
     mutationFn: async (divisiId: number) => {
-      const promises = selectedItemIds.map(itemId => 
-        projectV2Service.updateProjectItem(itemId, { divisi_id: divisiId })
-      );
-      await Promise.all(promises);
+      await projectV2Service.bulkUpdateItemDivisi(selectedItemIds, divisiId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
@@ -616,8 +613,8 @@ export default function PerencanaanDetailPage() {
       toast.success('PO Divisi massal berhasil diupdate');
       setSelectedItemIds([]);
     },
-    onError: () => {
-      toast.error('Gagal mengupdate PO Divisi massal');
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.message || 'Gagal mengupdate PO Divisi massal');
     },
   });
 
@@ -631,10 +628,17 @@ export default function PerencanaanDetailPage() {
       new_pic_jabatan?: string;
       deskripsi_belum_lengkap?: string;
     }) => {
-      const promises = selectedItemIds.map(itemId => 
-        projectV2Service.updateBahanBaku(itemId, payload)
-      );
-      await Promise.all(promises);
+      // Chunk updates in small batches to prevent server overload / 503
+      const BATCH_SIZE = 3;
+      for (let i = 0; i < selectedItemIds.length; i += BATCH_SIZE) {
+        const batch = selectedItemIds.slice(i, i + BATCH_SIZE);
+        await Promise.all(
+          batch.map((itemId) => projectV2Service.updateBahanBaku(itemId, payload))
+        );
+        if (i + BATCH_SIZE < selectedItemIds.length) {
+          await new Promise((res) => setTimeout(res, 120));
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
@@ -643,8 +647,8 @@ export default function PerencanaanDetailPage() {
       toast.success('Stok Material massal berhasil diupdate');
       setSelectedItemIds([]);
     },
-    onError: () => {
-      toast.error('Gagal mengupdate Stok Material massal');
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.message || 'Gagal mengupdate Stok Material massal');
     },
   });
 
