@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { CalendarIcon, Loader2, ArrowUpDown, ArrowUp, ArrowDown, Filter } from "lucide-react"
+import { CalendarIcon, Loader2, ArrowUpDown, ArrowUp, ArrowDown, Filter, Search, X } from "lucide-react"
 import { format } from "date-fns"
 import { Label } from "@/components/ui/label"
 
@@ -116,6 +116,7 @@ export function PengirimanPerSpkFormDialog({
   const [selectedItems, setSelectedItems] = React.useState<SelectedItem[]>([])
   const [poDivisiSortOrder, setPoDivisiSortOrder] = React.useState<'asc' | 'desc' | null>(null)
   const [filterPoDivisi, setFilterPoDivisi] = React.useState<string>("ALL")
+  const [searchItem, setSearchItem] = React.useState<string>("")
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -152,6 +153,7 @@ export function PengirimanPerSpkFormDialog({
     if (open) {
       setPoDivisiSortOrder(null)
       setFilterPoDivisi("ALL")
+      setSearchItem("")
       if (effectivePengiriman) {
         form.reset({
           tanggal: new Date(effectivePengiriman.tanggal),
@@ -290,6 +292,12 @@ export function PengirimanPerSpkFormDialog({
 
   const displayedItems = React.useMemo(() => {
     let items = selectedItems
+
+    if (searchItem.trim()) {
+      const q = searchItem.trim().toLowerCase()
+      items = items.filter((item) => (item.item_name || "").toLowerCase().includes(q))
+    }
+
     if (filterPoDivisi && filterPoDivisi !== "ALL") {
       if (filterPoDivisi === "TANPA_DIVISI") {
         items = items.filter(
@@ -306,7 +314,7 @@ export function PengirimanPerSpkFormDialog({
       const comp = valA.localeCompare(valB, "id", { numeric: true, sensitivity: "base" })
       return poDivisiSortOrder === "asc" ? comp : -comp
     })
-  }, [selectedItems, filterPoDivisi, poDivisiSortOrder])
+  }, [selectedItems, searchItem, filterPoDivisi, poDivisiSortOrder])
 
   const isAllSelected = displayedItems.length > 0 && displayedItems.every(item => item.selected)
   const isSomeSelected = displayedItems.length > 0 && displayedItems.some(item => item.selected) && !isAllSelected
@@ -563,6 +571,28 @@ export function PengirimanPerSpkFormDialog({
                 </div>
                 {selectedItems.length > 0 && (
                   <div className="flex items-center gap-2.5 shrink-0">
+                    {/* Search Nama Item */}
+                    <div className="relative">
+                      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                      <Input
+                        type="text"
+                        placeholder="Cari nama item..."
+                        value={searchItem}
+                        onChange={(e) => setSearchItem(e.target.value)}
+                        className="h-8 text-xs pl-8 pr-7 w-[180px] sm:w-[220px] bg-white"
+                      />
+                      {searchItem && (
+                        <button
+                          type="button"
+                          onClick={() => setSearchItem("")}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                          title="Hapus pencarian"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      )}
+                    </div>
+
                     {/* Filter PO Divisi */}
                     <div className="flex items-center gap-1.5">
                       <Filter className="h-3.5 w-3.5 text-muted-foreground" />
@@ -612,15 +642,24 @@ export function PengirimanPerSpkFormDialog({
                   </div>
                 ) : displayedItems.length === 0 ? (
                   <div className="border border-dashed rounded-lg p-12 text-center text-muted-foreground text-sm space-y-2">
-                    <p>Tidak ada item untuk filter PO Divisi "{filterPoDivisi}".</p>
+                    <p>
+                      {searchItem.trim() && filterPoDivisi !== "ALL"
+                        ? `Tidak ada item yang cocok dengan pencarian "${searchItem}" dan filter PO Divisi "${filterPoDivisi}".`
+                        : searchItem.trim()
+                        ? `Tidak ada item dengan nama "${searchItem}".`
+                        : `Tidak ada item untuk filter PO Divisi "${filterPoDivisi}".`}
+                    </p>
                     <Button
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() => setFilterPoDivisi("ALL")}
+                      onClick={() => {
+                        setFilterPoDivisi("ALL")
+                        setSearchItem("")
+                      }}
                       className="text-xs h-7"
                     >
-                      Reset Filter
+                      Reset Filter & Pencarian
                     </Button>
                   </div>
                 ) : (
