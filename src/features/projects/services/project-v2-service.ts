@@ -908,6 +908,39 @@ export const projectV2Service = {
     return data;
   },
 
+  bulkUpdateItemDivisi: async (itemIds: number[], divisiId: number) => {
+    try {
+      const { data } = await apiClient.post<{ message: string; updated_count: number }>(
+        '/projects-v2-items/bulk-divisi',
+        {
+          item_ids: itemIds,
+          divisi_id: divisiId,
+        }
+      );
+      return data;
+    } catch (error: any) {
+      if (error?.response?.status === 404 || error?.response?.status === 405) {
+        const BATCH_SIZE = 3;
+        for (let i = 0; i < itemIds.length; i += BATCH_SIZE) {
+          const batch = itemIds.slice(i, i + BATCH_SIZE);
+          await Promise.all(
+            batch.map((id) =>
+              apiClient.post(`/projects-v2-items/${id}`, {
+                divisi_id: divisiId,
+                _method: 'PUT',
+              })
+            )
+          );
+          if (i + BATCH_SIZE < itemIds.length) {
+            await new Promise((res) => setTimeout(res, 120));
+          }
+        }
+        return { message: 'PO Divisi massal berhasil diperbarui', updated_count: itemIds.length };
+      }
+      throw error;
+    }
+  },
+
   uploadDokubah: async (
     projectId: number,
     payload: {
