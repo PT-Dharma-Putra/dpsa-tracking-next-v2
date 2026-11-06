@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Loader2 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -17,7 +17,15 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
 import { ClientService, Client } from "@/features/clients/services/client-service"
+import { RegionalHerminaService } from "@/features/regional-hermina/services/regional-hermina-service"
 
 interface ClientFormDialogProps {
     open: boolean
@@ -41,6 +49,13 @@ export function ClientFormDialog({ open, onOpenChange, client }: ClientFormDialo
     const [rekening, setRekening] = React.useState("")
     const [npwp, setNpwp] = React.useState("")
     const [hermina, setHermina] = React.useState<number>(0)
+    const [regionalHerminaId, setRegionalHerminaId] = React.useState<string>("")
+
+    const { data: regionalHerminaList = [] } = useQuery({
+        queryKey: ["regional-hermina"],
+        queryFn: () => RegionalHerminaService.getRegionalHermina(),
+        enabled: open,
+    })
 
     React.useEffect(() => {
         if (client) {
@@ -58,6 +73,7 @@ export function ClientFormDialog({ open, onOpenChange, client }: ClientFormDialo
             setRekening(client.rekening || "")
             setNpwp(client.npwp || "")
             setHermina(client.hermina ?? 0)
+            setRegionalHerminaId(client.regional_hermina_id ? String(client.regional_hermina_id) : "")
         } else {
             setKode("")
             setName("")
@@ -73,6 +89,7 @@ export function ClientFormDialog({ open, onOpenChange, client }: ClientFormDialo
             setRekening("")
             setNpwp("")
             setHermina(0)
+            setRegionalHerminaId("")
         }
     }, [client, open])
 
@@ -110,7 +127,8 @@ export function ClientFormDialog({ open, onOpenChange, client }: ClientFormDialo
             nama_bank: namaBank || undefined,
             rekening: rekening || undefined,
             npwp: npwp || undefined,
-            hermina: Number(hermina)
+            hermina: Number(hermina),
+            regional_hermina_id: regionalHerminaId ? Number(regionalHerminaId) : null,
         })
     }
 
@@ -179,43 +197,67 @@ export function ClientFormDialog({ open, onOpenChange, client }: ClientFormDialo
                             </div>
                         </div>
 
-                        {/* Section 2: Kategori Hermina */}
-                        <div className="grid gap-1.5">
-                            <Label className="text-xs">Kategori Client</Label>
-                            <div className="grid grid-cols-3 gap-2">
-                                <button
-                                    type="button"
-                                    onClick={() => setHermina(0)}
-                                    className={`flex flex-col items-center justify-center p-2 rounded-lg border text-center transition-all cursor-pointer select-none ${
-                                        hermina === 0
-                                            ? "border-orange-500 bg-orange-50/70 text-orange-700 ring-2 ring-orange-400/20 font-semibold"
-                                            : "border-neutral-200 bg-neutral-50/50 hover:bg-neutral-100/70 text-neutral-600"
-                                    }`}
+                        {/* Section 2: Kategori Hermina & Regional */}
+                        <div className="space-y-3">
+                            <div className="grid gap-1.5">
+                                <Label className="text-xs">Kategori Client</Label>
+                                <div className="grid grid-cols-3 gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setHermina(0)}
+                                        className={`flex flex-col items-center justify-center p-2 rounded-lg border text-center transition-all cursor-pointer select-none ${
+                                            hermina === 0
+                                                ? "border-orange-500 bg-orange-50/70 text-orange-700 ring-2 ring-orange-400/20 font-semibold"
+                                                : "border-neutral-200 bg-neutral-50/50 hover:bg-neutral-100/70 text-neutral-600"
+                                        }`}
+                                    >
+                                        <span className="text-xs">Non Hermina (0)</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setHermina(1)}
+                                        className={`flex flex-col items-center justify-center p-2 rounded-lg border text-center transition-all cursor-pointer select-none ${
+                                            hermina === 1
+                                                ? "border-blue-500 bg-blue-50/70 text-blue-700 ring-2 ring-blue-400/20 font-semibold"
+                                                : "border-neutral-200 bg-neutral-50/50 hover:bg-neutral-100/70 text-neutral-600"
+                                        }`}
+                                    >
+                                        <span className="text-xs">Hermina (1)</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setHermina(2)}
+                                        className={`flex flex-col items-center justify-center p-2 rounded-lg border text-center transition-all cursor-pointer select-none ${
+                                            hermina === 2
+                                                ? "border-emerald-500 bg-emerald-50/70 text-emerald-700 ring-2 ring-emerald-400/20 font-semibold"
+                                                : "border-neutral-200 bg-neutral-50/50 hover:bg-neutral-100/70 text-neutral-600"
+                                        }`}
+                                    >
+                                        <span className="text-xs">Managed Hermina (2)</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="grid gap-1.5">
+                                <Label htmlFor="regionalHermina" className="text-xs">
+                                    Regional Hermina (Opsional)
+                                </Label>
+                                <Select
+                                    value={regionalHerminaId || "none"}
+                                    onValueChange={(val) => setRegionalHerminaId(val === "none" ? "" : val)}
                                 >
-                                    <span className="text-xs">Non Hermina (0)</span>
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setHermina(1)}
-                                    className={`flex flex-col items-center justify-center p-2 rounded-lg border text-center transition-all cursor-pointer select-none ${
-                                        hermina === 1
-                                            ? "border-blue-500 bg-blue-50/70 text-blue-700 ring-2 ring-blue-400/20 font-semibold"
-                                            : "border-neutral-200 bg-neutral-50/50 hover:bg-neutral-100/70 text-neutral-600"
-                                    }`}
-                                >
-                                    <span className="text-xs">Hermina (1)</span>
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setHermina(2)}
-                                    className={`flex flex-col items-center justify-center p-2 rounded-lg border text-center transition-all cursor-pointer select-none ${
-                                        hermina === 2
-                                            ? "border-emerald-500 bg-emerald-50/70 text-emerald-700 ring-2 ring-emerald-400/20 font-semibold"
-                                            : "border-neutral-200 bg-neutral-50/50 hover:bg-neutral-100/70 text-neutral-600"
-                                    }`}
-                                >
-                                    <span className="text-xs">Managed Hermina (2)</span>
-                                </button>
+                                    <SelectTrigger id="regionalHermina" className="h-8 text-xs bg-white">
+                                        <SelectValue placeholder="Pilih Regional Hermina" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="none" className="text-xs">-- Tidak Ada / Kosong --</SelectItem>
+                                        {regionalHerminaList.map((reg) => (
+                                            <SelectItem key={reg.id} value={String(reg.id)} className="text-xs">
+                                                {reg.regional} {reg.angka_romawi ? `(${reg.angka_romawi})` : ""} {reg.nama_direktur ? `- ${reg.nama_direktur}` : ""}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </div>
                         </div>
 

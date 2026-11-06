@@ -9,6 +9,13 @@ export interface Client {
     director_name?: string | null;
     email?: string | null;
     hermina: number;
+    regional_hermina_id?: number | null;
+    regional_hermina?: {
+        id: number;
+        regional: string;
+        angka_romawi?: string | null;
+        nama_direktur?: string | null;
+    } | null;
     email_keuangan?: string | null;
     finance_email?: string | null;
     phone_number?: string | null;
