@@ -2,9 +2,25 @@
 
 import * as React from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { Plus, Pencil, Trash2, Loader2, Users, Search, Mail, Phone, MapPin, ChevronLeft, ChevronRight, ArrowUpDown, Building, Building2 } from "lucide-react"
+import {
+    Plus,
+    Pencil,
+    Trash2,
+    Loader2,
+    Users,
+    Search,
+    Mail,
+    Phone,
+    MapPin,
+    ChevronLeft,
+    ChevronRight,
+    ArrowUpDown,
+    Building,
+    Building2,
+} from "lucide-react"
 import { toast } from "sonner"
 import { format } from "date-fns"
+import { id as idLocale } from "date-fns/locale"
 import { cn } from "@/lib/utils"
 
 import {
@@ -31,6 +47,15 @@ import {
 
 import { ClientService, Client } from "@/features/clients/services/client-service"
 import { ClientFormDialog } from "./client-form-dialog"
+
+const formatDate = (dateStr?: string | null) => {
+    if (!dateStr) return "-"
+    try {
+        return format(new Date(dateStr), "dd MMM yyyy HH:mm", { locale: idLocale })
+    } catch {
+        return dateStr
+    }
+}
 
 export function ClientTable() {
     const queryClient = useQueryClient()
@@ -86,7 +111,7 @@ export function ClientTable() {
         setIsFormOpen(true)
     }
 
-    const filtered = clients // Filtered by backend now
+    const filtered = clients
 
     return (
         <div className="space-y-6">
@@ -244,186 +269,301 @@ export function ClientTable() {
                     </Button>
                 </div>
 
-            {/* Search */}
-            <div className="relative max-w-sm">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                    placeholder="Cari client..."
-                    value={search}
-                    onChange={e => {
-                        setSearch(e.target.value)
-                        setPage(1) // Reset to first page on search
-                    }}
-                    className="pl-9 bg-neutral-50 border-neutral-200 focus:bg-white"
-                />
-            </div>
+                {/* Search */}
+                <div className="relative max-w-sm">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        placeholder="Cari client..."
+                        value={search}
+                        onChange={e => {
+                            setSearch(e.target.value)
+                            setPage(1)
+                        }}
+                        className="pl-9 bg-neutral-50 border-neutral-200 focus:bg-white"
+                    />
+                </div>
 
-            {/* Table */}
-            <div className="rounded-xl border border-neutral-200 overflow-hidden shadow-sm">
-                <Table>
-                    <TableHeader className="bg-neutral-50/80">
-                        <TableRow>
-                            <TableHead className="w-[50px]">#</TableHead>
-                            <TableHead className="w-[90px]">Kode</TableHead>
-                            <TableHead>Client</TableHead>
-                            <TableHead>Kontak</TableHead>
-                            <TableHead>Alamat</TableHead>
-                            <TableHead
-                                className="cursor-pointer hover:bg-neutral-200/50 transition-colors select-none"
-                                onClick={() => {
-                                    setSortDirection((prev) => {
-                                        if (prev === null) return "desc"
-                                        if (prev === "desc") return "asc"
-                                        return null
-                                    })
-                                }}
-                            >
-                                <div className="flex items-center gap-1.5">
-                                    Total Project
-                                    <ArrowUpDown className={cn("h-3 w-3", sortDirection ? "text-orange-600 font-bold" : "text-neutral-400")} />
-                                </div>
-                            </TableHead>
-                            <TableHead className="w-[120px] text-right">Aksi</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {isLoading ? (
+                {/* Table with all database columns */}
+                <div className="rounded-xl border border-neutral-200 overflow-x-auto shadow-sm">
+                    <Table className="min-w-full text-xs">
+                        <TableHeader className="bg-neutral-50/90 sticky top-0 z-10 text-[11px] font-semibold text-neutral-700 uppercase whitespace-nowrap">
                             <TableRow>
-                                <TableCell colSpan={7} className="h-32 text-center">
-                                    <Loader2 className="h-6 w-6 animate-spin mx-auto text-neutral-400" />
-                                </TableCell>
+                                <TableHead className="w-[45px] text-center">#</TableHead>
+                                <TableHead className="w-[60px] text-center">ID</TableHead>
+                                <TableHead className="w-[75px] text-center">Kode</TableHead>
+                                <TableHead className="min-w-[180px]">Nama Client (name)</TableHead>
+                                <TableHead className="min-w-[180px]">Nama Perusahaan (company_name)</TableHead>
+                                <TableHead className="min-w-[160px]">Nama Direktur (nama_direktur)</TableHead>
+                                <TableHead className="min-w-[160px]">Director Name (director_name)</TableHead>
+                                <TableHead className="min-w-[180px]">Email (email)</TableHead>
+                                <TableHead className="min-w-[140px] text-center">Kategori Hermina (hermina)</TableHead>
+                                <TableHead className="min-w-[180px]">Email Keuangan (email_keuangan)</TableHead>
+                                <TableHead className="min-w-[180px]">Finance Email (finance_email)</TableHead>
+                                <TableHead className="min-w-[130px]">No. Telepon (phone_number)</TableHead>
+                                <TableHead className="min-w-[240px]">Alamat (address)</TableHead>
+                                <TableHead className="min-w-[140px]">Nama Jangum (nama_jangum)</TableHead>
+                                <TableHead className="min-w-[160px]">General Affair Name (general_affair_name)</TableHead>
+                                <TableHead className="min-w-[130px]">HP Jangum (hp_jangum)</TableHead>
+                                <TableHead className="min-w-[140px]">General Affair HP (general_affair_hp)</TableHead>
+                                <TableHead className="min-w-[140px]">No. Rekening (rekening)</TableHead>
+                                <TableHead className="min-w-[120px]">Nama Bank (nama_bank)</TableHead>
+                                <TableHead className="min-w-[160px]">NPWP (npwp)</TableHead>
+                                <TableHead className="min-w-[150px]">Created At (created_at)</TableHead>
+                                <TableHead className="min-w-[150px]">Updated At (updated_at)</TableHead>
+                                <TableHead
+                                    className="min-w-[120px] text-center cursor-pointer hover:bg-neutral-200/50 transition-colors select-none"
+                                    onClick={() => {
+                                        setSortDirection((prev) => {
+                                            if (prev === null) return "desc"
+                                            if (prev === "desc") return "asc"
+                                            return null
+                                        })
+                                    }}
+                                >
+                                    <div className="flex items-center justify-center gap-1.5">
+                                        Total Project
+                                        <ArrowUpDown className={cn("h-3 w-3", sortDirection ? "text-orange-600 font-bold" : "text-neutral-400")} />
+                                    </div>
+                                </TableHead>
+                                <TableHead className="w-[90px] text-center sticky right-0 bg-neutral-50 z-20 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.06)]">
+                                    Aksi
+                                </TableHead>
                             </TableRow>
-                        ) : filtered.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={7} className="h-32 text-center text-muted-foreground text-sm">
-                                    {search ? "Tidak ada client yang cocok." : "Belum ada client. Klik 'Tambah Client' untuk memulai."}
-                                </TableCell>
-                            </TableRow>
-                        ) : (
-                            filtered.map((client: Client, index: number) => (
-                                <TableRow key={client.id} className="hover:bg-neutral-50/50 transition-colors">
-                                    <TableCell className="font-medium text-muted-foreground">{index + 1}</TableCell>
-                                    <TableCell>
-                                        {client.kode !== null && client.kode !== undefined ? (
-                                            <span className="font-mono text-xs font-semibold text-neutral-800 bg-neutral-100 px-2 py-0.5 rounded border border-neutral-200">
-                                                {client.kode}
-                                            </span>
-                                        ) : (
-                                            <span className="text-neutral-400 text-xs">-</span>
-                                        )}
-                                    </TableCell>
-                                    <TableCell>
-                                        <div className="flex flex-col gap-1">
-                                            <div className="flex items-center gap-2">
-                                                <span className="font-bold text-neutral-900">{client.name}</span>
-                                                <Badge variant="outline" className={`text-[9px] h-4 px-1.5 uppercase tracking-wider ${
-                                                    client.hermina === 1 
-                                                    ? 'bg-blue-50 text-blue-700 border-blue-200' 
-                                                    : client.hermina === 2
-                                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                                    : 'bg-orange-50 text-orange-700 border-orange-200'
-                                                }`}>
-                                                    {client.hermina === 1 ? 'Hermina' : client.hermina === 2 ? 'Managed by Hermina' : 'Non Hermina'}
-                                                </Badge>
-                                            </div>
-                                            <span className="text-[10px] text-muted-foreground">ID: #{client.id}</span>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <div className="flex flex-col gap-1">
-                                            <div className="flex items-center gap-1.5 text-xs text-neutral-600">
-                                                <Mail className="h-3 w-3 text-neutral-400" />
-                                                {client.email}
-                                            </div>
-                                            {client.phone && (
-                                                <div className="flex items-center gap-1.5 text-xs text-neutral-600">
-                                                    <Phone className="h-3 w-3 text-neutral-400" />
-                                                    {client.phone}
-                                                </div>
-                                            )}
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <div className="flex items-start gap-1.5 text-xs text-neutral-600 max-w-[200px]">
-                                            <MapPin className="h-3 w-3 text-neutral-400 mt-0.5 shrink-0" />
-                                            <span className="line-clamp-2">{client.address || "-"}</span>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Badge variant="secondary" className="bg-neutral-100 text-neutral-600 border-none font-medium">
-                                            {client.projects_count || 0} Project
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        <div className="flex items-center justify-end gap-1">
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="h-8 w-8 hover:bg-blue-50 hover:text-blue-600"
-                                                onClick={() => handleEdit(client)}
-                                            >
-                                                <Pencil className="h-4 w-4" />
-                                            </Button>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="h-8 w-8 hover:bg-red-50 hover:text-red-600"
-                                                onClick={() => handleDelete(client)}
-                                            >
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
-                                        </div>
+                        </TableHeader>
+                        <TableBody className="divide-y divide-neutral-100">
+                            {isLoading ? (
+                                <TableRow>
+                                    <TableCell colSpan={24} className="h-32 text-center">
+                                        <Loader2 className="h-6 w-6 animate-spin mx-auto text-neutral-400" />
+                                        <span className="text-xs text-neutral-500 mt-2 block">Memuat data client...</span>
                                     </TableCell>
                                 </TableRow>
-                            ))
-                        )}
-                    </TableBody>
-                </Table>
-            </div>
+                            ) : filtered.length === 0 ? (
+                                <TableRow>
+                                    <TableCell colSpan={24} className="h-32 text-center text-muted-foreground text-sm">
+                                        {search ? "Tidak ada client yang cocok." : "Belum ada client. Klik 'Tambah Client' untuk memulai."}
+                                    </TableCell>
+                                </TableRow>
+                            ) : (
+                                filtered.map((client: Client, index: number) => (
+                                    <TableRow key={client.id} className="hover:bg-neutral-50/50 transition-colors group">
+                                        {/* 1. # */}
+                                        <TableCell className="font-medium text-muted-foreground text-center">
+                                            {(meta.current_page - 1) * 10 + index + 1}
+                                        </TableCell>
 
-            {/* Pagination */}
-            <div className="flex items-center justify-between pt-2">
-                <p className="text-xs text-muted-foreground">
-                    Menampilkan {(meta.current_page - 1) * 10 + 1} sampai {Math.min(meta.current_page * 10, meta.total)} dari {meta.total} data
-                </p>
-                <div className="flex items-center gap-2">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setPage(p => Math.max(1, p - 1))}
-                        disabled={meta.current_page === 1 || isLoading}
-                        className="h-8 w-8 p-0"
-                    >
-                        <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    <div className="flex items-center gap-1">
-                        {Array.from({ length: meta.last_page }, (_, i) => i + 1)
-                            .filter(p => p === 1 || p === meta.last_page || Math.abs(p - meta.current_page) <= 1)
-                            .map((p, i, arr) => (
-                                <React.Fragment key={p}>
-                                    {i > 0 && arr[i-1] !== p - 1 && <span className="text-neutral-300">...</span>}
-                                    <Button
-                                        variant={p === meta.current_page ? "default" : "outline"}
-                                        size="sm"
-                                        onClick={() => setPage(p)}
-                                        className={`h-8 w-8 p-0 text-xs ${p === meta.current_page ? "bg-orange-600 hover:bg-orange-700" : ""}`}
-                                    >
-                                        {p}
-                                    </Button>
-                                </React.Fragment>
-                            ))}
-                    </div>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setPage(p => Math.min(meta.last_page, p + 1))}
-                        disabled={meta.current_page === meta.last_page || isLoading}
-                        className="h-8 w-8 p-0"
-                    >
-                        <ChevronRight className="h-4 w-4" />
-                    </Button>
+                                        {/* 2. id */}
+                                        <TableCell className="text-center font-mono text-xs text-neutral-500">
+                                            #{client.id}
+                                        </TableCell>
+
+                                        {/* 3. kode */}
+                                        <TableCell className="text-center">
+                                            {client.kode !== null && client.kode !== undefined ? (
+                                                <span className="font-mono text-xs font-semibold text-neutral-800 bg-neutral-100 px-2 py-0.5 rounded border border-neutral-200">
+                                                    {client.kode}
+                                                </span>
+                                            ) : (
+                                                <span className="text-neutral-400 text-xs">-</span>
+                                            )}
+                                        </TableCell>
+
+                                        {/* 4. name */}
+                                        <TableCell className="font-bold text-neutral-900 whitespace-nowrap">
+                                            {client.name}
+                                        </TableCell>
+
+                                        {/* 5. company_name */}
+                                        <TableCell className="text-neutral-700 whitespace-nowrap">
+                                            {client.company_name || "-"}
+                                        </TableCell>
+
+                                        {/* 6. nama_direktur */}
+                                        <TableCell className="text-neutral-700 whitespace-nowrap">
+                                            {client.nama_direktur || "-"}
+                                        </TableCell>
+
+                                        {/* 7. director_name */}
+                                        <TableCell className="text-neutral-700 whitespace-nowrap">
+                                            {client.director_name || "-"}
+                                        </TableCell>
+
+                                        {/* 8. email */}
+                                        <TableCell className="text-neutral-700 whitespace-nowrap">
+                                            {client.email ? (
+                                                <span className="flex items-center gap-1.5">
+                                                    <Mail className="h-3 w-3 text-neutral-400 shrink-0" />
+                                                    {client.email}
+                                                </span>
+                                            ) : "-"}
+                                        </TableCell>
+
+                                        {/* 9. hermina */}
+                                        <TableCell className="text-center whitespace-nowrap">
+                                            <Badge variant="outline" className={`text-[10px] h-5 px-2 font-medium uppercase tracking-wider ${
+                                                client.hermina === 1 
+                                                ? 'bg-blue-50 text-blue-700 border-blue-200' 
+                                                : client.hermina === 2
+                                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                                : 'bg-orange-50 text-orange-700 border-orange-200'
+                                            }`}>
+                                                {client.hermina === 1 ? 'Hermina (1)' : client.hermina === 2 ? 'Managed by Hermina (2)' : 'Non Hermina (0)'}
+                                            </Badge>
+                                        </TableCell>
+
+                                        {/* 10. email_keuangan */}
+                                        <TableCell className="text-neutral-700 whitespace-nowrap">
+                                            {client.email_keuangan || "-"}
+                                        </TableCell>
+
+                                        {/* 11. finance_email */}
+                                        <TableCell className="text-neutral-700 whitespace-nowrap">
+                                            {client.finance_email || "-"}
+                                        </TableCell>
+
+                                        {/* 12. phone_number */}
+                                        <TableCell className="text-neutral-700 whitespace-nowrap">
+                                            {(client.phone_number || client.phone) ? (
+                                                <span className="flex items-center gap-1.5 font-mono text-xs">
+                                                    <Phone className="h-3 w-3 text-neutral-400 shrink-0" />
+                                                    {client.phone_number || client.phone}
+                                                </span>
+                                            ) : "-"}
+                                        </TableCell>
+
+                                        {/* 13. address */}
+                                        <TableCell className="text-neutral-700 max-w-[280px]">
+                                            <div className="flex items-start gap-1.5" title={client.address || undefined}>
+                                                <MapPin className="h-3 w-3 text-neutral-400 mt-0.5 shrink-0" />
+                                                <span className="truncate">{client.address || "-"}</span>
+                                            </div>
+                                        </TableCell>
+
+                                        {/* 14. nama_jangum */}
+                                        <TableCell className="text-neutral-700 whitespace-nowrap">
+                                            {client.nama_jangum || "-"}
+                                        </TableCell>
+
+                                        {/* 15. general_affair_name */}
+                                        <TableCell className="text-neutral-700 whitespace-nowrap">
+                                            {client.general_affair_name || "-"}
+                                        </TableCell>
+
+                                        {/* 16. hp_jangum */}
+                                        <TableCell className="text-neutral-700 font-mono text-xs whitespace-nowrap">
+                                            {client.hp_jangum || "-"}
+                                        </TableCell>
+
+                                        {/* 17. general_affair_hp */}
+                                        <TableCell className="text-neutral-700 font-mono text-xs whitespace-nowrap">
+                                            {client.general_affair_hp || "-"}
+                                        </TableCell>
+
+                                        {/* 18. rekening */}
+                                        <TableCell className="text-neutral-700 font-mono text-xs whitespace-nowrap">
+                                            {client.rekening || "-"}
+                                        </TableCell>
+
+                                        {/* 19. nama_bank */}
+                                        <TableCell className="text-neutral-700 whitespace-nowrap">
+                                            {client.nama_bank || "-"}
+                                        </TableCell>
+
+                                        {/* 20. npwp */}
+                                        <TableCell className="text-neutral-700 font-mono text-xs whitespace-nowrap">
+                                            {client.npwp || "-"}
+                                        </TableCell>
+
+                                        {/* 21. created_at */}
+                                        <TableCell className="text-neutral-600 text-xs whitespace-nowrap">
+                                            {formatDate(client.created_at)}
+                                        </TableCell>
+
+                                        {/* 22. updated_at */}
+                                        <TableCell className="text-neutral-600 text-xs whitespace-nowrap">
+                                            {formatDate(client.updated_at)}
+                                        </TableCell>
+
+                                        {/* 23. projects_count */}
+                                        <TableCell className="text-center whitespace-nowrap">
+                                            <Badge variant="secondary" className="bg-neutral-100 text-neutral-600 border-none font-medium">
+                                                {client.projects_count || 0} Project
+                                            </Badge>
+                                        </TableCell>
+
+                                        {/* 24. Aksi */}
+                                        <TableCell className="text-center sticky right-0 bg-white group-hover:bg-neutral-50/90 transition-colors z-10 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.06)]">
+                                            <div className="flex items-center justify-center gap-1">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-8 w-8 hover:bg-blue-50 hover:text-blue-600"
+                                                    onClick={() => handleEdit(client)}
+                                                    title="Edit Client"
+                                                >
+                                                    <Pencil className="h-4 w-4" />
+                                                </Button>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-8 w-8 hover:bg-red-50 hover:text-red-600"
+                                                    onClick={() => handleDelete(client)}
+                                                    title="Hapus Client"
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            )}
+                        </TableBody>
+                    </Table>
                 </div>
-            </div>
+
+                {/* Pagination */}
+                <div className="flex items-center justify-between pt-2">
+                    <p className="text-xs text-muted-foreground">
+                        Menampilkan {(meta.current_page - 1) * 10 + 1} sampai {Math.min(meta.current_page * 10, meta.total)} dari {meta.total} data
+                    </p>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setPage(p => Math.max(1, p - 1))}
+                            disabled={meta.current_page === 1 || isLoading}
+                            className="h-8 w-8 p-0"
+                        >
+                            <ChevronLeft className="h-4 w-4" />
+                        </Button>
+                        <div className="flex items-center gap-1">
+                            {Array.from({ length: meta.last_page }, (_, i) => i + 1)
+                                .filter(p => p === 1 || p === meta.last_page || Math.abs(p - meta.current_page) <= 1)
+                                .map((p, i, arr) => (
+                                    <React.Fragment key={p}>
+                                        {i > 0 && arr[i-1] !== p - 1 && <span className="text-neutral-300">...</span>}
+                                        <Button
+                                            variant={p === meta.current_page ? "default" : "outline"}
+                                            size="sm"
+                                            onClick={() => setPage(p)}
+                                            className={`h-8 w-8 p-0 text-xs ${p === meta.current_page ? "bg-orange-600 hover:bg-orange-700" : ""}`}
+                                        >
+                                            {p}
+                                        </Button>
+                                    </React.Fragment>
+                                ))}
+                        </div>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setPage(p => Math.min(meta.last_page, p + 1))}
+                            disabled={meta.current_page === meta.last_page || isLoading}
+                            className="h-8 w-8 p-0"
+                        >
+                            <ChevronRight className="h-4 w-4" />
+                        </Button>
+                    </div>
+                </div>
             </div>
 
             {/* Form Dialog */}

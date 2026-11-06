@@ -4,12 +4,25 @@ export interface Client {
     id: number;
     kode?: number | null;
     name: string;
-    email: string;
-    phone?: string;
-    address?: string;
+    company_name?: string | null;
+    nama_direktur?: string | null;
     director_name?: string | null;
+    email?: string | null;
     hermina: number;
-    created_at?: string;
+    email_keuangan?: string | null;
+    finance_email?: string | null;
+    phone_number?: string | null;
+    phone?: string | null;
+    address?: string | null;
+    nama_jangum?: string | null;
+    general_affair_name?: string | null;
+    hp_jangum?: string | null;
+    general_affair_hp?: string | null;
+    rekening?: string | null;
+    nama_bank?: string | null;
+    npwp?: string | null;
+    created_at?: string | null;
+    updated_at?: string | null;
     projects_count?: number;
 }
 
