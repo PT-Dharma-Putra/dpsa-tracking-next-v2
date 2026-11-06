@@ -297,6 +297,7 @@ export function ClientTable() {
                                 <TableHead className="min-w-[160px]">Director Name (director_name)</TableHead>
                                 <TableHead className="min-w-[180px]">Email (email)</TableHead>
                                 <TableHead className="min-w-[140px] text-center">Kategori Hermina (hermina)</TableHead>
+                                <TableHead className="min-w-[170px]">Regional Hermina (regional_hermina_id)</TableHead>
                                 <TableHead className="min-w-[180px]">Email Keuangan (email_keuangan)</TableHead>
                                 <TableHead className="min-w-[180px]">Finance Email (finance_email)</TableHead>
                                 <TableHead className="min-w-[130px]">No. Telepon (phone_number)</TableHead>
@@ -333,14 +334,14 @@ export function ClientTable() {
                         <TableBody className="divide-y divide-neutral-100">
                             {isLoading ? (
                                 <TableRow>
-                                    <TableCell colSpan={24} className="h-32 text-center">
+                                    <TableCell colSpan={25} className="h-32 text-center">
                                         <Loader2 className="h-6 w-6 animate-spin mx-auto text-neutral-400" />
                                         <span className="text-xs text-neutral-500 mt-2 block">Memuat data client...</span>
                                     </TableCell>
                                 </TableRow>
                             ) : filtered.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={24} className="h-32 text-center text-muted-foreground text-sm">
+                                    <TableCell colSpan={25} className="h-32 text-center text-muted-foreground text-sm">
                                         {search ? "Tidak ada client yang cocok." : "Belum ada client. Klik 'Tambah Client' untuk memulai."}
                                     </TableCell>
                                 </TableRow>
@@ -409,6 +410,23 @@ export function ClientTable() {
                                             }`}>
                                                 {client.hermina === 1 ? 'Hermina (1)' : client.hermina === 2 ? 'Managed by Hermina (2)' : 'Non Hermina (0)'}
                                             </Badge>
+                                        </TableCell>
+
+                                        {/* 9b. regional_hermina_id */}
+                                        <TableCell className="whitespace-nowrap">
+                                            {client.regional_hermina ? (
+                                                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-800 border border-neutral-200">
+                                                    <MapPin className="h-3 w-3 text-neutral-500 shrink-0" />
+                                                    <span>{client.regional_hermina.regional}</span>
+                                                    {client.regional_hermina.angka_romawi && (
+                                                        <span className="font-mono text-[10px] bg-white px-1 rounded border text-blue-600 font-bold">
+                                                            {client.regional_hermina.angka_romawi}
+                                                        </span>
+                                                    )}
+                                                </span>
+                                            ) : (
+                                                <span className="text-neutral-400 text-xs">-</span>
+                                            )}
                                         </TableCell>
 
                                         {/* 10. email_keuangan */}
