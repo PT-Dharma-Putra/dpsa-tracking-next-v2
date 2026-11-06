@@ -14,6 +14,7 @@ import {
   User as UserIcon,
   ChevronsUpDown,
   FileText,
+  MapPin,
 } from 'lucide-react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -809,12 +810,24 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild
-                    tooltip='User Management'
-                    isActive={isActive('/dashboard/admin/users')}
+                    tooltip='Divisi'
+                    isActive={isActive('/dashboard/master-data/divisi')}
                   >
                     <Link href='/dashboard/master-data/divisi'>
                       <Users />
                       <span>Divisi</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    tooltip='Regional Hermina'
+                    isActive={isActive('/dashboard/master-data/regional-hermina')}
+                  >
+                    <Link href='/dashboard/master-data/regional-hermina'>
+                      <MapPin />
+                      <span>Regional Hermina</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
