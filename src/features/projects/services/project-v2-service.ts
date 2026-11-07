@@ -879,14 +879,26 @@ export const projectV2Service = {
     return data;
   },
 
-  createDivisi: async (payload: { nama: string; nama_panjang?: string }) => {
+  createDivisi: async (payload: {
+    nama: string;
+    nama_panjang?: string;
+    is_supplier?: boolean;
+    is_dpsa_group?: boolean;
+    urutan?: number | null;
+  }) => {
     const { data } = await apiClient.post<Divisi>('/divisi', payload);
     return data;
   },
 
   updateDivisi: async (
     id: number,
-    payload: { nama: string; nama_panjang?: string }
+    payload: {
+      nama: string;
+      nama_panjang?: string;
+      is_supplier?: boolean;
+      is_dpsa_group?: boolean;
+      urutan?: number | null;
+    }
   ) => {
     const { data } = await apiClient.put<Divisi>(`/divisi/${id}`, payload);
     return data;
@@ -1479,6 +1491,9 @@ export interface Divisi {
   id: number;
   nama: string;
   nama_panjang: string | null;
+  is_supplier?: boolean;
+  is_dpsa_group?: boolean;
+  urutan?: number | null;
   created_at: string;
   updated_at: string;
 }

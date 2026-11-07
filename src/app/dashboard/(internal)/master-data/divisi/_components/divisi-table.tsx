@@ -72,10 +72,17 @@ export function DivisiTable() {
         setIsFormOpen(true)
     }
 
-    const filtered = divisions?.filter(d =>
-        d.nama.toLowerCase().includes(search.toLowerCase()) ||
-        (d.nama_panjang?.toLowerCase().includes(search.toLowerCase()) ?? false)
-    ) ?? []
+    const filtered = (divisions ?? [])
+        .filter(d =>
+            d.nama.toLowerCase().includes(search.toLowerCase()) ||
+            (d.nama_panjang?.toLowerCase().includes(search.toLowerCase()) ?? false)
+        )
+        .sort((a, b) => {
+            const orderA = a.urutan !== null && a.urutan !== undefined ? a.urutan : 999999;
+            const orderB = b.urutan !== null && b.urutan !== undefined ? b.urutan : 999999;
+            if (orderA !== orderB) return orderA - orderB;
+            return a.id - b.id;
+        })
 
     return (
         <div className="p-6 space-y-4">
@@ -115,6 +122,8 @@ export function DivisiTable() {
                             <TableHead className="w-[50px]">#</TableHead>
                             <TableHead>Nama Divisi</TableHead>
                             <TableHead>Nama Panjang</TableHead>
+                            <TableHead>DPSA GROUP</TableHead>
+                            <TableHead>Urutan</TableHead>
                             <TableHead>Dibuat</TableHead>
                             <TableHead className="w-[120px] text-right">Aksi</TableHead>
                         </TableRow>
@@ -122,13 +131,13 @@ export function DivisiTable() {
                     <TableBody>
                         {isLoading ? (
                             <TableRow>
-                                <TableCell colSpan={5} className="h-32 text-center">
+                                <TableCell colSpan={7} className="h-32 text-center">
                                     <Loader2 className="h-6 w-6 animate-spin mx-auto text-neutral-400" />
                                 </TableCell>
                             </TableRow>
                         ) : filtered.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={5} className="h-32 text-center text-muted-foreground text-sm">
+                                <TableCell colSpan={7} className="h-32 text-center text-muted-foreground text-sm">
                                     {search ? "Tidak ada divisi yang cocok." : "Belum ada divisi. Klik 'Tambah Divisi' untuk memulai."}
                                 </TableCell>
                             </TableRow>
@@ -143,6 +152,26 @@ export function DivisiTable() {
                                     </TableCell>
                                     <TableCell className="text-sm text-neutral-600">
                                         {divisi.nama_panjang || <span className="text-muted-foreground italic text-xs">-</span>}
+                                    </TableCell>
+                                    <TableCell>
+                                        {divisi.is_dpsa_group ? (
+                                            <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 font-semibold text-xs px-2.5 py-0.5">
+                                                Ya
+                                            </Badge>
+                                        ) : (
+                                            <Badge variant="outline" className="bg-neutral-50 text-neutral-600 border-neutral-200 font-medium text-xs px-2.5 py-0.5">
+                                                Tidak
+                                            </Badge>
+                                        )}
+                                    </TableCell>
+                                    <TableCell>
+                                        {divisi.urutan !== null && divisi.urutan !== undefined ? (
+                                            <span className="inline-flex items-center justify-center min-w-[24px] h-6 px-1.5 rounded bg-neutral-100 text-neutral-800 font-mono text-xs font-semibold">
+                                                {divisi.urutan}
+                                            </span>
+                                        ) : (
+                                            <span className="text-muted-foreground italic text-xs">-</span>
+                                        )}
                                     </TableCell>
                                     <TableCell className="text-xs text-muted-foreground">
                                         {divisi.created_at ? format(new Date(divisi.created_at), "d MMM yyyy") : "-"}
