@@ -434,7 +434,6 @@ export default function PrintSuratJalanPage() {
           { v: 'VOL', t: 's', s: headerStyle },
           { v: 'SAT', t: 's', s: headerStyle },
           { v: 'JML', t: 's', s: headerStyle },
-          { v: 'NO. PACK', t: 's', s: headerStyle },
           { v: 'KET', t: 's', s: headerStyle },
         ]);
         let rHeader1 = wsData.length - 1;
@@ -451,7 +450,6 @@ export default function PrintSuratJalanPage() {
           { v: '', t: 's', s: headerStyle },
           { v: '', t: 's', s: headerStyle },
           { v: '', t: 's', s: headerStyle },
-          { v: '', t: 's', s: headerStyle },
         ]);
         let rHeader2 = wsData.length - 1;
 
@@ -464,7 +462,6 @@ export default function PrintSuratJalanPage() {
         merges.push({ s: { r: rHeader1, c: 8 }, e: { r: rHeader2, c: 8 } });
         merges.push({ s: { r: rHeader1, c: 9 }, e: { r: rHeader2, c: 9 } });
         merges.push({ s: { r: rHeader1, c: 10 }, e: { r: rHeader2, c: 10 } });
-        merges.push({ s: { r: rHeader1, c: 11 }, e: { r: rHeader2, c: 11 } });
 
         combinedDetails.forEach((detail, index) => {
           wsData.push([
@@ -478,7 +475,6 @@ export default function PrintSuratJalanPage() {
             { v: detail.project_item?.volume ?? '-', t: 's', s: dataStyleCenter },
             { v: detail.project_item?.satuan || '-', t: 's', s: dataStyleCenter },
             { v: detail.jumlah_keluar || 0, t: 'n', s: dataStyleCenter },
-            { v: detail.nomor_pack || '-', t: 's', s: dataStyleCenter },
             { v: detail.keterangan || '-', t: 's', s: dataStyleLeft },
           ]);
         });
@@ -558,7 +554,7 @@ export default function PrintSuratJalanPage() {
       ws['!merges'] = merges;
       ws['!cols'] = isSuratJalan
         ? [{ wch: 4 }, { wch: 10 }, { wch: 10 }, { wch: 16 }, { wch: 28 }, { wch: 6 }, { wch: 6 }, { wch: 6 }, { wch: 14 }, { wch: 12 }]
-        : [{ wch: 4 }, { wch: 10 }, { wch: 16 }, { wch: 26 }, { wch: 5 }, { wch: 5 }, { wch: 5 }, { wch: 5 }, { wch: 5 }, { wch: 5 }, { wch: 14 }, { wch: 8 }];
+        : [{ wch: 4 }, { wch: 10 }, { wch: 16 }, { wch: 26 }, { wch: 5 }, { wch: 5 }, { wch: 5 }, { wch: 5 }, { wch: 5 }, { wch: 5 }, { wch: 14 }];
 
       ws['!margins'] = { left: 0.3, right: 0.3, top: 0.5, bottom: 0.5, header: 0.3, footer: 0.3 };
       ws['!pageSetup'] = { orientation: 'portrait', paperSize: 9, fitToWidth: 1, fitToHeight: 0 };
@@ -1250,10 +1246,7 @@ export default function PrintSuratJalanPage() {
                         <th className='p-1.5 border-r border-black font-semibold text-center w-10' rowSpan={2}>
                           JML
                         </th>
-                        <th className='p-1.5 border-r border-black font-semibold text-center w-24' rowSpan={2}>
-                          NO. PACK
-                        </th>
-                        <th className='p-1.5 font-semibold text-center w-24' rowSpan={2}>
+                        <th className='p-1.5 font-semibold text-center w-14' rowSpan={2}>
                           KET
                         </th>
                       </tr>
@@ -1303,33 +1296,6 @@ export default function PrintSuratJalanPage() {
                             </td>
                             <td className='p-1.5 border-r border-black text-center'>
                               {detail.jumlah_keluar}
-                            </td>
-                            <td className='p-1.5 border-r border-black text-center text-xs'>
-                              {isEditing && detail.id ? (
-                                <input
-                                  type='text'
-                                  value={
-                                    editedValues[detail.id]?.nomor_pack ??
-                                    (detail.nomor_pack || '')
-                                  }
-                                  onChange={(e) => {
-                                    const val = e.target.value;
-                                    setEditedValues((prev) => ({
-                                      ...prev,
-                                      [detail.id!]: {
-                                        nomor_pack: val,
-                                        keterangan:
-                                          prev[detail.id!]?.keterangan ??
-                                          (detail.keterangan || ''),
-                                      },
-                                    }));
-                                  }}
-                                  placeholder='Nomor pack...'
-                                  className='w-full px-1.5 py-0.5 border border-blue-400 rounded text-xs text-center bg-blue-50/40 focus:bg-white focus:outline-blue-600'
-                                />
-                              ) : (
-                                detail.nomor_pack || ''
-                              )}
                             </td>
                             <td className='p-1.5 text-center text-xs'>
                               {isEditing && detail.id ? (
