@@ -75,6 +75,28 @@ export default function ProjectMonitoringDetailPage() {
     }
   };
 
+  const formatTgl = (dateStr?: string | null) => {
+    if (!dateStr) return '-';
+    try {
+      const cleanStr = String(dateStr).slice(0, 10);
+      const parts = cleanStr.split('-');
+      if (parts.length === 3) {
+        const year = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1;
+        const day = parseInt(parts[2], 10);
+        const d = new Date(year, month, day);
+        if (!isNaN(d.getTime())) {
+          return format(d, 'dd MMM yyyy');
+        }
+      }
+      const d = new Date(dateStr);
+      return isNaN(d.getTime()) ? '-' : format(d, 'dd MMM yyyy');
+    } catch {
+      return '-';
+    }
+  };
+
+
   const { data: project, isLoading: isProjectLoading } = useQuery({
     queryKey: ['project-v2', id],
     queryFn: () => projectV2Service.getProject(id),
@@ -587,33 +609,80 @@ export default function ProjectMonitoringDetailPage() {
 
             {/* Fields */}
             <div className='space-y-3'>
-              <h4 className='font-bold text-xs text-neutral-400 uppercase tracking-widest border-b pb-2 flex items-center gap-2'>
-                <Truck className='h-3 w-3' />
+              <h4 className='font-bold text-xs text-neutral-500 uppercase tracking-widest border-b pb-2 flex items-center gap-2'>
+                <Truck className='h-3.5 w-3.5 text-blue-500' />
                 Tahapan Supplier
               </h4>
-              <div className='grid grid-cols-2 sm:grid-cols-2 gap-x-8 gap-y-4'>
+              <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
                 {(
                   [
-                    { key: 'barang_dipesan', label: 'Barang Dipesan' },
-                    { key: 'barang_tersedia', label: 'Barang Tersedia' },
-                    { key: 'rakit', label: 'Rakit' },
-                    { key: 'packing', label: 'Packing' },
-                    { key: 'terkirim', label: 'Terkirim' },
-                  ] as const
-                ).map(({ key, label }) => {
-                  const isSkipped = (supplierViewItem?.barang_supplier as any)?.skipped_fields?.includes(key);
-                  const val = supplierViewItem?.barang_supplier?.[key as keyof typeof supplierViewItem.barang_supplier];
+                    {
+                      key: 'barang_dipesan' as const,
+                      label: 'Barang Dipesan',
+                      val: supplierViewItem?.barang_supplier?.barang_dipesan,
+                      tanggal: supplierViewItem?.barang_supplier?.tanggal_barang_dipesan,
+                    },
+                    {
+                      key: 'barang_tersedia' as const,
+                      label: 'Barang Tersedia',
+                      val: supplierViewItem?.barang_supplier?.barang_tersedia,
+                      tanggal: supplierViewItem?.barang_supplier?.tanggal_barang_tersedia,
+                    },
+                    {
+                      key: 'rakit' as const,
+                      label: 'Rakit',
+                      val: supplierViewItem?.barang_supplier?.rakit,
+                      tanggal: supplierViewItem?.barang_supplier?.tanggal_rakit,
+                    },
+                    {
+                      key: 'packing' as const,
+                      label: 'Packing',
+                      val: supplierViewItem?.barang_supplier?.packing,
+                      tanggal: supplierViewItem?.barang_supplier?.tanggal_packing,
+                    },
+                  ]
+                ).map(({ key, label, val, tanggal }) => {
+                  const isSkipped = supplierViewItem?.barang_supplier?.skipped_fields?.includes(key);
                   const order = supplierViewItem?.barang_supplier?.jumlah_order || supplierViewItem?.jumlah || 0;
                   return (
-                    <div key={key} className='flex items-center justify-between'>
-                      <span className='text-xs text-neutral-600'>{label}</span>
-                      <div className='flex items-center gap-2'>
+                    <div
+                      key={key}
+                      className={`p-3 rounded-xl border transition-colors ${
+                        isSkipped
+                          ? 'bg-neutral-50/70 border-neutral-200/70 opacity-70'
+                          : 'bg-neutral-50/40 border-neutral-200 hover:border-neutral-300'
+                      }`}
+                    >
+                      <div className='flex items-center justify-between mb-1.5'>
+                        <span className='text-xs font-bold text-neutral-800'>{label}</span>
                         {isSkipped ? (
-                          <Badge variant='secondary' className='text-[9px] bg-neutral-100 text-neutral-400 border-none'>SKIPPED</Badge>
+                          <Badge variant='secondary' className='text-[9px] bg-neutral-200 text-neutral-500 border-none font-medium'>
+                            SKIPPED
+                          </Badge>
                         ) : (
-                          <span className='text-sm font-bold text-neutral-900'>{Number(val) || 0} <span className='text-[10px] text-neutral-400 font-normal'>/ {order}</span></span>
+                          <span className='text-xs font-bold text-neutral-900'>
+                            {Number(val) || 0} <span className='text-[10px] text-neutral-400 font-normal'>/ {order}</span>
+                          </span>
                         )}
                       </div>
+
+                      {!isSkipped ? (
+                        <div className='pt-2 border-t border-neutral-200/60 text-[11px]'>
+                          <div className='flex items-center justify-between'>
+                            <span className='text-[10px] text-neutral-400 font-medium flex items-center gap-1'>
+                              <Calendar className='h-3 w-3 text-neutral-400' />
+                              Tanggal:
+                            </span>
+                            <span className='font-semibold text-neutral-700 truncate'>
+                              {formatTgl(tanggal)}
+                            </span>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className='text-[10px] text-neutral-400 italic pt-1 border-t border-neutral-200/60'>
+                          Tahapan dilewati
+                        </p>
+                      )}
                     </div>
                   );
                 })}
