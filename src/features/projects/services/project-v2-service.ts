@@ -1133,19 +1133,6 @@ export const projectV2Service = {
   },
 
   // Delivery Schedule
-  getTanggalPengiriman: async () => {
-    const { data } = await apiClient.get<TanggalPengiriman[]>(
-      '/tanggal-pengiriman'
-    );
-    return data;
-  },
-  storeTanggalPengiriman: async (tanggal: string) => {
-    const { data } = await apiClient.post<TanggalPengiriman>(
-      '/tanggal-pengiriman',
-      { tanggal }
-    );
-    return data;
-  },
   getCalendarSchedules: async (params?: {
     year?: number;
     month?: number;
@@ -1158,7 +1145,7 @@ export const projectV2Service = {
     );
     return data;
   },
-  getJadwalPengiriman: async (params?: { tanggal_pengiriman_id?: number; project_id?: number }) => {
+  getJadwalPengiriman: async (params?: { project_id?: number }) => {
     const { data } = await apiClient.get<JadwalPengiriman[]>(
       '/jadwal-pengiriman',
       { params }
@@ -1168,8 +1155,7 @@ export const projectV2Service = {
   storeJadwalPengiriman: async (payload: {
     project_id: number;
     divisi_id?: number | null;
-    tanggal?: string;
-    tanggal_pengiriman_id?: number;
+    tanggal: string;
     keterangan?: string;
   }) => {
     const { data } = await apiClient.post<JadwalPengiriman>(
@@ -1564,23 +1550,14 @@ export interface BarangJadiTerpacking {
   updated_at: string;
 }
 
-export interface TanggalPengiriman {
-  id: number;
-  tanggal: string;
-  created_at: string;
-  updated_at: string;
-}
-
 export interface JadwalPengiriman {
   id: number;
   project_id: number;
   divisi_id?: number | null;
   divisi?: Divisi | null;
   tanggal?: string;
-  tanggal_pengiriman_id?: number | null;
   keterangan: string | null;
   project?: ProjectV2;
-  tanggal_pengiriman?: TanggalPengiriman;
   created_at: string;
   updated_at: string;
 }

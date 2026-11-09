@@ -1267,7 +1267,7 @@ export function ProjectsV2Table({
         const jadwalKirimStr = schedules.length > 0
           ? schedules
               .map((s: any) => {
-                const raw = s.tanggal || s.tanggal_pengiriman?.tanggal;
+                const raw = s.tanggal;
                 if (!raw) return null;
                 try {
                   return format(new Date(raw), 'dd MMM yyyy');
@@ -1711,7 +1711,7 @@ export function ProjectsV2Table({
         if (schedules.length > 0) {
           const dates = schedules
             .map((s: any) => {
-              const raw = s.tanggal || s.tanggal_pengiriman?.tanggal;
+              const raw = s.tanggal;
               if (!raw) return null;
               try {
                 const d = new Date(raw);
@@ -1991,7 +1991,7 @@ export function ProjectsV2Table({
         if (schedules.length > 0) {
           const dates = schedules
             .map((s: any) => {
-              const raw = s.tanggal || s.tanggal_pengiriman?.tanggal;
+              const raw = s.tanggal;
               if (!raw) return null;
               try {
                 const d = new Date(raw);
@@ -5607,8 +5607,7 @@ export function ProjectsV2Table({
                               }
                               const firstSchedule = schedules[0];
                               const firstDate =
-                                firstSchedule.tanggal ||
-                                firstSchedule.tanggal_pengiriman?.tanggal;
+                                firstSchedule.tanggal;
                               const hasMultiple = schedules.length > 1;
 
                               return (
@@ -6441,8 +6440,7 @@ export function ProjectsV2Table({
                             if (schedules.length > 0) {
                               const firstSchedule = schedules[0];
                               const firstDate =
-                                firstSchedule.tanggal ||
-                                firstSchedule.tanggal_pengiriman?.tanggal;
+                                firstSchedule.tanggal;
                               const diff =
                                 firstDate && project.deadline
                                   ? differenceInDays(
