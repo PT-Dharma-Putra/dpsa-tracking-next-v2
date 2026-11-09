@@ -262,11 +262,6 @@ export default function RekapPenagihanPage() {
     };
   }, [penagihanList]);
 
-  const { data: terminList = [], isLoading: isLoadingTermin } = useQuery({
-    queryKey: ['termin-all'],
-    queryFn: () => penagihanService.getTermin(),
-  });
-
   const updatePenagihanMutation = useMutation({
     mutationFn: ({
       id,
@@ -343,10 +338,10 @@ export default function RekapPenagihanPage() {
   const openEdit = (p: Penagihan) => {
     if (!canUpdate) return;
     setEditingId(p.id);
-    const currentTermin = Number(p.termin || p.termin_id || 1);
+    const currentTermin = Number(p.termin || 1);
     const projectTermins = penagihanList
       .filter((item) => item.project_id === p.project_id)
-      .map((item) => Number(item.termin || item.termin_id || 0));
+      .map((item) => Number(item.termin || 0));
     setMaxTerminCount(Math.max(4, currentTermin, ...projectTermins));
     setForm({
       project_id: p.project_id,
@@ -1491,7 +1486,7 @@ export default function RekapPenagihanPage() {
             <AlertDialogDescription>
               Apakah Anda yakin ingin menghapus penagihan{' '}
               <span className='font-bold text-neutral-800'>
-                Termin {deleteTarget?.termin || deleteTarget?.termin_id} - {deleteTarget?.nomor_invoice}
+                Termin {deleteTarget?.termin} - {deleteTarget?.nomor_invoice}
               </span>
               ? Tindakan ini tidak dapat dibatalkan.
             </AlertDialogDescription>
