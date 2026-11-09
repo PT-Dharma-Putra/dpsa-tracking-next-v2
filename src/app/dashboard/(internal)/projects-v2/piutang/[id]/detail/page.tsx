@@ -163,11 +163,6 @@ export default function PiutangDetailPage() {
     queryFn: () => penagihanService.getPenagihanByProject(projectId),
   });
 
-  const { data: terminList = [], isLoading: isLoadingTermin } = useQuery({
-    queryKey: ['termin'],
-    queryFn: () => penagihanService.getTermin(),
-  });
-
   const spkId = project?.spk?.id;
 
   const { data: pengirimanPerSpkData } = useQuery({
@@ -190,10 +185,6 @@ export default function PiutangDetailPage() {
     null
   );
 
-  // Termin management
-  const [isTerminOpen, setIsTerminOpen] = React.useState(false);
-  const [newTerminName, setNewTerminName] = React.useState('');
-
   // SPK Nominal inline edit
   const [isEditingSpkNominal, setIsEditingSpkNominal] = React.useState(false);
   const [spkNominalInput, setSpkNominalInput] = React.useState('');
@@ -202,21 +193,12 @@ export default function PiutangDetailPage() {
   const [isBilledCollapsed, setIsBilledCollapsed] = React.useState(false);
   const [isPaymentCollapsed, setIsPaymentCollapsed] = React.useState(false);
   const [isShipCollapsed, setIsShipCollapsed] = React.useState(false);
-  const [editingTermin, setEditingTermin] = React.useState<{
-    id: number;
-    nama: string;
-  } | null>(null);
-  const [deleteTerminTarget, setDeleteTerminTarget] = React.useState<{
-    id: number;
-    nama: string;
-  } | null>(null);
-
   const [maxTerminCount, setMaxTerminCount] = React.useState(4);
 
   const usedTermins = React.useMemo(() => {
     return penagihanList
       .filter((p) => editingId === null || p.id !== editingId)
-      .map((p) => Number(p.termin || p.termin_id || 0))
+      .map((p) => Number(p.termin || 0))
       .filter(Boolean);
   }, [penagihanList, editingId]);
 
@@ -258,37 +240,6 @@ export default function PiutangDetailPage() {
     onError: () => toast.error('Gagal menghapus penagihan'),
   });
 
-  const createTerminMutation = useMutation({
-    mutationFn: (nama: string) => penagihanService.createTermin(nama),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['termin'] });
-      toast.success('Termin berhasil ditambahkan');
-      setNewTerminName('');
-    },
-    onError: () => toast.error('Gagal menambahkan termin'),
-  });
-
-  const updateTerminMutation = useMutation({
-    mutationFn: ({ id, nama }: { id: number; nama: string }) =>
-      penagihanService.updateTermin(id, nama),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['termin'] });
-      toast.success('Termin berhasil diperbarui');
-      setEditingTermin(null);
-    },
-    onError: () => toast.error('Gagal memperbarui termin'),
-  });
-
-  const deleteTerminMutation = useMutation({
-    mutationFn: (id: number) => penagihanService.deleteTermin(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['termin'] });
-      toast.success('Termin berhasil dihapus');
-      setDeleteTerminTarget(null);
-    },
-    onError: () => toast.error('Gagal menghapus termin'),
-  });
-
   const updateSpkNominalMutation = useMutation({
     mutationFn: ({
       nominal,
@@ -310,7 +261,7 @@ export default function PiutangDetailPage() {
   const openCreate = () => {
     setEditingId(null);
     const currentUsed = penagihanList
-      .map((p) => Number(p.termin || p.termin_id || 0))
+      .map((p) => Number(p.termin || 0))
       .filter(Boolean);
     let nextAvailable = 1;
     while (currentUsed.includes(nextAvailable)) {
@@ -329,11 +280,11 @@ export default function PiutangDetailPage() {
 
   const openEdit = (p: Penagihan) => {
     setEditingId(p.id);
-    const currentTermin = Number(p.termin || p.termin_id || 1);
+    const currentTermin = Number(p.termin || 1);
     const highestExisting = Math.max(
       4,
       currentTermin,
-      ...penagihanList.map((item) => Number(item.termin || item.termin_id || 0))
+      ...penagihanList.map((item) => Number(item.termin || 0))
     );
     setMaxTerminCount(highestExisting);
     setForm({
@@ -1009,11 +960,7 @@ export default function PiutangDetailPage() {
                         : '-'}
                     </TableCell>
                     <TableCell className='font-semibold'>
-                      {item.termin
-                        ? `Termin ${item.termin}`
-                        : item.termin_id
-                        ? `Termin ${item.termin_id}`
-                        : '-'}
+                      {item.termin ? `Termin ${item.termin}` : '-'}
                     </TableCell>
                     <TableCell className='text-sm text-neutral-600 max-w-[200px] truncate'>
                       {item.deskripsi || '-'}
@@ -1695,7 +1642,7 @@ export default function PiutangDetailPage() {
             <AlertDialogTitle>Hapus Penagihan</AlertDialogTitle>
             <AlertDialogDescription>
               Apakah Anda yakin ingin menghapus penagihan termin{' '}
-              <strong>Termin {deleteTarget?.termin || deleteTarget?.termin_id}</strong>? Tindakan ini tidak
+              <strong>Termin {deleteTarget?.termin}</strong>? Tindakan ini tidak
               dapat dibatalkan.
             </AlertDialogDescription>
           </AlertDialogHeader>

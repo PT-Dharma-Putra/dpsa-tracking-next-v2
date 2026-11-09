@@ -1,15 +1,9 @@
 import { axiosInstance as apiClient } from '@/lib/axios';
 
-export interface Termin {
-    id: number;
-    nama: string;
-}
-
 export interface Penagihan {
     id: number;
     project_id: number;
     termin: number;
-    termin_id?: number | null;
     nomor_invoice: string | null;
     deskripsi: string | null;
     persentase: number;
@@ -45,26 +39,6 @@ export interface CreatePenagihanPayload {
 }
 
 export const penagihanService = {
-    // Termin CRUD
-    getTermin: async (): Promise<Termin[]> => {
-        const { data } = await apiClient.get<Termin[]>('/termin');
-        return data;
-    },
-
-    createTermin: async (nama: string): Promise<Termin> => {
-        const { data } = await apiClient.post<Termin>('/termin', { nama });
-        return data;
-    },
-
-    updateTermin: async (id: number, nama: string): Promise<Termin> => {
-        const { data } = await apiClient.put<Termin>(`/termin/${id}`, { nama });
-        return data;
-    },
-
-    deleteTermin: async (id: number): Promise<void> => {
-        await apiClient.delete(`/termin/${id}`);
-    },
-
     // Penagihan CRUD
     getAllPenagihan: async (clientId?: number): Promise<Penagihan[]> => {
         const { data } = await apiClient.get<Penagihan[]>('/penagihan/all', {
