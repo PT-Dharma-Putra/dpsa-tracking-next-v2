@@ -8,7 +8,8 @@ export interface Termin {
 export interface Penagihan {
     id: number;
     project_id: number;
-    termin_id: number;
+    termin: number;
+    termin_id?: number | null;
     nomor_invoice: string | null;
     deskripsi: string | null;
     persentase: number;
@@ -21,7 +22,6 @@ export interface Penagihan {
     tanggal_dibayar: string | null;
     nominal_dibayar: number | string | null;
     file: string | null;
-    termin?: Termin;
     project?: any;
     created_at: string;
     updated_at: string;
@@ -29,7 +29,7 @@ export interface Penagihan {
 
 export interface CreatePenagihanPayload {
     project_id: number;
-    termin_id: number;
+    termin: number;
     nomor_invoice?: string;
     deskripsi?: string;
     persentase: number;
@@ -81,7 +81,7 @@ export const penagihanService = {
     createPenagihan: async (payload: CreatePenagihanPayload): Promise<Penagihan> => {
         const formData = new FormData();
         formData.append('project_id', payload.project_id.toString());
-        formData.append('termin_id', payload.termin_id.toString());
+        formData.append('termin', payload.termin.toString());
         if (payload.nomor_invoice !== undefined) formData.append('nomor_invoice', payload.nomor_invoice);
         if (payload.deskripsi !== undefined) formData.append('deskripsi', payload.deskripsi);
         formData.append('persentase', payload.persentase.toString());
@@ -101,7 +101,7 @@ export const penagihanService = {
 
     updatePenagihan: async (id: number, payload: Partial<CreatePenagihanPayload>): Promise<Penagihan> => {
         const formData = new FormData();
-        if (payload.termin_id !== undefined) formData.append('termin_id', payload.termin_id.toString());
+        if (payload.termin !== undefined) formData.append('termin', payload.termin.toString());
         if (payload.nomor_invoice !== undefined) formData.append('nomor_invoice', payload.nomor_invoice);
         if (payload.deskripsi !== undefined) formData.append('deskripsi', payload.deskripsi);
         if (payload.persentase !== undefined) formData.append('persentase', payload.persentase.toString());

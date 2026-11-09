@@ -86,6 +86,7 @@ import {
   Receipt,
   Download,
   Loader2,
+  Plus,
   Pencil,
   Trash2,
   CheckCircle2,
@@ -166,9 +167,10 @@ export default function RekapPenagihanPage() {
 
   const [isEditingSpkNominal, setIsEditingSpkNominal] = React.useState(false);
   const [spkNominalInput, setSpkNominalInput] = React.useState('');
+  const [maxTerminCount, setMaxTerminCount] = React.useState(4);
 
   const [form, setForm] = React.useState<Partial<CreatePenagihanPayload>>({
-    termin_id: undefined,
+    termin: undefined,
     nomor_invoice: '',
     deskripsi: '',
     persentase: 0,
@@ -323,7 +325,7 @@ export default function RekapPenagihanPage() {
     setIsFormOpen(false);
     setEditingId(null);
     setForm({
-      termin_id: undefined,
+      termin: undefined,
       nomor_invoice: '',
       deskripsi: '',
       persentase: 0,
@@ -341,9 +343,14 @@ export default function RekapPenagihanPage() {
   const openEdit = (p: Penagihan) => {
     if (!canUpdate) return;
     setEditingId(p.id);
+    const currentTermin = Number(p.termin || p.termin_id || 1);
+    const projectTermins = penagihanList
+      .filter((item) => item.project_id === p.project_id)
+      .map((item) => Number(item.termin || item.termin_id || 0));
+    setMaxTerminCount(Math.max(4, currentTermin, ...projectTermins));
     setForm({
       project_id: p.project_id,
-      termin_id: p.termin_id,
+      termin: currentTermin,
       nomor_invoice: p.nomor_invoice || '',
       deskripsi: p.deskripsi || '',
       persentase: p.persentase,
@@ -362,7 +369,7 @@ export default function RekapPenagihanPage() {
   };
 
   const handleSave = () => {
-    if (!form.termin_id) {
+    if (!form.termin) {
       toast.error('Pilih termin terlebih dahulu');
       return;
     }
@@ -1059,29 +1066,43 @@ export default function RekapPenagihanPage() {
               <Label>
                 Termin <span className='text-red-500'>*</span>
               </Label>
-              {isLoadingTermin ? (
-                <div className='h-9 w-full bg-neutral-100 animate-pulse rounded-md' />
-              ) : (
+              <div className='flex items-center gap-1.5'>
                 <Tabs
-                  value={form.termin_id ? form.termin_id.toString() : ''}
+                  value={form.termin ? form.termin.toString() : ''}
                   onValueChange={(v) =>
-                    setForm((prev) => ({ ...prev, termin_id: parseInt(v) }))
+                    setForm((prev) => ({ ...prev, termin: parseInt(v) }))
                   }
-                  className='w-full'
+                  className='flex-1'
                 >
                   <TabsList className='w-full flex-wrap h-auto p-1 bg-neutral-100/50'>
-                    {terminList.map((t) => (
-                      <TabsTrigger
-                        key={t.id}
-                        value={t.id.toString()}
-                        className='flex-1 data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-sm'
-                      >
-                        {t.nama}
-                      </TabsTrigger>
-                    ))}
+                    {Array.from({ length: maxTerminCount }, (_, i) => i + 1).map(
+                      (terminNum) => (
+                        <TabsTrigger
+                          key={terminNum}
+                          value={terminNum.toString()}
+                          className='flex-1 min-w-[72px] data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-sm'
+                        >
+                          Termin {terminNum}
+                        </TabsTrigger>
+                      )
+                    )}
                   </TabsList>
                 </Tabs>
-              )}
+                <Button
+                  type='button'
+                  variant='outline'
+                  size='icon'
+                  title='Tambah Termin'
+                  className='h-9 w-9 shrink-0'
+                  onClick={() => {
+                    const nextTermin = maxTerminCount + 1;
+                    setMaxTerminCount(nextTermin);
+                    setForm((prev) => ({ ...prev, termin: nextTermin }));
+                  }}
+                >
+                  <Plus className='h-4 w-4' />
+                </Button>
+              </div>
             </div>
 
             {/* No Invoice */}
@@ -1470,7 +1491,7 @@ export default function RekapPenagihanPage() {
             <AlertDialogDescription>
               Apakah Anda yakin ingin menghapus penagihan{' '}
               <span className='font-bold text-neutral-800'>
-                {deleteTarget?.termin?.nama} - {deleteTarget?.nomor_invoice}
+                Termin {deleteTarget?.termin || deleteTarget?.termin_id} - {deleteTarget?.nomor_invoice}
               </span>
               ? Tindakan ini tidak dapat dibatalkan.
             </AlertDialogDescription>

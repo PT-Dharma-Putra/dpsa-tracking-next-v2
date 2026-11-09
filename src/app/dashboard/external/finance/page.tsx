@@ -473,8 +473,11 @@ export default function FinanceOverviewPage() {
                                             '-';
 
                                         const terminStr =
-                                            inv.termin?.nama ||
-                                            (inv.termin_id ? `Termin ${inv.termin_id}` : '-');
+                                            inv.termin
+                                                ? `Termin ${inv.termin}`
+                                                : inv.termin_id
+                                                ? `Termin ${inv.termin_id}`
+                                                : '-';
 
                                         const dueDateStr = inv.jatuh_tempo
                                             ? format(new Date(inv.jatuh_tempo), 'dd MMM yyyy')
