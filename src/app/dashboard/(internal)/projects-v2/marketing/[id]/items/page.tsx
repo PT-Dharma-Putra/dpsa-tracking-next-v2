@@ -449,6 +449,7 @@ export default function ProjectItemsPage() {
   const [spkPpn, setSpkPpn] = React.useState<string>('');
   const [spkGrandTotal, setSpkGrandTotal] = React.useState<string>('');
   const [spkPenerbitId, setSpkPenerbitId] = React.useState<string>('');
+  const [spkPenerbitName, setSpkPenerbitName] = React.useState<string>('');
   const [spkPenerimaId, setSpkPenerimaId] = React.useState<string>('');
 
   const [clientPopoverOpen, setClientPopoverOpen] = React.useState(false);
@@ -497,9 +498,19 @@ export default function ProjectItemsPage() {
   );
 
   const clientsRaw = clientsData?.pages.flatMap((page) => page.data) || [];
-  const clients = Array.from(
-    new Map(clientsRaw.map((c: any) => [c.id, c])).values()
-  );
+  const clients = React.useMemo(() => {
+    const map = new Map<number, any>();
+    if (project?.spk?.penerbit) {
+      map.set(project.spk.penerbit.id, project.spk.penerbit);
+    }
+    if (project?.client) {
+      map.set(project.client.id, project.client);
+    }
+    clientsRaw.forEach((c: any) => {
+      map.set(c.id, c);
+    });
+    return Array.from(map.values());
+  }, [clientsRaw, project?.spk?.penerbit, project?.client]);
 
   const observerRef = React.useRef<IntersectionObserver>(null);
   const loadMoreRef = React.useCallback(
@@ -568,6 +579,7 @@ export default function ProjectItemsPage() {
       setSpkPpn('');
       setSpkGrandTotal('');
       setSpkPenerbitId('');
+      setSpkPenerbitName('');
       setSpkPenerimaId('');
       setIsSpkModalOpen(false);
     },
@@ -679,6 +691,7 @@ export default function ProjectItemsPage() {
   const [editSpkPpn, setEditSpkPpn] = React.useState<string>('');
   const [editSpkGrandTotal, setEditSpkGrandTotal] = React.useState<string>('');
   const [editSpkPenerbitId, setEditSpkPenerbitId] = React.useState<string>('');
+  const [editSpkPenerbitName, setEditSpkPenerbitName] = React.useState<string>('');
   const [editSpkPenerimaId, setEditSpkPenerimaId] = React.useState<string>('');
 
   const updateSpkMutation = useMutation({
@@ -728,9 +741,25 @@ export default function ProjectItemsPage() {
       setEditSpkGrandTotal(
         existingSpk.nominal ? formatRupiah(String(existingSpk.nominal)) : ''
       );
-      setEditSpkPenerbitId(
-        existingSpk.penerbit_id ? String(existingSpk.penerbit_id) : ''
-      );
+      const initialPenerbitId = existingSpk.penerbit_id
+        ? String(existingSpk.penerbit_id)
+        : existingSpk.penerbit?.id
+        ? String(existingSpk.penerbit.id)
+        : project?.client_id
+        ? String(project.client_id)
+        : '';
+      const initialPenerbitName =
+        existingSpk.penerbit?.name ||
+        (existingSpk.penerbit_id && project?.client?.id === existingSpk.penerbit_id
+          ? project?.client?.name
+          : '') ||
+        (project?.client?.id && String(project.client.id) === initialPenerbitId
+          ? project?.client?.name
+          : '') ||
+        '';
+
+      setEditSpkPenerbitId(initialPenerbitId);
+      setEditSpkPenerbitName(initialPenerbitName);
       setEditSpkPenerimaId(
         existingSpk.penerima_id ? String(existingSpk.penerima_id) : ''
       );
@@ -792,6 +821,21 @@ export default function ProjectItemsPage() {
   const [isAccModalOpen, setIsAccModalOpen] = React.useState(false);
   const [isSphModalOpen, setIsSphModalOpen] = React.useState(false);
   const [isSpkModalOpen, setIsSpkModalOpen] = React.useState(false);
+
+  const handleOpenUploadSpk = () => {
+    setSpkFile(null);
+    setSpkNumber('');
+    setSpkTanggalSpk('');
+    setSpkDeadlineSpk('');
+    setSpkTanggalMasuk(format(new Date(), 'yyyy-MM-dd'));
+    setSpkNominal('');
+    setSpkPpn('');
+    setSpkGrandTotal('');
+    setSpkPenerbitId(project?.client_id ? String(project.client_id) : '');
+    setSpkPenerbitName(project?.client?.name || '');
+    setSpkPenerimaId('');
+    setIsSpkModalOpen(true);
+  };
   const [isBastModalOpen, setIsBastModalOpen] = React.useState(false);
 
   const [bastNoSurat, setBastNoSurat] = React.useState('');
@@ -2001,7 +2045,7 @@ export default function ProjectItemsPage() {
                       variant='outline'
                       className='w-full h-8 text-[10px] border-purple-200 text-purple-600 hover:bg-purple-50 shrink-0 mt-1'
                       disabled={!flowSteps[3].isActive}
-                      onClick={() => setIsSpkModalOpen(true)}
+                      onClick={handleOpenUploadSpk}
                     >
                       <Upload className='h-3 w-3 mr-1' />
                       Ganti SPK
@@ -2017,7 +2061,7 @@ export default function ProjectItemsPage() {
                     variant='outline'
                     className='w-full h-8 text-[10px] border-purple-200 text-purple-600 hover:bg-purple-50 shrink-0'
                     disabled={!flowSteps[3].isActive}
-                    onClick={() => setIsSpkModalOpen(true)}
+                    onClick={handleOpenUploadSpk}
                   >
                     <Upload className='h-3 w-3 mr-1' />
                     Upload SPK
@@ -3026,11 +3070,22 @@ export default function ProjectItemsPage() {
                       )}
                     >
                       <span className='truncate'>
-                        {editSpkPenerbitId && clients.length > 0
-                          ? clients.find(
-                              (client) => client.id.toString() === editSpkPenerbitId
-                            )?.name || 'Pilih Penerbit...'
-                          : 'Pilih Penerbit...'}
+                        {editSpkPenerbitName ||
+                          (editSpkPenerbitId &&
+                            (clients.find(
+                              (client) =>
+                                client.id.toString() === editSpkPenerbitId
+                            )?.name ||
+                              (existingSpk?.penerbit &&
+                              existingSpk.penerbit.id.toString() ===
+                                editSpkPenerbitId
+                                ? existingSpk.penerbit.name
+                                : null) ||
+                              (project?.client &&
+                              project.client.id.toString() === editSpkPenerbitId
+                                ? project.client.name
+                                : null))) ||
+                          'Pilih Penerbit...'}
                       </span>
                       <ChevronDown className='ml-1 h-3.5 w-3.5 shrink-0 opacity-50' />
                     </Button>
@@ -3054,6 +3109,7 @@ export default function ProjectItemsPage() {
                               key={client.id}
                               onSelect={() => {
                                 setEditSpkPenerbitId(client.id.toString());
+                                setEditSpkPenerbitName(client.name);
                                 setEditClientPopoverOpen(false);
                               }}
                               className='text-xs'
@@ -3302,11 +3358,16 @@ export default function ProjectItemsPage() {
                       )}
                     >
                       <span className='truncate'>
-                        {spkPenerbitId && clients.length > 0
-                          ? clients.find(
+                        {spkPenerbitName ||
+                          (spkPenerbitId &&
+                            (clients.find(
                               (client) => client.id.toString() === spkPenerbitId
-                            )?.name || 'Pilih Penerbit...'
-                          : 'Pilih Penerbit...'}
+                            )?.name ||
+                              (project?.client &&
+                              project.client.id.toString() === spkPenerbitId
+                                ? project.client.name
+                                : null))) ||
+                          'Pilih Penerbit...'}
                       </span>
                       <ChevronDown className='ml-1 h-3.5 w-3.5 shrink-0 opacity-50' />
                     </Button>
@@ -3330,6 +3391,7 @@ export default function ProjectItemsPage() {
                               key={client.id}
                               onSelect={() => {
                                 setSpkPenerbitId(client.id.toString());
+                                setSpkPenerbitName(client.name);
                                 setClientPopoverOpen(false);
                               }}
                               className='text-xs'
