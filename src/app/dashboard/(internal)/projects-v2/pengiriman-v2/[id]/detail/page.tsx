@@ -1550,7 +1550,7 @@ export default function PerencanaanDetailPage() {
     if (rawSchedules.length > 0) {
       const dates = rawSchedules
         .map((s: any) => {
-          const raw = s.tanggal || s.tanggal_pengiriman?.tanggal;
+          const raw = s.tanggal;
           if (!raw) return null;
           try {
             const d = new Date(raw);

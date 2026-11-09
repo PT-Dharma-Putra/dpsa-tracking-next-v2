@@ -54,8 +54,8 @@ export function JadwalPengirimanViewDialog({
       : [project.jadwal_pengiriman];
 
     return [...raw].sort((a, b) => {
-      const dateA = a.tanggal || a.tanggal_pengiriman?.tanggal || '';
-      const dateB = b.tanggal || b.tanggal_pengiriman?.tanggal || '';
+      const dateA = a.tanggal || '';
+      const dateB = b.tanggal || '';
       return dateA.localeCompare(dateB);
     });
   }, [project]);
@@ -78,10 +78,9 @@ export function JadwalPengirimanViewDialog({
     (project?.spk as any)?.spk_number ||
     null;
 
-  const firstDate = schedules[0]?.tanggal || schedules[0]?.tanggal_pengiriman?.tanggal;
+  const firstDate = schedules[0]?.tanggal;
   const lastDate =
-    schedules[schedules.length - 1]?.tanggal ||
-    schedules[schedules.length - 1]?.tanggal_pengiriman?.tanggal;
+    schedules[schedules.length - 1]?.tanggal;
 
   const formatDateSafe = (dateStr?: string | null, pattern = 'EEEE, d MMMM yyyy') => {
     if (!dateStr) return '-';
@@ -201,7 +200,7 @@ export function JadwalPengirimanViewDialog({
             ) : (
               <div className='space-y-2.5'>
                 {schedules.map((s, idx) => {
-                  const scheduleDate = s.tanggal || s.tanggal_pengiriman?.tanggal;
+                  const scheduleDate = s.tanggal;
                   const diff =
                     scheduleDate && project?.deadline
                       ? differenceInDays(

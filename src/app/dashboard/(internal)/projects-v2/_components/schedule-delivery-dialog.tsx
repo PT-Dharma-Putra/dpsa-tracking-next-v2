@@ -191,7 +191,7 @@ export function ScheduleDeliveryDialog({
     const handleStartEdit = (s: JadwalPengiriman) => {
         setEditingId(s.id)
         setSelectedDivisiId(s.divisi_id ? String(s.divisi_id) : "")
-        const dateStr = s.tanggal || s.tanggal_pengiriman?.tanggal
+        const dateStr = s.tanggal
         if (dateStr) {
             setSelectedDate(new Date(dateStr))
         } else {
@@ -276,7 +276,7 @@ export function ScheduleDeliveryDialog({
                         ) : (
                             <div className="space-y-2 max-h-[200px] overflow-y-auto pr-1">
                                 {displaySchedules.map((s, idx) => {
-                                    const scheduleDate = s.tanggal || s.tanggal_pengiriman?.tanggal
+                                    const scheduleDate = s.tanggal
                                     const isBeingEdited = editingId === s.id
                                     const divisiNama = s.divisi?.nama || allDivisions.find((d) => d.id === s.divisi_id)?.nama
                                     return (
