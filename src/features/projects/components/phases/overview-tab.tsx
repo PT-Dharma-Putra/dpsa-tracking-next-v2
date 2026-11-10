@@ -145,7 +145,7 @@ export function OverviewTab({ projectId, onNavigateTab }: OverviewTabProps) {
         if (typeof stats.deadline_days === 'number' && stats.deadline_days !== null) {
             if (stats.deadline_days < 0) return true;
         }
-        const deadlineStr = project?.deadline || (project as any)?.due_date;
+        const deadlineStr = project?.deadline;
         if (deadlineStr) {
             try {
                 const deadlineDate = new Date(deadlineStr);

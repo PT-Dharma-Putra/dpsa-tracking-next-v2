@@ -13,8 +13,6 @@ export interface Project {
   client?: { name: string };
   created_at: string;
   updated_at: string;
-  start_date?: string;
-  due_date?: string;
   deadline?: string;
   tanggal_selesai?: string;
   spk_number?: string;
@@ -40,7 +38,7 @@ export interface CreateProjectPayload {
   client_id: string | number; // Form usually returns string, but user.id is number
   description?: string;
   catatan?: string;
-  due_date?: string;
+  deadline?: string;
   items?: {
     item: string;
     jumlah: number;

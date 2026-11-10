@@ -199,7 +199,7 @@ export function IncomingOrdersWidget() {
                             const phase = PHASES[project.current_phase] || `Phase ${project.current_phase}`
                             const phaseProgress = Math.min(((project.current_phase || 1) / 4) * 100, 100)
 
-                            const rawDate = project.created_at || project.updated_at || project.start_date
+                            const rawDate = project.created_at || project.updated_at
                             const date = rawDate ? new Date(rawDate) : null
                             const isValidDate = date && !isNaN(date.getTime())
 

@@ -46,7 +46,7 @@ const formSchema = z.object({
     name: z.string().min(3, "Project name must be at least 3 characters"),
     client_id: z.string().min(1, "Please select a client"),
     description: z.string().optional(),
-    due_date: z.string().optional(),
+    deadline: z.string().optional(),
 });
 
 export function CreateProjectModal() {
@@ -62,7 +62,7 @@ export function CreateProjectModal() {
             name: "",
             client_id: "",
             description: "",
-            due_date: "",
+            deadline: "",
         },
     });
 
@@ -253,7 +253,7 @@ export function CreateProjectModal() {
 
                         <FormField
                             control={form.control}
-                            name="due_date"
+                            name="deadline"
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Target Deadline (Optional)</FormLabel>

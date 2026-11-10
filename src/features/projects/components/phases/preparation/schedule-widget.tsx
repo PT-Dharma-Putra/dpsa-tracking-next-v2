@@ -22,18 +22,18 @@ interface ScheduleWidgetProps {
 
 export function ScheduleWidget({ project }: ScheduleWidgetProps) {
     const queryClient = useQueryClient();
-    const [startDate, setStartDate] = useState<Date | undefined>(
-        project.start_date ? new Date(project.start_date) : undefined
+    const [deadline, setDeadline] = useState<Date | undefined>(
+        project.deadline ? new Date(project.deadline) : undefined
     );
-    const [dueDate, setDueDate] = useState<Date | undefined>(
-        project.due_date ? new Date(project.due_date) : undefined
+    const [tanggalSelesai, setTanggalSelesai] = useState<Date | undefined>(
+        project.tanggal_selesai ? new Date(project.tanggal_selesai) : undefined
     );
 
     const updateScheduleMutation = useMutation({
         mutationFn: async () => {
             return await ProjectService.updateProject(project.id, {
-                start_date: startDate ? format(startDate, 'yyyy-MM-dd') : null,
-                due_date: dueDate ? format(dueDate, 'yyyy-MM-dd') : null
+                deadline: deadline ? format(deadline, 'yyyy-MM-dd') : null,
+                tanggal_selesai: tanggalSelesai ? format(tanggalSelesai, 'yyyy-MM-dd') : null
             });
         },
         onSuccess: () => {
@@ -46,8 +46,8 @@ export function ScheduleWidget({ project }: ScheduleWidgetProps) {
     });
 
     const hasChanges =
-        (startDate?.toISOString() !== (project.start_date ? new Date(project.start_date).toISOString() : undefined)) ||
-        (dueDate?.toISOString() !== (project.due_date ? new Date(project.due_date).toISOString() : undefined));
+        (deadline?.toISOString() !== (project.deadline ? new Date(project.deadline).toISOString() : undefined)) ||
+        (tanggalSelesai?.toISOString() !== (project.tanggal_selesai ? new Date(project.tanggal_selesai).toISOString() : undefined));
 
     return (
         <Card className="border-neutral-200 shadow-sm">
@@ -57,59 +57,59 @@ export function ScheduleWidget({ project }: ScheduleWidgetProps) {
                     Project Schedule
                 </CardTitle>
                 <CardDescription>
-                    Define the production timeline.
+                    Define the production and project delivery timeline.
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Start Date */}
+                    {/* Deadline */}
                     <div className="space-y-2">
-                        <label className="text-xs font-semibold text-neutral-600 uppercase">Start Date</label>
+                        <label className="text-xs font-semibold text-neutral-600 uppercase">Deadline Proyek</label>
                         <Popover>
                             <PopoverTrigger asChild>
                                 <Button
                                     variant={"outline"}
                                     className={cn(
                                         "w-full justify-start text-left font-normal",
-                                        !startDate && "text-muted-foreground"
+                                        !deadline && "text-muted-foreground"
                                     )}
                                 >
                                     <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {startDate ? format(startDate, "PPP") : <span>Pick a date</span>}
+                                    {deadline ? format(deadline, "PPP") : <span>Pick a date</span>}
                                 </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0">
                                 <Calendar
                                     mode="single"
-                                    selected={startDate}
-                                    onSelect={setStartDate}
+                                    selected={deadline}
+                                    onSelect={setDeadline}
                                     initialFocus
                                 />
                             </PopoverContent>
                         </Popover>
                     </div>
 
-                    {/* Due Date */}
+                    {/* Tanggal Selesai Produksi */}
                     <div className="space-y-2">
-                        <label className="text-xs font-semibold text-neutral-600 uppercase">Deadline (Due Date)</label>
+                        <label className="text-xs font-semibold text-neutral-600 uppercase">Tanggal Selesai Produksi</label>
                         <Popover>
                             <PopoverTrigger asChild>
                                 <Button
                                     variant={"outline"}
                                     className={cn(
                                         "w-full justify-start text-left font-normal",
-                                        !dueDate && "text-muted-foreground"
+                                        !tanggalSelesai && "text-muted-foreground"
                                     )}
                                 >
                                     <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {dueDate ? format(dueDate, "PPP") : <span>Pick a date</span>}
+                                    {tanggalSelesai ? format(tanggalSelesai, "PPP") : <span>Pick a date</span>}
                                 </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0">
                                 <Calendar
                                     mode="single"
-                                    selected={dueDate}
-                                    onSelect={setDueDate}
+                                    selected={tanggalSelesai}
+                                    onSelect={setTanggalSelesai}
                                     initialFocus
                                 />
                             </PopoverContent>
