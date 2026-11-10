@@ -21,12 +21,8 @@ export function DashboardCalendar() {
 
     // Map projects to deadline dates
     const deadlineDates = projects.map((p: any) => {
-        if (p.due_date) return new Date(p.due_date)
-        if (p.start_date) {
-            const d = new Date(p.start_date)
-            d.setDate(d.getDate() + 14)
-            return d
-        }
+        if (p.deadline) return new Date(p.deadline)
+        if (p.tanggal_selesai) return new Date(p.tanggal_selesai)
         return null
     }).filter(Boolean) as Date[]
 

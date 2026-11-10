@@ -30,7 +30,7 @@ export function PreparationPhase({ project }: PreparationPhaseProps) {
 
     // --- GATE CHECKS ---
     // 1. Schedule Check
-    const isScheduleSet = Boolean(project.start_date && project.due_date);
+    const isScheduleSet = Boolean(project.deadline || project.tanggal_selesai);
 
     // 2. Dokubah Check
     const { data: dokubahData } = useQuery({
