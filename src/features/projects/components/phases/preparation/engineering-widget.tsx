@@ -2,9 +2,8 @@
 
 import { useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { DocumentService } from "@/features/projects/services/document-service"
 import { ProjectService } from "@/features/projects/services/project-service"
-import { Loader2, Upload, File as FileIcon, Trash2, Download, Image as ImageIcon, FileCheck, ChevronDown } from "lucide-react"
+import { Loader2, Upload, File as FileIcon, Trash2, Download, Image as ImageIcon, FileCheck, ExternalLink } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { toast } from "sonner"
@@ -32,11 +31,8 @@ interface EngineeringWidgetProps {
     projectId: number;
 }
 
-const DOC_TYPE = "ENGINEERING";
-
 export function EngineeringWidget({ projectId }: EngineeringWidgetProps) {
     const queryClient = useQueryClient();
-    const [handoverFile, setHandoverFile] = useState<File | null>(null);
     const [itemFiles, setItemFiles] = useState<Record<number, File | null>>({});
 
     // 1. Fetch SPH Items
@@ -45,29 +41,7 @@ export function EngineeringWidget({ projectId }: EngineeringWidgetProps) {
         queryFn: () => ProjectService.getSPHItems(projectId)
     });
 
-    // 2. Fetch Handover Document (from project)
-    const { data: project } = useQuery({
-        queryKey: ["project", projectId],
-        queryFn: () => ProjectService.getProject(projectId)
-    });
-
-    // 3. Upload Handover Mutation
-    const uploadHandoverMutation = useMutation({
-        mutationFn: async () => {
-            if (!handoverFile) throw new Error("Please select a file first");
-            return await DocumentService.uploadEngineeringHandover(projectId, handoverFile);
-        },
-        onSuccess: () => {
-            toast.success("Handover document uploaded");
-            setHandoverFile(null);
-            queryClient.invalidateQueries({ queryKey: ["project", projectId] });
-        },
-        onError: (error: any) => {
-            toast.error(error.message || "Failed to upload handover");
-        }
-    });
-
-    // 4. Upload Item Drawing Mutation
+    // 2. Upload Item Drawing Mutation
     const uploadItemDrawingMutation = useMutation({
         mutationFn: async ({ itemId, file }: { itemId: number, file: File }) => {
             throw new Error("Legacy upload deprecated. Silakan upload gambar kerja via menu Projects V2.");
@@ -82,7 +56,7 @@ export function EngineeringWidget({ projectId }: EngineeringWidgetProps) {
         }
     });
 
-    // 5. Delete Mutation
+    // 3. Delete Mutation
     const deleteMutation = useMutation({
         mutationFn: async (docId: number) => {
             throw new Error("Legacy delete deprecated.");
@@ -95,8 +69,6 @@ export function EngineeringWidget({ projectId }: EngineeringWidgetProps) {
             toast.error(error.message || "Failed to delete");
         }
     });
-
-    const handoverUrl = project?.data?.engineering_handover_file;
 
     if (itemsLoading) {
         return (
@@ -116,7 +88,7 @@ export function EngineeringWidget({ projectId }: EngineeringWidgetProps) {
                     </CardTitle>
                 </div>
                 <CardDescription>
-                    Upload handover document and per-item working drawings.
+                    Kelola berkas serah terima engineering dan gambar kerja per item.
                 </CardDescription>
             </CardHeader>
             <CardContent className="p-6 space-y-6">
@@ -126,55 +98,22 @@ export function EngineeringWidget({ projectId }: EngineeringWidgetProps) {
                     <div className="flex items-center justify-between">
                         <h3 className="text-sm font-semibold text-neutral-700 flex items-center gap-2">
                             <FileCheck className="h-4 w-4" />
-                            Surat Serah Terima Engineering
+                            Surat Serah Terima Gambar Kerja
                         </h3>
-                        {handoverUrl && (
-                            <Badge variant="default" className="bg-green-600">Uploaded</Badge>
-                        )}
                     </div>
 
-                    {handoverUrl ? (
-                        <div className="space-y-3">
-                            <div className="flex items-center justify-between bg-green-50 border border-green-100 rounded-lg p-3">
-                                <p className="text-sm text-green-900 font-medium">Handover document available</p>
-                                <Link href={handoverUrl} target="_blank">
-                                    <Button size="sm" variant="outline" className="border-green-200 text-green-700 hover:bg-green-100">
-                                        <Download className="mr-2 h-3 w-3" /> Download
-                                    </Button>
-                                </Link>
-                            </div>
-                            {/* PDF Viewer */}
-                            <div className="border border-neutral-200 rounded-lg overflow-hidden bg-neutral-50">
-                                <iframe
-                                    src={handoverUrl}
-                                    className="w-full h-[400px]"
-                                    title="Handover Document"
-                                />
-                            </div>
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-blue-50/70 border border-blue-100 rounded-lg p-4">
+                        <div className="space-y-1">
+                            <p className="text-sm font-medium text-blue-900">Modul Resmi Surat Serah Terima Gambar Kerja</p>
+                            <p className="text-xs text-blue-700">Pembuatan nomor surat resmi, persetujuan, dan pencetakan dokumen serah terima gambar kerja dikelola di Projects V2.</p>
                         </div>
-                    ) : (
-                        <div className="flex gap-2">
-                            <input
-                                type="file"
-                                accept=".pdf"
-                                onChange={(e) => e.target.files && setHandoverFile(e.target.files[0])}
-                                className="block w-full text-sm text-neutral-500
-                                    file:mr-4 file:py-2 file:px-4
-                                    file:rounded-md file:border-0
-                                    file:text-xs file:font-semibold
-                                    file:bg-blue-50 file:text-blue-700
-                                    hover:file:bg-blue-100
-                                    border border-neutral-200 rounded-md cursor-pointer"
-                            />
-                            <Button
-                                size="sm"
-                                onClick={() => uploadHandoverMutation.mutate()}
-                                disabled={!handoverFile || uploadHandoverMutation.isPending}
-                            >
-                                {uploadHandoverMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                        <Link href="/dashboard/projects-v2/serah-terima-gambar">
+                            <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm shrink-0">
+                                <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
+                                Buka Serah Terima Gambar
                             </Button>
-                        </div>
-                    )}
+                        </Link>
+                    </div>
                 </div>
 
                 {/* Per-Item Drawings */}

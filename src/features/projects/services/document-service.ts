@@ -1,15 +1,6 @@
 import { axiosInstance as apiClient } from "@/lib/axios";
 
 export const DocumentService = {
-    // Engineering Handover
-    uploadEngineeringHandover: async (projectId: number | string, file: File) => {
-        const formData = new FormData();
-        formData.append('file', file);
-
-        const response = await apiClient.post(`/projects/${projectId}/engineering/handover`, formData);
-        return response.data;
-    },
-
     // SPH (Quotation) Documents
     getSPH: async (projectId: number | string) => {
         const response = await apiClient.get(`/projects/${projectId}/sph`);
