@@ -572,7 +572,7 @@ export default function PrintSPHPage() {
               : null}
 
             <div className='mt-4'>
-              {project.client?.nama_jangum && (
+              {project.client?.general_affair_name && (
                 <div
                   style={{
                     fontWeight: 'bold',
@@ -580,7 +580,7 @@ export default function PrintSPHPage() {
                     textDecoration: 'underline',
                   }}
                 >
-                  Up. {project.client.nama_jangum} (Manajer Jangum)
+                  Up. {project.client.general_affair_name} (Manajer Jangum)
                 </div>
               )}
             </div>
