@@ -15,7 +15,6 @@ export interface Client {
         angka_romawi?: string | null;
         nama_direktur?: string | null;
     } | null;
-    email_keuangan?: string | null;
     finance_email?: string | null;
     phone_number?: string | null;
     phone?: string | null;

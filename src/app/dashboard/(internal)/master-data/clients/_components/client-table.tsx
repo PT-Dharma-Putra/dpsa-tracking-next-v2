@@ -297,7 +297,6 @@ export function ClientTable() {
                                 <TableHead className="min-w-[140px] text-center">Kategori Hermina</TableHead>
                                 <TableHead className="min-w-[170px]">Regional Hermina</TableHead>
                                 <TableHead className="min-w-[180px]">Email Keuangan</TableHead>
-                                <TableHead className="min-w-[180px]">Finance Email</TableHead>
                                 <TableHead className="min-w-[130px]">No. Telepon</TableHead>
                                 <TableHead className="min-w-[240px]">Alamat</TableHead>
                                 <TableHead className="min-w-[140px]">Nama Jangum</TableHead>
@@ -330,14 +329,14 @@ export function ClientTable() {
                         <TableBody className="divide-y divide-neutral-100">
                             {isLoading ? (
                                 <TableRow>
-                                    <TableCell colSpan={21} className="h-32 text-center">
+                                    <TableCell colSpan={20} className="h-32 text-center">
                                         <Loader2 className="h-6 w-6 animate-spin mx-auto text-neutral-400" />
                                         <span className="text-xs text-neutral-500 mt-2 block">Memuat data client...</span>
                                     </TableCell>
                                 </TableRow>
                             ) : filtered.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={21} className="h-32 text-center text-muted-foreground text-sm">
+                                    <TableCell colSpan={20} className="h-32 text-center text-muted-foreground text-sm">
                                         {search ? "Tidak ada client yang cocok." : "Belum ada client. Klik 'Tambah Client' untuk memulai."}
                                     </TableCell>
                                 </TableRow>
@@ -413,11 +412,6 @@ export function ClientTable() {
                                             ) : (
                                                 <span className="text-neutral-400 text-xs">-</span>
                                             )}
-                                        </TableCell>
-
-                                        {/* 10. email_keuangan */}
-                                        <TableCell className="text-neutral-700 whitespace-nowrap">
-                                            {client.email_keuangan || "-"}
                                         </TableCell>
 
                                         {/* 11. finance_email */}
