@@ -5,7 +5,6 @@ export interface Client {
     kode?: number | null;
     name: string;
     company_name?: string | null;
-    nama_direktur?: string | null;
     director_name?: string | null;
     email?: string | null;
     hermina: number;

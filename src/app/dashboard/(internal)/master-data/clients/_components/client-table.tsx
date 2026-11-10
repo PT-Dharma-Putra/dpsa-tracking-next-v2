@@ -289,28 +289,24 @@ export function ClientTable() {
                         <TableHeader className="bg-neutral-50/90 sticky top-0 z-10 text-[11px] font-semibold text-neutral-700 uppercase whitespace-nowrap">
                             <TableRow>
                                 <TableHead className="w-[45px] text-center">#</TableHead>
-                                <TableHead className="w-[60px] text-center">ID</TableHead>
                                 <TableHead className="w-[75px] text-center">Kode</TableHead>
-                                <TableHead className="min-w-[180px]">Nama Client (name)</TableHead>
-                                <TableHead className="min-w-[180px]">Nama Perusahaan (company_name)</TableHead>
-                                <TableHead className="min-w-[160px]">Nama Direktur (nama_direktur)</TableHead>
-                                <TableHead className="min-w-[160px]">Director Name (director_name)</TableHead>
-                                <TableHead className="min-w-[180px]">Email (email)</TableHead>
-                                <TableHead className="min-w-[140px] text-center">Kategori Hermina (hermina)</TableHead>
-                                <TableHead className="min-w-[170px]">Regional Hermina (regional_hermina_id)</TableHead>
-                                <TableHead className="min-w-[180px]">Email Keuangan (email_keuangan)</TableHead>
-                                <TableHead className="min-w-[180px]">Finance Email (finance_email)</TableHead>
-                                <TableHead className="min-w-[130px]">No. Telepon (phone_number)</TableHead>
-                                <TableHead className="min-w-[240px]">Alamat (address)</TableHead>
-                                <TableHead className="min-w-[140px]">Nama Jangum (nama_jangum)</TableHead>
-                                <TableHead className="min-w-[160px]">General Affair Name (general_affair_name)</TableHead>
-                                <TableHead className="min-w-[130px]">HP Jangum (hp_jangum)</TableHead>
-                                <TableHead className="min-w-[140px]">General Affair HP (general_affair_hp)</TableHead>
-                                <TableHead className="min-w-[140px]">No. Rekening (rekening)</TableHead>
-                                <TableHead className="min-w-[120px]">Nama Bank (nama_bank)</TableHead>
-                                <TableHead className="min-w-[160px]">NPWP (npwp)</TableHead>
-                                <TableHead className="min-w-[150px]">Created At (created_at)</TableHead>
-                                <TableHead className="min-w-[150px]">Updated At (updated_at)</TableHead>
+                                <TableHead className="min-w-[180px]">Nama Client</TableHead>
+                                <TableHead className="min-w-[180px]">Nama Perusahaan</TableHead>
+                                <TableHead className="min-w-[160px]">Nama Direktur</TableHead>
+                                <TableHead className="min-w-[180px]">Email</TableHead>
+                                <TableHead className="min-w-[140px] text-center">Kategori Hermina</TableHead>
+                                <TableHead className="min-w-[170px]">Regional Hermina</TableHead>
+                                <TableHead className="min-w-[180px]">Email Keuangan</TableHead>
+                                <TableHead className="min-w-[180px]">Finance Email</TableHead>
+                                <TableHead className="min-w-[130px]">No. Telepon</TableHead>
+                                <TableHead className="min-w-[240px]">Alamat</TableHead>
+                                <TableHead className="min-w-[140px]">Nama Jangum</TableHead>
+                                <TableHead className="min-w-[160px]">General Affair Name</TableHead>
+                                <TableHead className="min-w-[130px]">HP Jangum</TableHead>
+                                <TableHead className="min-w-[140px]">General Affair HP</TableHead>
+                                <TableHead className="min-w-[140px]">No. Rekening</TableHead>
+                                <TableHead className="min-w-[120px]">Nama Bank</TableHead>
+                                <TableHead className="min-w-[160px]">NPWP</TableHead>
                                 <TableHead
                                     className="min-w-[120px] text-center cursor-pointer hover:bg-neutral-200/50 transition-colors select-none"
                                     onClick={() => {
@@ -334,14 +330,14 @@ export function ClientTable() {
                         <TableBody className="divide-y divide-neutral-100">
                             {isLoading ? (
                                 <TableRow>
-                                    <TableCell colSpan={25} className="h-32 text-center">
+                                    <TableCell colSpan={21} className="h-32 text-center">
                                         <Loader2 className="h-6 w-6 animate-spin mx-auto text-neutral-400" />
                                         <span className="text-xs text-neutral-500 mt-2 block">Memuat data client...</span>
                                     </TableCell>
                                 </TableRow>
                             ) : filtered.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={25} className="h-32 text-center text-muted-foreground text-sm">
+                                    <TableCell colSpan={21} className="h-32 text-center text-muted-foreground text-sm">
                                         {search ? "Tidak ada client yang cocok." : "Belum ada client. Klik 'Tambah Client' untuk memulai."}
                                     </TableCell>
                                 </TableRow>
@@ -351,11 +347,6 @@ export function ClientTable() {
                                         {/* 1. # */}
                                         <TableCell className="font-medium text-muted-foreground text-center">
                                             {(meta.current_page - 1) * 10 + index + 1}
-                                        </TableCell>
-
-                                        {/* 2. id */}
-                                        <TableCell className="text-center font-mono text-xs text-neutral-500">
-                                            #{client.id}
                                         </TableCell>
 
                                         {/* 3. kode */}
@@ -377,11 +368,6 @@ export function ClientTable() {
                                         {/* 5. company_name */}
                                         <TableCell className="text-neutral-700 whitespace-nowrap">
                                             {client.company_name || "-"}
-                                        </TableCell>
-
-                                        {/* 6. nama_direktur */}
-                                        <TableCell className="text-neutral-700 whitespace-nowrap">
-                                            {client.nama_direktur || "-"}
                                         </TableCell>
 
                                         {/* 7. director_name */}
@@ -490,16 +476,6 @@ export function ClientTable() {
                                         {/* 20. npwp */}
                                         <TableCell className="text-neutral-700 font-mono text-xs whitespace-nowrap">
                                             {client.npwp || "-"}
-                                        </TableCell>
-
-                                        {/* 21. created_at */}
-                                        <TableCell className="text-neutral-600 text-xs whitespace-nowrap">
-                                            {formatDate(client.created_at)}
-                                        </TableCell>
-
-                                        {/* 22. updated_at */}
-                                        <TableCell className="text-neutral-600 text-xs whitespace-nowrap">
-                                            {formatDate(client.updated_at)}
                                         </TableCell>
 
                                         {/* 23. projects_count */}

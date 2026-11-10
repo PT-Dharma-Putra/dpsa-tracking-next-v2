@@ -62,7 +62,7 @@ export function ClientFormDialog({ open, onOpenChange, client }: ClientFormDialo
             setKode(client.kode !== null && client.kode !== undefined ? String(client.kode) : "")
             setName(client.name || "")
             setCompanyName(client.company_name || "")
-            setDirectorName(client.director_name || client.nama_direktur || "")
+            setDirectorName(client.director_name || "")
             setEmail(client.email || "")
             setFinanceEmail(client.finance_email || client.email_keuangan || "")
             setPhone(client.phone_number || client.phone || "")
