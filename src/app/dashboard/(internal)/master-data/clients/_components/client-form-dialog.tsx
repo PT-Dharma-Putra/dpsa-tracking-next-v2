@@ -64,7 +64,7 @@ export function ClientFormDialog({ open, onOpenChange, client }: ClientFormDialo
             setCompanyName(client.company_name || "")
             setDirectorName(client.director_name || "")
             setEmail(client.email || "")
-            setFinanceEmail(client.finance_email || client.email_keuangan || "")
+            setFinanceEmail(client.finance_email || "")
             setPhone(client.phone_number || client.phone || "")
             setAddress(client.address || "")
             setGeneralAffairName(client.general_affair_name || client.nama_jangum || "")
