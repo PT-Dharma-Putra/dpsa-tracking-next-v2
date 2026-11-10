@@ -299,10 +299,8 @@ export function ClientTable() {
                                 <TableHead className="min-w-[180px]">Email Keuangan</TableHead>
                                 <TableHead className="min-w-[130px]">No. Telepon</TableHead>
                                 <TableHead className="min-w-[240px]">Alamat</TableHead>
-                                <TableHead className="min-w-[140px]">Nama Jangum</TableHead>
-                                <TableHead className="min-w-[160px]">General Affair Name</TableHead>
-                                <TableHead className="min-w-[130px]">HP Jangum</TableHead>
-                                <TableHead className="min-w-[140px]">General Affair HP</TableHead>
+                                <TableHead className="min-w-[150px]">Nama Jangum / GA</TableHead>
+                                <TableHead className="min-w-[140px]">HP Jangum / GA</TableHead>
                                 <TableHead className="min-w-[140px]">No. Rekening</TableHead>
                                 <TableHead className="min-w-[120px]">Nama Bank</TableHead>
                                 <TableHead className="min-w-[160px]">NPWP</TableHead>
@@ -329,14 +327,14 @@ export function ClientTable() {
                         <TableBody className="divide-y divide-neutral-100">
                             {isLoading ? (
                                 <TableRow>
-                                    <TableCell colSpan={20} className="h-32 text-center">
+                                    <TableCell colSpan={18} className="h-32 text-center">
                                         <Loader2 className="h-6 w-6 animate-spin mx-auto text-neutral-400" />
                                         <span className="text-xs text-neutral-500 mt-2 block">Memuat data client...</span>
                                     </TableCell>
                                 </TableRow>
                             ) : filtered.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={20} className="h-32 text-center text-muted-foreground text-sm">
+                                    <TableCell colSpan={18} className="h-32 text-center text-muted-foreground text-sm">
                                         {search ? "Tidak ada client yang cocok." : "Belum ada client. Klik 'Tambah Client' untuk memulai."}
                                     </TableCell>
                                 </TableRow>
@@ -437,19 +435,9 @@ export function ClientTable() {
                                             </div>
                                         </TableCell>
 
-                                        {/* 14. nama_jangum */}
-                                        <TableCell className="text-neutral-700 whitespace-nowrap">
-                                            {client.nama_jangum || "-"}
-                                        </TableCell>
-
                                         {/* 15. general_affair_name */}
                                         <TableCell className="text-neutral-700 whitespace-nowrap">
                                             {client.general_affair_name || "-"}
-                                        </TableCell>
-
-                                        {/* 16. hp_jangum */}
-                                        <TableCell className="text-neutral-700 font-mono text-xs whitespace-nowrap">
-                                            {client.hp_jangum || "-"}
                                         </TableCell>
 
                                         {/* 17. general_affair_hp */}

@@ -22,7 +22,8 @@ export interface ProjectV2 {
     name: string;
     address?: string | null;
     director_name?: string | null;
-    nama_jangum?: string | null;
+    general_affair_name?: string | null;
+    general_affair_hp?: string | null;
   };
   marketing?: {
     id: number;

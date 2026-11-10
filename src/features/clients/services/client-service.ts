@@ -19,9 +19,7 @@ export interface Client {
     phone_number?: string | null;
     phone?: string | null;
     address?: string | null;
-    nama_jangum?: string | null;
     general_affair_name?: string | null;
-    hp_jangum?: string | null;
     general_affair_hp?: string | null;
     rekening?: string | null;
     nama_bank?: string | null;
