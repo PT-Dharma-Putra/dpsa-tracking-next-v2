@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { adminService } from '@/features/admin/api/admin-service';
 
 import {
@@ -58,6 +58,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
   const { user, logout } = useAuthStore();
   const { isMobile } = useSidebar();
 
@@ -67,6 +68,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     } catch (e) {
       console.error('Logout failed', e);
     }
+    queryClient.removeQueries({ queryKey: ['user-sidebar-menus'] });
     logout();
     router.push('/auth/internal/login');
   };
@@ -625,9 +627,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   // Fetch dynamic database menus (from database table 'menus')
   const { data: dbMenus } = useQuery({
-    queryKey: ['user-sidebar-menus'],
+    queryKey: ['user-sidebar-menus', user?.id],
     queryFn: adminService.getUserSidebarMenus,
     enabled: !!user,
+    staleTime: 1000 * 60 * 30, // 30 minutes cache to avoid redundant API hits on window focus/navigation
+    gcTime: 1000 * 60 * 60,    // Keep unused data for 1 hour
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 
   const dynamicNavMain = (dbMenus && Array.isArray(dbMenus) && dbMenus.length > 0)
