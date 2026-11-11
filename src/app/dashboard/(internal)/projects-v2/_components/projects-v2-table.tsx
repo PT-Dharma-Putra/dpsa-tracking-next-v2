@@ -4657,7 +4657,7 @@ export function ProjectsV2Table({
                         !showQC && <TableHead>NO SPH</TableHead>}
                       {!showSPD && (
                         <>
-                          {!showMarketingFilter && (
+                          {!showMarketingFilter && !showPiutang && (
                             <TableHead
                               className='cursor-pointer hover:bg-neutral-100 transition-colors group'
                               onClick={() => handleSortChange('prioritas')}
@@ -5152,7 +5152,7 @@ export function ProjectsV2Table({
                           : showProduksi
                           ? 15
                           : showPiutang
-                          ? 15
+                          ? 14
                           : showMarketingFilter
                           ? 22
                           : showPerencanaan
@@ -5185,7 +5185,7 @@ export function ProjectsV2Table({
                           : showProduksi
                           ? 15
                           : showPiutang
-                          ? 15
+                          ? 14
                           : showMarketingFilter
                           ? 22
                           : showPerencanaan
@@ -6070,7 +6070,7 @@ export function ProjectsV2Table({
                             )}
                           {!showSPD && (
                             <>
-                              {!showMarketingFilter && (
+                              {!showMarketingFilter && !showPiutang && (
                                 <TableCell>
                                   {project.prioritas === 'Urgent' ? (
                                     <Badge className='bg-red-100 text-red-700 border border-red-200 hover:bg-red-100 font-semibold text-[11px]'>
