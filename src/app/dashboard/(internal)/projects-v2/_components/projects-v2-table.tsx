@@ -207,6 +207,9 @@ export function ProjectsV2Table({
   const [selectedDivisi, setSelectedDivisi] = React.useState<string>(
     searchParams.get('divisi_id') || 'all'
   );
+  const [selectedPenerimaSpk, setSelectedPenerimaSpk] = React.useState<string>(
+    searchParams.get('penerima_spk_id') || 'all'
+  );
   const [selectedMonth, setSelectedMonth] = React.useState<string>(
     searchParams.get('month') || 'all'
   );
@@ -264,6 +267,7 @@ export function ProjectsV2Table({
     const urlClientId = searchParams.get('client_id') || 'all';
     const urlMarketingId = searchParams.get('marketing_id') || 'all';
     const urlDivisiId = searchParams.get('divisi_id') || 'all';
+    const urlPenerimaSpkId = searchParams.get('penerima_spk_id') || 'all';
     const urlMonth = searchParams.get('month') || 'all';
     const urlYear = searchParams.get('year') || 'all';
     const urlDashboardFilter = (searchParams.get('dashboard_filter') as any) || null;
@@ -287,6 +291,7 @@ export function ProjectsV2Table({
     setClientId(urlClientId);
     setMarketingId(urlMarketingId);
     setSelectedDivisi(urlDivisiId);
+    setSelectedPenerimaSpk(urlPenerimaSpkId);
     setSelectedMonth(urlMonth);
     setSelectedYear(urlYear);
     setDashboardFilter(urlDashboardFilter);
@@ -721,6 +726,7 @@ export function ProjectsV2Table({
       clientId,
       marketingId,
       selectedDivisi,
+      selectedPenerimaSpk,
       selectedMonth,
       selectedYear,
       sortBy,
@@ -745,6 +751,7 @@ export function ProjectsV2Table({
         client_id: clientId !== 'all' ? clientId : undefined,
         marketing_id: marketingId !== 'all' ? marketingId : undefined,
         divisi_id: selectedDivisi !== 'all' ? selectedDivisi : undefined,
+        penerima_spk_id: selectedPenerimaSpk !== 'all' ? selectedPenerimaSpk : undefined,
         month: selectedMonth !== 'all' ? selectedMonth : undefined,
         year: selectedYear !== 'all' ? selectedYear : undefined,
         sort_by: sortBy,
@@ -773,6 +780,7 @@ export function ProjectsV2Table({
       clientId,
       marketingId,
       selectedDivisi,
+      selectedPenerimaSpk,
       selectedMonth,
       selectedYear,
       pengirimanStatusFilter,
@@ -786,6 +794,7 @@ export function ProjectsV2Table({
         client_id: clientId !== 'all' ? clientId : undefined,
         marketing_id: marketingId !== 'all' ? marketingId : undefined,
         divisi_id: selectedDivisi !== 'all' ? selectedDivisi : undefined,
+        penerima_spk_id: selectedPenerimaSpk !== 'all' ? selectedPenerimaSpk : undefined,
         month: selectedMonth !== 'all' ? selectedMonth : undefined,
         year: selectedYear !== 'all' ? selectedYear : undefined,
         pengiriman_status: pengirimanStatusFilter || undefined,
@@ -843,6 +852,10 @@ export function ProjectsV2Table({
     queryFn: () => projectV2Service.getDivisions(),
   });
 
+  const dpsaGroupDivisions = React.useMemo(() => {
+    return divisions.filter((d) => Boolean(d.is_dpsa_group));
+  }, [divisions]);
+
   const divisionsMap = React.useMemo(() => {
     const map = new Map<number, string>();
     divisions.forEach((d) => map.set(d.id, d.nama));
@@ -885,6 +898,44 @@ export function ProjectsV2Table({
   const handleClearDivisi = () => {
     setSelectedDivisi('all');
     handleFilterParamChange('divisi_id', 'all');
+  };
+
+  const [penerimaSpkPopoverOpen, setPenerimaSpkPopoverOpen] = React.useState(false);
+
+  const selectedPenerimaSpkIds = React.useMemo(() => {
+    if (!selectedPenerimaSpk || selectedPenerimaSpk === 'all') return [];
+    return selectedPenerimaSpk
+      .split(',')
+      .map((s: string) => s.trim())
+      .filter(Boolean);
+  }, [selectedPenerimaSpk]);
+
+  const handleTogglePenerimaSpk = (divisiId: string) => {
+    let newIds: string[];
+    if (selectedPenerimaSpkIds.includes(divisiId)) {
+      newIds = selectedPenerimaSpkIds.filter((id: string) => id !== divisiId);
+    } else {
+      newIds = [...selectedPenerimaSpkIds, divisiId];
+    }
+    const newValue = newIds.length > 0 ? newIds.join(',') : 'all';
+    setSelectedPenerimaSpk(newValue);
+    handleFilterParamChange('penerima_spk_id', newValue);
+  };
+
+  const handleSelectAllPenerimaSpk = () => {
+    if (selectedPenerimaSpkIds.length === dpsaGroupDivisions.length) {
+      setSelectedPenerimaSpk('all');
+      handleFilterParamChange('penerima_spk_id', 'all');
+    } else {
+      const allIds = dpsaGroupDivisions.map((d) => d.id.toString()).join(',');
+      setSelectedPenerimaSpk(allIds);
+      handleFilterParamChange('penerima_spk_id', allIds);
+    }
+  };
+
+  const handleClearPenerimaSpk = () => {
+    setSelectedPenerimaSpk('all');
+    handleFilterParamChange('penerima_spk_id', 'all');
   };
 
   const { data: engineers = [] } = useQuery({
@@ -4032,6 +4083,137 @@ export function ProjectsV2Table({
             </div>
 
             <div className='flex flex-wrap gap-2 items-center'>
+              {showPiutang && (
+                <Popover open={penerimaSpkPopoverOpen} onOpenChange={setPenerimaSpkPopoverOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={penerimaSpkPopoverOpen}
+                      className={cn(
+                        'h-9 justify-between min-w-[170px] max-w-[250px] font-normal text-sm bg-background',
+                        selectedPenerimaSpkIds.length === 0 && 'text-muted-foreground'
+                      )}
+                    >
+                      <div className="flex items-center gap-1.5 truncate mr-1">
+                        <span className="truncate text-xs sm:text-sm text-foreground">
+                          {selectedPenerimaSpkIds.length === 0
+                            ? 'Penerima SPK'
+                            : selectedPenerimaSpkIds.length === 1
+                            ? dpsaGroupDivisions.find((d) => d.id.toString() === selectedPenerimaSpkIds[0])?.nama || '1 Penerima'
+                            : `${selectedPenerimaSpkIds.length} Penerima SPK`}
+                        </span>
+                        {selectedPenerimaSpkIds.length > 1 && (
+                          <Badge
+                            variant="secondary"
+                            className="h-5 px-1.5 text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200"
+                          >
+                            {selectedPenerimaSpkIds.length}
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        {selectedPenerimaSpkIds.length > 0 && (
+                          <span
+                            role="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleClearPenerimaSpk();
+                            }}
+                            className="rounded-full p-0.5 hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer"
+                            title="Reset filter penerima SPK"
+                          >
+                            <X className="h-3 w-3" />
+                          </span>
+                        )}
+                        <ChevronsUpDown className="h-3.5 w-3.5 opacity-50" />
+                      </div>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[240px] p-0" align="start">
+                    <Command>
+                      <CommandInput placeholder="Cari penerima SPK..." className="h-8 text-xs" />
+                      <div className="flex items-center justify-between px-3 py-1.5 border-b text-xs text-muted-foreground bg-muted/30">
+                        <span className="text-[11px] font-medium">
+                          {selectedPenerimaSpkIds.length > 0
+                            ? `${selectedPenerimaSpkIds.length} dipilih`
+                            : 'Semua penerima SPK'}
+                        </span>
+                        {selectedPenerimaSpkIds.length > 0 ? (
+                          <button
+                            type="button"
+                            onClick={handleClearPenerimaSpk}
+                            className="text-[11px] text-blue-600 hover:text-blue-800 font-medium hover:underline cursor-pointer"
+                          >
+                            Reset
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={handleSelectAllPenerimaSpk}
+                            className="text-[11px] text-blue-600 hover:text-blue-800 font-medium hover:underline cursor-pointer"
+                          >
+                            Pilih Semua
+                          </button>
+                        )}
+                      </div>
+                      <CommandList className="max-h-[220px] overflow-y-auto p-1">
+                        <CommandEmpty className="py-4 text-center text-xs text-muted-foreground">
+                          Tidak ada divisi ditemukan.
+                        </CommandEmpty>
+                        <CommandGroup>
+                          {dpsaGroupDivisions.map((d) => {
+                            const isSelected = selectedPenerimaSpkIds.includes(d.id.toString());
+                            return (
+                              <CommandItem
+                                key={d.id}
+                                value={`${d.nama} ${d.nama_panjang || ''}`}
+                                onSelect={() => handleTogglePenerimaSpk(d.id.toString())}
+                                className="flex items-center gap-2 cursor-pointer py-1.5 px-2 rounded-sm text-xs hover:bg-accent"
+                              >
+                                <Checkbox
+                                  checked={isSelected}
+                                  className="pointer-events-none"
+                                />
+                                <div className="flex flex-col min-w-0 flex-1 leading-tight">
+                                  <span className={cn('truncate', isSelected && 'font-semibold text-primary')}>
+                                    {d.nama}
+                                  </span>
+                                  {d.nama_panjang && (
+                                    <span className="text-[10px] text-muted-foreground truncate">
+                                      {d.nama_panjang}
+                                    </span>
+                                  )}
+                                </div>
+                              </CommandItem>
+                            );
+                          })}
+                        </CommandGroup>
+                      </CommandList>
+                      <div className="flex items-center justify-between p-2 border-t bg-muted/20 text-xs">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 text-xs px-2 text-muted-foreground hover:text-foreground"
+                          onClick={handleSelectAllPenerimaSpk}
+                        >
+                          {selectedPenerimaSpkIds.length === dpsaGroupDivisions.length ? 'Batal Semua' : 'Pilih Semua'}
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="default"
+                          className="h-7 text-xs px-3 bg-blue-600 hover:bg-blue-700 text-white"
+                          onClick={() => setPenerimaSpkPopoverOpen(false)}
+                        >
+                          Selesai
+                        </Button>
+                      </div>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              )}
               <Popover open={divisiPopoverOpen} onOpenChange={setDivisiPopoverOpen}>
                 <PopoverTrigger asChild>
                   <Button
@@ -4410,6 +4592,7 @@ export function ProjectsV2Table({
                       )}
                       {!showPiutang && <TableHead>CLIENT</TableHead>}
                       {showPiutang && <TableHead>CLIENT (PENERBIT SPK)</TableHead>}
+                      {showPiutang && <TableHead>PENERIMA SPK</TableHead>}
                       {(!showSPD || showEngineer) && <TableHead>NO SPK</TableHead>}
                       {showPiutang && <TableHead>NOMINAL</TableHead>}
                       {showMarketingFilter && (
@@ -4969,7 +5152,7 @@ export function ProjectsV2Table({
                           : showProduksi
                           ? 15
                           : showPiutang
-                          ? 14
+                          ? 15
                           : showMarketingFilter
                           ? 22
                           : showPerencanaan
@@ -5002,7 +5185,7 @@ export function ProjectsV2Table({
                           : showProduksi
                           ? 15
                           : showPiutang
-                          ? 14
+                          ? 15
                           : showMarketingFilter
                           ? 22
                           : showPerencanaan
@@ -5787,6 +5970,11 @@ export function ProjectsV2Table({
                           {showPiutang && (
                             <TableCell className='font-semibold'>
                               {project.spk?.penerbit?.name || '-'}
+                            </TableCell>
+                          )}
+                          {showPiutang && (
+                            <TableCell className='font-semibold'>
+                              {project.spk?.penerima?.nama || '-'}
                             </TableCell>
                           )}
                           {(!showSPD || showEngineer) && (

@@ -287,6 +287,7 @@ interface GetProjectsV2Params {
   client_id?: string;
   marketing_id?: string;
   divisi_id?: string;
+  penerima_spk_id?: string;
   month?: string;
   year?: string;
   sort_by?: string;
