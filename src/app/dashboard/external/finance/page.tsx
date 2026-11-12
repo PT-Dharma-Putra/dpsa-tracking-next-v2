@@ -12,7 +12,8 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Download, FileText, TrendingUp, CreditCard, AlertCircle, Loader2, Check, ChevronsUpDown } from "lucide-react"
+import { Download, FileText, TrendingUp, CreditCard, AlertCircle, Loader2, Check, ChevronsUpDown, MapPin } from "lucide-react"
+import { isDirekturRegionalUser } from "@/lib/get-user-role"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
@@ -93,11 +94,40 @@ export default function FinanceOverviewPage() {
         );
     }, [user]);
 
-    const { data: herminaClients = [] } = useQuery({
-        queryKey: ["hermina-clients"],
-        queryFn: ClientService.getHerminaClients,
-        enabled: isHerminaPusat,
+    const isDirekturRegional = React.useMemo(() => {
+        if (!user) return false;
+        if (isDirekturRegionalUser(user)) return true;
+        const userRoles = [
+            user.role,
+            ...(user.roles_list || []),
+            ...(user.roles?.map((r: any) => typeof r === 'string' ? r : r.name) || [])
+        ].filter(Boolean) as string[];
+
+        return (
+            userRoles.some(r => r?.toLowerCase().includes('direktur regional')) ||
+            user.role_id === 23 ||
+            (Array.isArray(user.role_ids) && user.role_ids.includes(23))
+        );
+    }, [user]);
+
+    const isMultiClientFinance = isHerminaPusat || isDirekturRegional;
+    const userRegionalId = user?.regional_hermina_id || (user?.regional_hermina ? user.regional_hermina.id : null);
+
+    const { data: rawHerminaClients = [] } = useQuery({
+        queryKey: ["hermina-clients", isDirekturRegional ? userRegionalId : "all"],
+        queryFn: () => ClientService.getHerminaClients(isDirekturRegional ? (userRegionalId || undefined) : undefined),
+        enabled: isMultiClientFinance,
     });
+
+    const herminaClients = React.useMemo(() => {
+        if (!isDirekturRegional || !userRegionalId) return rawHerminaClients;
+        return rawHerminaClients.filter(c => c.regional_hermina_id === userRegionalId);
+    }, [rawHerminaClients, isDirekturRegional, userRegionalId]);
+
+    const regionalClientIds = React.useMemo(() => {
+        if (!isDirekturRegional) return new Set<number>();
+        return new Set(herminaClients.map(c => c.id));
+    }, [isDirekturRegional, herminaClients]);
 
     const { data, isLoading } = useQuery({
         queryKey: ["client-finance"],
@@ -105,12 +135,41 @@ export default function FinanceOverviewPage() {
     })
 
     const { data: penagihanList = [], isLoading: isLoadingPenagihan } = useQuery({
-        queryKey: ["penagihan-all", user?.client_id, isHerminaPusat],
-        queryFn: () => penagihanService.getAllPenagihan(isHerminaPusat ? undefined : (user?.client_id ?? undefined))
+        queryKey: ["penagihan-all", user?.client_id, isHerminaPusat, isDirekturRegional, userRegionalId],
+        queryFn: () => penagihanService.getAllPenagihan(isMultiClientFinance ? undefined : (user?.client_id ?? undefined))
     })
 
     const filteredPenagihanList = React.useMemo(() => {
         if (!user) return penagihanList;
+
+        if (isDirekturRegional) {
+            // Direktur Regional ONLY sees invoices belonging to their regional
+            return penagihanList.filter((inv: any) => {
+                const projectSpk = inv.project?.spk || inv.project?.spks;
+                const penerbit = Array.isArray(projectSpk)
+                    ? projectSpk[0]?.penerbit
+                    : projectSpk?.penerbit;
+
+                const penerbitId = penerbit?.id || (Array.isArray(projectSpk) ? projectSpk[0]?.penerbit_id : projectSpk?.penerbit_id);
+                const projectClientId = inv.project?.client_id;
+                const clientRegionalId = penerbit?.regional_hermina_id || inv.project?.client?.regional_hermina_id;
+
+                const belongsToRegional = (userRegionalId && clientRegionalId === userRegionalId) ||
+                    (penerbitId && regionalClientIds.has(Number(penerbitId))) ||
+                    (projectClientId && regionalClientIds.has(Number(projectClientId)));
+
+                if (!belongsToRegional) return false;
+
+                if (selectedHerminaClientId !== "all") {
+                    return (
+                        (penerbitId !== undefined && penerbitId !== null && Number(penerbitId) === Number(selectedHerminaClientId)) ||
+                        (projectClientId !== undefined && projectClientId !== null && Number(projectClientId) === Number(selectedHerminaClientId))
+                    );
+                }
+
+                return true;
+            });
+        }
 
         if (isHerminaPusat) {
             // Hermina Pusat ONLY sees invoices where SPK penerbit is a Hermina client
@@ -160,7 +219,7 @@ export default function FinanceOverviewPage() {
 
             return String(penerbitId) === String(userClientId);
         });
-    }, [penagihanList, user, isHerminaPusat, selectedHerminaClientId]);
+    }, [penagihanList, user, isHerminaPusat, isDirekturRegional, userRegionalId, regionalClientIds, selectedHerminaClientId]);
 
     const finalPenagihanList = React.useMemo(() => {
         let list = filteredPenagihanList;
@@ -310,7 +369,7 @@ export default function FinanceOverviewPage() {
                         <CardDescription>A complete list of issued invoices.</CardDescription>
                     </div>
                     <div className="flex flex-wrap items-center gap-3">
-                        {isHerminaPusat && (
+                        {isMultiClientFinance && (
                             <div className="flex items-center gap-2">
                                 <span className="text-xs font-medium text-neutral-500 whitespace-nowrap">Filter Cabang:</span>
                                 <Popover open={isHerminaSelectOpen} onOpenChange={setIsHerminaSelectOpen}>
@@ -323,7 +382,7 @@ export default function FinanceOverviewPage() {
                                         >
                                             <span className="truncate">
                                                 {selectedHerminaClientId === "all"
-                                                    ? "Semua Cabang Hermina"
+                                                    ? isDirekturRegional ? "Semua Cabang Regional" : "Semua Cabang Hermina"
                                                     : herminaClients.find((c) => c.id === selectedHerminaClientId)?.name || "Pilih Cabang..."}
                                             </span>
                                             <ChevronsUpDown className="ml-2 h-3.5 w-3.5 shrink-0 opacity-50" />
@@ -343,7 +402,7 @@ export default function FinanceOverviewPage() {
                                                         }}
                                                         className="text-xs flex items-center justify-between cursor-pointer"
                                                     >
-                                                        <span>Semua Cabang Hermina</span>
+                                                        <span>{isDirekturRegional ? "Semua Cabang Regional" : "Semua Cabang Hermina"}</span>
                                                         {selectedHerminaClientId === "all" && <Check className="h-3.5 w-3.5 text-orange-600" />}
                                                     </CommandItem>
                                                     {herminaClients.map((client) => (

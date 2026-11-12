@@ -13,18 +13,20 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { ClientTaskDialog } from "./client-task-dialog"
 import { useAuthStore } from "@/lib/auth-store"
-import { isHerminaPusatUser } from "@/lib/get-user-role"
+import { isHerminaPusatUser, isDirekturRegionalUser } from "@/lib/get-user-role"
 
 export function ClientHelpButton() {
     const router = useRouter()
     const { user } = useAuthStore()
     const isHerminaPusat = isHerminaPusatUser(user)
+    const isDirekturRegional = isDirekturRegionalUser(user)
+    const canRequest = isHerminaPusat || isDirekturRegional
 
     const [dialogOpen, setDialogOpen] = React.useState(false)
     const [dialogTipe, setDialogTipe] = React.useState<"Request Fitur" | "Lapor Kendala">("Lapor Kendala")
 
     const handleOpenModal = (tipe: "Request Fitur" | "Lapor Kendala") => {
-        setDialogTipe(isHerminaPusat ? tipe : "Lapor Kendala")
+        setDialogTipe(canRequest ? tipe : "Lapor Kendala")
         setDialogOpen(true)
     }
 
@@ -46,7 +48,7 @@ export function ClientHelpButton() {
                                 </span>
                             </div>
                             <span className="text-xs font-bold tracking-wide pr-1">
-                                {isHerminaPusat ? "Bantuan & Request" : "Lapor Kendala"}
+                                {canRequest ? "Bantuan & Request" : "Lapor Kendala"}
                             </span>
                         </button>
                     </DropdownMenuTrigger>

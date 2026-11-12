@@ -20,7 +20,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { taskItService } from "@/features/projects/services/task-it-service"
 import { useAuthStore } from "@/lib/auth-store"
-import { isHerminaPusatUser } from "@/lib/get-user-role"
+import { isHerminaPusatUser, isDirekturRegionalUser } from "@/lib/get-user-role"
 
 interface ClientTaskDialogProps {
     open: boolean
@@ -43,7 +43,9 @@ export function ClientTaskDialog({
     const { user } = useAuthStore()
 
     const isHerminaPusat = isHerminaPusatUser(user)
-    const effectiveDefaultTipe = isHerminaPusat ? defaultTipe : "Lapor Kendala"
+    const isDirekturRegional = isDirekturRegionalUser(user)
+    const canRequestFitur = isHerminaPusat || isDirekturRegional
+    const effectiveDefaultTipe = canRequestFitur ? defaultTipe : "Lapor Kendala"
 
     const [tipe, setTipe] = React.useState<"Request Fitur" | "Lapor Kendala">(effectiveDefaultTipe)
     const [judul, setJudul] = React.useState("")
@@ -56,7 +58,7 @@ export function ClientTaskDialog({
     // Reset or initialize fields when dialog opens
     React.useEffect(() => {
         if (open) {
-            setTipe(isHerminaPusat ? defaultTipe : "Lapor Kendala")
+            setTipe(canRequestFitur ? defaultTipe : "Lapor Kendala")
             setJudul("")
             setDeskripsi("")
             setFile(null)
@@ -127,7 +129,7 @@ export function ClientTaskDialog({
         }
 
         const formData = new FormData()
-        formData.append("tipe", isHerminaPusat ? tipe : "Lapor Kendala")
+        formData.append("tipe", canRequestFitur ? tipe : "Lapor Kendala")
         formData.append("judul", judul.trim())
         formData.append("deskripsi", deskripsi.trim())
         formData.append("prioritas", "Medium")
@@ -154,7 +156,7 @@ export function ClientTaskDialog({
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <DialogHeader className="space-y-1.5 text-left">
                         <DialogTitle className="text-xl font-bold flex items-center gap-2">
-                            {isHerminaPusat && tipe === "Request Fitur" ? (
+                            {canRequestFitur && tipe === "Request Fitur" ? (
                                 <span className="flex items-center gap-2 text-purple-700">
                                     <Sparkles className="h-5 w-5 text-purple-600" />
                                     Request Fitur Baru
@@ -167,14 +169,14 @@ export function ClientTaskDialog({
                             )}
                         </DialogTitle>
                         <DialogDescription className="text-xs text-neutral-500">
-                            {isHerminaPusat
+                            {canRequestFitur
                                 ? "Sampaikan kebutuhan atau kendala Anda langsung kepada tim IT kami. Kami akan merespon tiket Anda secepat mungkin."
                                 : "Sampaikan kendala sistem atau bug yang Anda temukan langsung kepada tim IT kami. Kami akan merespon tiket Anda secepat mungkin."}
                         </DialogDescription>
                     </DialogHeader>
 
                     {/* Tipe Selector Buttons (Hanya muncul jika user adalah Hermina Pusat) */}
-                    {isHerminaPusat && (
+                    {canRequestFitur && (
                         <div className="grid grid-cols-2 gap-3 p-1 bg-neutral-100/80 rounded-xl border border-neutral-200/70">
                             <button
                                 type="button"
@@ -215,7 +217,7 @@ export function ClientTaskDialog({
                             value={judul}
                             onChange={(e) => setJudul(e.target.value)}
                             placeholder={
-                                isHerminaPusat && tipe === "Request Fitur"
+                                canRequestFitur && tipe === "Request Fitur"
                                     ? "Contoh: Minta penambahan fitur filter tanggal di menu Finance"
                                     : "Contoh: Tombol cetak SPK tidak merespon saat diklik"
                             }
@@ -235,7 +237,7 @@ export function ClientTaskDialog({
                             value={deskripsi}
                             onChange={(e) => setDeskripsi(e.target.value)}
                             placeholder={
-                                isHerminaPusat && tipe === "Request Fitur"
+                                canRequestFitur && tipe === "Request Fitur"
                                     ? "Jelaskan ide fitur yang Anda inginkan, bagaimana cara kerjanya, dan manfaatnya untuk kebutuhan Anda..."
                                     : "Jelaskan kendala atau pesan error yang muncul, halaman tempat terjadinya kendala, atau kronologi sebelum error terjadi..."
                             }

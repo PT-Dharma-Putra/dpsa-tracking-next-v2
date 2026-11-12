@@ -10,7 +10,9 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useSearchParams, useRouter } from "next/navigation"
-import { Loader2, Building2, Eye, MapPin, User, X, Hospital, Search, ChevronLeft, ChevronRight } from "lucide-react"
+import { Loader2, Building2, Eye, MapPin, User, X, Hospital, Search, ChevronLeft, ChevronRight, Layers } from "lucide-react"
+import { isHerminaPusatUser, isDirekturRegionalUser } from "@/lib/get-user-role"
+import { RegionalHerminaService, RegionalHermina } from "@/features/regional-hermina/services/regional-hermina-service"
 
 const ITEMS_PER_PAGE = 4
 
@@ -71,33 +73,89 @@ export default function ClientDashboardPage() {
         isInitializedRef.current = true
     }, [searchParams, router])
 
-    // Check if user has "Hermina Pusat" role
+    // Check Roles: Hermina Pusat & Direktur Regional
     const userRoles = [
         user?.role,
         ...(user?.roles_list || []),
         ...(user?.roles?.map(r => typeof r === 'string' ? r : r.name) || [])
     ].filter(Boolean) as string[]
 
-    const isHerminaPusat = userRoles.some(r => r?.toLowerCase().includes('hermina pusat')) || user?.role_id === 19
+    const isHerminaPusat = isHerminaPusatUser(user) || userRoles.some(r => r?.toLowerCase().includes('hermina pusat')) || user?.role_id === 19
+    const isDirekturRegional = isDirekturRegionalUser(user) || userRoles.some(r => r?.toLowerCase().includes('direktur regional')) || user?.role_id === 23
+    const isMultiClientViewer = isHerminaPusat || isDirekturRegional
 
-    // Fetch Hermina Clients if user role is Hermina Pusat
-    const { data: herminaClients = [], isLoading: isLoadingHermina } = useQuery({
-        queryKey: ["hermina-clients"],
-        queryFn: ClientService.getHerminaClients,
-        enabled: isHerminaPusat,
+    // Regional Hermina List & User's Assigned Regional
+    const { data: regionalList = [] } = useQuery({
+        queryKey: ["all-regional-hermina"],
+        queryFn: () => RegionalHerminaService.getRegionalHermina(),
+        enabled: isDirekturRegional,
     })
 
-    // Fetch Managed by Hermina Clients if user role is Hermina Pusat
-    const { data: managedClients = [], isLoading: isLoadingManaged } = useQuery({
-        queryKey: ["managed-hermina-clients"],
-        queryFn: ClientService.getManagedByHerminaClients,
-        enabled: isHerminaPusat,
+    const userRegionalId = user?.regional_hermina_id || (user?.regional_hermina ? user.regional_hermina.id : null)
+    const [selectedRegionalId, setSelectedRegionalId] = React.useState<number | null>(null)
+
+    // Sync selectedRegionalId on mount or when regionalList loads
+    React.useEffect(() => {
+        if (!isDirekturRegional) return
+        if (userRegionalId) {
+            setSelectedRegionalId(Number(userRegionalId))
+        } else if (regionalList.length > 0 && selectedRegionalId === null) {
+            const storedReg = typeof window !== "undefined" ? sessionStorage.getItem("external_selected_regional_id") : null
+            if (storedReg && regionalList.some(r => r.id === Number(storedReg))) {
+                setSelectedRegionalId(Number(storedReg))
+            } else {
+                setSelectedRegionalId(regionalList[0].id)
+            }
+        }
+    }, [isDirekturRegional, userRegionalId, regionalList, selectedRegionalId])
+
+    const activeRegionalId = isDirekturRegional ? (userRegionalId || selectedRegionalId || undefined) : undefined
+    const activeRegionalObj = React.useMemo(() => {
+        if (!isDirekturRegional || !activeRegionalId) return null
+        return regionalList.find(r => r.id === activeRegionalId) || user?.regional_hermina || null
+    }, [isDirekturRegional, activeRegionalId, regionalList, user])
+
+    const handleSwitchRegional = (regionalId: number) => {
+        if (userRegionalId && Number(userRegionalId) !== regionalId) return
+        setSelectedRegionalId(regionalId)
+        setCurrentPage(1)
+        setSelectedClientId(null)
+        if (typeof window !== "undefined") {
+            sessionStorage.setItem("external_selected_regional_id", regionalId.toString())
+            sessionStorage.removeItem("external_selected_client_id")
+        }
+        router.replace('/dashboard/external', { scroll: false })
+    }
+
+    // Fetch Hermina Clients (filtered by regional if Direktur Regional)
+    const { data: rawHerminaClients = [], isLoading: isLoadingHermina } = useQuery({
+        queryKey: ["hermina-clients", activeRegionalId],
+        queryFn: () => ClientService.getHerminaClients(activeRegionalId),
+        enabled: isMultiClientViewer,
     })
+
+    // Fetch Managed by Hermina Clients (filtered by regional if Direktur Regional)
+    const { data: rawManagedClients = [], isLoading: isLoadingManaged } = useQuery({
+        queryKey: ["managed-hermina-clients", activeRegionalId],
+        queryFn: () => ClientService.getManagedByHerminaClients(activeRegionalId),
+        enabled: isMultiClientViewer,
+    })
+
+    // Scoped client lists
+    const herminaClients = React.useMemo(() => {
+        if (!isDirekturRegional || !activeRegionalId) return rawHerminaClients
+        return rawHerminaClients.filter(c => c.regional_hermina_id === activeRegionalId)
+    }, [rawHerminaClients, isDirekturRegional, activeRegionalId])
+
+    const managedClients = React.useMemo(() => {
+        if (!isDirekturRegional || !activeRegionalId) return rawManagedClients
+        return rawManagedClients.filter(c => c.regional_hermina_id === activeRegionalId)
+    }, [rawManagedClients, isDirekturRegional, activeRegionalId])
 
     // Fetch Client Projects
     const { data: projects = [], isLoading } = useQuery({
-        queryKey: ["client-projects"],
-        queryFn: () => ClientService.getMyProjects()
+        queryKey: ["client-projects", activeRegionalId],
+        queryFn: () => ClientService.getMyProjects(undefined, activeRegionalId)
     })
 
     const handleSwitchTab = (tab: "hermina" | "managed") => {
@@ -223,24 +281,34 @@ export default function ClientDashboardPage() {
 
     // Filter projects based on selected client or selected category (Cabang Hermina vs Managed by Hermina)
     const clientProjects = React.useMemo(() => {
-        if (!isHerminaPusat) {
+        if (!isMultiClientViewer) {
             if (selectedClientId === null) return projects
             return projects.filter(p => p.client_id === selectedClientId)
         }
 
-        // If a specific client is selected by Hermina Pusat user
+        // If a specific client is selected
         if (selectedClientId !== null) {
             return projects.filter(p => p.client_id === selectedClientId)
         }
 
+        // Base projects: for Direktur Regional, ensure belonging to their regional
+        const baseProjects = isDirekturRegional && activeRegionalId
+            ? projects.filter(p => {
+                if (p.regional_hermina_id !== undefined && p.regional_hermina_id !== null) {
+                    return p.regional_hermina_id === activeRegionalId
+                }
+                return p.client_id ? (herminaClientIds.has(p.client_id) || managedClientIds.has(p.client_id)) : false
+            })
+            : projects
+
         // Filter projects by active client category tab (hermina vs managed)
-        return projects.filter(p => {
+        return baseProjects.filter(p => {
             if (p.client_hermina !== undefined && p.client_hermina !== null) {
                 return clientTab === "hermina" ? p.client_hermina === 1 : p.client_hermina === 2
             }
             return p.client_id ? (clientTab === "hermina" ? herminaClientIds.has(p.client_id) : managedClientIds.has(p.client_id)) : false
         })
-    }, [isHerminaPusat, selectedClientId, projects, clientTab, herminaClientIds, managedClientIds])
+    }, [isMultiClientViewer, isDirekturRegional, activeRegionalId, selectedClientId, projects, clientTab, herminaClientIds, managedClientIds])
 
     // Filter projects based on SPK number search query
     const displayProjects = React.useMemo(() => {
@@ -295,7 +363,7 @@ export default function ClientDashboardPage() {
         router.replace('/dashboard/external', { scroll: false })
     }
 
-    if (isLoading || (isHerminaPusat && (isLoadingHermina || isLoadingManaged))) {
+    if (isLoading || (isMultiClientViewer && (isLoadingHermina || isLoadingManaged))) {
         return (
             <div className="flex h-[50vh] items-center justify-center">
                 <Loader2 className="h-8 w-8 animate-spin text-orange-600" />
@@ -320,9 +388,18 @@ export default function ClientDashboardPage() {
                                 Hermina Pusat
                             </Badge>
                         )}
+                        {isDirekturRegional && (
+                            <Badge className="bg-blue-600 text-white font-semibold hover:bg-blue-700">
+                                Direktur Regional {activeRegionalObj ? (activeRegionalObj.angka_romawi || activeRegionalObj.regional) : ''}
+                            </Badge>
+                        )}
                     </h2>
                     <p className="text-neutral-500">
-                        {isHerminaPusat
+                        {isDirekturRegional
+                            ? activeRegionalObj
+                                ? `Pantau dan kelola seluruh projek cabang RS Hermina di Regional ${activeRegionalObj.regional}${activeRegionalObj.angka_romawi ? ` (${activeRegionalObj.angka_romawi})` : ''}${activeRegionalObj.nama_direktur ? ` - ${activeRegionalObj.nama_direktur}` : ''}.`
+                                : "Pantau dan kelola seluruh projek cabang RS Hermina per regional."
+                            : isHerminaPusat
                             ? clientTab === "managed"
                                 ? "Pantau dan kelola seluruh projek rumah sakit mitra (Managed by Hermina)."
                                 : "Pantau dan kelola seluruh projek cabang RS Hermina secara terpusat."
@@ -346,12 +423,45 @@ export default function ClientDashboardPage() {
                 </div>
             </div>
 
-            {/* SECTION: List Hermina & Managed by Hermina (Displayed ONLY for role "Hermina Pusat", before Active Project) */}
-            {isHerminaPusat && (
+            {/* SECTION: List Hermina & Managed by Hermina (Displayed for Hermina Pusat & Direktur Regional) */}
+            {isMultiClientViewer && (
                 <div className="space-y-4 pt-2">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-4">
                         <div className="space-y-2">
-                            {/* Tab Switcher Buttons */}
+                            {/* Regional Tab Buttons for Direktur Regional */}
+                            {isDirekturRegional && (
+                                <div className="flex flex-wrap items-center gap-2 mb-2">
+                                    <span className="text-xs font-semibold text-neutral-500">Regional:</span>
+                                    {userRegionalId ? (
+                                        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 border border-blue-200 text-blue-800 rounded-lg text-xs font-bold shadow-xs">
+                                            <MapPin className="w-3.5 h-3.5 text-blue-600" />
+                                            <span>Regional {activeRegionalObj?.regional} {activeRegionalObj?.angka_romawi ? `(${activeRegionalObj.angka_romawi})` : ''}</span>
+                                            {activeRegionalObj?.nama_direktur && (
+                                                <span className="text-blue-600/80 font-normal">| {activeRegionalObj.nama_direktur}</span>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <div className="inline-flex items-center p-1 bg-neutral-100/90 rounded-xl border border-neutral-200/80 gap-1">
+                                            {regionalList.map((reg) => (
+                                                <button
+                                                    key={reg.id}
+                                                    type="button"
+                                                    onClick={() => handleSwitchRegional(reg.id)}
+                                                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                                                        activeRegionalId === reg.id
+                                                            ? "bg-white text-blue-800 shadow-sm border border-neutral-200/60"
+                                                            : "text-neutral-500 hover:text-neutral-900"
+                                                    }`}
+                                                >
+                                                    Regional {reg.angka_romawi || reg.regional}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Tab Switcher Buttons (Cabang Hermina vs Managed) */}
                             <div className="inline-flex items-center p-1 bg-neutral-100/90 rounded-xl border border-neutral-200/80 gap-1">
                                 <button
                                     type="button"
@@ -627,6 +737,28 @@ export default function ClientDashboardPage() {
                                     Tampilkan Semua {clientTab === "managed" ? "Managed by Hermina" : "Cabang Hermina"}
                                 </button>
                             </div>
+                        ) : isDirekturRegional ? (
+                            <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                <span className="text-xs text-neutral-500">Regional:</span>
+                                <Badge
+                                    variant="outline"
+                                    className="text-[11px] font-medium bg-blue-50 text-blue-700 border-blue-200"
+                                >
+                                    Regional {activeRegionalObj?.regional} {activeRegionalObj?.angka_romawi ? `(${activeRegionalObj.angka_romawi})` : ''}
+                                </Badge>
+                                <span className="text-xs text-neutral-400">•</span>
+                                <span className="text-xs text-neutral-500">Kategori:</span>
+                                <Badge
+                                    variant="outline"
+                                    className={`text-[11px] font-medium ${
+                                        clientTab === "managed"
+                                            ? "bg-indigo-50 text-indigo-700 border-indigo-200"
+                                            : "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                    }`}
+                                >
+                                    {clientTab === "managed" ? "Managed by Hermina" : "Cabang Hermina"}
+                                </Badge>
+                            </div>
                         ) : isHerminaPusat ? (
                             <div className="flex items-center gap-2 mt-1">
                                 <span className="text-xs text-neutral-500">Kategori:</span>
@@ -673,6 +805,8 @@ export default function ClientDashboardPage() {
                                 ? `Tidak ada projek dengan nomor SPK "${spkSearchQuery}".`
                                 : selectedClientObj
                                 ? `Tidak ada projek aktif ditemukan untuk ${selectedClientObj.name}.`
+                                : isDirekturRegional
+                                ? `Tidak ada projek aktif ditemukan untuk Regional ${activeRegionalObj?.regional || ''}.`
                                 : isHerminaPusat
                                 ? clientTab === "managed"
                                     ? "Tidak ada projek aktif ditemukan untuk Managed by Hermina."

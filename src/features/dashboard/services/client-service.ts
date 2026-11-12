@@ -6,6 +6,7 @@ export interface ClientProject {
     client_id?: number;
     client_name?: string | null;
     client_hermina?: number | null;
+    regional_hermina_id?: number | null;
     status: string;
     progress: number;
     description: string;
@@ -32,6 +33,13 @@ export interface HerminaClient {
     general_affair_hp?: string | null;
     projects_count?: number;
     hermina: number;
+    regional_hermina_id?: number | null;
+    regional_hermina?: {
+        id: number;
+        regional: string;
+        angka_romawi?: string | null;
+        nama_direktur?: string | null;
+    } | null;
 }
 
 
@@ -65,24 +73,41 @@ export interface ClientInvoice {
 }
 
 export const ClientService = {
-    getMyProjects: async (clientId?: number): Promise<ClientProject[]> => {
+    getMyProjects: async (clientId?: number, regionalHerminaId?: number): Promise<ClientProject[]> => {
+        const params: any = {};
+        if (clientId) params.client_id = clientId;
+        if (regionalHerminaId) params.regional_hermina_id = regionalHerminaId;
         const response = await axiosInstance.get('/orders/mdl/client', {
-            params: clientId ? { client_id: clientId } : undefined
+            params: Object.keys(params).length > 0 ? params : undefined
         });
         return response.data.data;
     },
 
-    getHerminaClients: async (): Promise<HerminaClient[]> => {
-        const response = await axiosInstance.get('/clients', {
-            params: { hermina: 1, per_page: -1, sort_by: 'kode', sort_order: 'asc' }
-        });
+    getHerminaClients: async (regionalHerminaId?: number): Promise<HerminaClient[]> => {
+        const params: any = { hermina: 1, per_page: -1, sort_by: 'kode', sort_order: 'asc' };
+        if (regionalHerminaId) params.regional_hermina_id = regionalHerminaId;
+        const response = await axiosInstance.get('/clients', { params });
         return response.data.data || response.data || [];
     },
 
-    getManagedByHerminaClients: async (): Promise<HerminaClient[]> => {
-        const response = await axiosInstance.get('/clients', {
-            params: { hermina: 2, per_page: -1, sort_by: 'kode', sort_order: 'asc' }
-        });
+    getManagedByHerminaClients: async (regionalHerminaId?: number): Promise<HerminaClient[]> => {
+        const params: any = { hermina: 2, per_page: -1, sort_by: 'kode', sort_order: 'asc' };
+        if (regionalHerminaId) params.regional_hermina_id = regionalHerminaId;
+        const response = await axiosInstance.get('/clients', { params });
+        return response.data.data || response.data || [];
+    },
+
+    getClientsByRegional: async (regionalId: number, herminaType?: number): Promise<HerminaClient[]> => {
+        const params: any = {
+            regional_hermina_id: regionalId,
+            per_page: -1,
+            sort_by: 'kode',
+            sort_order: 'asc'
+        };
+        if (herminaType !== undefined) {
+            params.hermina = herminaType;
+        }
+        const response = await axiosInstance.get('/clients', { params });
         return response.data.data || response.data || [];
     },
 

@@ -4,14 +4,15 @@ export type BusinessRole = 'marketing' | 'studio' | 'supervisor' | 'finance' | '
 
 /**
  * Checks if the user is a Client / External user.
- * Returns true for role 'Client', role_id 19, or role name containing 'hermina pusat'.
+ * Returns true for role 'Client', role_id 19, role_id 23, or role name containing 'hermina pusat' / 'direktur regional'.
  */
 export function isClientUser(user: User | null): boolean {
     if (!user) return false;
 
     if (
         user.role_id === 19 ||
-        (Array.isArray(user.role_ids) && user.role_ids.includes(19))
+        user.role_id === 23 ||
+        (Array.isArray(user.role_ids) && (user.role_ids.includes(19) || user.role_ids.includes(23)))
     ) {
         return true;
     }
@@ -22,7 +23,7 @@ export function isClientUser(user: User | null): boolean {
         ...(user.roles_list?.map(r => r.toLowerCase()) || []),
     ].filter(Boolean) as string[];
 
-    return roleNames.some(r => r === 'client' || r.includes('hermina pusat'));
+    return roleNames.some(r => r === 'client' || r.includes('hermina pusat') || r.includes('direktur regional'));
 }
 
 /**
@@ -46,6 +47,29 @@ export function isHerminaPusatUser(user: User | null | any): boolean {
     ].filter(Boolean) as string[];
 
     return roleNames.some(r => r.includes('hermina pusat'));
+}
+
+/**
+ * Checks if the user is Direktur Regional.
+ * Returns true if role, roles list, or role_id matches Direktur Regional (e.g., role_id 23 or role name contains 'direktur regional').
+ */
+export function isDirekturRegionalUser(user: User | null | any): boolean {
+    if (!user) return false;
+
+    if (
+        user.role_id === 23 ||
+        (Array.isArray(user.role_ids) && user.role_ids.includes(23))
+    ) {
+        return true;
+    }
+
+    const roleNames = [
+        user.role?.toLowerCase(),
+        ...(user.roles?.map((r: any) => typeof r === 'string' ? r.toLowerCase() : r.name?.toLowerCase()) || []),
+        ...(user.roles_list?.map((r: any) => r.toLowerCase()) || []),
+    ].filter(Boolean) as string[];
+
+    return roleNames.some(r => r.includes('direktur regional'));
 }
 
 /**
@@ -77,4 +101,3 @@ export const canApproveDesign = (role: BusinessRole) => role === 'supervisor';
 export const canManageSPH = (role: BusinessRole) => role === 'marketing';
 export const canApproveSPH = (role: BusinessRole) => role === 'supervisor';
 export const canReviseDocs = (role: BusinessRole) => role === 'marketing' || role === 'supervisor';
-
