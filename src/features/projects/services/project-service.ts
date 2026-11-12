@@ -19,6 +19,14 @@ export interface Project {
   need_design?: number;
   catatan_keterlambatan?: CatatanKeterlambatan | null;
   catatan_keterlambatans?: CatatanKeterlambatan[];
+  jadwal_pengiriman?: {
+    id: number;
+    project_id: number;
+    divisi_id?: number | null;
+    tanggal: string;
+    keterangan?: string | null;
+    divisi?: { id: number; nama: string } | null;
+  }[];
   // Addendum fields
   parent_project_id?: number | null;
   addendum_number?: number | null;

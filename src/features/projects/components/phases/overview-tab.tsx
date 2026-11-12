@@ -166,12 +166,22 @@ export function OverviewTab({ projectId, onNavigateTab }: OverviewTabProps) {
 
             {/* 1. Project Health Stats */}
             {(() => {
+                const schedules: any[] = Array.isArray((project as any)?.jadwal_pengiriman)
+                    ? (project as any).jadwal_pengiriman
+                    : (project as any)?.jadwal_pengiriman
+                    ? [(project as any).jadwal_pengiriman]
+                    : [];
+
+                const firstSchedule = schedules.length > 0 ? schedules[0] : null;
+                const firstDate = firstSchedule?.tanggal;
+                const hasMultiple = schedules.length > 1;
+
                 const jadwalKirimFormatted = (() => {
-                    if (!project?.deadline) return "Belum diatur";
+                    if (!firstDate) return "Belum diatur";
                     try {
-                        return format(new Date(project.deadline), 'd MMMM yyyy', { locale: idLocale });
+                        return format(new Date(firstDate), 'd MMMM yyyy', { locale: idLocale });
                     } catch {
-                        return project.deadline;
+                        return String(firstDate);
                     }
                 })();
 
@@ -239,9 +249,60 @@ export function OverviewTab({ projectId, onNavigateTab }: OverviewTabProps) {
                         })()}
                         <StatsCard
                             title="Pengiriman"
-                            value={jadwalKirimFormatted}
+                            badge={
+                                hasMultiple ? (
+                                    <Badge variant="outline" className="text-[10px] h-4.5 px-1.5 text-sky-700 bg-sky-50 border-sky-200 font-semibold">
+                                        {schedules.length} Tahap
+                                    </Badge>
+                                ) : undefined
+                            }
+                            valueClassName={hasMultiple ? "text-sm font-normal" : undefined}
+                            value={
+                                hasMultiple ? (
+                                    <div className="space-y-1.5 py-0.5">
+                                        {schedules.map((schedule: any, idx: number) => {
+                                            const dateStr = schedule.tanggal;
+                                            let formattedDate = "-";
+                                            try {
+                                                if (dateStr) {
+                                                    formattedDate = format(new Date(dateStr), 'd MMMM yyyy', { locale: idLocale });
+                                                }
+                                            } catch {
+                                                formattedDate = String(dateStr);
+                                            }
+                                            return (
+                                                <div
+                                                    key={schedule.id || idx}
+                                                    className="flex items-center justify-between gap-2 py-1 px-2 rounded-md bg-neutral-50/90 border border-neutral-200/70 group-hover:bg-neutral-100/80 transition-colors"
+                                                >
+                                                    <div className="flex items-center gap-1.5 min-w-0">
+                                                        <span className="h-1.5 w-1.5 rounded-full bg-sky-500 shrink-0" />
+                                                        <span className="text-xs font-semibold text-neutral-700 truncate">
+                                                            Tahap {idx + 1}
+                                                        </span>
+                                                        {schedule.divisi?.nama && (
+                                                            <span className="text-[10px] text-neutral-400 truncate">
+                                                                ({schedule.divisi.nama})
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <span className="text-xs font-bold text-neutral-900 shrink-0 tabular-nums">
+                                                        {formattedDate}
+                                                    </span>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                ) : schedules.length === 1 ? (
+                                    jadwalKirimFormatted
+                                ) : (
+                                    "Belum diatur"
+                                )
+                            }
                             icon={<Truck className="h-4 w-4 text-sky-500" />}
-                            desc={onNavigateTab ? "Lihat Jadwal & Foto Dok →" : "Jadwal Kirim"}
+                            desc={hasMultiple 
+                                ? "Klik untuk lihat foto & detail pengiriman →" 
+                                : (onNavigateTab ? "Lihat Jadwal & Foto Dok →" : "Jadwal Kirim")}
                             onClick={onNavigateTab ? () => onNavigateTab("pengiriman") : undefined}
                             className={onNavigateTab ? "hover:border-orange-300 hover:shadow-xs cursor-pointer group" : ""}
                         />
@@ -692,16 +753,21 @@ export function OverviewTab({ projectId, onNavigateTab }: OverviewTabProps) {
     )
 }
 
-function StatsCard({ title, value, icon, desc, valueClassName, onClick, className }: any) {
+function StatsCard({ title, badge, value, icon, desc, valueClassName, onClick, className }: any) {
     return (
-        <Card className={cn(onClick && "cursor-pointer transition-all", className)} onClick={onClick}>
-            <CardContent className="p-6">
-                <div className="flex items-center justify-between space-y-0 pb-2">
-                    <p className="text-sm font-medium text-neutral-500">{title}</p>
-                    {icon}
+        <Card className={cn("flex flex-col justify-between", onClick && "cursor-pointer transition-all", className)} onClick={onClick}>
+            <CardContent className="p-6 flex flex-col justify-between h-full">
+                <div>
+                    <div className="flex items-center justify-between space-y-0 pb-2">
+                        <div className="flex items-center gap-2">
+                            <p className="text-sm font-medium text-neutral-500">{title}</p>
+                            {badge}
+                        </div>
+                        {icon}
+                    </div>
+                    <div className={valueClassName !== undefined ? valueClassName : "text-2xl font-bold text-neutral-900"}>{value}</div>
                 </div>
-                <div className={`text-2xl font-bold ${valueClassName || ''}`}>{value}</div>
-                <p className="text-xs text-neutral-400 mt-1">{desc}</p>
+                {desc && <p className="text-xs text-neutral-400 mt-2">{desc}</p>}
             </CardContent>
         </Card>
     )
