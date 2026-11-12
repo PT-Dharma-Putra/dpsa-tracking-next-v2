@@ -41,6 +41,7 @@ import { adminService } from "@/features/admin/api/admin-service"
 import { User } from "@/features/auth/types"
 import { projectV2Service } from "@/features/projects/services/project-v2-service"
 import { ClientService } from "@/features/clients/services/client-service"
+import { RegionalHerminaService, RegionalHermina } from "@/features/regional-hermina/services/regional-hermina-service"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { format } from "date-fns"
 import { useState, useEffect } from "react"
@@ -80,6 +81,7 @@ export function UserListTable() {
         role_ids: number[];
         divisi_id: string;
         client_id: string;
+        regional_hermina_id: string;
         account_status: string;
     }>({
         name: '',
@@ -90,6 +92,7 @@ export function UserListTable() {
         role_ids: [],
         divisi_id: '',
         client_id: '',
+        regional_hermina_id: '',
         account_status: 'approved'
     })
     const [dialogTab, setDialogTab] = useState("internal")
@@ -119,12 +122,23 @@ export function UserListTable() {
         queryFn: projectV2Service.getDivisions,
     })
 
+    const { data: regionals } = useQuery({
+        queryKey: ['admin-regionals-all'],
+        queryFn: () => RegionalHerminaService.getRegionalHermina(),
+    })
+
     const { data: clientsResponse } = useQuery({
         queryKey: ['admin-clients-all'],
         queryFn: () => ClientService.getClients({ per_page: -1 }),
         enabled: dialogTab === "external"
     })
     const clients = Array.isArray(clientsResponse?.data) ? clientsResponse.data : []
+
+    const isDirekturRegionalSelected = formData.role_ids.some(id => {
+        const roleObj = roles?.find((r: any) => r.id === id)
+        const roleName = (roleObj?.name || '').toLowerCase()
+        return roleName.includes('direktur regional') || roleName.includes('direktur-regional') || roleName.includes('direktur_regional')
+    })
 
     const createMutation = useMutation({
         mutationFn: (data: any) => adminService.createUser(data),
@@ -173,6 +187,7 @@ export function UserListTable() {
             role_ids: [],
             divisi_id: '',
             client_id: '',
+            regional_hermina_id: '',
             account_status: 'approved'
         })
         setDialogTab("internal")
@@ -191,6 +206,7 @@ export function UserListTable() {
             role_ids: userRoleIds,
             divisi_id: user.divisi_id?.toString() || '',
             client_id: user.client_id?.toString() || '',
+            regional_hermina_id: user.regional_hermina_id?.toString() || '',
             account_status: user.account_status || 'approved'
         })
         setDialogTab(user.client_id ? "external" : "internal")
@@ -207,15 +223,23 @@ export function UserListTable() {
         if (value === "internal") {
             setFormData(prev => ({ ...prev, client_id: '' }))
         } else {
-            setFormData(prev => ({ ...prev, role_id: '', role_ids: [], divisi_id: '' }))
+            setFormData(prev => ({ ...prev, role_id: '', role_ids: [], divisi_id: '', regional_hermina_id: '' }))
         }
     }
 
     const handleSubmit = () => {
+        if (dialogTab === "internal" && isDirekturRegionalSelected && !formData.regional_hermina_id) {
+            toast.error("Silakan pilih Wilayah Regional untuk role Direktur Regional")
+            return
+        }
+
         const payload = {
             ...formData,
             role_ids: formData.role_ids,
-            role_id: formData.role_ids[0] ? formData.role_ids[0].toString() : formData.role_id
+            role_id: formData.role_ids[0] ? formData.role_ids[0].toString() : formData.role_id,
+            regional_hermina_id: (dialogTab === "internal" && isDirekturRegionalSelected && formData.regional_hermina_id)
+                ? Number(formData.regional_hermina_id)
+                : null
         }
         if (selectedUser) {
             updateMutation.mutate({ id: selectedUser.id, data: payload })
@@ -257,7 +281,7 @@ export function UserListTable() {
                             <TableHead className="w-[50px]">#</TableHead>
                             <TableHead>User</TableHead>
                             <TableHead>Roles</TableHead>
-                            <TableHead>Division</TableHead>
+                            <TableHead>Division / Regional</TableHead>
                             <TableHead>Account Status</TableHead>
                             <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
@@ -304,7 +328,15 @@ export function UserListTable() {
                                         </div>
                                     </TableCell>
                                     <TableCell>
-                                        {user.divisi ? user.divisi : <span className="text-muted-foreground">-</span>}
+                                        {user.divisi ? (
+                                            user.divisi
+                                        ) : user.regional_hermina ? (
+                                            <Badge variant="outline" className="bg-amber-50 text-amber-800 border-amber-300 font-medium text-xs">
+                                                {user.regional_hermina.regional} {user.regional_hermina.angka_romawi ? `(${user.regional_hermina.angka_romawi})` : ''}
+                                            </Badge>
+                                        ) : (
+                                            <span className="text-muted-foreground">-</span>
+                                        )}
                                     </TableCell>
                                     <TableCell>
                                         <Badge className={getStatusColor(user.account_status)}>
@@ -516,6 +548,38 @@ export function UserListTable() {
                                         </Select>
                                     </div>
                                 </div>
+
+                                {isDirekturRegionalSelected && (
+                                    <div className="grid gap-2 p-3 bg-amber-50/70 border border-amber-200 rounded-md">
+                                        <div className="flex items-center justify-between">
+                                            <Label htmlFor="regional_hermina_id" className="text-amber-950 font-medium text-xs flex items-center gap-1.5">
+                                                Regional Hermina <span className="text-red-500">*</span>
+                                            </Label>
+                                            <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300 text-[10px] py-0">
+                                                Wajib untuk Direktur Regional
+                                            </Badge>
+                                        </div>
+                                        <Select 
+                                            value={formData.regional_hermina_id} 
+                                            onValueChange={val => setFormData({...formData, regional_hermina_id: val === "none" ? "" : val})}
+                                        >
+                                            <SelectTrigger id="regional_hermina_id" className="bg-white">
+                                                <SelectValue placeholder="Pilih Wilayah Regional..." />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="none">-- Pilih Regional --</SelectItem>
+                                                {regionals?.map((reg) => (
+                                                    <SelectItem key={reg.id} value={reg.id.toString()}>
+                                                        {reg.regional} {reg.angka_romawi ? `(${reg.angka_romawi})` : ''} {reg.nama_direktur ? `- ${reg.nama_direktur}` : ''}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <p className="text-[11px] text-amber-700">
+                                            Akun Direktur Regional akan memiliki akses ke dashboard eksternal regional tersebut dan seluruh RS cabang di bawahnya.
+                                        </p>
+                                    </div>
+                                )}
                             </TabsContent>
 
                             <TabsContent value="external" className="mt-0 space-y-4">

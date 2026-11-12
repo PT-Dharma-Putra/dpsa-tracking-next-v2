@@ -43,12 +43,14 @@ import {
 import { taskItService, TaskIt } from "@/features/projects/services/task-it-service"
 import { ClientTaskDialog } from "@/features/dashboard/components/client/client-task-dialog"
 import { useAuthStore } from "@/lib/auth-store"
-import { isHerminaPusatUser } from "@/lib/get-user-role"
+import { isHerminaPusatUser, isDirekturRegionalUser } from "@/lib/get-user-role"
 
 export default function ClientRequestsPage() {
     const queryClient = useQueryClient()
     const { user } = useAuthStore()
     const isHerminaPusat = isHerminaPusatUser(user)
+    const isDirekturRegional = isDirekturRegionalUser(user)
+    const canRequestFitur = isHerminaPusat || isDirekturRegional
 
     const [search, setSearch] = React.useState("")
     const [tipeFilter, setTipeFilter] = React.useState<string>("all")
@@ -160,10 +162,10 @@ export default function ClientRequestsPage() {
                         </div>
                         <div>
                             <h1 className="text-xl font-bold text-neutral-900 tracking-tight">
-                                {isHerminaPusat ? "Pusat Request & Lapor Kendala" : "Pusat Lapor Kendala"}
+                                {canRequestFitur ? "Pusat Request & Lapor Kendala" : "Pusat Lapor Kendala"}
                             </h1>
                             <p className="text-xs text-muted-foreground mt-0.5">
-                                {isHerminaPusat
+                                {canRequestFitur
                                     ? "Pantau status usulan fitur dan kendala operasional yang Anda ajukan ke tim IT."
                                     : "Pantau status kendala operasional yang Anda ajukan ke tim IT."}
                             </p>
@@ -176,7 +178,7 @@ export default function ClientRequestsPage() {
                     className="bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-semibold shadow-sm shrink-0"
                 >
                     <Plus className="h-4 w-4 mr-1.5" />
-                    {isHerminaPusat ? "Buat Tiket Baru" : "Lapor Kendala"}
+                    {canRequestFitur ? "Buat Tiket Baru" : "Lapor Kendala"}
                 </Button>
             </div>
 
@@ -214,7 +216,7 @@ export default function ClientRequestsPage() {
 
                 <div className="flex items-center gap-2 w-full md:w-auto flex-wrap">
                     {/* Tipe Filter (Hanya tampil untuk Hermina Pusat) */}
-                    {isHerminaPusat && (
+                    {canRequestFitur && (
                         <div className="flex items-center gap-1 bg-neutral-100 p-1 rounded-lg text-xs font-medium">
                             <button
                                 type="button"

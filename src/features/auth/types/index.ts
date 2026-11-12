@@ -24,6 +24,13 @@ export interface User {
     avatar_url?: string;
     // External specific
     client_id?: number | null;
+    regional_hermina_id?: number | null;
+    regional_hermina?: {
+        id: number;
+        regional: string;
+        angka_romawi?: string | null;
+        nama_direktur?: string | null;
+    } | null;
     // ACL fields
     client_categories?: string[];
     permissions?: string[];

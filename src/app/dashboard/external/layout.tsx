@@ -19,7 +19,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 // import { ClientNotifications } from "@/features/dashboard/components/client/client-notifications";
 import { useAuthStore } from "@/lib/auth-store";
 import { useCartStore } from "@/features/shop/stores/cart-store";
-import { isClientUser, isHerminaPusatUser } from "@/lib/get-user-role";
+import { isClientUser, isHerminaPusatUser, isDirekturRegionalUser } from "@/lib/get-user-role";
 import { ClientHelpButton } from "@/features/dashboard/components/client/client-help-button";
 
 export default function CustomerLayout({ children }: { children: ReactNode }) {
@@ -27,6 +27,8 @@ export default function CustomerLayout({ children }: { children: ReactNode }) {
     const pathname = usePathname()
     const { token, hydrated, user, logout } = useAuthStore()
     const isHerminaPusat = isHerminaPusatUser(user)
+    const isDirekturRegional = isDirekturRegionalUser(user)
+    const canMakeRequest = isHerminaPusat || isDirekturRegional
     const [isChecking, setIsChecking] = useState(true)
 
     const handleLogout = () => {
@@ -91,7 +93,7 @@ export default function CustomerLayout({ children }: { children: ReactNode }) {
                         </NavLink>
                         <NavLink href="/dashboard/external/requests" active={pathname.startsWith("/dashboard/external/requests")}>
                             <LifeBuoy className="h-4 w-4 mr-2" />
-                            {isHerminaPusat ? "Request & Kendala" : "Kendala"}
+                            {canMakeRequest ? "Request & Kendala" : "Kendala"}
                         </NavLink>
                     </nav>
 
