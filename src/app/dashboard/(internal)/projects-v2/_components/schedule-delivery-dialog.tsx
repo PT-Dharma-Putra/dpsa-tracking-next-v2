@@ -3,6 +3,7 @@
 import * as React from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { format } from "date-fns"
+import { id as idLocale } from "date-fns/locale"
 import { Calendar as CalendarIcon, Plus, Loader2, Trash2, Pencil, Truck, X, Check } from "lucide-react"
 import { toast } from "sonner"
 
@@ -33,6 +34,29 @@ interface ScheduleDeliveryDialogProps {
     open: boolean
     onOpenChange: (open: boolean) => void
     project: ProjectV2 | null
+}
+
+const parseLocalDate = (dateStr?: string | null): Date | undefined => {
+    if (!dateStr) return undefined
+    try {
+        if (dateStr.includes('T') || dateStr.includes('Z')) {
+            const d = new Date(dateStr)
+            return isNaN(d.getTime()) ? undefined : d
+        }
+        const cleanStr = String(dateStr).slice(0, 10)
+        const parts = cleanStr.split('-')
+        if (parts.length === 3) {
+            const year = parseInt(parts[0], 10)
+            const month = parseInt(parts[1], 10) - 1
+            const day = parseInt(parts[2], 10)
+            const d = new Date(year, month, day)
+            if (!isNaN(d.getTime())) return d
+        }
+        const d = new Date(dateStr)
+        return isNaN(d.getTime()) ? undefined : d
+    } catch {
+        return undefined
+    }
 }
 
 export function ScheduleDeliveryDialog({
@@ -191,12 +215,7 @@ export function ScheduleDeliveryDialog({
     const handleStartEdit = (s: JadwalPengiriman) => {
         setEditingId(s.id)
         setSelectedDivisiId(s.divisi_id ? String(s.divisi_id) : "")
-        const dateStr = s.tanggal
-        if (dateStr) {
-            setSelectedDate(new Date(dateStr))
-        } else {
-            setSelectedDate(undefined)
-        }
+        setSelectedDate(parseLocalDate(s.tanggal))
         setKeterangan(s.keterangan || "")
     }
 
@@ -305,9 +324,10 @@ export function ScheduleDeliveryDialog({
                                                             </Badge>
                                                         )}
                                                         <p className="text-xs font-semibold text-neutral-900">
-                                                            {scheduleDate
-                                                                ? format(new Date(scheduleDate), "EEEE, d MMMM yyyy")
-                                                                : "-"}
+                                                            {(() => {
+                                                                const d = parseLocalDate(scheduleDate)
+                                                                return d ? format(d, "EEEE, d MMMM yyyy", { locale: idLocale }) : "-"
+                                                            })()}
                                                         </p>
                                                     </div>
                                                     {s.keterangan && (
@@ -416,7 +436,7 @@ export function ScheduleDeliveryDialog({
                                     >
                                         <CalendarIcon className="mr-2 h-3.5 w-3.5 text-orange-500 shrink-0" />
                                         {selectedDate
-                                            ? format(selectedDate, "EEEE, d MMMM yyyy")
+                                            ? format(selectedDate, "EEEE, d MMMM yyyy", { locale: idLocale })
                                             : "Pilih tanggal pengiriman..."}
                                     </Button>
                                 </PopoverTrigger>

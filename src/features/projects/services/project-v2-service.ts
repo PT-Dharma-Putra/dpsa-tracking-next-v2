@@ -79,6 +79,9 @@ export interface ProjectV2 {
     nomor_spk?: string;
     nominal?: string | number | null;
     nominal_dpp?: string | number | null;
+    diskon_persen?: string | number | null;
+    diskon_nominal?: string | number | null;
+    net_dpp?: string | number | null;
     ppn?: string | number | null;
     deadline?: string | null;
     deadline_spk?: string | null;
@@ -642,6 +645,8 @@ export const projectV2Service = {
       prioritas?: string;
       tanggal_masuk?: string;
       nominal_dpp?: string;
+      diskon_persen?: string;
+      diskon_nominal?: string;
       ppn?: string;
       grand_total?: string;
       penerbit_id?: string;
@@ -661,6 +666,10 @@ export const projectV2Service = {
     if (payload.tanggal_masuk)
       formData.append('tanggal_masuk', payload.tanggal_masuk);
     if (payload.nominal_dpp) formData.append('nominal_dpp', payload.nominal_dpp);
+    if (payload.diskon_persen !== undefined && payload.diskon_persen !== null && payload.diskon_persen !== '')
+      formData.append('diskon_persen', payload.diskon_persen);
+    if (payload.diskon_nominal !== undefined && payload.diskon_nominal !== null && payload.diskon_nominal !== '')
+      formData.append('diskon_nominal', payload.diskon_nominal);
     if (payload.ppn) formData.append('ppn', payload.ppn);
     if (payload.grand_total) formData.append('grand_total', payload.grand_total);
     if (payload.penerbit_id) formData.append('penerbit_id', payload.penerbit_id);
@@ -684,7 +693,9 @@ export const projectV2Service = {
     grand_total?: string,
     penerbit_id?: string,
     deadline_spk?: string,
-    penerima_id?: string
+    penerima_id?: string,
+    diskon_persen?: string,
+    diskon_nominal?: string
   ) => {
     const formData = new FormData();
     if (file) formData.append('file', file);
@@ -698,6 +709,10 @@ export const projectV2Service = {
     if (tanggal_spk) formData.append('tanggal_spk', tanggal_spk);
     if (deadline_spk) formData.append('deadline_spk', deadline_spk);
     if (penerima_id) formData.append('penerima_id', penerima_id);
+    if (diskon_persen !== undefined && diskon_persen !== null && diskon_persen !== '')
+      formData.append('diskon_persen', diskon_persen);
+    if (diskon_nominal !== undefined && diskon_nominal !== null && diskon_nominal !== '')
+      formData.append('diskon_nominal', diskon_nominal);
     const { data } = await apiClient.post(
       `/projects-v2/${projectId}/upload-spk`,
       formData
