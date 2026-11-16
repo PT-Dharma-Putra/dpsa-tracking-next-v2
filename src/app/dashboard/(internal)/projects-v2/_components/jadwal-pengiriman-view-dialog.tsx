@@ -82,9 +82,13 @@ export function JadwalPengirimanViewDialog({
   const lastDate =
     schedules[schedules.length - 1]?.tanggal;
 
-  const formatDateSafe = (dateStr?: string | null, pattern = 'EEEE, d MMMM yyyy') => {
-    if (!dateStr) return '-';
+  const parseLocalDate = (dateStr?: string | null): Date | null => {
+    if (!dateStr) return null;
     try {
+      if (dateStr.includes('T') || dateStr.includes('Z')) {
+        const d = new Date(dateStr);
+        return isNaN(d.getTime()) ? null : d;
+      }
       const cleanStr = String(dateStr).slice(0, 10);
       const parts = cleanStr.split('-');
       if (parts.length === 3) {
@@ -93,11 +97,21 @@ export function JadwalPengirimanViewDialog({
         const day = parseInt(parts[2], 10);
         const d = new Date(year, month, day);
         if (!isNaN(d.getTime())) {
-          return format(d, pattern, { locale: idLocale });
+          return d;
         }
       }
       const d = new Date(dateStr);
-      return isNaN(d.getTime()) ? '-' : format(d, pattern, { locale: idLocale });
+      return isNaN(d.getTime()) ? null : d;
+    } catch {
+      return null;
+    }
+  };
+
+  const formatDateSafe = (dateStr?: string | null, pattern = 'EEEE, d MMMM yyyy') => {
+    const d = parseLocalDate(dateStr);
+    if (!d) return '-';
+    try {
+      return format(d, pattern, { locale: idLocale });
     } catch {
       return '-';
     }
@@ -201,11 +215,13 @@ export function JadwalPengirimanViewDialog({
               <div className='space-y-2.5'>
                 {schedules.map((s, idx) => {
                   const scheduleDate = s.tanggal;
+                  const parsedSched = parseLocalDate(scheduleDate);
+                  const parsedDead = parseLocalDate(project?.deadline);
                   const diff =
-                    scheduleDate && project?.deadline
+                    parsedSched && parsedDead
                       ? differenceInDays(
-                          startOfDay(new Date(project.deadline)),
-                          startOfDay(new Date(scheduleDate))
+                          startOfDay(parsedDead),
+                          startOfDay(parsedSched)
                         )
                       : null;
 
