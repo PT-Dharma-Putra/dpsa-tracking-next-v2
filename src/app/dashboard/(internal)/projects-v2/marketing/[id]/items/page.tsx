@@ -448,6 +448,80 @@ export default function ProjectItemsPage() {
   const [spkNominal, setSpkNominal] = React.useState<string>('');
   const [spkPpn, setSpkPpn] = React.useState<string>('');
   const [spkGrandTotal, setSpkGrandTotal] = React.useState<string>('');
+  const [spkDiskonPersen, setSpkDiskonPersen] = React.useState<string>('');
+  const [spkDiskonNominal, setSpkDiskonNominal] = React.useState<string>('');
+
+  const recalculateSpkTotals = (
+    nominalVal: string,
+    diskonNomVal: string,
+    ppnVal: string
+  ) => {
+    const dppNum = parseInt(parseRawNumber(nominalVal) || '0', 10);
+    const diskonNom = parseInt(parseRawNumber(diskonNomVal) || '0', 10);
+    const netDpp = Math.max(0, dppNum - diskonNom);
+    const ppnAmount = Math.round(netDpp * (parseFloat(ppnVal || '0') / 100));
+    const grandTotal = netDpp + ppnAmount;
+    setSpkGrandTotal(grandTotal > 0 ? grandTotal.toString() : '');
+  };
+
+  const handleSpkNominalChange = (val: string) => {
+    const formatted = formatRupiah(val);
+    setSpkNominal(formatted);
+    const dppNum = parseInt(parseRawNumber(val) || '0', 10);
+
+    let updatedDiskonNom = spkDiskonNominal;
+    if (spkDiskonPersen && dppNum > 0) {
+      const pct = parseFloat(spkDiskonPersen) || 0;
+      const nom = Math.round(dppNum * (pct / 100));
+      updatedDiskonNom = nom > 0 ? formatRupiah(nom.toString()) : '';
+      setSpkDiskonNominal(updatedDiskonNom);
+    } else if (spkDiskonNominal && dppNum > 0) {
+      const nom = parseInt(parseRawNumber(spkDiskonNominal) || '0', 10);
+      const pct = (nom / dppNum) * 100;
+      setSpkDiskonPersen(pct % 1 === 0 ? pct.toFixed(0) : pct.toFixed(2));
+    }
+
+    recalculateSpkTotals(formatted, updatedDiskonNom, spkPpn);
+  };
+
+  const handleSpkDiskonPersenChange = (val: string) => {
+    setSpkDiskonPersen(val);
+    const dppNum = parseInt(parseRawNumber(spkNominal) || '0', 10);
+    const pct = parseFloat(val) || 0;
+
+    let diskonNomStr = '';
+    if (dppNum > 0 && pct > 0) {
+      const diskonNom = Math.round(dppNum * (pct / 100));
+      diskonNomStr = formatRupiah(diskonNom.toString());
+      setSpkDiskonNominal(diskonNomStr);
+    } else {
+      setSpkDiskonNominal('');
+    }
+
+    recalculateSpkTotals(spkNominal, diskonNomStr, spkPpn);
+  };
+
+  const handleSpkDiskonNominalChange = (val: string) => {
+    const formatted = formatRupiah(val);
+    setSpkDiskonNominal(formatted);
+    const dppNum = parseInt(parseRawNumber(spkNominal) || '0', 10);
+    const diskonNom = parseInt(parseRawNumber(val) || '0', 10);
+
+    if (dppNum > 0 && diskonNom > 0) {
+      const pct = (diskonNom / dppNum) * 100;
+      setSpkDiskonPersen(pct % 1 === 0 ? pct.toFixed(0) : pct.toFixed(2));
+    } else {
+      setSpkDiskonPersen('');
+    }
+
+    recalculateSpkTotals(spkNominal, formatted, spkPpn);
+  };
+
+  const handleSpkPpnChange = (checked: boolean) => {
+    const pct = checked ? '11' : '0';
+    setSpkPpn(pct);
+    recalculateSpkTotals(spkNominal, spkDiskonNominal, pct);
+  };
   const [spkPenerbitId, setSpkPenerbitId] = React.useState<string>('');
   const [spkPenerbitName, setSpkPenerbitName] = React.useState<string>('');
   const [spkPenerimaId, setSpkPenerimaId] = React.useState<string>('');
@@ -541,11 +615,15 @@ export default function ProjectItemsPage() {
       grand_total,
       penerbit_id,
       penerima_id,
+      diskon_persen,
+      diskon_nominal,
     }: {
       file?: File | null;
       number: string;
       tanggal_masuk?: string;
       nominal_dpp?: string;
+      diskon_persen?: string;
+      diskon_nominal?: string;
       tanggal_spk?: string;
       deadline_spk?: string;
       ppn?: string;
@@ -565,7 +643,9 @@ export default function ProjectItemsPage() {
         grand_total,
         penerbit_id,
         deadline_spk,
-        penerima_id
+        penerima_id,
+        diskon_persen,
+        diskon_nominal
       ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects-v2', projectId] });
@@ -576,6 +656,8 @@ export default function ProjectItemsPage() {
       setSpkDeadlineSpk('');
       setSpkTanggalMasuk('');
       setSpkNominal('');
+      setSpkDiskonPersen('');
+      setSpkDiskonNominal('');
       setSpkPpn('');
       setSpkGrandTotal('');
       setSpkPenerbitId('');
@@ -600,6 +682,8 @@ export default function ProjectItemsPage() {
       number: spkNumber,
       tanggal_masuk: spkTanggalMasuk,
       nominal_dpp: parseRawNumber(spkNominal),
+      diskon_persen: spkDiskonPersen || '0',
+      diskon_nominal: parseRawNumber(spkDiskonNominal) || '0',
       tanggal_spk: spkTanggalSpk,
       deadline_spk: spkDeadlineSpk || undefined,
       ppn: spkPpn,
@@ -690,6 +774,80 @@ export default function ProjectItemsPage() {
   const [editSpkNominal, setEditSpkNominal] = React.useState<string>('');
   const [editSpkPpn, setEditSpkPpn] = React.useState<string>('');
   const [editSpkGrandTotal, setEditSpkGrandTotal] = React.useState<string>('');
+  const [editSpkDiskonPersen, setEditSpkDiskonPersen] = React.useState<string>('');
+  const [editSpkDiskonNominal, setEditSpkDiskonNominal] = React.useState<string>('');
+
+  const recalculateEditSpkTotals = (
+    nominalVal: string,
+    diskonNomVal: string,
+    ppnVal: string
+  ) => {
+    const dppNum = parseInt(parseRawNumber(nominalVal) || '0', 10);
+    const diskonNom = parseInt(parseRawNumber(diskonNomVal) || '0', 10);
+    const netDpp = Math.max(0, dppNum - diskonNom);
+    const ppnAmount = Math.round(netDpp * (parseFloat(ppnVal || '0') / 100));
+    const grandTotal = netDpp + ppnAmount;
+    setEditSpkGrandTotal(grandTotal > 0 ? formatRupiah(grandTotal.toString()) : '');
+  };
+
+  const handleEditSpkNominalChange = (val: string) => {
+    const formatted = formatRupiah(val);
+    setEditSpkNominal(formatted);
+    const dppNum = parseInt(parseRawNumber(val) || '0', 10);
+
+    let updatedDiskonNom = editSpkDiskonNominal;
+    if (editSpkDiskonPersen && dppNum > 0) {
+      const pct = parseFloat(editSpkDiskonPersen) || 0;
+      const nom = Math.round(dppNum * (pct / 100));
+      updatedDiskonNom = nom > 0 ? formatRupiah(nom.toString()) : '';
+      setEditSpkDiskonNominal(updatedDiskonNom);
+    } else if (editSpkDiskonNominal && dppNum > 0) {
+      const nom = parseInt(parseRawNumber(editSpkDiskonNominal) || '0', 10);
+      const pct = (nom / dppNum) * 100;
+      setEditSpkDiskonPersen(pct % 1 === 0 ? pct.toFixed(0) : pct.toFixed(2));
+    }
+
+    recalculateEditSpkTotals(formatted, updatedDiskonNom, editSpkPpn);
+  };
+
+  const handleEditSpkDiskonPersenChange = (val: string) => {
+    setEditSpkDiskonPersen(val);
+    const dppNum = parseInt(parseRawNumber(editSpkNominal) || '0', 10);
+    const pct = parseFloat(val) || 0;
+
+    let diskonNomStr = '';
+    if (dppNum > 0 && pct > 0) {
+      const diskonNom = Math.round(dppNum * (pct / 100));
+      diskonNomStr = formatRupiah(diskonNom.toString());
+      setEditSpkDiskonNominal(diskonNomStr);
+    } else {
+      setEditSpkDiskonNominal('');
+    }
+
+    recalculateEditSpkTotals(editSpkNominal, diskonNomStr, editSpkPpn);
+  };
+
+  const handleEditSpkDiskonNominalChange = (val: string) => {
+    const formatted = formatRupiah(val);
+    setEditSpkDiskonNominal(formatted);
+    const dppNum = parseInt(parseRawNumber(editSpkNominal) || '0', 10);
+    const diskonNom = parseInt(parseRawNumber(val) || '0', 10);
+
+    if (dppNum > 0 && diskonNom > 0) {
+      const pct = (diskonNom / dppNum) * 100;
+      setEditSpkDiskonPersen(pct % 1 === 0 ? pct.toFixed(0) : pct.toFixed(2));
+    } else {
+      setEditSpkDiskonPersen('');
+    }
+
+    recalculateEditSpkTotals(editSpkNominal, formatted, editSpkPpn);
+  };
+
+  const handleEditSpkPpnChange = (checked: boolean) => {
+    const pct = checked ? '11' : '0';
+    setEditSpkPpn(pct);
+    recalculateEditSpkTotals(editSpkNominal, editSpkDiskonNominal, pct);
+  };
   const [editSpkPenerbitId, setEditSpkPenerbitId] = React.useState<string>('');
   const [editSpkPenerbitName, setEditSpkPenerbitName] = React.useState<string>('');
   const [editSpkPenerimaId, setEditSpkPenerimaId] = React.useState<string>('');
@@ -705,6 +863,8 @@ export default function ProjectItemsPage() {
         nominal_dpp: editSpkNominal
           ? parseRawNumber(editSpkNominal)
           : undefined,
+        diskon_persen: editSpkDiskonPersen || '0',
+        diskon_nominal: parseRawNumber(editSpkDiskonNominal) || '0',
         ppn: editSpkPpn || undefined,
         grand_total: editSpkGrandTotal
           ? parseRawNumber(editSpkGrandTotal)
@@ -735,6 +895,16 @@ export default function ProjectItemsPage() {
       setEditSpkNominal(
         existingSpk.nominal_dpp
           ? formatRupiah(String(existingSpk.nominal_dpp))
+          : ''
+      );
+      setEditSpkDiskonPersen(
+        existingSpk.diskon_persen !== undefined && existingSpk.diskon_persen !== null && Number(existingSpk.diskon_persen) > 0
+          ? String(parseFloat(String(existingSpk.diskon_persen)))
+          : ''
+      );
+      setEditSpkDiskonNominal(
+        existingSpk.diskon_nominal !== undefined && existingSpk.diskon_nominal !== null && Number(existingSpk.diskon_nominal) > 0
+          ? formatRupiah(String(existingSpk.diskon_nominal))
           : ''
       );
       setEditSpkPpn(existingSpk.ppn ? String(existingSpk.ppn) : '');
@@ -829,6 +999,8 @@ export default function ProjectItemsPage() {
     setSpkDeadlineSpk('');
     setSpkTanggalMasuk(format(new Date(), 'yyyy-MM-dd'));
     setSpkNominal('');
+    setSpkDiskonPersen('');
+    setSpkDiskonNominal('');
     setSpkPpn('');
     setSpkGrandTotal('');
     setSpkPenerbitId(project?.client_id ? String(project.client_id) : '');
@@ -1929,6 +2101,14 @@ export default function ProjectItemsPage() {
                             {existingSpk.penerima?.nama && `Untuk: ${existingSpk.penerima.nama}`}
                           </p>
                         )}
+                        {existingSpk.diskon_nominal && Number(existingSpk.diskon_nominal) > 0 && (
+                          <p className='text-[10px] text-amber-700 font-medium truncate'>
+                            Diskon: {formatRupiah(existingSpk.diskon_nominal)}
+                            {existingSpk.diskon_persen && Number(existingSpk.diskon_persen) > 0
+                              ? ` (${existingSpk.diskon_persen}%)`
+                              : ''}
+                          </p>
+                        )}
                       </div>
                     </div>
                     {(existingSpk.file || existingSpk.spk_signed_file) && (
@@ -2988,25 +3168,58 @@ export default function ProjectItemsPage() {
                 type='text'
                 placeholder='Rp 0'
                 value={editSpkNominal}
-                onChange={(e) => {
-                  const formatted = formatRupiah(e.target.value);
-                  setEditSpkNominal(formatted);
-                  const nominalNum = parseInt(
-                    parseRawNumber(e.target.value) || '0',
-                    10
-                  );
-                  const ppnAmount = Math.round(
-                    nominalNum * (parseFloat(editSpkPpn || '0') / 100)
-                  );
-                  setEditSpkGrandTotal(
-                    nominalNum + ppnAmount > 0
-                      ? formatRupiah((nominalNum + ppnAmount).toString())
-                      : ''
-                  );
-                }}
+                onChange={(e) => handleEditSpkNominalChange(e.target.value)}
                 className='h-9 text-xs border-purple-200'
               />
             </div>
+            <div className='grid grid-cols-2 gap-3'>
+              <div className='space-y-1.5'>
+                <Label className='text-xs font-medium text-purple-700'>
+                  Diskon (%)
+                </Label>
+                <div className='relative'>
+                  <Input
+                    type='number'
+                    step='any'
+                    min='0'
+                    max='100'
+                    placeholder='0'
+                    value={editSpkDiskonPersen}
+                    onChange={(e) => handleEditSpkDiskonPersenChange(e.target.value)}
+                    className='h-9 text-xs border-purple-200 pr-7'
+                  />
+                  <span className='absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-neutral-400 font-medium pointer-events-none'>
+                    %
+                  </span>
+                </div>
+              </div>
+              <div className='space-y-1.5'>
+                <Label className='text-xs font-medium text-purple-700'>
+                  Diskon (Nominal)
+                </Label>
+                <Input
+                  type='text'
+                  placeholder='Rp 0'
+                  value={editSpkDiskonNominal}
+                  onChange={(e) => handleEditSpkDiskonNominalChange(e.target.value)}
+                  className='h-9 text-xs border-purple-200'
+                />
+              </div>
+            </div>
+            {parseInt(parseRawNumber(editSpkDiskonNominal) || '0', 10) > 0 && (
+              <div className='p-2 rounded bg-purple-50/70 border border-purple-100 flex items-center justify-between text-xs'>
+                <span className='text-purple-700 font-medium'>DPP Setelah Diskon:</span>
+                <span className='font-semibold text-purple-900'>
+                  {formatRupiah(
+                    Math.max(
+                      0,
+                      parseInt(parseRawNumber(editSpkNominal) || '0', 10) -
+                        parseInt(parseRawNumber(editSpkDiskonNominal) || '0', 10)
+                    ).toString()
+                  )}
+                </span>
+              </div>
+            )}
             <div className='space-y-1.5'>
               <Label className='text-xs font-medium text-purple-700'>
                 PPN 12% (11/12 x 12%)
@@ -3014,22 +3227,7 @@ export default function ProjectItemsPage() {
               <div className='flex items-center gap-3 h-9'>
                 <Switch
                   checked={editSpkPpn === '11'}
-                  onCheckedChange={(checked) => {
-                    const pct = checked ? '11' : '0';
-                    setEditSpkPpn(pct);
-                    const nominalNum = parseInt(
-                      parseRawNumber(editSpkNominal) || '0',
-                      10
-                    );
-                    const ppnAmount = Math.round(
-                      nominalNum * (parseFloat(pct || '0') / 100)
-                    );
-                    setEditSpkGrandTotal(
-                      nominalNum + ppnAmount > 0
-                        ? formatRupiah((nominalNum + ppnAmount).toString())
-                        : ''
-                    );
-                  }}
+                  onCheckedChange={handleEditSpkPpnChange}
                 />
                 <span className='text-xs font-medium text-neutral-600'>
                   {editSpkPpn === '11' ? 'Ya' : 'Tidak'}
@@ -3275,25 +3473,58 @@ export default function ProjectItemsPage() {
                 type='text'
                 placeholder='Rp 0'
                 value={spkNominal}
-                onChange={(e) => {
-                  const formatted = formatRupiah(e.target.value);
-                  setSpkNominal(formatted);
-                  const nominalNum = parseInt(
-                    parseRawNumber(e.target.value) || '0',
-                    10
-                  );
-                  const ppnAmount = Math.round(
-                    nominalNum * (parseFloat(spkPpn || '0') / 100)
-                  );
-                  setSpkGrandTotal(
-                    nominalNum + ppnAmount > 0
-                      ? (nominalNum + ppnAmount).toString()
-                      : ''
-                  );
-                }}
+                onChange={(e) => handleSpkNominalChange(e.target.value)}
                 className='h-9 text-xs border-purple-200'
               />
             </div>
+            <div className='grid grid-cols-2 gap-3'>
+              <div className='space-y-1.5'>
+                <Label className='text-xs font-medium text-purple-700'>
+                  Diskon (%)
+                </Label>
+                <div className='relative'>
+                  <Input
+                    type='number'
+                    step='any'
+                    min='0'
+                    max='100'
+                    placeholder='0'
+                    value={spkDiskonPersen}
+                    onChange={(e) => handleSpkDiskonPersenChange(e.target.value)}
+                    className='h-9 text-xs border-purple-200 pr-7'
+                  />
+                  <span className='absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-neutral-400 font-medium pointer-events-none'>
+                    %
+                  </span>
+                </div>
+              </div>
+              <div className='space-y-1.5'>
+                <Label className='text-xs font-medium text-purple-700'>
+                  Diskon (Nominal)
+                </Label>
+                <Input
+                  type='text'
+                  placeholder='Rp 0'
+                  value={spkDiskonNominal}
+                  onChange={(e) => handleSpkDiskonNominalChange(e.target.value)}
+                  className='h-9 text-xs border-purple-200'
+                />
+              </div>
+            </div>
+            {parseInt(parseRawNumber(spkDiskonNominal) || '0', 10) > 0 && (
+              <div className='p-2 rounded bg-purple-50/70 border border-purple-100 flex items-center justify-between text-xs'>
+                <span className='text-purple-700 font-medium'>DPP Setelah Diskon:</span>
+                <span className='font-semibold text-purple-900'>
+                  {formatRupiah(
+                    Math.max(
+                      0,
+                      parseInt(parseRawNumber(spkNominal) || '0', 10) -
+                        parseInt(parseRawNumber(spkDiskonNominal) || '0', 10)
+                    ).toString()
+                  )}
+                </span>
+              </div>
+            )}
             <div className='space-y-1.5'>
               <Label className='text-xs font-medium text-purple-700'>
                 PPN 12% (11/12 x 12%)
@@ -3301,22 +3532,7 @@ export default function ProjectItemsPage() {
               <div className='flex items-center gap-3 h-9'>
                 <Switch
                   checked={spkPpn === '11'}
-                  onCheckedChange={(checked) => {
-                    const pct = checked ? '11' : '0';
-                    setSpkPpn(pct);
-                    const nominalNum = parseInt(
-                      parseRawNumber(spkNominal) || '0',
-                      10
-                    );
-                    const ppnAmount = Math.round(
-                      nominalNum * (parseFloat(pct || '0') / 100)
-                    );
-                    setSpkGrandTotal(
-                      nominalNum + ppnAmount > 0
-                        ? (nominalNum + ppnAmount).toString()
-                        : ''
-                    );
-                  }}
+                  onCheckedChange={handleSpkPpnChange}
                 />
                 <span className='text-xs font-medium text-neutral-600'>
                   {spkPpn === '11' ? 'Ya' : 'Tidak'}
