@@ -1216,7 +1216,6 @@ export default function PerencanaanDetailPage() {
     },
   });
 
-  const [isSphCollapsed, setIsSphCollapsed] = React.useState(true);
   const [isDivisiCollapsed, setIsDivisiCollapsed] = React.useState(true);
   const [isGkCollapsed, setIsGkCollapsed] = React.useState(true);
   const [isDokubahCollapsed, setIsDokubahCollapsed] = React.useState(true);
@@ -2250,153 +2249,8 @@ export default function PerencanaanDetailPage() {
       </div>
 
       {/* Summary Cards Grid */}
-      <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-4 w-full'>
-        {/* 1. SPH & SPK */}
-        <Card
-          className={`relative border shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md ${
-            !!project.spk?.file || !!project.spk?.spk_signed_file
-              ? 'border-purple-200 bg-white ring-1 ring-purple-100'
-              : 'border-neutral-200 bg-white'
-          }`}
-        >
-          {project.sph?.file &&
-            (project.spk?.file || project.spk?.spk_signed_file) && (
-              <div className='absolute -top-1.5 -right-1.5 h-5 w-5 bg-emerald-500 rounded-full flex items-center justify-center shadow-sm z-10 animate-in zoom-in duration-300'>
-                <Check className='h-3 w-3 text-white' strokeWidth={3} />
-              </div>
-            )}
-          <CardHeader className='pb-2 flex flex-row items-center justify-between gap-3 min-w-0'>
-            <button
-              className='flex items-center gap-3 flex-1 text-left min-w-0'
-              onClick={() => setIsSphCollapsed(!isSphCollapsed)}
-            >
-              <div
-                className={`h-8 w-8 rounded-full flex items-center justify-center font-bold shrink-0 ${
-                  !!project.spk?.file || !!project.spk?.spk_signed_file
-                    ? 'bg-purple-100 text-purple-600'
-                    : 'bg-neutral-100 text-neutral-500'
-                }`}
-              >
-                1
-              </div>
-              <div className='flex-1 min-w-0'>
-                <CardTitle className='text-sm text-neutral-800 font-bold leading-snug break-words whitespace-normal'>
-                  SPH & SPK
-                </CardTitle>
-                <p className='text-[10px] text-muted-foreground uppercase tracking-wider font-semibold leading-tight break-words whitespace-normal mt-0.5'>
-                  Documents
-                </p>
-              </div>
-              <ChevronDown
-                className={`h-4 w-4 text-neutral-400 shrink-0 transition-transform duration-200 ${
-                  isSphCollapsed ? '-rotate-90' : ''
-                }`}
-              />
-            </button>
-          </CardHeader>
-          {!isSphCollapsed && (
-            <CardContent className='pt-0 space-y-2.5'>
-              <div className='grid grid-cols-2 gap-2 border-t border-neutral-100 pt-2.5'>
-                {/* SPH Block */}
-                <div className='flex items-center justify-between bg-neutral-50/50 p-1.5 rounded border border-neutral-100 min-w-0'>
-                  <div className='flex flex-col gap-0.5 min-w-0 flex-1 mr-1'>
-                    <span className='text-[9px] text-neutral-400 font-bold uppercase tracking-wider leading-none'>
-                      Nomor SPH
-                    </span>
-                    <span
-                      className={`text-[10px] font-extrabold truncate ${
-                        project.sph?.nomor_sph
-                          ? 'text-emerald-600'
-                          : 'text-red-500'
-                      }`}
-                      title={project.sph?.nomor_sph || undefined}
-                    >
-                      {project.sph?.nomor_sph || '-'}
-                    </span>
-                  </div>
-                  {(() => {
-                    const sphFile = project.sph?.file;
-                    if (!sphFile) return null;
-                    return (
-                      <Button
-                        variant='ghost'
-                        size='icon'
-                        className='h-6 w-6 text-blue-600 hover:bg-blue-100 shrink-0'
-                        asChild
-                        title='Lihat SPH'
-                      >
-                        <a
-                          href={
-                            sphFile.startsWith('http')
-                              ? sphFile
-                              : `${(
-                                  process.env.NEXT_PUBLIC_API_URL ||
-                                  'http://localhost:8000'
-                                ).replace('/api', '')}/storage/${sphFile}`
-                          }
-                          target='_blank'
-                          rel='noopener noreferrer'
-                        >
-                          <Eye className='h-3.5 w-3.5' />
-                        </a>
-                      </Button>
-                    );
-                  })()}
-                </div>
-
-                {/* SPK Block */}
-                <div className='flex items-center justify-between bg-neutral-50/50 p-1.5 rounded border border-neutral-100 min-w-0'>
-                  <div className='flex flex-col gap-0.5 min-w-0 flex-1 mr-1'>
-                    <span className='text-[9px] text-neutral-400 font-bold uppercase tracking-wider leading-none'>
-                      Nomor SPK
-                    </span>
-                    <span
-                      className={`text-[10px] font-extrabold truncate ${
-                        project.spk?.nomor_spk
-                          ? 'text-emerald-600'
-                          : 'text-red-500'
-                      }`}
-                      title={project.spk?.nomor_spk || undefined}
-                    >
-                      {project.spk?.nomor_spk || '-'}
-                    </span>
-                  </div>
-                  {(() => {
-                    const spkFile =
-                      project.spk?.spk_signed_file || project.spk?.file;
-                    if (!spkFile) return null;
-                    return (
-                      <Button
-                        variant='ghost'
-                        size='icon'
-                        className='h-6 w-6 text-blue-600 hover:bg-blue-100 shrink-0'
-                        asChild
-                        title='Lihat SPK'
-                      >
-                        <a
-                          href={
-                            spkFile.startsWith('http')
-                              ? spkFile
-                              : `${(
-                                  process.env.NEXT_PUBLIC_API_URL ||
-                                  'http://localhost:8000'
-                                ).replace('/api', '')}/storage/${spkFile}`
-                          }
-                          target='_blank'
-                          rel='noopener noreferrer'
-                        >
-                          <Eye className='h-3.5 w-3.5' />
-                        </a>
-                      </Button>
-                    );
-                  })()}
-                </div>
-              </div>
-            </CardContent>
-          )}
-        </Card>
-
-        {/* 2. Gudang Barang Jadi */}
+      <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-5 gap-4 w-full'>
+        {/* 1. Gudang Barang Jadi */}
         <Card
           className={`relative border shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md ${
             totalQtyMasuk >= totalQtyOrder && totalQtyOrder > 0
@@ -2423,7 +2277,7 @@ export default function PerencanaanDetailPage() {
                     : 'bg-neutral-100 text-neutral-500'
                 }`}
               >
-                2
+                1
               </div>
               <div className='flex-1 min-w-0'>
                 <CardTitle className='text-sm text-neutral-800 font-bold leading-snug break-words whitespace-normal'>
@@ -2485,7 +2339,7 @@ export default function PerencanaanDetailPage() {
           )}
         </Card>
 
-        {/* 3. Pengiriman */}
+        {/* 2. Pengiriman */}
         <Card className='border border-neutral-200/60 shadow-sm bg-white transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md'>
           <CardHeader className='pb-2 flex flex-row items-center justify-between gap-3 min-w-0'>
             <button
@@ -2493,7 +2347,7 @@ export default function PerencanaanDetailPage() {
               onClick={() => setIsShipCollapsed(!isShipCollapsed)}
             >
               <div className='h-8 w-8 rounded-full flex items-center justify-center font-bold bg-neutral-100 text-neutral-500 shrink-0'>
-                3
+                2
               </div>
               <div className='flex-1 min-w-0'>
                 <CardTitle className='text-sm text-neutral-800 font-bold leading-snug break-words whitespace-normal'>
@@ -2700,7 +2554,7 @@ export default function PerencanaanDetailPage() {
           )}
         </Card>
 
-        {/* 4. Barang Terkirim */}
+        {/* 3. Barang Terkirim */}
         <Card
           className={`relative border shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md ${
             totalQtyKeluar >= totalQtyOrder && totalQtyOrder > 0
@@ -2727,7 +2581,7 @@ export default function PerencanaanDetailPage() {
                     : 'bg-neutral-100 text-neutral-500'
                 }`}
               >
-                4
+                3
               </div>
               <div className='flex-1 min-w-0'>
                 <CardTitle className='text-sm text-neutral-800 font-bold leading-snug break-words whitespace-normal'>
@@ -2788,7 +2642,7 @@ export default function PerencanaanDetailPage() {
           )}
         </Card>
 
-        {/* 10. Barang Terkirim Belum Tersetting */}
+        {/* 4. Barang Terkirim Belum Tersetting */}
         <Card
           className={`relative border shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md ${
             totalQtyBelumSetting > 0
@@ -2810,7 +2664,7 @@ export default function PerencanaanDetailPage() {
                     : 'bg-neutral-100 text-neutral-500'
                 }`}
               >
-                10
+                4
               </div>
               <div className='flex-1 min-w-0'>
                 <CardTitle className='text-sm text-neutral-800 font-bold leading-snug break-words whitespace-normal'>
@@ -2855,7 +2709,7 @@ export default function PerencanaanDetailPage() {
           )}
         </Card>
 
-        {/* 11. Barang Sudah Tersetting */}
+        {/* 5. Barang Sudah Tersetting */}
         <Card
           className={`relative border shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md ${
             totalQtySetting >= totalQtyOrder && totalQtyOrder > 0
@@ -2882,7 +2736,7 @@ export default function PerencanaanDetailPage() {
                     : 'bg-neutral-100 text-neutral-500'
                 }`}
               >
-                11
+                5
               </div>
               <div className='flex-1 min-w-0'>
                 <CardTitle className='text-sm text-neutral-800 font-bold leading-snug break-words whitespace-normal'>
