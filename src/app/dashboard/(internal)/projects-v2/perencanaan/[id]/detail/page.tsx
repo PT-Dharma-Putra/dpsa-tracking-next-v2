@@ -863,7 +863,12 @@ export default function PerencanaanDetailPage() {
 
   // Export Excel Function
   const handleExportExcel = () => {
-    if (!filteredItems || filteredItems.length === 0) {
+    const isSelectedOnly = selectedItemIds.length > 0;
+    const itemsToExport = isSelectedOnly
+      ? (items || []).filter((item) => selectedItemIds.includes(item.id))
+      : filteredItems;
+
+    if (!itemsToExport || itemsToExport.length === 0) {
       toast.error('Tidak ada data item untuk diekspor');
       return;
     }
@@ -957,7 +962,7 @@ export default function PerencanaanDetailPage() {
       ],
     ];
 
-    filteredItems.forEach((item, index) => {
+    itemsToExport.forEach((item, index) => {
       const dimensiStr = `${item.panjang || '-'} x ${item.lebar || '-'} x ${item.tinggi || '-'}`;
       const poDivisiStr = item.divisi?.nama || '-';
       const stokMaterialStr = item.bahan_baku?.ketersediaan_stok || '-';
@@ -1034,7 +1039,11 @@ export default function PerencanaanDetailPage() {
     const safeProjectName = (project?.name || 'Project').replace(/[^a-zA-Z0-9 _-]/g, '');
     const fileName = `Detail_Perencanaan_${safeProjectName}.xlsx`;
     XLSX.writeFile(wb, fileName);
-    toast.success('Excel berhasil diexport');
+    toast.success(
+      isSelectedOnly
+        ? `Excel berhasil diexport (${itemsToExport.length} item terpilih)`
+        : 'Excel berhasil diexport'
+    );
   };
 
   if (isLoadingProject) {
@@ -1981,7 +1990,9 @@ export default function PerencanaanDetailPage() {
               className='shadow-sm h-8 text-xs gap-1.5 border-emerald-600 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 bg-white'
             >
               <FileSpreadsheet className='w-4 h-4 text-emerald-600' />
-              Export Excel
+              {selectedItemIds.length > 0
+                ? `Export Excel (${selectedItemIds.length})`
+                : 'Export Excel'}
             </Button>
             <div className='relative w-64'>
               <Search className='absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-neutral-400 pointer-events-none' />
