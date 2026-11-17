@@ -63,6 +63,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
+import { useMenuPermission } from '@/hooks/use-menu-permission';
 
 import { projectV2Service } from '@/features/projects/services/project-v2-service';
 import {
@@ -152,6 +153,8 @@ export default function PiutangDetailPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const projectId = parseInt(params.id as string);
+
+  const { canCreate, canUpdate, canDelete } = useMenuPermission('projects-v2/piutang');
 
   const { data: project, isLoading: isLoadingProject } = useQuery({
     queryKey: ['projects-v2', projectId],
@@ -259,6 +262,10 @@ export default function PiutangDetailPage() {
   });
 
   const openCreate = () => {
+    if (!canCreate) {
+      toast.error('Anda tidak memiliki izin untuk menambah penagihan');
+      return;
+    }
     setEditingId(null);
     const currentUsed = penagihanList
       .map((p) => Number(p.termin || 0))
@@ -279,6 +286,10 @@ export default function PiutangDetailPage() {
   };
 
   const openEdit = (p: Penagihan) => {
+    if (!canUpdate) {
+      toast.error('Anda tidak memiliki izin untuk mengedit penagihan');
+      return;
+    }
     setEditingId(p.id);
     const currentTermin = Number(p.termin || 1);
     const highestExisting = Math.max(
@@ -320,6 +331,15 @@ export default function PiutangDetailPage() {
   };
 
   const handleSubmit = () => {
+    if (editingId !== null && !canUpdate) {
+      toast.error('Anda tidak memiliki izin untuk memperbarui penagihan');
+      return;
+    }
+    if (editingId === null && !canCreate) {
+      toast.error('Anda tidak memiliki izin untuk menambah penagihan');
+      return;
+    }
+
     if (!form.termin || form.termin <= 0) {
       toast.error('Pilih termin terlebih dahulu');
       return;
@@ -894,16 +914,18 @@ export default function PiutangDetailPage() {
             <Receipt className='h-5 w-5 text-neutral-400' />
             Daftar Penagihan
           </h2>
-          <div className='flex gap-2'>
-            <Button
-              size='sm'
-              className='bg-blue-600 hover:bg-blue-700'
-              onClick={openCreate}
-            >
-              <Plus className='mr-2 h-4 w-4' />
-              Tambah Penagihan
-            </Button>
-          </div>
+          {canCreate && (
+            <div className='flex gap-2'>
+              <Button
+                size='sm'
+                className='bg-blue-600 hover:bg-blue-700'
+                onClick={openCreate}
+              >
+                <Plus className='mr-2 h-4 w-4' />
+                Tambah Penagihan
+              </Button>
+            </div>
+          )}
         </div>
 
         <div className='rounded-xl border border-neutral-200 bg-white overflow-hidden shadow-sm'>
@@ -923,20 +945,25 @@ export default function PiutangDetailPage() {
                 <TableHead>Tgl Dibayar</TableHead>
                 <TableHead>Umur Penagihan</TableHead>
                 <TableHead>File</TableHead>
-                <TableHead className='text-right'>Aksi</TableHead>
+                {(canUpdate || canDelete) && (
+                  <TableHead className='text-right'>Aksi</TableHead>
+                )}
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoadingPenagihan ? (
                 <TableRow>
-                  <TableCell colSpan={14} className='h-32 text-center'>
+                  <TableCell
+                    colSpan={13 + (canUpdate || canDelete ? 1 : 0)}
+                    className='h-32 text-center'
+                  >
                     <Loader2 className='h-6 w-6 animate-spin mx-auto text-neutral-400' />
                   </TableCell>
                 </TableRow>
               ) : penagihanList.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={14}
+                    colSpan={13 + (canUpdate || canDelete ? 1 : 0)}
                     className='h-32 text-center text-muted-foreground'
                   >
                     Belum ada data penagihan.
@@ -1047,26 +1074,32 @@ export default function PiutangDetailPage() {
                         </span>
                       )}
                     </TableCell>
-                    <TableCell className='text-right'>
-                      <div className='flex justify-end gap-1'>
-                        <Button
-                          variant='ghost'
-                          size='icon'
-                          className='h-8 w-8 text-neutral-500 hover:text-blue-600'
-                          onClick={() => openEdit(item)}
-                        >
-                          <Pencil className='h-3.5 w-3.5' />
-                        </Button>
-                        <Button
-                          variant='ghost'
-                          size='icon'
-                          className='h-8 w-8 text-neutral-500 hover:text-red-600'
-                          onClick={() => setDeleteTarget(item)}
-                        >
-                          <Trash2 className='h-3.5 w-3.5' />
-                        </Button>
-                      </div>
-                    </TableCell>
+                    {(canUpdate || canDelete) && (
+                      <TableCell className='text-right'>
+                        <div className='flex justify-end gap-1'>
+                          {canUpdate && (
+                            <Button
+                              variant='ghost'
+                              size='icon'
+                              className='h-8 w-8 text-neutral-500 hover:text-blue-600'
+                              onClick={() => openEdit(item)}
+                            >
+                              <Pencil className='h-3.5 w-3.5' />
+                            </Button>
+                          )}
+                          {canDelete && (
+                            <Button
+                              variant='ghost'
+                              size='icon'
+                              className='h-8 w-8 text-neutral-500 hover:text-red-600'
+                              onClick={() => setDeleteTarget(item)}
+                            >
+                              <Trash2 className='h-3.5 w-3.5' />
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    )}
                   </TableRow>
                 ))
               )}
@@ -1650,9 +1683,13 @@ export default function PiutangDetailPage() {
             <AlertDialogCancel>Batal</AlertDialogCancel>
             <AlertDialogAction
               className='bg-red-600 hover:bg-red-700'
-              onClick={() =>
-                deleteTarget && deleteMutation.mutate(deleteTarget.id)
-              }
+              onClick={() => {
+                if (!canDelete) {
+                  toast.error('Anda tidak memiliki izin untuk menghapus penagihan');
+                  return;
+                }
+                deleteTarget && deleteMutation.mutate(deleteTarget.id);
+              }}
             >
               {deleteMutation.isPending && (
                 <Loader2 className='mr-2 h-4 w-4 animate-spin' />
