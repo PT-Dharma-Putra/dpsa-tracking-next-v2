@@ -873,6 +873,7 @@ export default function PerencanaanDetailPage() {
     const deadlineStr = project?.deadline
       ? format(new Date(project.deadline), 'dd/MM/yyyy')
       : '-';
+    const tanggalEksporStr = format(new Date(), 'dd/MM/yyyy');
 
     const headerLabelStyle = {
       font: { bold: true, sz: 10 },
@@ -931,10 +932,16 @@ export default function PerencanaanDetailPage() {
         { v: 'Deadline:', t: 's', s: headerLabelStyle },
         { v: deadlineStr, t: 's', s: headerValueStyle },
       ],
+      [
+        { v: 'Tanggal Ekspor:', t: 's', s: headerLabelStyle },
+        { v: tanggalEksporStr, t: 's', s: headerValueStyle },
+      ],
       [],
       [
         { v: 'No', t: 's', s: tableHeaderStyle },
         { v: 'Nama Item', t: 's', s: tableHeaderStyle },
+        { v: 'Lantai', t: 's', s: tableHeaderStyle },
+        { v: 'Ruang', t: 's', s: tableHeaderStyle },
         { v: 'Deskripsi', t: 's', s: tableHeaderStyle },
         { v: 'Vol', t: 's', s: tableHeaderStyle },
         { v: 'Dimensi', t: 's', s: tableHeaderStyle },
@@ -983,6 +990,8 @@ export default function PerencanaanDetailPage() {
       wsData.push([
         { v: index + 1, t: 'n', s: cellStyleCenter },
         { v: item.item || '-', t: 's', s: cellStyleLeft },
+        { v: item.lantai || '-', t: 's', s: cellStyleCenter },
+        { v: item.ruang || '-', t: 's', s: cellStyleLeft },
         { v: item.keterangan || '-', t: 's', s: cellStyleLeft },
         { v: item.volume ?? '-', t: typeof item.volume === 'number' ? 'n' : 's', s: cellStyleCenter },
         { v: dimensiStr, t: 's', s: cellStyleCenter },
@@ -1003,6 +1012,8 @@ export default function PerencanaanDetailPage() {
     ws['!cols'] = [
       { wch: 6 },  // No
       { wch: 30 }, // Nama Item
+      { wch: 12 }, // Lantai
+      { wch: 20 }, // Ruang
       { wch: 30 }, // Deskripsi
       { wch: 10 }, // Vol
       { wch: 20 }, // Dimensi
