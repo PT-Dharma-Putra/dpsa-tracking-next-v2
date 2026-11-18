@@ -213,6 +213,7 @@ export default function PerencanaanDetailPage() {
   const [qrItem, setQrItem] = React.useState<ProjectItemV2 | null>(null);
   const [qrJumlah, setQrJumlah] = React.useState<string>('');
   const [qrBagian, setQrBagian] = React.useState<string>('1');
+  const [qrTotalLabel, setQrTotalLabel] = React.useState<string>('1');
 
   // Mass Label Print State
   const [selectedLabelItemIds, setSelectedLabelItemIds] = React.useState<
@@ -224,6 +225,9 @@ export default function PerencanaanDetailPage() {
     Record<number, string>
   >({});
   const [massLabelBagianConfig, setMassLabelBagianConfig] = React.useState<
+    Record<number, string>
+  >({});
+  const [massLabelTotalConfig, setMassLabelTotalConfig] = React.useState<
     Record<number, string>
   >({});
 
@@ -263,13 +267,16 @@ export default function PerencanaanDetailPage() {
   const openMassLabelDialog = () => {
     const initialConfig: Record<number, string> = {};
     const initialBagianConfig: Record<number, string> = {};
+    const initialTotalConfig: Record<number, string> = {};
     selectedLabelItemIds.forEach((id) => {
       const item = items?.find((i) => i.id === id);
       initialConfig[id] = item ? item.jumlah.toString() : '';
       initialBagianConfig[id] = '1';
+      initialTotalConfig[id] = item ? item.jumlah.toString() : '1';
     });
     setMassLabelConfig(initialConfig);
     setMassLabelBagianConfig(initialBagianConfig);
+    setMassLabelTotalConfig(initialTotalConfig);
     setIsMassLabelDialogOpen(true);
   };
 
@@ -294,69 +301,65 @@ export default function PerencanaanDetailPage() {
       const customJumlahText =
         massLabelConfig[item.id] ?? item.jumlah.toString();
       const itemPerPacking = Math.max(1, parseInt(customJumlahText) || 1);
-      const bagianText = massLabelBagianConfig[item.id] ?? '1';
-      const pengaliBagian = Math.max(1, parseInt(bagianText) || 1);
-      const numLabelsBase = Math.ceil(item.jumlah / itemPerPacking);
+      const totalToPrint = Math.max(
+        1,
+        parseInt(massLabelTotalConfig[item.id] ?? item.jumlah.toString()) || 1
+      );
 
-      for (let j = 0; j < pengaliBagian; j++) {
-        for (let i = 0; i < numLabelsBase; i++) {
-          const remaining = item.jumlah - i * itemPerPacking;
-          const qtyForThisLabel = Math.min(itemPerPacking, remaining);
+      for (let i = 0; i < totalToPrint; i++) {
+        const rows: [string, string][] = [
+          ['NAMA ITEM', item.item || '-'],
+          [
+            'UKURAN',
+            `${item.panjang || '-'} x ${item.lebar || '-'} x ${
+              item.tinggi || '-'
+            }`,
+          ],
+          [
+            'JUMLAH',
+            itemPerPacking > 0
+              ? `${itemPerPacking} ${item.satuan || ''}`.trim()
+              : '-',
+          ],
+          ['RUANG', item.ruang || '-'],
+          ['RUMAH SAKIT', project?.client?.name || '-'],
+          ['NO. SPK/TAHUN', spkValue],
+        ];
 
-          const rows: [string, string][] = [
-            ['NAMA ITEM', item.item || '-'],
-            [
-              'UKURAN',
-              `${item.panjang || '-'} x ${item.lebar || '-'} x ${
-                item.tinggi || '-'
-              }`,
-            ],
-            [
-              'JUMLAH',
-              qtyForThisLabel > 0
-                ? `${qtyForThisLabel} ${item.satuan || ''}`.trim()
-                : '-',
-            ],
-            ['RUANG', item.ruang || '-'],
-            ['RUMAH SAKIT', project?.client?.name || '-'],
-            ['NO. SPK/TAHUN', spkValue],
-          ];
+        const logoUrl = kopData.logo.startsWith('/')
+          ? `${window.location.origin}${kopData.logo}`
+          : kopData.logo;
 
-          const logoUrl = kopData.logo.startsWith('/')
-            ? `${window.location.origin}${kopData.logo}`
-            : kopData.logo;
-
-          const html = `
-          <div class="label">
-            <div class="hdr">
-              <div class="logo"><img src="${logoUrl}" alt="Logo"/></div>
-              <div class="co">
-                <p class="n">${kopData.nama_perusahaan}</p>
-                ${kopData.jenis_usaha ? `<p class="it">${kopData.jenis_usaha}</p>` : ''}
-                ${kopData.alamat ? `<p>${kopData.alamat}</p>` : ''}
-                <p>Telepon : ${kopData.telepon || '-'}&nbsp;&nbsp;Fax : ${kopData.fax || '-'}</p>
-                <p>E-mail : ${kopData.email || '-'}&nbsp;Website : ${kopData.website || '-'}</p>
-              </div>
-              <div class="dc">
-                <div class="dr">${kopData.nama_identitas_iso || 'PROD'}</div><div class="dr b">${kopData.nomor_identitas_iso || '003'}</div>
-                <div class="db"><span>Rev:${kopData.revisi_ke || '00'}</span><span>Terbit:<br>${kopData.terbit || '08/25'}</span></div>
-              </div>
+        const html = `
+        <div class="label">
+          <div class="hdr">
+            <div class="logo"><img src="${logoUrl}" alt="Logo"/></div>
+            <div class="co">
+              <p class="n">${kopData.nama_perusahaan}</p>
+              ${kopData.jenis_usaha ? `<p class="it">${kopData.jenis_usaha}</p>` : ''}
+              ${kopData.alamat ? `<p>${kopData.alamat}</p>` : ''}
+              <p>Telepon : ${kopData.telepon || '-'}&nbsp;&nbsp;Fax : ${kopData.fax || '-'}</p>
+              <p>E-mail : ${kopData.email || '-'}&nbsp;Website : ${kopData.website || '-'}</p>
             </div>
-            <div class="bd">
-              <div class="info">
-                ${rows
-                  .map(
-                    ([l, v], ri) =>
-                      `<div class="row${
-                        ri === rows.length - 1 ? ' last' : ''
-                      }"><div class="lbl">${l}</div><div class="sep">:</div><div class="val">${v}</div></div>`
-                  )
-                  .join('')}
-              </div>
+            <div class="dc">
+              <div class="dr">${kopData.nama_identitas_iso || 'PROD'}</div><div class="dr b">${kopData.nomor_identitas_iso || '003'}</div>
+              <div class="db"><span>Rev:${kopData.revisi_ke || '00'}</span><span>Terbit:<br>${kopData.terbit || '08/25'}</span></div>
             </div>
-          </div>`;
-          labelsData.push(html);
-        }
+          </div>
+          <div class="bd">
+            <div class="info">
+              ${rows
+                .map(
+                  ([l, v], ri) =>
+                    `<div class="row${
+                      ri === rows.length - 1 ? ' last' : ''
+                    }"><div class="lbl">${l}</div><div class="sep">:</div><div class="val">${v}</div></div>`
+                )
+                .join('')}
+            </div>
+          </div>
+        </div>`;
+        labelsData.push(html);
       }
     });
 
@@ -486,6 +489,7 @@ export default function PerencanaanDetailPage() {
     setQrItem(item);
     setQrJumlah(item.jumlah.toString());
     setQrBagian('1');
+    setQrTotalLabel(item.jumlah.toString());
     setIsItemQrDialogOpen(true);
   };
 
@@ -558,15 +562,10 @@ export default function PerencanaanDetailPage() {
 
     const labelsData: string[] = [];
     const itemPerPacking = Math.max(1, parseInt(qrJumlah) || 1);
-    const numLabelsBase = Math.ceil(qrItem.jumlah / itemPerPacking);
-    const pengaliBagian = Math.max(1, parseInt(qrBagian) || 1);
+    const totalToPrint = Math.max(1, parseInt(qrTotalLabel) || 1);
 
-    for (let j = 0; j < pengaliBagian; j++) {
-      for (let i = 0; i < numLabelsBase; i++) {
-        const remaining = qrItem.jumlah - i * itemPerPacking;
-        const qtyForThisLabel = Math.min(itemPerPacking, remaining);
-        labelsData.push(makeLabelHTML(qtyForThisLabel));
-      }
+    for (let i = 0; i < totalToPrint; i++) {
+      labelsData.push(makeLabelHTML(itemPerPacking));
     }
 
     const pages: string[][] = [];
@@ -3476,11 +3475,28 @@ export default function PerencanaanDetailPage() {
                   placeholder='Misal: 1'
                 />
               </div>
-              <div className='text-xs font-bold text-blue-600 sm:border-l sm:pl-4'>
-                Total Label:{' '}
-                {Math.ceil(
-                  (qrItem?.jumlah || 0) / Math.max(1, parseInt(qrJumlah) || 1)
-                ) * Math.max(1, parseInt(qrBagian) || 1)}
+              <div className='flex items-center gap-2 sm:border-l sm:pl-4'>
+                <Label className='text-xs font-bold text-blue-600 whitespace-nowrap'>
+                  Total Label:
+                </Label>
+                <Input
+                  type='number'
+                  min={1}
+                  value={qrTotalLabel}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === '') {
+                      setQrTotalLabel('');
+                    } else {
+                      const num = parseInt(val);
+                      if (!isNaN(num) && num > 0) {
+                        setQrTotalLabel(num.toString());
+                      }
+                    }
+                  }}
+                  className='h-8 w-20 text-xs text-center font-bold text-blue-700 bg-blue-50/50 border-blue-200'
+                  placeholder='Misal: 2'
+                />
               </div>
             </div>
             <div className='flex gap-2 ml-auto'>
@@ -5052,8 +5068,33 @@ export default function PerencanaanDetailPage() {
                           }}
                         />
                       </TableCell>
-                      <TableCell className='text-xs text-center font-bold text-blue-600'>
-                        {totalLabel}
+                      <TableCell className='text-xs text-center'>
+                        <Input
+                          type='number'
+                          min={1}
+                          className='h-7 w-16 text-xs mx-auto text-center font-bold text-blue-600 bg-blue-50/50 border-blue-200'
+                          value={
+                            massLabelTotalConfig[item.id] ??
+                            item.jumlah.toString()
+                          }
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val === '') {
+                              setMassLabelTotalConfig((prev) => ({
+                                ...prev,
+                                [item.id]: '',
+                              }));
+                            } else {
+                              const num = parseInt(val);
+                              if (!isNaN(num) && num > 0) {
+                                setMassLabelTotalConfig((prev) => ({
+                                  ...prev,
+                                  [item.id]: num.toString(),
+                                }));
+                              }
+                            }
+                          }}
+                        />
                       </TableCell>
                     </TableRow>
                   );
@@ -5068,21 +5109,11 @@ export default function PerencanaanDetailPage() {
                 {items
                   ?.filter((i) => selectedLabelItemIds.includes(i.id))
                   .reduce((sum, item) => {
-                    const customJumlahText =
-                      massLabelConfig[item.id] ?? item.jumlah.toString();
-                    const itemPerPacking = Math.max(
-                      1,
-                      parseInt(customJumlahText) || 1
-                    );
-                    const bagianText = massLabelBagianConfig[item.id] ?? '1';
-                    const pengaliBagian = Math.max(
-                      1,
-                      parseInt(bagianText) || 1
-                    );
-                    return (
-                      sum +
-                      Math.ceil(item.jumlah / itemPerPacking) * pengaliBagian
-                    );
+                    const totalVal =
+                      parseInt(
+                        massLabelTotalConfig[item.id] ?? item.jumlah.toString()
+                      ) || 0;
+                    return sum + totalVal;
                   }, 0)}
               </span>
             </div>
