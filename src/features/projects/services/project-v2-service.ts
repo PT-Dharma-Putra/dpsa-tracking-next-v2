@@ -1022,6 +1022,83 @@ export const projectV2Service = {
     return data;
   },
 
+  bulkUpdateItemPic: async (itemIds: number[], picId: number) => {
+    try {
+      const { data } = await apiClient.post<{ message: string; updated_count: number }>(
+        '/projects-v2-items/bulk-pic',
+        {
+          item_ids: itemIds,
+          pic_engineer_id: picId,
+        }
+      );
+      return data;
+    } catch (error: any) {
+      if (error?.response?.status === 404 || error?.response?.status === 405) {
+        const BATCH_SIZE = 3;
+        for (let i = 0; i < itemIds.length; i += BATCH_SIZE) {
+          const batch = itemIds.slice(i, i + BATCH_SIZE);
+          await Promise.all(
+            batch.map((id) =>
+              apiClient.post(`/projects-v2-items/${id}`, {
+                pic_engineer_id: picId,
+                _method: 'PUT',
+              })
+            )
+          );
+          if (i + BATCH_SIZE < itemIds.length) {
+            await new Promise((res) => setTimeout(res, 120));
+          }
+        }
+        return { message: 'PIC massal berhasil diperbarui', updated_count: itemIds.length };
+      }
+      throw error;
+    }
+  },
+
+  bulkUploadGambarKerja: async (
+    itemIds: number[],
+    payload: {
+      file?: File | string;
+      tanggal_mulai?: string;
+      tanggal_selesai?: string;
+    }
+  ) => {
+    try {
+      const formData = new FormData();
+      itemIds.forEach((id) => formData.append('item_ids[]', id.toString()));
+      if (payload.file) formData.append('file', payload.file);
+      if (payload.tanggal_mulai) formData.append('tanggal_mulai', payload.tanggal_mulai);
+      if (payload.tanggal_selesai) formData.append('tanggal_selesai', payload.tanggal_selesai);
+
+      const { data } = await apiClient.post<{ message: string; updated_count: number }>(
+        '/projects-v2-items/bulk-gambar-kerja',
+        formData
+      );
+      return data;
+    } catch (error: any) {
+      if (error?.response?.status === 404 || error?.response?.status === 405) {
+        const BATCH_SIZE = 3;
+        for (let i = 0; i < itemIds.length; i += BATCH_SIZE) {
+          const batch = itemIds.slice(i, i + BATCH_SIZE);
+          await Promise.all(
+            batch.map((id) => {
+              const fd = new FormData();
+              if (payload.file) fd.append('file', payload.file);
+              if (payload.tanggal_mulai) fd.append('tanggal_mulai', payload.tanggal_mulai);
+              if (payload.tanggal_selesai) fd.append('tanggal_selesai', payload.tanggal_selesai);
+              return apiClient.post(`/projects-v2-items/${id}/upload-gambar-kerja`, fd);
+            })
+          );
+          if (i + BATCH_SIZE < itemIds.length) {
+            await new Promise((res) => setTimeout(res, 120));
+          }
+        }
+        return { message: 'Gambar Kerja massal berhasil diperbarui', updated_count: itemIds.length };
+      }
+      throw error;
+    }
+  },
+
   getPics: async () => {
     const { data } = await apiClient.get<Pic[]>('/pics');
     return data;

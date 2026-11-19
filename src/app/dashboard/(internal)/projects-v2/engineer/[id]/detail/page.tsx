@@ -360,22 +360,27 @@ export default function EngineerDetailPage() {
     },
   });
 
+  const [isBulkPicPopoverOpen, setIsBulkPicPopoverOpen] = React.useState(false);
+
   const bulkUpdatePicMutation = useMutation({
     mutationFn: async (picId: number) => {
-      const promises = selectedItemIds.map((itemId) =>
-        projectV2Service.updateProjectItemPic(itemId, picId),
-      );
-      await Promise.all(promises);
+      await projectV2Service.bulkUpdateItemPic(selectedItemIds, picId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ["project-v2-items", projectId],
       });
+      queryClient.invalidateQueries({
+        queryKey: ["projects-v2", projectId],
+      });
       toast.success("PIC berhasil diupdate untuk item yang dipilih");
       setSelectedItemIds([]);
+      setIsBulkPicPopoverOpen(false);
     },
-    onError: () => {
-      toast.error("Gagal mengupdate PIC");
+    onError: (err: any) => {
+      const errorMsg =
+        err?.response?.data?.message || "Gagal mengupdate PIC massal";
+      toast.error(errorMsg);
     },
   });
 
@@ -527,10 +532,7 @@ export default function EngineerDetailPage() {
       tanggal_mulai?: string;
       tanggal_selesai?: string;
     }) => {
-      const promises = selectedItemIds.map((itemId) =>
-        projectV2Service.uploadGambarKerja(itemId, payload),
-      );
-      await Promise.all(promises);
+      await projectV2Service.bulkUploadGambarKerja(selectedItemIds, payload);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
@@ -552,8 +554,10 @@ export default function EngineerDetailPage() {
       setBulkGkEnd("");
       setSelectedItemIds([]);
     },
-    onError: () => {
-      toast.error("Gagal mengupdate Gambar Kerja massal");
+    onError: (err: any) => {
+      const errorMsg =
+        err?.response?.data?.message || "Gagal mengupdate Gambar Kerja massal";
+      toast.error(errorMsg);
     },
   });
 
@@ -1248,23 +1252,36 @@ export default function EngineerDetailPage() {
                   size="sm"
                   variant="outline"
                   className="h-8 bg-white"
+                  disabled={bulkUploadGkMutation.isPending}
                   onClick={() => {
                     setBulkGkInputType("url");
                     setBulkGkFile(DEFAULT_LINK_GAMBAR_KERJA);
                     setIsBulkGkDialogOpen(true);
                   }}
                 >
-                  <ImageIcon className="h-3.5 w-3.5 mr-2" />
+                  {bulkUploadGkMutation.isPending ? (
+                    <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" />
+                  ) : (
+                    <ImageIcon className="h-3.5 w-3.5 mr-2" />
+                  )}
                   Set GK Massal
                 </Button>
-                <Popover>
+                <Popover
+                  open={isBulkPicPopoverOpen}
+                  onOpenChange={setIsBulkPicPopoverOpen}
+                >
                   <PopoverTrigger asChild>
                     <Button
                       size="sm"
                       variant="outline"
                       className="h-8 bg-white"
+                      disabled={bulkUpdatePicMutation.isPending}
                     >
-                      <User className="h-3.5 w-3.5 mr-2" />
+                      {bulkUpdatePicMutation.isPending ? (
+                        <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" />
+                      ) : (
+                        <User className="h-3.5 w-3.5 mr-2" />
+                      )}
                       Set PIC Massal
                     </Button>
                   </PopoverTrigger>
@@ -1278,6 +1295,7 @@ export default function EngineerDetailPage() {
                             <CommandItem
                               key={pic.id}
                               onSelect={() => {
+                                setIsBulkPicPopoverOpen(false);
                                 bulkUpdatePicMutation.mutate(pic.id);
                               }}
                             >
