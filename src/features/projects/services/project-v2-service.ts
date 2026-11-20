@@ -166,6 +166,22 @@ export interface ProjectV2 {
   };
   catatan_keterlambatan?: CatatanKeterlambatan | null;
   catatan_keterlambatans?: CatatanKeterlambatan[];
+  catatan_project?: CatatanProject | null;
+  catatan_projects?: CatatanProject[];
+}
+
+export interface CatatanProject {
+  id: number;
+  project_id: number;
+  catatan: string | null;
+  user_id: number | null;
+  user?: {
+    id: number;
+    name: string;
+  } | null;
+  created_at: string;
+  updated_at: string;
+  deleted_at?: string | null;
 }
 
 export interface CatatanKeterlambatan {
@@ -1340,6 +1356,19 @@ export const projectV2Service = {
   updateCatatanKeterlambatan: async (projectId: number, catatan: string | null) => {
     const { data } = await apiClient.post(
       `/projects-v2/${projectId}/catatan-keterlambatan`,
+      { catatan }
+    );
+    return data;
+  },
+  getCatatanProject: async (projectId: number) => {
+    const { data } = await apiClient.get<{ status: string; data: CatatanProject[] }>(
+      `/projects-v2/${projectId}/catatan-project`
+    );
+    return data.data;
+  },
+  addCatatanProject: async (projectId: number, catatan: string) => {
+    const { data } = await apiClient.post(
+      `/projects-v2/${projectId}/catatan-project`,
       { catatan }
     );
     return data;

@@ -680,11 +680,14 @@ export function ProjectsV2Table({
     !showAllDashboard &&
     (userRole === 'marketing' ||
       userRole === 'ppic' ||
+      userRole === 'produksi' ||
       userRole === 'super-admin' ||
       userRole === 'admin' ||
       userRoles.includes('marketing') ||
       userRoles.includes('ppic') ||
-      userRoles.includes('super-admin'));
+      userRoles.includes('produksi') ||
+      userRoles.includes('super-admin') ||
+      userRoles.includes('admin'));
 
   const { canUpdateDeadline } = usePermissions();
   const isJadwalEditable = showPerencanaan && canUpdateDeadline;
@@ -4770,7 +4773,7 @@ export function ProjectsV2Table({
                       {!showPiutang && (
                         <TableHead>NAMA PROJEK</TableHead>
                       )}
-                      {showMarketingFilter && (
+                      {(showMarketingFilter || showPerencanaan || showProduksi) && (
                         <TableHead className='text-center min-w-[140px]'>
                           <div className='flex flex-col items-center'>
                             <span>CATATAN</span>
@@ -5150,13 +5153,13 @@ export function ProjectsV2Table({
                           : showPurchasing
                           ? 12
                           : showProduksi
-                          ? 15
+                          ? 16
                           : showPiutang
                           ? 14
                           : showMarketingFilter
                           ? 22
                           : showPerencanaan
-                          ? 23
+                          ? 24
                           : isMainProjectsV2Page
                           ? 21
                           : showPengirimanV2
@@ -5183,13 +5186,13 @@ export function ProjectsV2Table({
                           : showPurchasing
                           ? 12
                           : showProduksi
-                          ? 15
+                          ? 16
                           : showPiutang
                           ? 14
                           : showMarketingFilter
                           ? 22
                           : showPerencanaan
-                          ? 23
+                          ? 24
                           : isMainProjectsV2Page
                           ? 21
                           : showPengirimanV2
@@ -6269,10 +6272,16 @@ export function ProjectsV2Table({
                             )}
                           </TableCell>
                         )}
-                      {showMarketingFilter && (
+                      {(showMarketingFilter || showPerencanaan || showProduksi) && (
                         <TableCell className='text-center'>
                           {(() => {
-                            const noteText = project.catatan;
+                            const noteText =
+                              project.catatan_project?.catatan ||
+                              project.catatan_projects?.[0]?.catatan ||
+                              project.catatan;
+                            const noteCount =
+                              project.catatan_projects?.length ||
+                              (project.catatan_project ? 1 : (project.catatan ? 1 : 0));
 
                             if (noteText) {
                               return (
@@ -6287,6 +6296,11 @@ export function ProjectsV2Table({
                                 >
                                   <FileText className='h-3 w-3 shrink-0 text-amber-600' />
                                   <span className='truncate'>{noteText}</span>
+                                  {noteCount > 1 && (
+                                    <Badge className='ml-0.5 px-1 py-0 text-[10px] h-4 bg-amber-200 text-amber-900 border-none font-semibold'>
+                                      {noteCount}
+                                    </Badge>
+                                  )}
                                 </button>
                               );
                             }
@@ -7436,6 +7450,7 @@ export function ProjectsV2Table({
             onOpenChange={setIsCatatanProjectDialogOpen}
             project={projectForCatatanProject}
             canEdit={canEditCatatan}
+            isViewOnlyAllDashboard={showAllDashboard}
           />
 
           <MonthlyPerformanceDialog
