@@ -178,6 +178,7 @@ export default function PiutangDetailPage() {
   // Form state
   const [isFormOpen, setIsFormOpen] = React.useState(false);
   const [editingId, setEditingId] = React.useState<number | null>(null);
+  const [existingFile, setExistingFile] = React.useState<string | null>(null);
   const [form, setForm] = React.useState(emptyForm);
   const [fileInput, setFileInput] = React.useState<File | null>(null);
   const [fileError, setFileError] = React.useState<string | null>(null);
@@ -214,7 +215,10 @@ export default function PiutangDetailPage() {
       toast.success('Penagihan berhasil ditambahkan');
       closeForm();
     },
-    onError: () => toast.error('Gagal menambahkan penagihan'),
+    onError: (error: any) => {
+      const message = error?.response?.data?.message || 'Gagal menambahkan penagihan';
+      toast.error(message);
+    },
   });
 
   const updateMutation = useMutation({
@@ -230,7 +234,10 @@ export default function PiutangDetailPage() {
       toast.success('Penagihan berhasil diperbarui');
       closeForm();
     },
-    onError: () => toast.error('Gagal memperbarui penagihan'),
+    onError: (error: any) => {
+      const message = error?.response?.data?.message || 'Gagal memperbarui penagihan';
+      toast.error(message);
+    },
   });
 
   const deleteMutation = useMutation({
@@ -282,6 +289,7 @@ export default function PiutangDetailPage() {
     });
     setFileInput(null);
     setFileError(null);
+    setExistingFile(null);
     setIsFormOpen(true);
   };
 
@@ -317,6 +325,7 @@ export default function PiutangDetailPage() {
     });
     setFileInput(null);
     setFileError(null);
+    setExistingFile(p.file || null);
     setIsFormOpen(true);
   };
 
@@ -326,6 +335,7 @@ export default function PiutangDetailPage() {
     setForm(emptyForm);
     setFileInput(null);
     setFileError(null);
+    setExistingFile(null);
     setIsEditingSpkNominal(false);
     setSpkNominalInput('');
   };
@@ -345,18 +355,62 @@ export default function PiutangDetailPage() {
       return;
     }
 
+    if (!form.nomor_invoice || !form.nomor_invoice.trim()) {
+      toast.error('No Invoice wajib diisi');
+      return;
+    }
+
+    if (!form.deskripsi || !form.deskripsi.trim()) {
+      toast.error('Deskripsi wajib diisi');
+      return;
+    }
+
+    const rawNominal = parseRawNumber(form.nominal_penagihan);
+    if (!rawNominal || parseFloat(rawNominal) <= 0) {
+      toast.error('Nominal Tagihan wajib diisi');
+      return;
+    }
+
+    if (!form.tanggal_invoice) {
+      toast.error('Tanggal Invoice wajib diisi');
+      return;
+    }
+
+    if (!form.jatuh_tempo) {
+      toast.error('Jatuh Tempo wajib diisi');
+      return;
+    }
+
+    if (editingId === null && !fileInput) {
+      toast.error('Dokumen Pendukung wajib diunggah');
+      return;
+    }
+
+    if (editingId !== null && !fileInput && !existingFile) {
+      toast.error('Dokumen Pendukung wajib diunggah');
+      return;
+    }
+
+    if (
+      form.status === 'Sebagian Dibayar' &&
+      (!form.nominal_dibayar || form.nominal_dibayar <= 0)
+    ) {
+      toast.error('Nominal Dibayar wajib diisi untuk status Sebagian Dibayar');
+      return;
+    }
+
     const payload: CreatePenagihanPayload = {
       project_id: projectId,
       termin: form.termin,
       persentase: form.persentase,
-      nomor_invoice: form.nomor_invoice || undefined,
-      deskripsi: form.deskripsi || undefined,
-      nominal_penagihan: parseRawNumber(form.nominal_penagihan) || undefined,
+      nomor_invoice: form.nomor_invoice.trim(),
+      deskripsi: form.deskripsi.trim(),
+      nominal_penagihan: rawNominal,
       take_out: parseRawNumber(form.take_out) || undefined,
       status: form.status,
       tanggal_kirim: form.tanggal_kirim || undefined,
-      tanggal_invoice: form.tanggal_invoice || undefined,
-      jatuh_tempo: form.jatuh_tempo || undefined,
+      tanggal_invoice: form.tanggal_invoice,
+      jatuh_tempo: form.jatuh_tempo,
       tanggal_dibayar: form.tanggal_dibayar || undefined,
       nominal_dibayar:
         form.status === 'Sebagian Dibayar' ? form.nominal_dibayar : undefined,
@@ -1187,7 +1241,9 @@ export default function PiutangDetailPage() {
               <div className='grid grid-cols-1 sm:grid-cols-2 gap-3.5'>
                 {/* No Invoice */}
                 <div className='space-y-1.5'>
-                  <Label htmlFor='nomor_invoice' className='text-xs font-semibold text-neutral-700'>No Invoice</Label>
+                  <Label htmlFor='nomor_invoice' className='text-xs font-semibold text-neutral-700 flex items-center gap-1'>
+                    No Invoice <span className='text-red-500'>*</span>
+                  </Label>
                   <Input
                     id='nomor_invoice'
                     type='text'
@@ -1205,7 +1261,9 @@ export default function PiutangDetailPage() {
 
                 {/* Deskripsi */}
                 <div className='space-y-1.5'>
-                  <Label htmlFor='deskripsi' className='text-xs font-semibold text-neutral-700'>Deskripsi</Label>
+                  <Label htmlFor='deskripsi' className='text-xs font-semibold text-neutral-700 flex items-center gap-1'>
+                    Deskripsi <span className='text-red-500'>*</span>
+                  </Label>
                   <Input
                     id='deskripsi'
                     type='text'
@@ -1365,7 +1423,9 @@ export default function PiutangDetailPage() {
 
                 {/* Nominal */}
                 <div className='space-y-1.5'>
-                  <Label className='text-xs font-semibold text-neutral-700'>Nominal Tagihan</Label>
+                  <Label className='text-xs font-semibold text-neutral-700 flex items-center gap-1'>
+                    Nominal Tagihan <span className='text-red-500'>*</span>
+                  </Label>
                   <Input
                     type='text'
                     placeholder='Rp 0'
@@ -1437,7 +1497,9 @@ export default function PiutangDetailPage() {
               <div className='grid grid-cols-1 sm:grid-cols-2 gap-3.5'>
                 {/* Tanggal Invoice */}
                 <div className='space-y-1.5'>
-                  <Label className='text-xs font-semibold text-neutral-700'>Tanggal Invoice</Label>
+                  <Label className='text-xs font-semibold text-neutral-700 flex items-center gap-1'>
+                    Tanggal Invoice <span className='text-red-500'>*</span>
+                  </Label>
                   <Input
                     type='date'
                     value={form.tanggal_invoice || ''}
@@ -1462,7 +1524,9 @@ export default function PiutangDetailPage() {
 
                 {/* Jatuh Tempo */}
                 <div className='space-y-1.5'>
-                  <Label className='text-xs font-semibold text-neutral-700'>Jatuh Tempo</Label>
+                  <Label className='text-xs font-semibold text-neutral-700 flex items-center gap-1'>
+                    Jatuh Tempo <span className='text-red-500'>*</span>
+                  </Label>
                   <Input
                     type='date'
                     value={form.jatuh_tempo || ''}
@@ -1557,7 +1621,7 @@ export default function PiutangDetailPage() {
             <div className='space-y-3 p-3.5 rounded-xl border border-neutral-200/80 bg-white shadow-sm'>
               <h4 className='text-xs font-bold uppercase tracking-wider text-neutral-600 flex items-center gap-1.5'>
                 <Download className='h-3.5 w-3.5 text-blue-500' />
-                Dokumen Pendukung
+                Dokumen Pendukung <span className='text-red-500'>*</span>
               </h4>
 
               <div className='flex flex-col gap-2'>
@@ -1627,9 +1691,21 @@ export default function PiutangDetailPage() {
                     </div>
                   )}
                   {!fileInput && editingId !== null && (
-                    <span className='text-[10px] text-muted-foreground italic pl-1'>
-                      Kosongkan jika tidak ingin mengganti file
-                    </span>
+                    existingFile ? (
+                      <div className='flex items-center gap-2 p-2 px-3 rounded-lg bg-neutral-50 border border-neutral-200/80 text-xs text-neutral-600 w-full'>
+                        <FileText className='h-4 w-4 text-emerald-600 shrink-0' />
+                        <span className='truncate flex-1 font-medium'>
+                          {existingFile.split('/').pop()}
+                        </span>
+                        <span className='text-[10px] text-muted-foreground italic shrink-0'>
+                          (File saat ini, kosongkan jika tidak ingin mengganti)
+                        </span>
+                      </div>
+                    ) : (
+                      <span className='text-[10px] text-red-500 font-semibold pl-1'>
+                        Belum ada dokumen pendukung (Wajib diunggah)
+                      </span>
+                    )
                   )}
                 </div>
                 {fileError && (
