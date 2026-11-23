@@ -76,7 +76,7 @@ const RingChart = ({ percentage, color, label, subLabel }: { percentage: number,
         </svg>
       </div>
       <div className="mt-2 text-center">
-        <div className="text-xl font-bold text-neutral-800">{isNaN(percentage) ? '0.0' : percentage.toFixed(1)}%</div>
+        <div className="text-xl font-bold text-neutral-800">{isNaN(percentage) ? '0' : Math.round(percentage)}%</div>
         <div className="text-[10px] text-muted-foreground">{label}</div>
         <div className="text-[10px] font-medium text-neutral-500 mt-1">{subLabel}</div>
       </div>
@@ -97,7 +97,7 @@ const HorizontalProgressBar = ({ label, percentage, color, bgLight }: { label: s
           />
         </div>
       </div>
-      <span className="w-12 text-right text-xs font-bold text-neutral-800">{safePercentage.toFixed(1)}%</span>
+      <span className="w-12 text-right text-xs font-bold text-neutral-800">{Math.round(safePercentage)}%</span>
     </div>
   );
 };
@@ -275,6 +275,12 @@ export default function PerencanaanRekapPage() {
   let totalTerkirimProgress = 0;
   let totalTersettingProgress = 0;
 
+  // Total Qty progress calculations (Metode Total Qty seperti Monitoring)
+  let totalQtyProduksi = 0;
+  let totalQtyBarangJadi = 0;
+  let totalQtyTerkirim = 0;
+  let totalQtyTersetting = 0;
+
   let itemsProduksiCount = 0;
   let itemsPackingCount = 0;
   let itemsTerkirimCount = 0;
@@ -291,21 +297,26 @@ export default function PerencanaanRekapPage() {
       : Number(item.produksi?.persen) || 0;
     if (progressProduksi > 0) itemsProduksiCount++;
     totalProduksiProgress += progressProduksi;
+    totalQtyProduksi += qty * (progressProduksi / 100);
 
     // Barang Jadi (previously Packing)
     const qtyBarangJadi = item.barang_jadi_masuk?.reduce((sum, bj) => sum + Number(bj.jumlah), 0) || 0;
     const progressBarangJadi = qty > 0 ? Math.min(100, (qtyBarangJadi / qty) * 100) : 0;
     if (qtyBarangJadi > 0) itemsPackingCount++;
     totalPackingProgress += progressBarangJadi;
+    totalQtyBarangJadi += qtyBarangJadi;
 
     // Terkirim & Tersetting from Pengiriman
-    const qtyTerkirim = item.detail_pengiriman?.reduce(
+    const qtyTerkirimPengiriman = item.detail_pengiriman?.reduce(
       (sum, dp) => sum + Number(dp.jumlah_keluar || 0),
       0
     ) || 0;
+    const qtyTerkirimSupplier = Number(item.barang_supplier?.terkirim || 0);
+    const qtyTerkirim = qtyTerkirimPengiriman + qtyTerkirimSupplier;
     const progressTerkirim = qty > 0 ? Math.min(100, (qtyTerkirim / qty) * 100) : 0;
     if (qtyTerkirim > 0) itemsTerkirimCount++;
     totalTerkirimProgress += progressTerkirim;
+    totalQtyTerkirim += qtyTerkirim;
 
     const qtyTersetting = item.detail_pengiriman?.reduce(
       (sum, dp) => sum + Number(dp.jumlah_tersetting || 0),
@@ -314,6 +325,7 @@ export default function PerencanaanRekapPage() {
     const progressTersetting = qty > 0 ? Math.min(100, (qtyTersetting / qty) * 100) : 0;
     totalTersettingProgress += progressTersetting;
     if (qtyTersetting > 0) itemsTersettingCount++;
+    totalQtyTersetting += qtyTersetting;
 
     const qtyBelumTersetting = qtyTerkirim - qtyTersetting;
     if (qtyBelumTersetting > 0) itemsBelumTersettingCount++;
@@ -355,10 +367,11 @@ export default function PerencanaanRekapPage() {
     };
   });
 
-  const avgProduksi = totalItemsCount > 0 ? totalProduksiProgress / totalItemsCount : 0;
-  const avgPacking = totalItemsCount > 0 ? totalPackingProgress / totalItemsCount : 0;
-  const avgTerkirim = totalItemsCount > 0 ? totalTerkirimProgress / totalItemsCount : 0;
-  const avgTersetting = totalItemsCount > 0 ? totalTersettingProgress / totalItemsCount : 0;
+  // Perhitungan Progres berbasis Metode Total Qty (seperti Monitoring)
+  const avgProduksi = totalQtyOrder > 0 ? Math.min(100, (totalQtyProduksi / totalQtyOrder) * 100) : 0;
+  const avgPacking = totalQtyOrder > 0 ? Math.min(100, (totalQtyBarangJadi / totalQtyOrder) * 100) : 0;
+  const avgTerkirim = totalQtyOrder > 0 ? Math.min(100, (totalQtyTerkirim / totalQtyOrder) * 100) : 0;
+  const avgTersetting = totalQtyOrder > 0 ? Math.min(100, (totalQtyTersetting / totalQtyOrder) * 100) : 0;
 
   const filteredTableData = tableData.filter((row) => {
     if (!searchQuery) return true;
@@ -477,15 +490,15 @@ export default function PerencanaanRekapPage() {
       // Tambahkan baris summary rata-rata persentase di paling bawah
       wsData.push([
         { v: '', t: 's', s: headerStyle },
-        { v: 'RATA-RATA PROGRESS', t: 's', s: headerStyle },
+        { v: 'TOTAL PROGRESS (QTY)', t: 's', s: headerStyle },
         { v: '', t: 's', s: headerStyle },
         { v: '', t: 's', s: headerStyle },
         { v: '', t: 's', s: headerStyle },
         { v: '', t: 's', s: headerStyle },
-        { v: `${avgProduksi.toFixed(1)}%`, t: 's', s: headerStyle },
-        { v: `${avgPacking.toFixed(1)}%`, t: 's', s: headerStyle },
-        { v: `${avgTerkirim.toFixed(1)}%`, t: 's', s: headerStyle },
-        { v: `${avgTersetting.toFixed(1)}%`, t: 's', s: headerStyle },
+        { v: `${Math.round(avgProduksi)}%`, t: 's', s: headerStyle },
+        { v: `${Math.round(avgPacking)}%`, t: 's', s: headerStyle },
+        { v: `${Math.round(avgTerkirim)}%`, t: 's', s: headerStyle },
+        { v: `${Math.round(avgTersetting)}%`, t: 's', s: headerStyle },
         { v: '', t: 's', s: headerStyle },
       ]);
 
@@ -663,7 +676,7 @@ export default function PerencanaanRekapPage() {
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm font-bold text-neutral-800">Progres per Tahap</CardTitle>
-              <span className="text-[10px] text-muted-foreground font-medium">Rata-rata</span>
+              <span className="text-[10px] text-muted-foreground font-medium">Total Qty</span>
             </div>
           </CardHeader>
           <CardContent className="space-y-1">
