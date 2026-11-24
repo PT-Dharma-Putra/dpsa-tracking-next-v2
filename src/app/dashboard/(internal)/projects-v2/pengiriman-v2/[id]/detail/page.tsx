@@ -103,6 +103,12 @@ import {
 import { kopSuratService } from '@/features/master-data/services/kop-surat-service';
 import * as XLSX from 'xlsx-js-style';
 
+const isItemCancelled = (item: ProjectItemV2) => {
+  const divisiNama = (item.divisi?.nama || '').trim().toUpperCase();
+  const status = (item.status || '').trim().toUpperCase();
+  return divisiNama === 'CANCEL' || status === 'CANCELLED';
+};
+
 export default function PerencanaanDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -241,6 +247,7 @@ export default function PerencanaanDetailPage() {
     if (checked && items) {
       const filteredItems = items.filter((item) => {
         if (showBelumTerkirim) {
+          if (isItemCancelled(item)) return false;
           const totalKeluar =
             item.detail_pengiriman?.reduce(
               (sum, d) => sum + Number(d.jumlah_keluar),
@@ -692,6 +699,7 @@ export default function PerencanaanDetailPage() {
 
   const handleExportBelumTerkirim = () => {
     const belumTerkirimItems = (items ?? []).filter((item) => {
+      if (isItemCancelled(item)) return false;
       const totalKeluar =
         item.detail_pengiriman?.reduce(
           (sum, d) => sum + Number(d.jumlah_keluar),
@@ -1436,8 +1444,10 @@ export default function PerencanaanDetailPage() {
         a.id - b.id
     );
 
-    // Urutkan items berdasarkan lantai, ruang, item
-    const sortedItems = [...items].sort((a, b) => {
+    // Urutkan items berdasarkan lantai, ruang, item (kecualikan item cancel)
+    const sortedItems = [...items]
+      .filter((item) => !isItemCancelled(item))
+      .sort((a, b) => {
       const lantaiA = a.lantai ?? '';
       const lantaiB = b.lantai ?? '';
       const lantaiCmp = lantaiA.localeCompare(lantaiB, undefined, {
@@ -2008,15 +2018,16 @@ export default function PerencanaanDetailPage() {
   }
 
   // Summary Calculations
-  const totalItems = items?.length || 0;
-  const poDivisiCount = items?.filter((i) => i.divisi_id).length || 0;
+  const activeItems = (items ?? []).filter((i) => !isItemCancelled(i));
+  const totalItems = activeItems.length || 0;
+  const poDivisiCount = activeItems.filter((i) => i.divisi_id).length || 0;
   const gambarKerjaCount =
-    items?.filter((i) => i.gambar_kerja?.file || i.mdl_item?.link_gambar_kerja)
+    activeItems.filter((i) => i.gambar_kerja?.file || i.mdl_item?.link_gambar_kerja)
       .length || 0;
   const dokubahCount =
     project.dokubah?.file || project.dokubah?.file_rekap_dokubah ? 1 : 0;
   const stokLengkapCount =
-    items?.filter(
+    activeItems.filter(
       (i) =>
         i.bahan_baku?.ketersediaan_stok === 'Tersedia' ||
         i.bahan_baku?.ketersediaan_stok === 'Lengkap'
@@ -2030,22 +2041,22 @@ export default function PerencanaanDetailPage() {
     : 0;
   const isStokTerisi =
     totalItems > 0 &&
-    (items?.every((i) => !!i.bahan_baku?.ketersediaan_stok) || false);
+    (activeItems.every((i) => !!i.bahan_baku?.ketersediaan_stok) || false);
   const perintahProduksiCount =
-    items?.filter(
+    activeItems.filter(
       (i) =>
         i.divisi_id && (i.gambar_kerja?.file || i.mdl_item?.link_gambar_kerja)
     ).length || 0;
 
-  const totalQtyOrder = items?.reduce((sum, i) => sum + i.jumlah, 0) || 0;
+  const totalQtyOrder = activeItems.reduce((sum, i) => sum + i.jumlah, 0) || 0;
   const totalQtyMasuk =
-    items?.reduce(
+    activeItems.reduce(
       (sum, i) =>
         sum + (i.barang_jadi_masuk?.reduce((s, bj) => s + bj.jumlah, 0) || 0),
       0
     ) || 0;
   const totalQtyPacking =
-    items?.reduce(
+    activeItems.reduce(
       (sum, i) =>
         sum +
         (i.barang_jadi_terpacking?.reduce((s, p) => s + p.jumlah, 0) || 0),
@@ -2928,6 +2939,7 @@ export default function PerencanaanDetailPage() {
                         items && items.length > 0
                           ? items.filter((item) => {
                               if (showBelumTerkirim) {
+                                if (isItemCancelled(item)) return false;
                                 const totalKeluar =
                                   item.detail_pengiriman?.reduce(
                                     (sum, d) => sum + Number(d.jumlah_keluar),
@@ -2983,6 +2995,7 @@ export default function PerencanaanDetailPage() {
                 [...(items ?? [])]
                   .filter((item) => {
                     if (showBelumTerkirim) {
+                      if (isItemCancelled(item)) return false;
                       const totalKeluar =
                         item.detail_pengiriman?.reduce(
                           (sum, d) => sum + Number(d.jumlah_keluar),
